@@ -1,0 +1,22 @@
+########################################################################################
+############################## Package: PostAnalysis ###################################
+########################################################################################
+
+# Setting the name of the package 
+atlas_subdir(PostAnalysis)
+
+# Minimum CMake version 
+cmake_minimum_required( VERSION 3.2 FATAL_ERROR )
+
+# Include ROOT for the analysis 
+find_package( ROOT COMPONENTS REQUIRED Graf Gpad RooFitCore Hist RIO)
+
+# Creating the library and linking the files
+atlas_add_library( PackageLib
+  PostAnalysis/*.h Root/*.cxx
+  INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
+  LINK_LIBRARIES ${ROOT_LIBRARIES})
+
+atlas_add_executable( PostAnalysis util/PostAnalysis.cxx
+  INCLUDE_DIRS ${ROOT_INCLUDE_DIRS}
+  LINK_LIBRARIES ${ROOT_LIBRARIES} PackageLib)

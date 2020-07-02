@@ -1,0 +1,22 @@
+Some simple instructions for the use of Execute.sh. 
+The script is designed to initialize multiple runAnalysis workers in parallel given a sample directory (open the file using vim and edit the SampleDir variable)
+To use:
+  - Create a folder at the root directory of this project e.g. Parallel_Computing 
+  - Your folder structure should now look like this:
+    - build 
+    - Parallel_Computing
+    - run
+    - src (very important this is the name of the folder)
+  - Place the Execute.sh script within that folder. 
+  - Edit the file according to your CPU and the number of files you want to run per worker. 
+    - Corresponding Variables:
+      - NumberOfCores (regulates the number of cores to use on the PC)
+      - Files_Per_Core (This parameter basically indicates the number of files to be copied to local disk per worker. These files are then deleted after the cycle so dont worry about excessive storage usage)
+      - SampleDir (The directory of samples to execute)
+      - You may also want to change the executed algorithm (by default it is dEdx)
+  - Once you have adjusted the parameters you can simply bash Execute.sh and the worker will initialize
+
+Some notes on Files_Per_Core:
+The purpose for this variable is to accomodate the use of a NAS or some other network attachment device. For instance my Laptop partition for Centos7 only has 100GB and storing all the samples on the device is not possible. But given some storage media, you can simply stream individual files across a network that has a mounted volume. E.g. in my case, I use a NAS that is mounted to a folder called /CERN. 
+
+
