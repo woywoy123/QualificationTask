@@ -23,27 +23,27 @@ void Functions::FillTH1F_From_File(std::vector<TH1F*> Histograms, TFile* File, T
 }
 
 // ================== Fitting Base Classes ==============================//
-RooHistPdf* Fitting::ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name, RooRealVar* domain)
+RooHistPdf* Fit_Functions::ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name, RooRealVar* domain)
 {
   Name+=("_PDF");
   RooHistPdf* PDF = new RooHistPdf(Name, Name, *domain, *Histogram);
   return PDF;
 }
 
-RooDataHist* Fitting::ConvertTH1FtoDataHist(TH1F* Hist, RooRealVar* domain)
+RooDataHist* Fit_Functions::ConvertTH1FtoDataHist(TH1F* Hist, RooRealVar* domain)
 {
   TString name = Hist -> GetName();
   RooDataHist* Histo = new RooDataHist(name, name, *domain, Hist);
   return Histo;
 }
 
-RooRealVar* Fitting::GenerateVariable(TString name, double begin, double end)
+RooRealVar* Fit_Functions::GenerateVariable(TString name, double begin, double end)
 {
-  RooRealVar* var = new RooRealVar(name, name, begin, end);
+  RooRealVar* var = new RooRealVar(name, name, begin, 0., end);
   return var;
 }
 
-RooArgList Fitting::VectorToArgList(std::vector<RooRealVar*> Vector)
+RooArgList Fit_Functions::VectorToArgList(std::vector<RooRealVar*> Vector)
 {
   RooArgList List; 
   for (RooRealVar* arg : Vector)
@@ -53,7 +53,7 @@ RooArgList Fitting::VectorToArgList(std::vector<RooRealVar*> Vector)
   return List;
 }
 
-RooArgList Fitting::VectorToArgList(std::vector<RooHistPdf*> Vector)
+RooArgList Fit_Functions::VectorToArgList(std::vector<RooHistPdf*> Vector)
 {
   RooArgList List; 
   for (RooHistPdf* arg : Vector)
@@ -62,8 +62,9 @@ RooArgList Fitting::VectorToArgList(std::vector<RooHistPdf*> Vector)
   }
   return List;
 }
+
 // ================= Fitting Derived Classes ===========================//
-std::vector<RooDataHist*> Fitting::ConvertTH1FtoDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain)
+std::vector<RooDataHist*> Fit_Functions::ConvertTH1FtoDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain)
 {
   std::vector<RooDataHist*> DataHists;
   for (TH1F* hist : Histograms)
@@ -74,7 +75,7 @@ std::vector<RooDataHist*> Fitting::ConvertTH1FtoDataHist(std::vector<TH1F*> Hist
   return DataHists;
 }
 
-std::vector<RooHistPdf*> Fitting::ConvertTH1FtoPDF(std::vector<TH1F*> Histograms, RooRealVar* domain)
+std::vector<RooHistPdf*> Fit_Functions::ConvertTH1FtoPDF(std::vector<TH1F*> Histograms, RooRealVar* domain)
 {
   std::vector<RooHistPdf*> PDFs;
   std::vector<RooDataHist*> DataHists = ConvertTH1FtoDataHist(Histograms, domain);
@@ -86,7 +87,7 @@ std::vector<RooHistPdf*> Fitting::ConvertTH1FtoPDF(std::vector<TH1F*> Histograms
   return PDFs;
 }
 
-std::vector<RooRealVar*> Fitting::GenerateVariables(std::vector<TString> Names, std::vector<double> Begin, std::vector<double> End)
+std::vector<RooRealVar*> Fit_Functions::GenerateVariables(std::vector<TString> Names, std::vector<double> Begin, std::vector<double> End)
 {
   std::vector<RooRealVar*> Variables;
   for ( unsigned int x = 0; x < Names.size(); x++)
@@ -97,4 +98,38 @@ std::vector<RooRealVar*> Fitting::GenerateVariables(std::vector<TString> Names, 
   return Variables;
 }
 
+// ================== Plotting Class ================================= //
+TCanvas* Plot_Functions::GeneratePlot(TString Title, RooRealVar* range, RooDataHist* Data, RooAddPdf Model, std::vector<RooHistPdf*> PDFs, std::vector<TString> pdf_titles)
+{
+  // Initialize the frame for Plotting 
+  RooPlot* xframe = range -> frame(RooFit::Title(Title)); 
+  Data -> plotOn(xframe, RooFit::Name("Measured"));
+  Model.plotOn(xframe, RooFit::Name("Model Fit"));
+  
+  // Loop over the histograms 
+  for (unsigned i = 0; i < PDFs.size(); i++) 
+  {
+    Model.plotOn(xframe, RooFit::Name(pdf_titles[i]), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Constants::Colors[i]));
+  }
+ 
+  // Create the canvas  
+  auto f = new TCanvas();
+  gPad -> SetLogy();
+  gStyle -> SetOptStat(0);
+  
+  xframe -> SetXTitle("dEdx [MeV g^{-1} cm^{2}]");
+  xframe -> SetMinimum(1);
+  xframe -> Draw();
 
+  // Create the legend 
+  TLegend* Legend = new TLegend(0.9, 0.9, 0.75, 0.75);
+  Legend -> AddEntry("Measured", "Measured Distribution"); 
+  Legend -> AddEntry("Model Fit", "Model Fit");
+  for ( TString name : pdf_titles )
+  {
+    Legend -> AddEntry(name, name);
+  }
+  Legend -> Draw();
+
+  return f;
+}

@@ -5,6 +5,7 @@
 #include<TImage.h>
 #include<TApplication.h>
 #include<TSystem.h>
+#include<TCanvas.h>
 
 // Include the standard C++ library 
 #include<iostream>
@@ -15,6 +16,11 @@
 #include<RooHistPdf.h>
 #include<RooFit.h>
 #include<RooAddPdf.h>
+#include<TROOT.h>
+#include<TStyle.h>
+#include<TLegend.h>
+#include<RooPlot.h>
+using namespace RooFit;
 
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
@@ -26,7 +32,7 @@ class Functions
     void FillTH1F_From_File(std::vector<TH1F*> Histograms, TFile* File, TString DetectorLayer);
 };
 
-class Fitting
+class Fit_Functions
 {
   public:
     std::vector<RooDataHist*> ConvertTH1FtoDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain);
@@ -42,6 +48,12 @@ class Fitting
    
 };
 
+class Plot_Functions
+{
+  public: 
+    TCanvas* GeneratePlot(TString Title, RooRealVar* range, RooDataHist* Data, RooAddPdf Model, std::vector<RooHistPdf*> PDFs, std::vector<TString> pdf_titles); 
+};
+
 namespace Constants
 {
   std::vector<TString> Detector = {"IBL", "Blayer", "layer1", "layer2"};
@@ -51,8 +63,9 @@ namespace Constants
                                      "dEdx_ntrk_4_ntru_4"};
 
   std::vector<TString> Variable_Names = {"ntrk_1", "ntrk_2", "ntrk_3", "ntrk_4"};
-  std::vector<double> Begin = {1e6, 0., 0., 0.};
-  std::vector<double> End = {1e8, 1e1, 1e1, 1e1};
+  std::vector<double> Begin = {0, 0, 0, 0};
+  std::vector<double> End = {1e8, 1e8, 1e8, 1e8};
+  std::vector<Color_t> Colors = {kRed, kBlue, kOrange, kCyan, kGreen, kYellow, kViolet, kAzure};
 }
 
 #endif
