@@ -35,12 +35,13 @@ class Functions
 class Fit_Functions
 {
   public:
-    std::vector<RooDataHist*> ConvertTH1FtoDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain);
+    std::vector<RooDataHist*> ConvertTH1toDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain);
     std::vector<RooHistPdf*> ConvertTH1FtoPDF(std::vector<TH1F*> Histograms, RooRealVar* domain);
     std::vector<RooRealVar*> GenerateVariables(std::vector<TString>, std::vector<double> Begin, std::vector<double> End); 
     
     RooHistPdf* ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name, RooRealVar* domain);
-    RooDataHist* ConvertTH1FtoDataHist(TH1F* Hist, RooRealVar* domain);
+    RooDataHist* ConvertTH1toDataHist(TH1F* Hist, RooRealVar* domain);
+    RooDataHist* ConvertTH1toDataHist(TH1* Hist, RooRealVar* domain);
     RooRealVar* GenerateVariable(TString name, double begin, double end);   
   
     RooArgList VectorToArgList(std::vector<RooRealVar*> Vector);

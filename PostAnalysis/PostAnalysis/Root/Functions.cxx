@@ -30,11 +30,19 @@ RooHistPdf* Fit_Functions::ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name
   return PDF;
 }
 
-RooDataHist* Fit_Functions::ConvertTH1FtoDataHist(TH1F* Hist, RooRealVar* domain)
+RooDataHist* Fit_Functions::ConvertTH1toDataHist(TH1F* Hist, RooRealVar* domain)
 {
   TString name = Hist -> GetName();
   RooDataHist* Histo = new RooDataHist(name, name, *domain, Hist);
   return Histo;
+}
+
+RooDataHist* Fit_Functions::ConvertTH1toDataHist(TH1* Hist, RooRealVar* domain)
+{
+  TString name = Hist -> GetName();
+  RooDataHist* Histo = new RooDataHist(name, name, *domain, Hist);
+  return Histo;
+
 }
 
 RooRealVar* Fit_Functions::GenerateVariable(TString name, double begin, double end)
@@ -64,12 +72,12 @@ RooArgList Fit_Functions::VectorToArgList(std::vector<RooHistPdf*> Vector)
 }
 
 // ================= Fitting Derived Classes ===========================//
-std::vector<RooDataHist*> Fit_Functions::ConvertTH1FtoDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain)
+std::vector<RooDataHist*> Fit_Functions::ConvertTH1toDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain)
 {
   std::vector<RooDataHist*> DataHists;
   for (TH1F* hist : Histograms)
   {
-    RooDataHist* Histo = ConvertTH1FtoDataHist(hist, domain);
+    RooDataHist* Histo = ConvertTH1toDataHist(hist, domain);
     DataHists.push_back(Histo);
   }
   return DataHists;
@@ -78,7 +86,7 @@ std::vector<RooDataHist*> Fit_Functions::ConvertTH1FtoDataHist(std::vector<TH1F*
 std::vector<RooHistPdf*> Fit_Functions::ConvertTH1FtoPDF(std::vector<TH1F*> Histograms, RooRealVar* domain)
 {
   std::vector<RooHistPdf*> PDFs;
-  std::vector<RooDataHist*> DataHists = ConvertTH1FtoDataHist(Histograms, domain);
+  std::vector<RooDataHist*> DataHists = ConvertTH1toDataHist(Histograms, domain);
   for (unsigned int x = 0; x < DataHists.size(); x++)
   {
     RooDataHist* Histo = DataHists.at(x);
