@@ -30,6 +30,7 @@ class Functions
   public:
     std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, int min, int max);
     void FillTH1F_From_File(std::vector<TH1F*> Histograms, TFile* File, TString DetectorLayer);
+    void FillTH1F_From_File(TH1F* Histogram, TFile* File, TString DetectorLayer, std::vector<TString> List);
 };
 
 class Fit_Functions
@@ -57,16 +58,36 @@ class Plot_Functions
 
 namespace Constants
 {
-  std::vector<TString> Detector = {"IBL", "Blayer", "layer1", "layer2"};
-  std::vector<TString> Pure_Names = {"dEdx_ntrk_1_ntru_1", 
-                                     "dEdx_ntrk_2_ntru_2", 
-                                     "dEdx_ntrk_3_ntru_3", 
-                                     "dEdx_ntrk_4_ntru_4"};
+  const std::vector<TString> Detector = {"IBL", "Blayer", "layer1", "layer2"};
+  const std::vector<TString> Pure_Names = {"dEdx_ntrk_1_ntru_1", 
+                                           "dEdx_ntrk_2_ntru_2", 
+                                           "dEdx_ntrk_3_ntru_3", 
+                                           "dEdx_ntrk_4_ntru_4"};
 
-  std::vector<TString> Variable_Names = {"ntrk_1", "ntrk_2", "ntrk_3", "ntrk_4"};
-  std::vector<double> Begin = {0, 0, 0, 0};
-  std::vector<double> End = {1e8, 1e8, 1e8, 1e8};
-  std::vector<Color_t> Colors = {kRed, kBlue, kOrange, kCyan, kGreen, kYellow, kViolet, kAzure};
+  const std::vector<TString> trk_1 = {"dEdx_ntrk_1_ntru_1", 
+                                      "dEdx_ntrk_1_ntru_2", 
+                                      "dEdx_ntrk_1_ntru_3", 
+                                      "dEdx_ntrk_1_ntru_4"};
+
+  const std::vector<TString> trk_2 = {"dEdx_ntrk_2_ntru_1", 
+                                      "dEdx_ntrk_2_ntru_2", 
+                                      "dEdx_ntrk_2_ntru_3", 
+                                      "dEdx_ntrk_2_ntru_4"};
+
+  const std::vector<TString> trk_3 = {"dEdx_ntrk_3_ntru_1", 
+                                      "dEdx_ntrk_3_ntru_2", 
+                                      "dEdx_ntrk_3_ntru_3", 
+                                      "dEdx_ntrk_3_ntru_4"};
+
+  const std::vector<TString> trk_4 = {"dEdx_ntrk_4_ntru_1", 
+                                      "dEdx_ntrk_4_ntru_2", 
+                                      "dEdx_ntrk_4_ntru_3", 
+                                      "dEdx_ntrk_4_ntru_4"};
+
+  const std::vector<TString> Variable_Names = {"ntrk_1", "ntrk_2", "ntrk_3", "ntrk_4"};
+  const std::vector<double> Begin = {0., 0., 0., 0.};
+  const std::vector<double> End = {1e8, 1e8, 1e8, 1e8};
+  const std::vector<Color_t> Colors = {kRed, kBlue, kOrange, kCyan, kGreen, kYellow, kViolet, kAzure};
 }
 
 #endif

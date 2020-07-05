@@ -22,6 +22,15 @@ void Functions::FillTH1F_From_File(std::vector<TH1F*> Histograms, TFile* File, T
   } 
 }
 
+void Functions::FillTH1F_From_File(TH1F* Histogram, TFile* File, TString DetectorLayer, std::vector<TString> List)
+{
+  File -> cd(DetectorLayer);
+  for (TString HistName : List)
+  {
+    Histogram -> Add((TH1F*)gDirectory -> Get(HistName));
+  }
+}
+
 // ================== Fitting Base Classes ==============================//
 RooHistPdf* Fit_Functions::ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name, RooRealVar* domain)
 {
@@ -42,7 +51,6 @@ RooDataHist* Fit_Functions::ConvertTH1toDataHist(TH1* Hist, RooRealVar* domain)
   TString name = Hist -> GetName();
   RooDataHist* Histo = new RooDataHist(name, name, *domain, Hist);
   return Histo;
-
 }
 
 RooRealVar* Fit_Functions::GenerateVariable(TString name, double begin, double end)
