@@ -20,20 +20,30 @@ void PostAnalysis()
   TFile *File = new TFile(dir);
   if (!File -> IsOpen()){ gSystem -> Exit(0); }
 
+  // Appending the ntrack-ntruth names into a common vector
+  std::vector<std::vector<TString>> Namelist = {Constants::trk_1, Constants::trk_2, Constants::trk_3, Constants::trk_4}; 
+  std::vector<TString> Tracks = F.AppendVectors(Namelist);
+
   // Create the required Histograms  
   std::vector<TH1F*> Pure_Hists = F.MakeTH1F(Constants::Pure_Names, 50, 0, 20); 
-  std::vector<TH1F*> trk_1 = F.MakeTH1F(Constants::trk_1, 50, 0, 20); 
-  std::vector<TH1F*> trk_2 = F.MakeTH1F(Constants::trk_2, 50, 0, 20); 
-  std::vector<TH1F*> trk_3 = F.MakeTH1F(Constants::trk_3, 50, 0, 20); 
-  std::vector<TH1F*> trk_4 = F.MakeTH1F(Constants::trk_4, 50, 0, 20); 
-
+//  std::vector<TH1F*> trk_1 = F.MakeTH1F(Constants::trk_1, 50, 0, 20); 
+//  std::vector<TH1F*> trk_2 = F.MakeTH1F(Constants::trk_2, 50, 0, 20); 
+//  std::vector<TH1F*> trk_3 = F.MakeTH1F(Constants::trk_3, 50, 0, 20); 
+//  std::vector<TH1F*> trk_4 = F.MakeTH1F(Constants::trk_4, 50, 0, 20);  
+  std::map<TString, std::vector<TH1F*>> Layer_Track; 
+  
   for (TString layer : Constants::Detector)
   {
-    F.FillTH1F_From_File(Pure_Hists, File, layer); 
-    F.FillTH1F_From_File(trk_1, File, layer); 
-    F.FillTH1F_From_File(trk_2, File, layer);
-    F.FillTH1F_From_File(trk_3, File, layer);
-    F.FillTH1F_From_File(trk_4, File, layer);
+  //  F.FillTH1F_From_File(Pure_Hists, File, layer); 
+  //  F.FillTH1F_From_File(trk_1, File, layer); 
+  //  F.FillTH1F_From_File(trk_2, File, layer);
+  //  F.FillTH1F_From_File(trk_3, File, layer);
+  //  F.FillTH1F_From_File(trk_4, File, layer);
+
+    // Create the histograms for ntrk-ntruth for each layer 
+    std::vector<TH1F*> trk = F.MakeTH1F(Tracks, 50, 0, 20);
+    F.FillTH1F_From_File(trk, File, layer);
+    Layer_Track[layer] = trk; 
   }
 
   // Build PDFs and all the histograms needed for the fitting  
@@ -47,10 +57,8 @@ void PostAnalysis()
 
   //V.RecoverScaling(model, Pure_Hists, Pure_PDF, dEdx_range, Variables, 0.1, 0.001);
   //V.Subtraction(Pure_Hists, dEdx_range, model, Pure_PDF, Variables); 
-  V.Reconstruction(trk_1, trk_2, trk_3, trk_4, Variables, Pure_PDF, model, dEdx_range);
-
-   
- 
+  //V.Reconstruction(trk_1, trk_2, trk_3, trk_4, Variables, Pure_PDF, model, dEdx_range); 
+  V.FLostLayer(Layer_Track, 0.4, 19.6);
 }
 
 void StandaloneApplications(int argc, char**argv)
