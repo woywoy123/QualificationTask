@@ -33,6 +33,11 @@ class Verification
                                   std::vector<RooHistPdf*> PDFs,
                                   RooAddPdf model, 
                                   RooRealVar* range);
+    
+    void FLostLayer(std::map<TString, std::vector<TH1F*>> Layer_Track, 
+                                  float lower, float upper);
+
+    void NormalizedSubtraction(float lower, float upper, std::vector<TH1F*> Hist1, std::vector<TH1F*> Hist2, RooAddPdf model, std::vector<RooRealVar*> Variables, RooRealVar* Range);
 
 };
 #endif 

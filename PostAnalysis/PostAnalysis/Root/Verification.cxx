@@ -1,6 +1,8 @@
 #include<PostAnalysis/Verification.h>
 #include<PostAnalysis/Functions.h>
 
+using namespace RooFit;
+
 void Verification::RecoverScaling(RooAddPdf model, 
                                   std::vector<TH1F*> Histograms, 
                                   std::vector<RooHistPdf*> PDF, 
@@ -9,7 +11,6 @@ void Verification::RecoverScaling(RooAddPdf model,
                                   float S1, float S2)
 {
   // Init the function that hosts common tools
-  Functions F;
   Fit_Functions Fit;
   Plot_Functions plot;
 
@@ -188,4 +189,216 @@ void Verification::Reconstruction(std::vector<TH1F*> trk1,
   TCanvas* f = P.GeneratePlot("1-Track", range, trk1_H, model, PDFs, Constants::Pure_Names); 
 
 }
-                                  
+
+void Verification::FLostLayer(std::map<TString, std::vector<TH1F*>> Layer_Track, float lower, float upper)
+{
+  // Lambda functions
+  auto ntrk_ntru = [](std::vector<TH1F*> Histo)
+  {
+    Functions F; 
+    std::vector<std::pair<int, int>> Output;
+    for (TH1F* i : Histo)
+    {
+      TString name = i -> GetTitle();
+      std::vector<TString> list = F.SplitString("_", name);
+      int ntrk = list.at(2).Atoi();
+      int ntru = list.at(4).Atoi(); 
+      Output.push_back(std::pair<int, int>(ntrk, ntru)); 
+    }
+    return Output;
+  };
+
+  auto FLost = [](std::vector<TH1F*> Histo, std::vector<std::pair<int, int>> tktu, float lower, float upper)
+  {
+    // loss sum for each truth
+    float loss2 = 0;
+    float loss3 = 0;
+    float loss4 = 0; 
+
+    // Total tracks
+    float tot2 = 0;
+    float tot3 = 0;
+    float tot4 = 0;
+
+    for (unsigned i = 0; i < Histo.size(); i++)
+    {
+      std::pair<int, int> it = tktu.at(i);
+      int trk = it.first;
+      int tru = it.second;
+     
+      TH1F* h = Histo.at(i);
+      float W = h -> GetBinWidth(1);
+      float entries = h -> Integral(lower/W, upper/W);
+      float loss;
+
+      // case where ntrk < ntru i.e. lost truth
+      loss = (tru - trk)*entries;
+     
+      if ( tru == 2 && trk <= tru )
+      {
+        loss2 = loss2 + loss;
+        tot2 = entries*(tru-trk+1) + tot2;
+      }
+      if ( tru == 3 && trk <= tru )
+      {
+        loss3 = loss3 + loss;
+        tot3 = entries*(tru-trk+1) + tot3;
+      }
+      if ( tru == 4 && trk <= tru )
+      {
+        loss4 = loss4 + loss;
+        tot4 = entries*(tru-trk+1) + tot4;
+      }
+    }
+    
+    std::vector<float> flost = {loss2/tot2, loss3/tot3, loss4/tot4};
+    return flost;
+  };
+
+  std::cout << "" << std::endl;
+  for (std::pair<TString, std::vector<TH1F*>> i : Layer_Track)
+  {
+    std::vector<std::pair<int, int>> tktu = ntrk_ntru(i.second);
+    std::vector<float> FLOST = FLost(i.second, tktu, lower, upper);
+    
+    std::cout << "    Calculated FLost for Layer: " << i.first  << std::endl; 
+    std::cout << "    2-Track: " << FLOST.at(0) << "| 3-Track: " << FLOST.at(1) << "| 4-Track: " << FLOST.at(2) << std::endl; 
+    std::cout << "" << std::endl;
+  }
+   
+}
+
+void Verification::NormalizedSubtraction(float lower, float upper, std::vector<TH1F*> Hist1, std::vector<TH1F*> Hist2, RooAddPdf model, std::vector<RooRealVar*> Variables, RooRealVar* Range)
+{
+
+  auto GenerateData = [](std::vector<TH1F*> Hist1, TH1F* Data_H1, std::vector<TH1F*> Hist2, TH1F* Data_H2)
+  {
+    // Create the data histograms
+    for (unsigned int i = 0; i < Hist1.size(); i++)
+    {
+      Data_H1 -> Add(Hist1.at(i));
+      Data_H2 -> Add(Hist2.at(i));
+    }
+  };
+ 
+  auto CompleteSubtraction = [](TH1F* Hist1, TH1F* Hist2, float lower, float upper)
+  {
+    float W = Hist1 -> GetBinWidth(1);
+    // Assume Hist1 is the one we want to subtract from: e.g. 3-Track
+    // Hist 2 is the one we are subtracting: e.g. 4-Track
+    float E_H1 = Hist1 -> Integral(lower/W, upper/W);
+    float E_H2 = Hist2 -> Integral(lower/W, upper/W);
+    
+    // Scale the histogram we are going to subtract
+    Hist2-> Scale(E_H1/E_H2); 
+    Hist1 -> Add(Hist2, -1);
+  };
+  
+  auto AlternativeSubtraction = [](TH1F* Hist1, TH1F* Hist2, float lower, float upper)
+  {
+    float W = Hist1 -> GetBinWidth(1);
+
+    // Assume Hist1 is the one we want to subtract from: e.g. 3-Track
+    // Hist 2 is the one we are subtracting: e.g. 4-Track
+    float E_H1 = Hist1 -> Integral(lower/W, upper/W);
+    float E_H2 = Hist2 -> Integral(lower/W, upper/W);
+
+    float Total = E_H1 + E_H2;
+    std::cout << E_H1/Total << ":::" << E_H2/Total << std::endl;
+
+    Hist2 -> Scale((E_H1/E_H2)*(E_H2/Total));
+    Hist1 -> Add(Hist2, -1);
+
+    return (E_H1/Total);
+  };
+  
+   
+  // Clone the TH1F structure and generate the toy data
+  TH1F* Data_H1 = (TH1F*)Hist1.at(0) -> Clone("Data1");
+  Data_H1 -> Reset();
+  Data_H1 -> SetTitle("Remaining Distribution");
+
+  TH1F* Data_H2 = (TH1F*)Data_H1 -> Clone("Data2");
+  GenerateData(Hist1, Data_H1, Hist2, Data_H2);
+
+  TH1F* Original1 = (TH1F*)Data_H1 -> Clone("Data1");
+  TH1F* Original2 = (TH1F*)Data_H2 -> Clone("Data2");
+
+  // This causes most of the data in the domain to be removed. Try another method 
+  //CompleteSubtraction(Data_H1, Data_H2, lower, upper);
+
+  // Different approach
+  float Scale = AlternativeSubtraction(Data_H1, Data_H2, lower, upper);
+
+  // Perform the model fit. 
+  Fit_Functions F;
+  RooDataHist* Data = F.ConvertTH1toDataHist(Data_H1, Range);
+  model.fitTo(*Data, SumW2Error(kTRUE));
+ 
+  // Predicted events  
+  float c1 = Variables.at(0) -> getVal();
+  float c2 = Variables.at(1) -> getVal();
+  float c3 = Variables.at(2) -> getVal();
+  float c4 = Variables.at(3) -> getVal();
+
+  // Closure test: Get all the mc entries for each class. 
+  float W = Hist1.at(0) -> GetBinWidth(1); 
+  float t1_H1 = Hist1.at(0) -> GetEntries(); // Truth was 1 trk
+  float t2_H1 = Hist1.at(1) -> GetEntries(); // Truth was 2 trk
+  float t3_H1 = Hist1.at(2) -> GetEntries(); // Truth was 3 trk
+  float t4_H1 = Hist1.at(3) -> GetEntries(); // Truth was 4 trk
+  float t1_H2 = Hist2.at(0) -> GetEntries(); // Truth was 1 trk
+  float t2_H2 = Hist2.at(1) -> GetEntries(); // Truth was 2 trk
+  float t3_H2 = Hist2.at(2) -> GetEntries(); // Truth was 3 trk
+  float t4_H2 = Hist2.at(3) -> GetEntries(); // Truth was 4 trk
+
+  // Truth scaled with the numbers being subtracted
+  float t1 = t1_H1 - Scale*t1_H2;
+  float t2 = t2_H1 - Scale*t2_H2;
+  float t3 = t3_H1 - Scale*t3_H2;
+  float t4 = t4_H1 - Scale*t4_H2;
+
+  std::cout << t1 << "___" << t2 << "___" << t3 << "___" << t4 <<  std::endl;
+  std::cout << c1/t1 << " ::::: " << c2/t2 << " ::::: " << c3/t3 << " ::::: " << c4/t4 << std::endl;
+
+  // Ignore the title of the histogram
+  std::vector<TString> Legend = {"Final Dist", "Subtract from", "Subtract"};
+  std::vector<TH1F*> H = {Data_H1, Original1, Original2};
+
+  auto f = new TCanvas();
+  gPad -> SetLogy();
+  gStyle -> SetOptStat(0);
+  
+  Data_H1 -> SetLineColor(kRed);
+  Original1 -> SetLineColor(kBlue);
+  Original2 -> SetLineColor(kOrange);
+
+  TLegend* Legend_L = new TLegend(0.9, 0.9, 0.75, 0.75);
+  for (unsigned int i = 0; i < Legend.size(); i++)
+  {
+    Legend_L -> AddEntry(H.at(i), Legend.at(i));
+    H.at(i) -> Draw("HISTSAME");
+  }
+  Legend_L -> Draw();
+
+  f -> Draw();
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

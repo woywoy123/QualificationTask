@@ -28,9 +28,23 @@ using namespace RooFit;
 class Functions
 {
   public:
-    std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, int min, int max);
-    void FillTH1F_From_File(std::vector<TH1F*> Histograms, TFile* File, TString DetectorLayer);
-    void FillTH1F_From_File(TH1F* Histogram, TFile* File, TString DetectorLayer, std::vector<TString> List);
+    std::vector<TH1F*> MakeTH1F(std::vector<TString> Names,  int bins, int min, int max, TString Extension = "");
+
+    void FillTH1F_From_File(std::vector<TH1F*> Histograms, TFile* File, TString DetectorLayer, TString Extension = "");
+    void FillTH1F_From_File(TH1F* Histogram, TFile* File, TString DetectorLayer, std::vector<TString> List, TString Extension = "");
+
+    std::vector<TString> SplitString(TString token, TString Split);
+    TString RemoveExtension(TString Name, TString Extension);
+
+    template <typename T> std::vector<T> AppendVectors(std::vector<std::vector<T>> Input)
+    {
+      std::vector<T> Output; 
+      for (std::vector<T> i : Input)
+      {
+        for (T x : i){ Output.push_back(x); }
+      }
+      return Output;
+    }
 };
 
 class Fit_Functions
@@ -85,7 +99,7 @@ namespace Constants
                                       "dEdx_ntrk_4_ntru_4"};
 
   const std::vector<TString> Variable_Names = {"ntrk_1", "ntrk_2", "ntrk_3", "ntrk_4"};
-  const std::vector<double> Begin = {0., 0., 0., 0.};
+  const std::vector<double> Begin = {0, 0, 0, 0};
   const std::vector<double> End = {1e8, 1e8, 1e8, 1e8};
   const std::vector<Color_t> Colors = {kRed, kBlue, kOrange, kCyan, kGreen, kYellow, kViolet, kAzure};
 }

@@ -1,10 +1,11 @@
 #include<PostAnalysis/Functions.h>
 
-std::vector<TH1F*> Functions::MakeTH1F(std::vector<TString> Names, int bins, int min, int max)
+std::vector<TH1F*> Functions::MakeTH1F(std::vector<TString> Names, int bins, int min, int max, TString Extension)
 {
   std::vector<TH1F*> Histograms;
   for (TString name : Names)
   {
+    if (Extension != ""){ name+=(Extension); }
     TH1F* hist = new TH1F(name, name, bins, min, max);
     Histograms.push_back(hist);
   }
@@ -12,24 +13,48 @@ std::vector<TH1F*> Functions::MakeTH1F(std::vector<TString> Names, int bins, int
   return Histograms;
 }
 
-void Functions::FillTH1F_From_File(std::vector<TH1F*> Histograms, TFile* File, TString DetectorLayer)
+
+void Functions::FillTH1F_From_File(std::vector<TH1F*> Histograms, TFile* File, TString DetectorLayer, TString Extension)
 {
   File -> cd(DetectorLayer);
   for (TH1F* hist : Histograms)
   {
     TString hist_name = hist -> GetName();
+    if ( Extension != "") { hist_name = RemoveExtension(hist_name, Extension); }
     hist -> Add((TH1F*)gDirectory -> Get(hist_name));
   } 
+  File -> cd();
 }
 
-void Functions::FillTH1F_From_File(TH1F* Histogram, TFile* File, TString DetectorLayer, std::vector<TString> List)
+void Functions::FillTH1F_From_File(TH1F* Histogram, TFile* File, TString DetectorLayer, std::vector<TString> List, TString Extension)
 {
   File -> cd(DetectorLayer);
   for (TString HistName : List)
   {
+    if ( Extension != "") { HistName = RemoveExtension(HistName, Extension); }
     Histogram -> Add((TH1F*)gDirectory -> Get(HistName));
   }
+   File -> cd();
 }
+
+std::vector<TString> Functions::SplitString(TString token, TString Split)
+{
+  std::vector<TString> Output;
+  TObjArray *array = Split.Tokenize(token);
+  for (unsigned int x = 0; x < array -> GetEntries(); x++)
+  {
+    Output.push_back(((TObjString*)(array -> At(x))) -> String());
+  }
+  return Output;
+}
+
+TString Functions::RemoveExtension(TString Name, TString Extension)
+{
+  int l = Name.Sizeof();
+  int l_e = Extension.Sizeof();
+  return Name.Remove(l-l_e, l);
+}
+
 
 // ================== Fitting Base Classes ==============================//
 RooHistPdf* Fit_Functions::ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name, RooRealVar* domain)
