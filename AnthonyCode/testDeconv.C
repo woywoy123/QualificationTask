@@ -250,8 +250,6 @@ void testDeconvolution(TH1* trueTarget, TH1* trueConv1, TH1* trueConv2,
     ++iter;
   }
   
-  //
-  
   auto testConv1 = convolveWithOnesSelf( deconv.begin(),
                                          deconv.end()-upperMirrorSize );
   
@@ -300,17 +298,17 @@ std::vector<float> ShiftReplace(TH1D* trk1, std::vector<float> deconv)
   int len = trk1 -> GetNbinsX();
 
   // Convert the std::vector to a TH1D for fitting purposes. 
-  for (int i(1); i < nBins; i++)
+  for (int i(0); i < nBins; i++)
   {
     float e = deconv.at(i);
-    if(i <= len){TRK1 -> SetBinContent(i, trk1 -> GetBinContent(i));}
-    else{TRK1 -> SetBinContent(i, e);} 
-    Decon -> SetBinContent(i, e);
+    if(i <= len){TRK1 -> SetBinContent(i+1, trk1 -> GetBinContent(i+1));}
+    else{TRK1 -> SetBinContent(i+1, e);} 
+    Decon -> SetBinContent(i+1, e);
   }
  
   // Get the post peak bin
-  int m_b_de = Decon -> GetMaximumBin();
-  int m_b_tr = TRK1 -> GetMaximumBin();
+  int m_b_de = Decon -> GetMaximumBin()+1;
+  int m_b_tr = TRK1 -> GetMaximumBin()+1;
   
   // Derive the conversion factor bin -> dEdx
   float ss = (Max - Min)/nBins;
@@ -322,7 +320,7 @@ std::vector<float> ShiftReplace(TH1D* trk1, std::vector<float> deconv)
   RooFormulaVar delta("delta", "x-s", RooArgSet(x,s));
 
   // Define the fitting range 
-  x.setRange("FinalFit", m_b_de*ss, 16);
+  x.setRange("FinalFit", (m_b_de)*ss, 19);
   
   // RooData Hists used for the fit 
   RooDataHist original("original", "original", x, Decon);
@@ -341,7 +339,9 @@ std::vector<float> ShiftReplace(TH1D* trk1, std::vector<float> deconv)
   model.plotOn(xframe, RooFit::Name("Model"), RooFit::LineColor(kBlue)); 
 
   float shift = s.getVal();
-  int Shift = std::round(shift/((Max-Min)/nBins)); 
+  int Shift = std::round((shift)/((Max-Min)/nBins)); 
+
+  // ============== Debug/Experimental ========================== // 
 
   TString name = "Shifted: "; name += (Shift); name += ("-"); name +=(std::rand());
   TCanvas* Cans = new TCanvas(name,name, 800, 800);
@@ -357,22 +357,18 @@ std::vector<float> ShiftReplace(TH1D* trk1, std::vector<float> deconv)
   Cans -> Print("out.pdf");
 
   // ================================= Tail Replacement =================================================== //
-  int Bin_Shift = Shift;
- 
-  for (int i(1); i < nBins - Bin_Shift; i++)
+  int Repl = m_b_tr + 5;
+  for (int i(Repl); i < nBins; i++)
   {
-    if ( i > m_b_de)
-    {
-      float e = trk1 -> GetBinContent(i);
-      Decon -> SetBinContent(i - Bin_Shift, e);
-    }
-  }   
-  
+    float e = trk1 -> GetBinContent(i+1);
+    Decon -> SetBinContent(i-Shift, e);
+  } 
+ 
   // Extract the entries from Decon and place inside a vector 
   std::vector<float> deconv_raw; 
-  for (int i(1); i <= nBins; i++)
+  for (int i(0); i < nBins; i++)
   {
-    deconv_raw.push_back(Decon -> GetBinContent(i));
+    deconv_raw.push_back(Decon -> GetBinContent(i+1));
   }
   
   delete TRK1; 
