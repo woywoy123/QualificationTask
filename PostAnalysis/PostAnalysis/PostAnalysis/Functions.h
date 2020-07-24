@@ -20,6 +20,9 @@
 #include<TStyle.h>
 #include<TLegend.h>
 #include<RooPlot.h>
+#include<RooNumConvPdf.h>
+#include<TF1.h>
+
 using namespace RooFit;
 
 #ifndef FUNCTIONS_H
@@ -45,6 +48,9 @@ class Functions
       }
       return Output;
     }
+
+    TH1F* VectorToTH1F(std::vector<float> Vec, TString name, int bins, int min, int max);
+    void VectorToTH1F(std::vector<float> Vec, TH1F* hist);
 };
 
 class Fit_Functions
@@ -61,6 +67,9 @@ class Fit_Functions
   
     RooArgList VectorToArgList(std::vector<RooRealVar*> Vector);
     RooArgList VectorToArgList(std::vector<RooHistPdf*> Vector);
+
+    std::vector<float> LRDeconvolution(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y); 
+    void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, float min, float max);
    
 };
 
@@ -68,6 +77,12 @@ class Plot_Functions
 {
   public: 
     TCanvas* GeneratePlot(TString Title, RooRealVar* range, RooDataHist* Data, RooAddPdf Model, std::vector<RooHistPdf*> PDFs, std::vector<TString> pdf_titles); 
+};
+
+class Benchmark
+{
+  public:
+    float WeightedEuclidean(std::vector<float> v1, std::vector<float> v2);
 };
 
 namespace Constants
@@ -103,5 +118,6 @@ namespace Constants
   const std::vector<double> End = {1e8, 1e8, 1e8, 1e8};
   const std::vector<Color_t> Colors = {kRed, kBlue, kOrange, kCyan, kGreen, kYellow, kViolet, kAzure};
 }
+
 
 #endif

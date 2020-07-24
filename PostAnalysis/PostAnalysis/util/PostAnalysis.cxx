@@ -11,57 +11,85 @@ void PostAnalysis()
 {
   // Init the function that hosts common tools
   Functions F;
-  Fit_Functions Fit;
-  Plot_Functions plot;
+  Fit_Functions f;
   Verification V;
+  Benchmark B; 
 
-//  // Check that the file is there  
-//  TString dir = "../PostAnalysisData/Merged.root";
-//  TFile *File = new TFile(dir);
-//  if (!File -> IsOpen()){ gSystem -> Exit(0); }
-//
-//  // Appending the ntrack-ntruth names into a common vector
-//  std::vector<std::vector<TString>> Namelist = {Constants::trk_1, Constants::trk_2, Constants::trk_3, Constants::trk_4}; 
-//  std::vector<TString> Tracks = F.AppendVectors(Namelist);
-//
-//  // Create the required Histograms  
-//  std::vector<TH1F*> Pure_Hists = F.MakeTH1F(Constants::Pure_Names, 50, 0, 20, "_pdf"); 
-//  std::vector<TH1F*> trk_1 = F.MakeTH1F(Constants::trk_1, 50, 0, 20, "_d"); 
-//  std::vector<TH1F*> trk_2 = F.MakeTH1F(Constants::trk_2, 50, 0, 20, "_d"); 
-//  std::vector<TH1F*> trk_3 = F.MakeTH1F(Constants::trk_3, 50, 0, 20, "_d"); 
-//  std::vector<TH1F*> trk_4 = F.MakeTH1F(Constants::trk_4, 50, 0, 20, "_d");  
-//  std::map<TString, std::vector<TH1F*>> Layer_Track; 
-//  
-//  for (TString layer : Constants::Detector)
-//  {
-//    F.FillTH1F_From_File(Pure_Hists, File, layer, "_pdf"); 
-//    F.FillTH1F_From_File(trk_1, File, layer, "_d"); 
-//    F.FillTH1F_From_File(trk_2, File, layer, "_d");
-//    F.FillTH1F_From_File(trk_3, File, layer, "_d");
-//    F.FillTH1F_From_File(trk_4, File, layer, "_d");
-//
-//    // Create the histograms for ntrk-ntruth for each layer
-//    TString ext = "_"; ext+=(layer);  
-//    std::vector<TH1F*> trk = F.MakeTH1F(Tracks, 50, 0, 20, ext);
-//    F.FillTH1F_From_File(trk, File, layer, ext);
-//    Layer_Track[layer] = trk; 
+  // Probe for checking hist steps in code  
+  TH1F* Probe = new TH1F("Probe", "probe", 500, 0, 20);
+  TH1F* trk2 = new TH1F("trk2", "trk2", 500, 0, 20); 
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+
+  // Create the histograms for toy. 
+  std::vector<TString> nTrk = {"1trk", "2trk", "3trk", "4trk"};
+  std::vector<TString> nTrkS = {"1trkS", "2trkS", "3trkS", "4trkS"};
+  std::vector<TString> nTrkG = {"1trkG", "2trkG", "3trkG", "4trkG"};
+  std::vector<TH1F*> nTrk_H = F.MakeTH1F(nTrk, 500, 0, 20);
+  std::vector<TH1F*> nTrk_S = F.MakeTH1F(nTrkS, 500, 0, 20);
+  std::vector<TH1F*> nTrk_G = F.MakeTH1F(nTrkG, 500, 0, 20);
+
+  // Fill with Landau
+  std::vector<float> Params1 = {1, 0.9, 0.1};
+  V.Debug(nTrk_H, Params1); 
+  std::vector<float> Params2 = {1, 0.91, 0.075};
+  V.Debug(nTrk_G, Params2); 
+
+  // ======================================== Experimental =================================== // 
+  int nBins = nTrk_H.at(0) -> GetNbinsX(); 
+  float Offset = nBins*0.1;
+
+  //nTrk_H.at(1) -> Draw("SAMEHIST");
+
+  std::vector<float> data(nBins + Offset, 0);
+  std::vector<float> deconv(nBins + Offset, 1);
+
+  // Here he gets the entries from hist and stores into a vector.
+  for (size_t i(0); i < nBins; i++)
+  {
+    data[i] = nTrk_H.at(1) -> GetBinContent(i+1);
+  }
+
+  // Does this weird tail inversion. Not sure why. 
+  for (int i(0); i < Offset; i++)
+  {
+    data[ nBins + i ] = data[ nBins -1 -i ];
+  }
+
+  // *** Main Algorithm Part ================== //
+  for (int i(0); i < 100; i++)
+  {
+    deconv = f.LRDeconvolution(data, deconv, deconv, 0.75); 
+    F.VectorToTH1F(deconv, Probe); 
+    f.ConvolveHists(Probe, Probe, trk2, 0, 20);
+    trk2 -> Draw("SAMEHIST*");  
+    can -> Update();
+  }
+
+
+
+
+ 
+//  for (std::vector<float> prg : Progress)
+//  { 
+//    float dist = B.WeightedEuclidean(data, prg);  
+//    std::cout << dist << std::endl; 
 //  }
-//
-//  // Build PDFs and all the histograms needed for the fitting  
-//  RooRealVar* dEdx_range = new RooRealVar("dEdx_range", "dEdx_range", 0.4, 19.6);
-//  std::vector<RooHistPdf*> Pure_PDF = Fit.ConvertTH1FtoPDF(Pure_Hists, dEdx_range);
-//  std::vector<RooRealVar*> Variables = Fit.GenerateVariables(Constants::Variable_Names, Constants::Begin, Constants::End);
-//  
-//  RooArgList Vars = Fit.VectorToArgList(Variables);
-//  RooArgList PDFs = Fit.VectorToArgList(Pure_PDF);
-//  RooAddPdf model("model","model", PDFs, Vars);
 
-  //V.RecoverScaling(model, Pure_Hists, Pure_PDF, dEdx_range, Variables, 0.1, 0.001);
-  //V.Subtraction(Pure_Hists, dEdx_range, model, Pure_PDF, Variables); 
-  //V.Reconstruction(trk_1, trk_2, trk_3, trk_4, Variables, Pure_PDF, model, dEdx_range); 
-  //V.FLostLayer(Layer_Track, 0.4, 19.6);
-  //V.NormalizedSubtraction(10, 19, trk_3, trk_4, model, Variables, dEdx_range);
-  V.AnthonyCode();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 void StandaloneApplications(int argc, char**argv)

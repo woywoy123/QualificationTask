@@ -383,102 +383,29 @@ void Verification::NormalizedSubtraction(float lower, float upper, std::vector<T
   Legend_L -> Draw();
 
   f -> Draw();
-
-
 }
 
-void Verification::AnthonyCode()
-{ 
-  auto ShiftHist = [](int ShiftBins, TH1F* Original)
+void Verification::Debug(std::vector<TH1F*> Hist, std::vector<float> Params)
+{
+  TF1 Lan("Lan", "landau", 0, 20);
+  for (int i(0); i < Params.size(); i++)
   {
-    TString name = Original -> GetTitle(); name+=("Shift"); name+=(ShiftBins);
-    TH1F* Shifted = (TH1F*)Original -> Clone(name);
-    Shifted -> Reset();
-    int Bins = Original -> GetNbinsX();
-    for (int i(0); i < Bins; i++)
-    {
-      Shifted -> SetBinContent( ShiftBins + i, Original -> GetBinContent(i));
-    }
-    return Shifted;
-  };
-
-  Functions F;
-  Fit_Functions fit;
-
-  float bins = 500;
-  float min = 0;
-  float max = 20;
-
-  // Prepare the histograms 
-  std::vector<TString> H_Names = {"histA", "histB", "histC", "histD"};
-  std::vector<TString> Hs_Names = {"histAs", "histBs", "histCs", "histDs"};
-  std::vector<TString> Hg_Names = {"histAg", "histBg", "histCg"}; 
-  std::vector<TH1F*> H  = F.MakeTH1F(H_Names,  bins, min, max);
-  std::vector<TH1F*> Hs = F.MakeTH1F(Hs_Names, bins, min, max);
-  std::vector<TH1F*> Hg = F.MakeTH1F(Hg_Names, bins, min, max);
-
-  // Create the true distribution i.e. PDF
-  TF1 LDau("LDau", "landau", 0, 20);
-  LDau.SetParameter(0, 1); // <- (index, value) of TF1 model 
-  LDau.SetParameter(1, 0.9);
-  LDau.SetParameter(2, 0.1);
-
-  // Fill the data 
-  for ( int i(0); i < 1000000; i++)
-  {
-    double r1 = LDau.GetRandom();
-    Hg.at(0) -> Fill(r1);
+    Lan.SetParameter(i, Params.at(i));
   }
 
-  // Collect the peak of the Landau distribution
-  int M_b = Hg.at(0) -> GetMaximumBin();  
-
-  // Shift the original hist by 100 bins to the right 
-  TH1F* Shift = ShiftHist(100, Hg.at(0));
-
-  // ====== Build a model here ========
-  // Define the variables  
-  RooRealVar x("x", "x", 1, 20); // range of the original
-  RooRealVar s("s", "s", 0, 0., 20); // Shift range after peak (i.e. the parameter allowed to float) 
-  RooFormulaVar delta("delta", "x-s", RooArgSet(x, s));
-
-  // define the original hist 
-  RooDataHist org("original", "original", x, Hg.at(0));
-
-  // Create the PDF and make it such that it is a function of s and linked to original via delta 
-  RooHistPdf hx("hx", "hx", delta, x, org);   
-  RooAddPdf model("model", "model", RooArgList(hx), RooArgList(s));
-
-  // define the "Data" shifted 
-  RooDataHist shifted("Shifted", "Shifted", x, Shift);
-  model.fitTo(shifted, Range(5, 15)); 
- 
- 
- 
- 
- 
-  
-  RooPlot* xframe = x.frame(RooFit::Title("Shift Test"));
-  org.plotOn(xframe, RooFit::Name("Original"), RooFit::LineColor(kOrange));
-  shifted.plotOn(xframe, RooFit::Name("Shifted Original"), RooFit::LineColor(kRed));
-  model.plotOn(xframe, RooFit::Name("Model"), RooFit::LineColor(kBlue));
-
-  TCanvas* can = new TCanvas("can", "can", 800, 800);
-  gPad -> SetLogy();
-  xframe -> SetMinimum(1);
-  xframe -> Draw();
-
-  // Create the legend 
-  TLegend* Legend = new TLegend(0.9, 0.9, 0.75, 0.75);
-  Legend -> AddEntry("Original", "Original"); 
-  Legend -> AddEntry("Shifted Original", "Shifted Original");
-  Legend -> AddEntry("Model", "Model");
-  Legend -> Draw();
-
-
-
-  float shift = s.getVal();
-  std::cout << "Number of bins: " << shift/((max-min)/bins) << std::endl;
-
+  for ( int i(0); i < 500000; i++)
+  {
+    double r1 = Lan.GetRandom();
+    double r2 = Lan.GetRandom() + r1;
+    double r3 = Lan.GetRandom() + r2;
+    double r4 = Lan.GetRandom() + r3;
+    std::vector<double> rn = {r1, r2, r3, r4}; 
+    
+    for (int x(0); x < Hist.size(); x++)
+    {
+      TH1F* h = Hist.at(x);
+      h -> Fill(rn.at(x)); 
+    }
+  } 
 }
 
