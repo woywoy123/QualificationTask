@@ -118,7 +118,7 @@ namespace Constants
 
   const std::vector<TString> Variable_Names = {"ntrk_1", "ntrk_2", "ntrk_3", "ntrk_4"};
   const std::vector<double> Begin = {0, 0, 0, 0};
-  const std::vector<double> End = {1e8, 1e8, 1e8, 1e8};
+  const std::vector<double> End = {1e6, 1e6, 1e6, 1e6};
   const std::vector<Color_t> Colors = {kRed, kBlue, kOrange, kCyan, kGreen, kYellow, kViolet, kAzure};
 }
 

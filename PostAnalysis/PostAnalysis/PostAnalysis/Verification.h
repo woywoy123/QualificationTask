@@ -39,7 +39,7 @@ class Verification
 
     void NormalizedSubtraction(float lower, float upper, std::vector<TH1F*> Hist1, std::vector<TH1F*> Hist2, RooAddPdf model, std::vector<RooRealVar*> Variables, RooRealVar* Range);
 
-    void Debug(std::vector<TH1F*> Hist, std::vector<float> Params);
+    void Debug(std::vector<TH1F*> Hist, std::vector<std::vector<float>> Params);
 
 
 };

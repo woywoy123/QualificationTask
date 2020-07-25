@@ -385,27 +385,24 @@ void Verification::NormalizedSubtraction(float lower, float upper, std::vector<T
   f -> Draw();
 }
 
-void Verification::Debug(std::vector<TH1F*> Hist, std::vector<float> Params)
+void Verification::Debug(std::vector<TH1F*> Hist, std::vector<std::vector<float>> Params)
 {
-  TF1 Lan("Lan", "landau", 0, 20);
-  for (int i(0); i < Params.size(); i++)
-  {
-    Lan.SetParameter(i, Params.at(i));
-  }
+  for (int x(0); x < Hist.size(); x++)
+  {   
+    TH1F* H = Hist.at(x); 
+    std::vector<float> Par = Params.at(x);
 
-  for ( int i(0); i < 500000; i++)
-  {
-    double r1 = Lan.GetRandom();
-    double r2 = Lan.GetRandom() + r1;
-    double r3 = Lan.GetRandom() + r2;
-    double r4 = Lan.GetRandom() + r3;
-    std::vector<double> rn = {r1, r2, r3, r4}; 
-    
-    for (int x(0); x < Hist.size(); x++)
+    TF1 Lan("Lan", "landau", 0, 20);
+    for (int i(0); i < Par.size(); i++)
     {
-      TH1F* h = Hist.at(x);
-      h -> Fill(rn.at(x)); 
+      Lan.SetParameter(i, Par.at(i));
     }
+  
+    for ( int i(0); i < 500000; i++)
+    {
+      double r1 = Lan.GetRandom(); 
+      H -> Fill(r1);  
+    } 
   } 
 }
 

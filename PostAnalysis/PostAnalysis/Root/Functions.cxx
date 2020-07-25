@@ -210,7 +210,6 @@ void Fit_Functions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offs
  
   // Set bin content of conv histogram 
   std::vector<float> Conv = ConvolveHists(H1, H2);
-  std::cout << Conv.size() << std::endl;
   for ( unsigned int i(0); i < nBins_2 - offset; i++ )
   {
     conv -> SetBinContent(i+1, Conv.at(i));
@@ -299,7 +298,6 @@ TCanvas* Plot_Functions::GeneratePlot(TString Title, RooRealVar* range, RooDataH
 
   return f;
 }
-
 
 // ============= Benchmarking Class ========== //
 float Benchmark::WeightedEuclidean(std::vector<float> v1, std::vector<float> v2)
