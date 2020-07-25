@@ -20,8 +20,8 @@
 #include<TStyle.h>
 #include<TLegend.h>
 #include<RooPlot.h>
-#include<RooNumConvPdf.h>
-#include<TF1.h>
+#include<TVirtualFFT.h>
+#include<TComplex.h>
 
 using namespace RooFit;
 
@@ -68,8 +68,11 @@ class Fit_Functions
     RooArgList VectorToArgList(std::vector<RooRealVar*> Vector);
     RooArgList VectorToArgList(std::vector<RooHistPdf*> Vector);
 
-    std::vector<float> LRDeconvolution(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y); 
-    void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, float min, float max);
+    std::vector<float> LRDeconvolution(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y);
+    void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offset);  
+
+  private:
+    std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
    
 };
 

@@ -16,11 +16,27 @@ void PostAnalysis()
   Benchmark B; 
 
   // Probe for checking hist steps in code  
-  TH1F* Probe = new TH1F("Probe", "probe", 500, 0, 20);
+  TH1F* Probe = new TH1F("Probe", "probe", 550, 0, 20);
   TH1F* trk2 = new TH1F("trk2", "trk2", 500, 0, 20); 
   TCanvas* can = new TCanvas();
-  can -> SetLogy();
-
+  //can -> SetLogy();
+  //Probe -> GetYaxis() -> SetRangeUser(1, 1e6);
+ 
+  std::vector<float> ProbeV;
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
   // Create the histograms for toy. 
   std::vector<TString> nTrk = {"1trk", "2trk", "3trk", "4trk"};
   std::vector<TString> nTrkS = {"1trkS", "2trkS", "3trkS", "4trkS"};
@@ -35,9 +51,13 @@ void PostAnalysis()
   std::vector<float> Params2 = {1, 0.91, 0.075};
   V.Debug(nTrk_G, Params2); 
 
+
+
+
+
   // ======================================== Experimental =================================== // 
   int nBins = nTrk_H.at(0) -> GetNbinsX(); 
-  float Offset = nBins*0.1;
+  int Offset = nBins*0.1;
 
   //nTrk_H.at(1) -> Draw("SAMEHIST");
 
@@ -48,6 +68,7 @@ void PostAnalysis()
   for (size_t i(0); i < nBins; i++)
   {
     data[i] = nTrk_H.at(1) -> GetBinContent(i+1);
+    ProbeV.push_back(nTrk_H.at(1) -> GetBinContent(i+1)); 
   }
 
   // Does this weird tail inversion. Not sure why. 
@@ -56,27 +77,34 @@ void PostAnalysis()
     data[ nBins + i ] = data[ nBins -1 -i ];
   }
 
+
+
+
+
+
+
   // *** Main Algorithm Part ================== //
+  TGraph* gr = new TGraph(); 
   for (int i(0); i < 100; i++)
   {
     deconv = f.LRDeconvolution(data, deconv, deconv, 0.75); 
     F.VectorToTH1F(deconv, Probe); 
-    f.ConvolveHists(Probe, Probe, trk2, 0, 20);
-    trk2 -> Draw("SAMEHIST*");  
+    f.ConvolveHists(Probe, Probe, trk2, Offset);
+    //Probe -> Draw("SAMEHIST*"); 
+
+    std::vector<float> Prog;
+    for (int i(0); i < trk2 -> GetNbinsX(); i++)
+    {
+      Prog.push_back(trk2 -> GetBinContent(i+1));
+    }
+     
+    float dist = B.WeightedEuclidean(ProbeV, Prog);  
+    gr -> SetPoint(i, i, dist);
+    gr -> Draw("ap");
     can -> Update();
   }
 
-
-
-
  
-//  for (std::vector<float> prg : Progress)
-//  { 
-//    float dist = B.WeightedEuclidean(data, prg);  
-//    std::cout << dist << std::endl; 
-//  }
-
-
 
 
 

@@ -191,42 +191,78 @@ std::vector<float> Fit_Functions::LRDeconvolution(std::vector<float> G, std::vec
   return PSF; 
 }
 
-
-
-// Work in progress... 
-void Fit_Functions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, float min, float max)
+void Fit_Functions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offset)
 {
-  RooRealVar* x = new RooRealVar("x", "x", min, max);
-  RooDataHist* HistD1 = ConvertTH1toDataHist(Hist1, x);
-  RooDataHist* HistD2 = ConvertTH1toDataHist(Hist2, x);
+  int nBins_2 = Hist2 -> GetNbinsX();
+  int nBins_1 = Hist1 -> GetNbinsX();
+   
+  // Make sure the bins are equally sized  
+  if ( nBins_2 != nBins_1 ) { return; }
 
-  RooHistPdf* HistPDF1 = ConvertTH1FtoPDF(HistD1, "Hist1", x);
-  RooHistPdf* HistPDF2 = ConvertTH1FtoPDF(HistD2, "Hist2", x);
-
-  RooNumConvPdf* H12 = new RooNumConvPdf("ConvH1H2", "ConvH1H2", *x, *HistPDF1, *HistPDF2);
-  TF1* tf1 = new TF1(*H12 -> asTF(RooArgList(*x)));
-  conv -> GetListOfFunctions() -> Add(tf1); 
-
-  // Create the canvas  
-  auto f = new TCanvas();
-  gPad -> SetLogy();
-  gStyle -> SetOptStat(0);
+  // Convert TH1 to vector 
+  std::vector<float> H1, H2, Con;
+  for ( unsigned int i(0); i < nBins_2 - offset; i++ )
+  {
+    H1.push_back(Hist1 -> GetBinContent(i+1));
+    H2.push_back(Hist1 -> GetBinContent(i+1));
+    Con.push_back(Hist1 -> GetBinContent(i+1));
+  }
  
-  // Initialize the frame for Plotting 
-  RooPlot* xframe = x -> frame(RooFit::Title("Hello")); 
-  H12 -> plotOn(xframe, RooFit::Name("Measured"));
-  
-  xframe -> SetMinimum(1);
-  xframe -> Draw();
-
-
-
-
+  // Set bin content of conv histogram 
+  std::vector<float> Conv = ConvolveHists(H1, H2);
+  std::cout << Conv.size() << std::endl;
+  for ( unsigned int i(0); i < nBins_2 - offset; i++ )
+  {
+    conv -> SetBinContent(i+1, Conv.at(i));
+  }
 }
 
+std::vector<float> Fit_Functions::ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2)
+{
+  int n = Hist1.size();
+  std::vector<float> conv(n, 0);
 
+  // Initialize the FFT method by giving it the data points  
+  TVirtualFFT* fft1 = TVirtualFFT::FFT(1, &n, "R2C K P");
+  TVirtualFFT* fft2 = TVirtualFFT::FFT(1, &n, "R2C K P");
+  
+  for ( Int_t i(0); i < n; i++ )
+  {
+    fft1 -> SetPoint(i, Hist1.at(i), 0); 
+    fft2 -> SetPoint(i, Hist2.at(i), 0); 
+  }
+  fft1 -> Transform();
+  fft2 -> Transform();
 
+  // Main part of the FFT 
+  TVirtualFFT* fft2r = TVirtualFFT::FFT(1, &n, "C2R K P");  
+  for ( Int_t i(0); i < n/2 +1; i++ )
+  {
+    Double_t r1, r2, i1, i2;
+    fft1 -> GetPointComplex(i, r1, i1);   
+    fft2 -> GetPointComplex(i, r2, i2); 
+    
+    Double_t re = r1*r2 - i1*i2;
+    Double_t im = r1*i2 + r2*i1;
+    
+    TComplex t(re, im);
+    fft2r -> SetPointComplex(i, t);  
+  }
 
+  // Reverse FFT to real space
+  fft2r -> Transform();
+  for ( Int_t i(0); i < n; i++ )
+  {
+    Double_t r1, i1;
+    fft2r -> GetPointComplex(i, r1, i1);
+    conv[i] = r1;
+  }
+  delete fft1; 
+  delete fft2;
+  delete fft2r;
+  
+  return conv;
+}
 
 // ================== Plotting Class ================================= //
 TCanvas* Plot_Functions::GeneratePlot(TString Title, RooRealVar* range, RooDataHist* Data, RooAddPdf Model, std::vector<RooHistPdf*> PDFs, std::vector<TString> pdf_titles)
@@ -271,6 +307,7 @@ float Benchmark::WeightedEuclidean(std::vector<float> v1, std::vector<float> v2)
   // First check that the vectors have the same length
   if ( v1.size() != v2.size() ) 
   { 
+    std::cout << v1.size() << v2.size() << std::endl;
     std::cout << "Invalid data vectors passed!!!!" << std::endl; 
     return 0;
   }
