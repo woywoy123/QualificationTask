@@ -398,7 +398,7 @@ void Verification::Debug(std::vector<TH1F*> Hist, std::vector<std::vector<float>
       Lan.SetParameter(i, Par.at(i));
     }
   
-    for ( int i(0); i < 500000; i++)
+    for ( int i(0); i < 1000000; i++)
     {
       double r1 = Lan.GetRandom(); 
       H -> Fill(r1);  

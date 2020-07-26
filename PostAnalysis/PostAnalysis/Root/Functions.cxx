@@ -263,6 +263,154 @@ std::vector<float> Fit_Functions::ConvolveHists(std::vector<float> Hist1, std::v
   return conv;
 }
 
+std::vector<float> Fit_Functions::TailReplace(TH1F* Hist, std::vector<float> deconv, float min, float max)
+{
+
+  // The deconv vector has a length of nbins + Offset (e.g. 50 + 5)
+  // Create two hists of nbins + Offset, iterate through all entries until trk1 exhausted an replace excess with deconv
+
+  float nbins = deconv.size();
+  TH1F* Decon = new TH1F("Decon", "Decon", nbins, min, max);
+  TH1F* TRK1 = new TH1F("TRK1", "TRK1", nbins, min, max);
+
+  // Get the length of the Hist histogram
+  int H_len = Hist -> GetNbinsX();
+
+  // Convert the std::vector to a TH1F for fitting 
+  for (int i(0); i < nbins; i++)
+  {
+    float e = deconv.at(i);
+    if ( i < H_len )
+    {
+      TRK1 -> SetBinContent(i+1, Hist -> GetBinContent(i+1));
+    }
+    else 
+    {
+      TRK1 -> SetBinContent(i+1, e);
+    }
+    Decon -> SetBinContent(i+1, e);
+  }
+
+  // Try scaling the TRK1 hist to Deconv 
+  float Sc_T = TRK1 -> Integral();
+  float Sc_D = Decon -> Integral();
+  TRK1 -> Scale(Sc_D/Sc_T);
+
+  // Get the post peak point to use for the fitting and replacement range 
+  int m_b_de = Decon -> GetMaximumBin();
+  int m_b_tr = TRK1 -> GetMaximumBin();
+
+  // Need a scale conversion: Go from bin to MeV
+  float ss = (max - min)/nbins;
+
+  // ========================= Perform the fitting =============================== //
+  // Define the variables for RooFit 
+  RooRealVar x("x", "x", min, max); // Used for fitting range
+  RooRealVar s("s", "s", 0., -6, 6); // Determine the shifts between histos
+  RooFormulaVar delta("delta", "x-s", RooArgSet(x,s)); // Relation between x and s
+
+  // Define the fitting range
+  x.setRange("Signal", (m_b_tr)*ss, max-4);
+
+  // Create the PDF and the model for fitting 
+  RooDataHist D("Decon", "Decon", x, Decon);
+  RooHistPdf model("model", "model", delta, x, D, 1);
+
+  // Define the data hist for the fit
+  RooDataHist trk1("trk1", "trk1", x, TRK1);
+
+  // Perform the fit 
+  RooFitResult* Result = model.fitTo(trk1, RooFit::Save(), RooFit::Range("Signal"), SumW2Error(true));
+ 
+  // Return the shift 
+  float shift = s.getVal();
+  int S = std::round((shift)/ss);
+ 
+  // ====================== Replace the tail of the dist ============ //
+  int Repl = m_b_tr-1;
+  for (int i(Repl); i < nbins; i++)
+  {
+    float e = Hist -> GetBinContent(i+1);
+    Decon -> SetBinContent(i-S, e);
+  }
+ 
+  // Convert back to normal vector for output 
+  std::vector<float> dec;
+  for (int i(0); i < nbins; i++)
+  {
+    dec.push_back(Decon -> GetBinContent(i+1));
+  }
+ 
+  delete TRK1; 
+  delete Decon;
+  return dec;
+}
+
+
+std::vector<RooRealVar*> Fit_Functions::FitPDFtoData(std::vector<TH1F*> PDFs, TH1F* Data, float min, float max, std::vector<TString> Names, std::vector<double> Begin, std::vector<double> End)
+{
+  // === Create the variables 
+  RooRealVar* x = new RooRealVar("x", "x", min, max); 
+  std::vector<RooRealVar*> var = GenerateVariables(Names, Begin, End);
+  
+  // === Create the PDFs with the measured n-tracks
+  std::vector<RooHistPdf*> pdf = ConvertTH1FtoPDF(PDFs, x);  
+  RooAddPdf fit("fit", "fit", VectorToArgList(pdf), VectorToArgList(var));
+   
+  // === Import the data and fit the model   
+  RooDataHist* Data_Fit = ConvertTH1toDataHist(Data, x);
+  fit.fitTo(*Data_Fit);
+
+  delete x; 
+  delete Data_Fit;
+  for (int i(0); i < pdf.size(); i++)
+  {
+    delete pdf[i];
+  }
+  return var;
+}
+
+void Fit_Functions::Normalizer(TH1F* Hist)
+{
+  int nbins = Hist -> GetNbinsX();
+  float sum(0);
+  for ( int i(0); i < nbins; i++)
+  {
+    float e = Hist -> GetBinContent(i+1);
+    sum += e; 
+  }
+  Hist -> Scale(1/sum);
+}
+
+std::vector<float> Fit_Functions::Fractionalizer(std::vector<RooRealVar*> vars, TH1F* Data)
+{
+  float lumi = Data -> Integral();
+  float p1 = vars.at(0) -> getVal();
+  float p2 = vars.at(1) -> getVal();
+  float p3 = vars.at(2) -> getVal();
+  float p4 = vars.at(3) -> getVal();  
+  std::vector<float> frac = {p1/lumi, p2/lumi, p3/lumi, p4/lumi}; 
+  return frac;
+}
+
+std::vector<float> Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk, std::vector<RooRealVar*> var)
+{
+  std::vector<float> frac = Fractionalizer(var, Target);
+  
+  // Subtract the scaled tracks from the Data Copy 
+  for (int i(0); i < nTrk.size(); i++)
+  {
+    if ( i == ntrk -1 ) { continue; }
+    else
+    {
+      nTrk.at(i) -> Scale(frac[i]);
+      Target -> Add(nTrk.at(i), -1);
+    }
+    delete var[i];
+  }
+  return frac;
+}
+
 // ================== Plotting Class ================================= //
 TCanvas* Plot_Functions::GeneratePlot(TString Title, RooRealVar* range, RooDataHist* Data, RooAddPdf Model, std::vector<RooHistPdf*> PDFs, std::vector<TString> pdf_titles)
 {
@@ -299,6 +447,17 @@ TCanvas* Plot_Functions::GeneratePlot(TString Title, RooRealVar* range, RooDataH
   return f;
 }
 
+void Plot_Functions::View(TCanvas* can, std::vector<TH1F*> Hists)
+{
+  for (int i(0); i < Hists.size(); i++)
+  {
+    can -> cd(i+1);
+    can -> cd(i+1) -> SetLogy();
+    Hists.at(i) -> Draw("SAMEHIST");
+  }
+
+}
+
 // ============= Benchmarking Class ========== //
 float Benchmark::WeightedEuclidean(std::vector<float> v1, std::vector<float> v2)
 {
@@ -331,3 +490,13 @@ float Benchmark::WeightedEuclidean(std::vector<float> v1, std::vector<float> v2)
   return sum;
 }
 
+float Benchmark::PythagoreanDistance(std::vector<float> v1, std::vector<float> v2)
+{
+  float di(0);
+  for ( int i(0); i < v1.size(); i++)
+  {
+    di += pow(v1.at(i) - v2.at(i), 2) +di;
+  }
+  return di;
+
+}

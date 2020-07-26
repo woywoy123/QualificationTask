@@ -23,6 +23,7 @@ void PostAnalysis()
   Fit_Functions f;
   Verification V;
   Benchmark B; 
+  Plot_Functions P;
 
   // ====================== Generate the data =================== // 
   // === 0. Parameters for the N-Tracks and fill the generated Hists 
@@ -35,8 +36,8 @@ void PostAnalysis()
   std::vector<TString> trk = {"trk1", "trk2", "trk3", "trk4"};
    
   // Generate the toys 
-  std::vector<TH1F*> nTrkHist = F.MakeTH1F(nTrk, 50, 0, 20);
-  std::vector<TH1F*> ntrk = F.MakeTH1F(trk, 50, 0, 20);
+  std::vector<TH1F*> nTrkHist = F.MakeTH1F(nTrk, 500, 0, 20);
+  std::vector<TH1F*> ntrk = F.MakeTH1F(trk, 500, 0, 20);
   V.Debug(nTrkHist, Params);
    
   // === 1.: Generate the fake n-Track datasets with closure  
@@ -65,7 +66,21 @@ void PostAnalysis()
   std::vector<float> Settings = COMP2;
   int NumTrak = 2; // <--------- Need to Automate this 
   float Offset = 0.1; // <------------------------------------------- Deconvolution Param
-  // === 3. Combine all the data hists together for easy access
+  
+  // === 3.: Copy the track data
+  TH1F* trk1_C = (TH1F*)trk1Data -> Clone("trk1_C");
+  TH1F* trk2_C = (TH1F*)trk2Data -> Clone("trk2_C");
+  TH1F* trk3_C = (TH1F*)trk3Data -> Clone("trk3_C");
+  TH1F* trk4_C = (TH1F*)trk4Data -> Clone("trk4_C");
+  
+  // === 3.1: Normalize the data 
+  f.Normalizer(trk1_C);
+  f.Normalizer(trk2_C);
+  f.Normalizer(trk3_C);
+  f.Normalizer(trk4_C);
+  
+  // === 3.2: Store in vectors
+  std::vector<TH1F*> PDFs= {trk1_C, trk2_C, trk3_C, trk4_C};
   std::vector<TH1F*> DataHists = {trk1Data, trk2Data, trk3Data, trk4Data}; 
 
   // ===================== END OF DATA ========================== // 
@@ -75,51 +90,10 @@ void PostAnalysis()
 
   // =========== Initial Estimate of contamination ============== //
   // === 0. Perform a simple fit with the hists that are given. 
-  // === 0.1 Create the variables  
-  RooRealVar* x = new RooRealVar("x", "x", 0, 20); 
-  std::vector<RooRealVar*> var = f.GenerateVariables(Constants::Variable_Names, Constants::Begin, Constants::End);
-  
-  // === 0.2 Create the PDFs with the measured n-tracks
-  std::vector<RooHistPdf*> pdf = f.ConvertTH1FtoPDF(DataHists, x);  
-  RooAddPdf fit("fit", "fit", f.VectorToArgList(pdf), f.VectorToArgList(var));
-  
-  // === 0.3 Import the data and fit the model   
-  RooDataHist* Data_Fit = f.ConvertTH1toDataHist(Data_Copy, x);
-  fit.fitTo(*Data_Fit);
-  
-  // === 1. Check the varibles and verify that they match the set scales
-  // === 1.1 Collect from variables  
-  float p1 = var.at(0) -> getVal();
-  float p2 = var.at(1) -> getVal();
-  float p3 = var.at(2) -> getVal();
-  float p4 = var.at(3) -> getVal(); 
-  
-  // === 2. Use the pn values to make a rough estimate of the number of entries are due to cross contamination 
-  // === 2.1: Scale the number of entries according to Trk numbers and scale with Data Copy lumi 
-  float Data_Lumi = Data_Copy -> Integral();
-  float p1s = p1*(1/Data_Lumi);
-  float p2s = 2*p2*(1/Data_Lumi);
-  float p3s = 3*p3*(1/Data_Lumi);
-  float p4s = 4*p4*(1/Data_Lumi);
-  std::vector<float> Scales = {p1s, p2s, p3s, p4s};
-
-  // === 2.2: Copy the track data
-  TH1F* trk1_C = (TH1F*)trk1Data -> Clone("trk1_C");
-  TH1F* trk2_C = (TH1F*)trk2Data -> Clone("trk2_C");
-  TH1F* trk3_C = (TH1F*)trk3Data -> Clone("trk3_C");
-  TH1F* trk4_C = (TH1F*)trk4Data -> Clone("trk4_C");
-  std::vector<TH1F*> Hist_Copy = {trk1_C, trk2_C, trk3_C, trk4_C};
-
-  // === 2.3: Subtract the scaled tracks from the Data Copy 
-  for (int i(0); i < Scales.size(); i++)
-  {
-    if ( i == NumTrak -1 ) { continue; }
-    else
-    {
-      Hist_Copy.at(i) -> Scale(Scales[i]);
-      Data_Copy -> Add(Hist_Copy.at(i), -1);
-    }
-  }
+  std::vector<RooRealVar*> vg = f.FitPDFtoData(PDFs, Data_Copy, 0, 20, Constants::Variable_Names, Constants::Begin, Constants::End);
+   
+  // === 1. Subtract the tracks from the Data Copy 
+  f.Subtraction(PDFs, Data_Copy, NumTrak, vg); 
 
   // === 3. Copy the contents of the TH1F into a vector and create the mirror
   int nBins = Data_Copy -> GetNbinsX();
@@ -132,12 +106,8 @@ void PostAnalysis()
     if ( i < OS) { Data_Vector[nBins + i] = Data_Copy -> GetBinContent(nBins -i -1); } 
   }
 
-  // === 4. Reset any useful Histograms and set their colors 
-  trk1_C -> Reset();
-  trk2_C -> Reset();
-  trk3_C -> Reset();
-  trk4_C -> Reset();
-  
+  // === 4. Delete pointers and Reset any useful Histograms and set their colors 
+ 
   trk1_C -> SetMarkerColor(kBlue);
   trk1_C -> SetLineColor(kBlue);
   trk1_C -> SetLineWidth(3);
@@ -153,77 +123,98 @@ void PostAnalysis()
   trk4_C -> SetMarkerColor(kYellow);
   trk4_C -> SetLineColor(kYellow);
   trk4_C -> SetLineWidth(3);
+
   // =========== END OF: Initial Estimate of contamination ============== //
 
 
+  // =================== Main Algorithm ================================= // 
+  // === 0. Prepare the deconv vector 
+  // === 0.1: Assume a flat prior of deconv 
+  std::vector<float> deconv = std::vector<float>(nBins + OS, 0.5);
 
-
-  // ===================== Start of Deconvolution =============== //
-   
-
-
-
-
-
-
-  //// ======================================== Experimental =================================== // 
-  //int nBins = nTrk_H.at(0) -> GetNbinsX(); 
-  //int Offset = nBins*0.1;
-
-  ////nTrk_H.at(1) -> Draw("SAMEHIST");
-
-  //std::vector<float> data(nBins + Offset, 0);
-  //std::vector<float> deconv(nBins + Offset, 1);
-
-  //// Here he gets the entries from hist and stores into a vector.
-  //for (size_t i(0); i < nBins; i++)
-  //{
-  //  data[i] = nTrk_H.at(1) -> GetBinContent(i+1);
-  //  ProbeV.push_back(nTrk_H.at(1) -> GetBinContent(i+1)); 
-  //}
-
-  //// Does this weird tail inversion. Not sure why. 
-  //for (int i(0); i < Offset; i++)
-  //{
-  //  data[ nBins + i ] = data[ nBins -1 -i ];
-  //}
-
-
-  //// *** Main Algorithm Part ================== //
-  //TGraph* gr = new TGraph(); 
-  //for (int i(0); i < 100; i++)
-  //{
-  //  deconv = f.LRDeconvolution(data, deconv, deconv, 0.75); 
-  //  F.VectorToTH1F(deconv, Probe); 
-  //  f.ConvolveHists(Probe, Probe, trk2, Offset);
-  //  //Probe -> Draw("SAMEHIST*"); 
-
-  //  std::vector<float> Prog;
-  //  for (int i(0); i < trk2 -> GetNbinsX(); i++)
-  //  {
-  //    Prog.push_back(trk2 -> GetBinContent(i+1));
-  //  }
-  //   
-  //  float dist = B.WeightedEuclidean(ProbeV, Prog);  
-  //  gr -> SetPoint(i, i, dist);
-  //  gr -> Draw("*ap");
-  //  can -> Update();
-  //}
-
+  // === 0.2: Define some probes for checking the deconvolution
+  TCanvas* can = new TCanvas();
+  can -> Divide(2,2);
+    
+  // === 1. Start the deconvolution process
+  for (int i(0); i < 10; i++)
+  {
  
+    trk1_C -> Reset("ICES");
+    trk2_C -> Reset("ICES");
+    trk3_C -> Reset("ICES");
+    trk4_C -> Reset("ICES");
+    
+    for (int x(0); x < 10; x++)
+    {
+      deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75);
+    }
+    // === 1.1: Replace the tail of the deconv with the 1trk data 
+    deconv = f.TailReplace(trk1Data, deconv, 0, 20);
+    
+    // === 2. Start building the 2-trk, 3-trk, 4-trk histograms 
+    // === 2.1: 1-Track histo -> Name: trk1_C 
+    F.VectorToTH1F(deconv, trk1_C);
+    f.Normalizer(trk1_C);
+   
+    // === 2.2: 2-Track histo -> Name: trk2_C
+    f.ConvolveHists(trk1_C, trk1_C, trk2_C, 0);
+    //f.Normalizer(trk2_C);
 
+    // === 2.3: 3-Track histo -> Name: trk3_C
+    f.ConvolveHists(trk2_C, trk1_C, trk3_C, 0);
+    //f.Normalizer(trk3_C);
 
+    // === 2.4: 4-Track histo -> Name: trk4_C
+    f.ConvolveHists(trk2_C, trk2_C, trk4_C, 0);
+    //f.Normalizer(trk4_C);
+    std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};  
 
+    TH1F* trk2 = (TH1F*)trk2Data -> Clone("TRK2");
+    std::vector<RooRealVar*> var = f.FitPDFtoData(PDFs, trk2, 0, 20, 
+                                                  Constants::Variable_Names, 
+                                                  Constants::Begin, Constants::End);  
+     
+    // === 3.: Subtract the tracks from the trk2
+    std::vector<float> vars = f.Subtraction(PDFs, trk2, NumTrak, var);
+   
+    // === 4. Convert the new data estimate to deconv  
+    int n = trk2 -> GetNbinsX(); 
+    for (int i(0); i < n; i++)
+    {
+      float e = trk2 -> GetBinContent(i+1);
+      deconv[i] = e; 
+    }
+     
+    P.View(can, PDFs); 
+    P.View(can, DataHists);
+        
+    // Perform the fits on all the track data
+    std::vector<RooRealVar*> trk1_v = f.FitPDFtoData(PDFs, trk1Data, 0, 20, Constants::Variable_Names, Constants::Begin, Constants::End);
+    std::vector<RooRealVar*> trk2_v = f.FitPDFtoData(PDFs, trk2Data, 0, 20, Constants::Variable_Names, Constants::Begin, Constants::End);
+    std::vector<RooRealVar*> trk3_v = f.FitPDFtoData(PDFs, trk3Data, 0, 20, Constants::Variable_Names, Constants::Begin, Constants::End);
+    std::vector<RooRealVar*> trk4_v = f.FitPDFtoData(PDFs, trk4Data, 0, 20, Constants::Variable_Names, Constants::Begin, Constants::End);
+    
+    std::vector<float> trk1_f = f.Fractionalizer(trk1_v, trk1Data);
+    std::vector<float> trk2_f = f.Fractionalizer(trk2_v, trk2Data);
+    std::vector<float> trk3_f = f.Fractionalizer(trk3_v, trk3Data);
+    std::vector<float> trk4_f = f.Fractionalizer(trk4_v, trk4Data);
+    std::vector<std::vector<float>> trk_f = {trk1_f, trk2_f,  trk3_f, trk4_f};
+    
+    can -> Draw(); 
+    can -> Update();   
 
-
-
-
-
-
-
-
-
-
+    for (int x(0); x < trk1_v.size(); x++)
+    {
+      delete trk1_v[x];
+      delete trk2_v[x];     
+      delete trk3_v[x];
+      delete trk4_v[x];  
+      std::cout << "######################### Fit for TRK-" << x+1 << " #########################" << std::endl; 
+      std::cout << " Trk1: " << trk_f[x][0] << " Trk2: " << trk_f[x][1] << " Trk3: "<< trk_f[x][2] << " Trk4: "<< trk_f[x][3] << std::endl; 
+      std::cout << "      " << std::endl; 
+    }
+  } 
 }
 
 void StandaloneApplications(int argc, char**argv)
