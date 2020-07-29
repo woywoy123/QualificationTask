@@ -84,7 +84,7 @@ class Fit_Functions
     void Normalizer(TH1F* Hist);
 
     // Fitting PDFs to data
-    std::vector<RooRealVar*> FitPDFtoData(std::vector<TH1F*> PDFs, TH1F* Data, float min, float max, std::vector<TString> Names, std::vector<double> Begin, std::vector<double> End);
+    std::vector<RooRealVar*> FitPDFtoData(std::vector<TH1F*> PDFs, TH1F* Data, float min, float max);
    
     // Cleaning up the cross contamination via subtraction 
     std::vector<float> Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk, std::vector<RooRealVar*> var);

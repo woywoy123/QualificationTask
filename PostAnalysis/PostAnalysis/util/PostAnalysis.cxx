@@ -17,11 +17,18 @@ void PostAnalysis()
     }
   };
 
+  Verification V;
+  
+  V.UnitTesting();
+  
+  
+  
+  
+  /*
 
   // Init the function that hosts common tools
   Functions F;
   Fit_Functions f;
-  Verification V;
   Benchmark B; 
   Plot_Functions P;
 
@@ -47,7 +54,7 @@ void PostAnalysis()
   TH1F* trk1Data = ntrk.at(0); 
  
   // 2-Track Data 
-  std::vector<float> COMP2 = {0.1, 0.7, 0.1, 0.1}; 
+  std::vector<float> COMP2 = {0.0, 0.7, 0.0, 0.0}; 
   FillHist(ntrk.at(1), nTrkHist, COMP2);
   TH1F* trk2Data = ntrk.at(1); 
    
@@ -137,7 +144,7 @@ void PostAnalysis()
   can -> Divide(2,2);
     
   // === 1. Start the deconvolution process
-  for (int i(0); i < 10; i++)
+  for (int i(0); i < 1; i++)
   {
  
     trk1_C -> Reset("ICES");
@@ -145,12 +152,12 @@ void PostAnalysis()
     trk3_C -> Reset("ICES");
     trk4_C -> Reset("ICES");
     
-    for (int x(0); x < 10; x++)
+    for (int x(0); x < 25; x++)
     {
       deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75);
     }
     // === 1.1: Replace the tail of the deconv with the 1trk data 
-    deconv = f.TailReplace(trk1Data, deconv, 0, 20);
+    //deconv = f.TailReplace(trk1Data, deconv, 0, 20);
     
     // === 2. Start building the 2-trk, 3-trk, 4-trk histograms 
     // === 2.1: 1-Track histo -> Name: trk1_C 
@@ -215,6 +222,8 @@ void PostAnalysis()
       std::cout << "      " << std::endl; 
     }
   } 
+
+  */
 }
 
 void StandaloneApplications(int argc, char**argv)

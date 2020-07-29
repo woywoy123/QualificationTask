@@ -265,36 +265,36 @@ std::vector<float> Fit_Functions::ConvolveHists(std::vector<float> Hist1, std::v
 
 std::vector<float> Fit_Functions::TailReplace(TH1F* Hist, std::vector<float> deconv, float min, float max)
 {
+  // Get the length of the Hist histogram
+  int nbins = Hist -> GetNbinsX();
+
+  // Normalize the content in the vector and the hist 
+  float sum_D(0); 
+  float sum_T(0);
 
   // The deconv vector has a length of nbins + Offset (e.g. 50 + 5)
   // Create two hists of nbins + Offset, iterate through all entries until trk1 exhausted an replace excess with deconv
-
-  float nbins = deconv.size();
-  TH1F* Decon = new TH1F("Decon", "Decon", nbins, min, max);
-  TH1F* TRK1 = new TH1F("TRK1", "TRK1", nbins, min, max);
-
-  // Get the length of the Hist histogram
-  int H_len = Hist -> GetNbinsX();
+  TH1F* Decon = new TH1F("Decon", "Decon", nbins, min, max);  
+  TH1F* TRK1 = (TH1F*)Hist -> Clone("TRK1");
 
   // Convert the std::vector to a TH1F for fitting 
   for (int i(0); i < nbins; i++)
   {
     float e = deconv.at(i);
-    if ( i < H_len )
-    {
-      TRK1 -> SetBinContent(i+1, Hist -> GetBinContent(i+1));
-    }
-    else 
-    {
-      TRK1 -> SetBinContent(i+1, e);
-    }
     Decon -> SetBinContent(i+1, e);
+  } 
+  
+  // Normalize the hist to the decon vector 
+  for (int i(0); i < nbins; i++)
+  {
+    sum_D += deconv.at(i);
+    sum_T += TRK1 -> GetBinContent(i+1);
   }
 
-  // Try scaling the TRK1 hist to Deconv 
-  float Sc_T = TRK1 -> Integral();
-  float Sc_D = Decon -> Integral();
-  TRK1 -> Scale(Sc_D/Sc_T);
+  for (int i(0); i < nbins; i++)
+  {
+    TRK1 -> SetBinContent(i+1, (sum_D/sum_T)*(TRK1 -> GetBinContent(i+1)));
+  }
 
   // Get the post peak point to use for the fitting and replacement range 
   int m_b_de = Decon -> GetMaximumBin();
@@ -310,7 +310,7 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* Hist, std::vector<float> dec
   RooFormulaVar delta("delta", "x-s", RooArgSet(x,s)); // Relation between x and s
 
   // Define the fitting range
-  x.setRange("Signal", (m_b_tr)*ss, max-4);
+  x.setRange("Signal", (m_b_tr)*ss, max-2);
 
   // Create the PDF and the model for fitting 
   RooDataHist D("Decon", "Decon", x, Decon);
@@ -325,49 +325,89 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* Hist, std::vector<float> dec
   // Return the shift 
   float shift = s.getVal();
   int S = std::round((shift)/ss);
- 
+  std::cout << "###################### " << S << std::endl; 
+
+  // debug 
+  TH1F* de = new TH1F("hist", "hist", 500, 0, 20);
   // ====================== Replace the tail of the dist ============ //
-  int Repl = m_b_tr-1;
+  int Repl = 100;
   for (int i(Repl); i < nbins; i++)
   {
-    float e = Hist -> GetBinContent(i+1);
-    Decon -> SetBinContent(i-S, e);
+    float e = TRK1 -> GetBinContent(i + 1+ S);
+    de -> SetBinContent(i+1, e);
+    //Decon -> SetBinContent(i+1, e);
   }
- 
+
+
+  //// ============== Debug/Experimental ========================== // 
+
+ // TString name = "Shifted: ";
+ // TCanvas* Cans = new TCanvas(name,name, 800, 800);
+ // Cans -> SetLogy();
+ // Decon -> SetLineColor(kGreen);
+ // TRK1 -> SetLineColor(kBlue);
+ // de -> SetLineColor(kRed);
+ // Decon -> GetYaxis() -> SetRangeUser(1e-1, 1e5);
+ // TRK1 -> GetYaxis() -> SetRangeUser(1e-1, 1e5);
+ // Decon -> Draw("SAMEHIST");
+ // TRK1 -> Draw("SAMEHIST");
+ // de -> Draw("SAMEHIST"); 
+ // Cans -> Update();
+
+  // ================================= Tail Replacement =================================================== //
+
   // Convert back to normal vector for output 
   std::vector<float> dec;
   for (int i(0); i < nbins; i++)
   {
-    dec.push_back(Decon -> GetBinContent(i+1));
+    dec.push_back(sum_D*(Decon -> GetBinContent(i+1)));
   }
+  for (int i(0); i < nbins*0.1; i++)
+  {
+    dec.push_back(deconv[nbins+i]);
+  }
+
  
   delete TRK1; 
   delete Decon;
+  delete de;
   return dec;
 }
 
 
-std::vector<RooRealVar*> Fit_Functions::FitPDFtoData(std::vector<TH1F*> PDFs, TH1F* Data, float min, float max, std::vector<TString> Names, std::vector<double> Begin, std::vector<double> End)
+std::vector<RooRealVar*> Fit_Functions::FitPDFtoData(std::vector<TH1F*> PDFs, TH1F* Data, float min, float max)
 {
-  // === Create the variables 
-  RooRealVar* x = new RooRealVar("x", "x", min, max); 
-  std::vector<RooRealVar*> var = GenerateVariables(Names, Begin, End);
-  
-  // === Create the PDFs with the measured n-tracks
-  std::vector<RooHistPdf*> pdf = ConvertTH1FtoPDF(PDFs, x);  
-  RooAddPdf fit("fit", "fit", VectorToArgList(pdf), VectorToArgList(var));
-   
-  // === Import the data and fit the model   
-  RooDataHist* Data_Fit = ConvertTH1toDataHist(Data, x);
-  fit.fitTo(*Data_Fit);
+  Fit_Functions f;
+
+  std::vector<TString> Names;
+  for ( int i(0); i < PDFs.size(); i++)
+  {
+    Names.push_back(PDFs[i] -> GetName());
+  }
+
+  // Define required variables
+  std::vector<double> Parms_S(Names.size(), 0);
+  std::vector<double> Parms_E(Names.size(), Data -> Integral());
+
+  // Variable Generation
+  RooRealVar* x = new RooRealVar("x", "x", min, max);
+  std::vector<RooRealVar*> vars = f.GenerateVariables(Names, Parms_S, Parms_E);
+  std::vector<RooHistPdf*> pdfs = f.ConvertTH1FtoPDF(PDFs, x); 
+  RooArgList var_List = f.VectorToArgList(vars); 
+  RooArgList pdfs_List = f.VectorToArgList(pdfs);  
+  RooDataHist* D = f.ConvertTH1toDataHist(Data, x);
+
+  // Model 
+  RooAddPdf model("model", "model", pdfs_List, var_List);
+  model.fitTo(*D);
 
   delete x; 
-  delete Data_Fit;
-  for (int i(0); i < pdf.size(); i++)
+  delete D;
+  for (int i(0); i < pdfs.size(); i++)
   {
-    delete pdf[i];
+    delete pdfs[i];
   }
-  return var;
+  return vars;
 }
 
 void Fit_Functions::Normalizer(TH1F* Hist)
