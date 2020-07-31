@@ -56,6 +56,7 @@ void Verification::Debug(std::vector<TH1F*> Hist, std::vector<float> Params)
   } 
 }
 
+// Test case the Fitting
 std::vector<float> TestFit(std::vector<TH1F*> PDF, TH1F* Data)
 {
   Fit_Functions f;
@@ -76,103 +77,255 @@ std::vector<float> TestFit(std::vector<TH1F*> PDF, TH1F* Data)
  
 }
 
-std::vector<float> TailReplace(TH1F* Hist, std::vector<float> deconv, float min, float max)
+
+std::vector<float> TailReplace(TH1F* hist, std::vector<float> deconv, float min, float max)
 {
+  float n_H = hist -> GetNbinsX();
+  float n_D = deconv.size();
+  float Pad = (n_D - n_H) / 2.;
+  float ss = (max - min)/n_D;
 
-  // Check that the vector and the hist have the same length 
-  float n_H = Hist -> GetNbinsX();
-  float n_V = deconv.size(); 
-  float ss = (max - min)/n_H;
-  int offset = 0;
-
-  // Define the histograms used in this code 
-  TH1F* Deconv = new TH1F("Deconv", "Deconv", n_H + 2*offset, min - ss*offset, max + ss*offset);  
-  TH1F* hist = (TH1F*)Deconv -> Clone("hist");
-  for (int i(0); i < n_H + 2*offset; i++)
+  TH1F* Deconv = new TH1F("Deconv", "Deconv", n_D, min, max);
+  TH1F* Hist = (TH1F*)Deconv -> Clone("Hist"); 
+  
+  // Fill the histogram with deconv data
+  for (int i(0); i < n_D; i++)
   {
-    if ( i < offset || n_H + offset <= i) 
+    Deconv -> SetBinContent(i+1, deconv[i]);
+    if (i < Pad || n_H + Pad < i)
     {
-      Deconv -> SetBinContent(i+1, 0);
-      hist -> SetBinContent(i+1, 0);   
+      Hist -> SetBinContent(i + 1, 0);
     }
     else
     {
-      Deconv -> SetBinContent(i+1, deconv[i-offset]);
-      hist -> SetBinContent(i+1, Hist -> GetBinContent(i +1 - offset));
+      Hist -> SetBinContent(i + 1, hist -> GetBinContent(i + 1 - Pad));
     }
   }
-  
-  // Find the min max positions of the hist    
-  float max_b = Deconv -> GetMaximumBin();
-  float min_D = Deconv -> GetBinContent(max_b);
-  int min_b(0);
-  for (int i(max_b); i < n_H; i++)
+
+  // Get the domain of the fit by checking the peak and the tail length
+  float max_H = Hist -> GetMaximumBin();
+  float max_D = Deconv -> GetMaximumBin();
+  float min_H = max_H;
+  float min_D = max_D;
+  float val_H = Hist -> GetBinContent(max_H);
+  float val_D = Deconv -> GetBinContent(max_D);
+
+  for (int i(0); i < n_D; i++)
   {
-    float e = Deconv -> GetBinContent(i+1);
-    if (e < min_D)
+    float H = Hist -> GetBinContent(i+1);
+    float D = Deconv -> GetBinContent(i+1);
+
+    if (i > max_H && H < val_H)
     {
-      min_D = e;
-      min_b = i+1;
-    } 
+      val_H = H;
+      min_H = i+1;
+    }
+
+    if (i > max_D && D < val_D)
+    {
+      val_D = D;
+      min_D = i+1;
+    }
+
   }
 
-  // Define the step size being used for the dEdx
-  float start = ss*(max_b + offset);
-  float end = ss*(min_b + offset); 
+  float peak_delta = max_H - max_D;
 
-
-  // ========================= Perform the fitting =============================== //
-  // Define the variables for RooFit 
-  RooRealVar x("x", "x", min, max); // Used for fitting range
-  RooRealVar s("s", "s", -20, 20); // Determine the shifts between histos
-  RooFormulaVar delta("delta", "x-s", RooArgSet(x,s)); // Relation between x and s
-
-  // Define the fitting range
-  x.setRange("Signal", 2, 10);
-
-  // Create the PDF and the model for fitting 
-  RooDataHist D("Decon", "Decon", x, Deconv);
-  RooHistPdf model("model", "model", delta, x, D, 1);
-
-  // Define the data hist for the fit
-  RooDataHist trk1("trk1", "trk1", x, hist);
-
-  // Perform the fit 
-  RooFitResult* Result = model.fitTo(trk1, RooFit::Save(), RooFit::Range("Signal"), SumW2Error(true));
-
+//  float start(0);
+//  float end(0);
+//  if (peak_delta > 0)  
+//  {  
+//    start = (max_D - Pad +1)*ss;
+//    end = (min_D - Pad - peak_delta)*ss;
+//  }
+//  else
+//  {
+  double b = 2; //min + (max_H)*ss; <<< ------ This part has a weird bug. When I change this number, so does the variable e not sure why...
+  double e = 18;//min + (min_H -10)*ss;
   
-  // ============== Debug/Experimental ========================== // 
 
-  float shift = s.getVal();
-  float S = shift/ss;
+  //TCanvas* can = new TCanvas();
+  //can -> SetLogy();
+  //Hist -> Draw("SAMEHIST");
+  //Deconv -> Draw("SAMEHIST");
+
+  RooRealVar x("x", "x", min, max);
+
+  RooRealVar s("s", "s", 0., -6, 6);
+  RooFormulaVar delta("delta", "x-s", RooArgSet(x,s));
+  
+  RooDataHist D("Decon", "Decon", x, Deconv); 
+  RooHistPdf model("Model", "Model", delta, x, D, 1);
+
+  RooDataHist trk1("trk1", "trk1", x, Hist);
+
+  RooFitResult* Result = model.fitTo(trk1, Range(1.3, 18));
 
   RooPlot* xframe = x.frame(RooFit::Title("Shift Test"));
-  trk1.plotOn(xframe, RooFit::LineColor(kOrange), RooFit::LineStyle(kSolid), RooFit::YErrorSize(0));
-  D.plotOn(xframe, RooFit::LineColor(kRed), RooFit::LineStyle(kSolid), RooFit::YErrorSize(0));
-  model.plotOn(xframe, RooFit::LineColor(kGreen), RooFit::LineStyle(kSolid));
-
+  D.plotOn(xframe, RooFit::Name("Decon"), RooFit::LineColor(kAzure)); 
+  trk1.plotOn(xframe, RooFit::Name("1Track"), RooFit::LineColor(kRed)); 
+  model.plotOn(xframe, RooFit::Name("Model"), RooFit::LineColor(kBlue)); 
+  
   TCanvas* can = new TCanvas();
   can -> SetLogy();
   xframe -> SetMinimum(1);
-  xframe -> Draw("HIST");
+  xframe -> Draw();
 
- 
-//  for (int i(0); i < n_H; i++)
-//  {
-//    Deconv -> SetBinContent(i+1, deconv[i]);
-//  }
-//
-//  float l_H = Hist -> Integral();
-//  float l_D = Deconv -> Integral();
-
-
-
+  float shift = s.getVal();
+  float S = std::round(shift/ss);
+  std::cout << "###################### " << S << std::endl; 
+  std::cout << "Start" << b << " ::: " << e << std::endl;
+  std::cout << peak_delta << std::endl;
 
   std::vector<float> dec;
   return dec;
+
 }
 
-std::vector<float> TestShift(std::vector<TH1F*> Hists, TH1F* reference)
+
+void ShiftDetect(TH1F* hist, std::vector<float> deconv, float min, float max)
+{
+
+  float n_H = hist -> GetNbinsX();
+  float n_D = deconv.size();
+  float Pad = (n_D - n_H) / 2.;
+  float ss = (max - min)/n_D;
+
+  TH1F* Deconv = new TH1F("Deconv", "Deconv", n_D, min, max);
+  TH1F* Hist = (TH1F*)Deconv -> Clone("Hist"); 
+  
+  // Fill the histogram with deconv data
+  for (int i(0); i < n_D; i++)
+  {
+    Deconv -> SetBinContent(i+1, deconv[i]);
+    if (i < Pad || n_H + Pad < i)
+    {
+      Hist -> SetBinContent(i + 1, 0);
+    }
+    else
+    {
+      Hist -> SetBinContent(i + 1, hist -> GetBinContent(i + 1 - Pad));
+    }
+  }
+
+  // Get the domain of the fit by checking the peak and the tail length
+  float max_H = Hist -> GetMaximumBin();
+  float max_D = Deconv -> GetMaximumBin();
+  float min_H = max_H;
+  float min_D = max_D;
+  float val_H = Hist -> GetBinContent(max_H);
+  float val_D = Deconv -> GetBinContent(max_D);
+
+  for (int i(0); i < n_D; i++)
+  {
+    float H = Hist -> GetBinContent(i+1);
+    float D = Deconv -> GetBinContent(i+1);
+
+    if (i > max_H && H < val_H)
+    {
+      val_H = H;
+      min_H = i+1;
+    }
+
+    if (i > max_D && D < val_D)
+    {
+      val_D = D;
+      min_D = i+1;
+    } 
+  }
+
+  TH1F* Hist_Clip = (TH1F*)Hist -> Clone("Clip_H");
+  TH1F* Deco_Clip = (TH1F*)Deconv -> Clone("Clip_D");
+  Deco_Clip -> Reset();
+  Hist_Clip -> Reset();
+  Deco_Clip -> SetLineColor(kYellow);  
+   
+  // Peak and minimum positions; max_H, min_H :: max_D, min_D
+  //Clip the pre-tail of the histograms 
+  for (int i(0); i < n_D; i++)
+  {
+    if ( i >= max_D )
+    {
+      Deco_Clip -> SetBinContent(i, Deconv -> GetBinContent(i));
+    }
+    
+    if ( i >= max_H )
+    {
+      Hist_Clip -> SetBinContent(i, Hist -> GetBinContent(i));
+    }
+  }
+
+ 
+  TH1F* temp = (TH1F*)Hist -> Clone("Temp");  
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy();
+  for (int i(0); i < n_D; i++)
+  {
+    temp -> Reset();
+    for (int y(i); y < n_D - i; y++)
+    {
+      float e = Hist_Clip -> GetBinContent(y+1);
+      temp -> SetBinContent(i+1+y, e);
+    } 
+    Deco_Clip -> Draw("SAMEHIST");
+    temp -> Draw("SAMEHIST");
+    can -> Update();       
+    
+  }
+  
+
+
+  std::cout << "fin" << std::endl;
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Test case the shift test and tail replace
+std::vector<float> TestShift(std::vector<TH1F*> Hists, TH1F* reference, float min, float max)
 {
   Fit_Functions f;
 
@@ -185,13 +338,11 @@ std::vector<float> TestShift(std::vector<TH1F*> Hists, TH1F* reference)
       deconv[i] = hist -> GetBinContent(i+1);  
     }
 
-    std::vector<float> something = TailReplace(reference, deconv, 0, 20);
-   
+    //std::vector<float> something = TailReplace(reference, deconv, min, max);
+    ShiftDetect(reference, deconv, min, max); 
   }  
   return Results; 
 }
-
-
 
 void Verification::UnitTesting()
 {
@@ -212,37 +363,47 @@ void Verification::UnitTesting()
   trk3 -> SetLineColor(kOrange);
   trk4 -> SetLineColor(kGreen); 
 
-  // Fit testing section
-  std::vector<TH1F*> PDF = {trk1, trk2, trk3, trk4};
-  TH1F* Data1 = (TH1F*)trk1 -> Clone("Data1");
-  TH1F* Data2 = (TH1F*)trk2 -> Clone("Data2");
-  TH1F* Data3 = (TH1F*)trk3 -> Clone("Data3");
-  TH1F* Data4 = (TH1F*)trk4 -> Clone("Data4");
-  std::vector<float> Fit_test1 = TestFit(PDF, Data1);
-  std::vector<float> Fit_test2 = TestFit(PDF, Data2);
-  std::vector<float> Fit_test3 = TestFit(PDF, Data3);
-  std::vector<float> Fit_test4 = TestFit(PDF, Data4);  
+  //// Fit testing section
+  //std::vector<TH1F*> PDF = {trk1, trk2, trk3, trk4};
+  //TH1F* Data1 = (TH1F*)trk1 -> Clone("Data1");
+  //TH1F* Data2 = (TH1F*)trk2 -> Clone("Data2");
+  //TH1F* Data3 = (TH1F*)trk3 -> Clone("Data3");
+  //TH1F* Data4 = (TH1F*)trk4 -> Clone("Data4");
+  //std::vector<float> Fit_test1 = TestFit(PDF, Data1);
+  //std::vector<float> Fit_test2 = TestFit(PDF, Data2);
+  //std::vector<float> Fit_test3 = TestFit(PDF, Data3);
+  //std::vector<float> Fit_test4 = TestFit(PDF, Data4);  
 
   // Test Tail replace
   std::vector<TString> Shift_N = {"S1"};
-  std::vector<TH1F*> Shift_Hist = F.MakeTH1F(Shift_N, 500, 0, 20);
-  std::vector<float> Shift_Numbers = {5};
+  float Padding = 100;
+  float step_size = (20.0-0.0)/500.;
+  float max = 20 + step_size*Padding;
+  float min =  - step_size*Padding;
+  
+  std::vector<TH1F*> Shift_Hist = F.MakeTH1F(Shift_N, 500 + 2*Padding, min, max);
+  std::vector<float> Shift_Numbers = {50};
 
-  //TCanvas* can = new TCanvas();
-  //can -> SetLogy();
+  // TCanvas* can = new TCanvas();
+  // can -> SetLogy();
   for (int i(0); i < Shift_Numbers.size(); i++)
   {
     for (int x(0); x < Shift_Hist[i] -> GetNbinsX(); x++)
     {
-      Shift_Hist[i] -> SetBinContent(x + 1 + Shift_Numbers[i], trk1 -> GetBinContent(x+1)); 
+      if ( x < Padding + Shift_Numbers[i] || Shift_Hist[i] -> GetNbinsX() - Padding + Shift_Numbers[i] <= x)
+      { 
+        Shift_Hist[i] -> SetBinContent(x + 1, 0);
+      }
+      else
+      {
+        Shift_Hist[i] -> SetBinContent(x + 1, trk1 -> GetBinContent(x+1 - Padding - Shift_Numbers[i])); 
+      }
     }
-    //Shift_Hist[i] -> SetLineColor(Constants::Colors[i]);
-    //Shift_Hist[i] -> Draw("SAMEHIST");
-    //can -> Update();
+    Shift_Hist[i] -> SetLineColor(Constants::Colors[i]);
+    // Shift_Hist[i] -> Draw("SAMEHIST");
+    // can -> Update();
   }
   
-  std::vector<float> Shift_Results = TestShift(Shift_Hist, trk1); 
+  std::vector<float> Shift_Results = TestShift(Shift_Hist, trk1, min, max); 
   
-
-
 }
