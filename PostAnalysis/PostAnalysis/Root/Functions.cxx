@@ -263,115 +263,47 @@ std::vector<float> Fit_Functions::ConvolveHists(std::vector<float> Hist1, std::v
   return conv;
 }
 
-std::vector<float> Fit_Functions::TailReplace(TH1F* Hist, std::vector<float> deconv, float min, float max)
+std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> deconv)
 {
-  // Get the length of the Hist histogram
-  int nbins = Hist -> GetNbinsX();
+  // Get basic information 
+  float bins = hist -> GetNbinsX(); // Number of bins in hist
+  float n_D = deconv.size(); // Number of bins for deconv 
+  int delta = n_D - bins; // Difference in length 
 
-  // Normalize the content in the vector and the hist 
-  float sum_D(0); 
-  float sum_T(0);
+  // Make a copy/create new histograms 
+  TH1F* Deconv = (TH1F*)hist -> Clone("Deconv");
+  Deconv -> Reset();
+  TH1F* Hist = (TH1F*)hist -> Clone("Hist");
 
-  // The deconv vector has a length of nbins + Offset (e.g. 50 + 5)
-  // Create two hists of nbins + Offset, iterate through all entries until trk1 exhausted an replace excess with deconv
-  TH1F* Decon = new TH1F("Decon", "Decon", nbins, min, max);  
-  TH1F* TRK1 = (TH1F*)Hist -> Clone("TRK1");
-
-  // Convert the std::vector to a TH1F for fitting 
-  for (int i(0); i < nbins; i++)
+  // Fill the Deconv
+  for (int i(0); i < bins; i++)
   {
-    float e = deconv.at(i);
-    Decon -> SetBinContent(i+1, e);
-  } 
+    Deconv -> SetBinContent(i+1, deconv[i]);
+  }
+
+  // Find the peaks of the two histograms 
+  int n_max_D = Deconv -> GetMaximumBin();
+  int n_max_H = Hist -> GetMaximumBin();
+  float max_D = Deconv -> GetBinContent(n_max_D);
+  float max_H = Hist -> GetBinContent(n_max_H);
+  int delta_peak = n_max_D - n_max_H;
+
+  for (int i(n_max_D+1); i < bins; i++)
+  {
+    Deconv -> SetBinContent(i+1, (Hist -> GetBinContent(i+1 - delta_peak))*(max_D/max_H));
+  }
+
+  std::vector<float> De;
+  for (int i(0); i < n_D; i++)
+  {
+    if ( i < bins ) { De.push_back(Deconv -> GetBinContent(i+1)); }
+    else { De.push_back(deconv[i]*(max_D/max_H)); }
+  }
   
-  // Normalize the hist to the decon vector 
-  for (int i(0); i < nbins; i++)
-  {
-    sum_D += deconv.at(i);
-    sum_T += TRK1 -> GetBinContent(i+1);
-  }
+  delete Deconv;
+  delete Hist;
 
-  for (int i(0); i < nbins; i++)
-  {
-    TRK1 -> SetBinContent(i+1, (sum_D/sum_T)*(TRK1 -> GetBinContent(i+1)));
-  }
-
-  // Get the post peak point to use for the fitting and replacement range 
-  int m_b_de = Decon -> GetMaximumBin();
-  int m_b_tr = TRK1 -> GetMaximumBin();
-
-  // Need a scale conversion: Go from bin to MeV
-  float ss = (max - min)/nbins;
-
-  // ========================= Perform the fitting =============================== //
-  // Define the variables for RooFit 
-  RooRealVar x("x", "x", min, max); // Used for fitting range
-  RooRealVar s("s", "s", 0., -6, 6); // Determine the shifts between histos
-  RooFormulaVar delta("delta", "x-s", RooArgSet(x,s)); // Relation between x and s
-
-  // Define the fitting range
-  x.setRange("Signal", (m_b_tr)*ss, max-2);
-
-  // Create the PDF and the model for fitting 
-  RooDataHist D("Decon", "Decon", x, Decon);
-  RooHistPdf model("model", "model", delta, x, D, 1);
-
-  // Define the data hist for the fit
-  RooDataHist trk1("trk1", "trk1", x, TRK1);
-
-  // Perform the fit 
-  RooFitResult* Result = model.fitTo(trk1, RooFit::Save(), RooFit::Range("Signal"), SumW2Error(true));
- 
-  // Return the shift 
-  float shift = s.getVal();
-  int S = std::round((shift)/ss);
-  std::cout << "###################### " << S << std::endl; 
-
-  // debug 
-  TH1F* de = new TH1F("hist", "hist", 500, 0, 20);
-  // ====================== Replace the tail of the dist ============ //
-  int Repl = 100;
-  for (int i(Repl); i < nbins; i++)
-  {
-    float e = TRK1 -> GetBinContent(i + 1+ S);
-    de -> SetBinContent(i+1, e);
-    //Decon -> SetBinContent(i+1, e);
-  }
-
-
-  //// ============== Debug/Experimental ========================== // 
-
- // TString name = "Shifted: ";
- // TCanvas* Cans = new TCanvas(name,name, 800, 800);
- // Cans -> SetLogy();
- // Decon -> SetLineColor(kGreen);
- // TRK1 -> SetLineColor(kBlue);
- // de -> SetLineColor(kRed);
- // Decon -> GetYaxis() -> SetRangeUser(1e-1, 1e5);
- // TRK1 -> GetYaxis() -> SetRangeUser(1e-1, 1e5);
- // Decon -> Draw("SAMEHIST");
- // TRK1 -> Draw("SAMEHIST");
- // de -> Draw("SAMEHIST"); 
- // Cans -> Update();
-
-  // ================================= Tail Replacement =================================================== //
-
-  // Convert back to normal vector for output 
-  std::vector<float> dec;
-  for (int i(0); i < nbins; i++)
-  {
-    dec.push_back(sum_D*(Decon -> GetBinContent(i+1)));
-  }
-  for (int i(0); i < nbins*0.1; i++)
-  {
-    dec.push_back(deconv[nbins+i]);
-  }
-
- 
-  delete TRK1; 
-  delete Decon;
-  delete de;
-  return dec;
+  return De;
 }
 
 
@@ -449,53 +381,6 @@ std::vector<float> Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Tar
     delete var[i];
   }
   return frac;
-}
-
-// ================== Plotting Class ================================= //
-TCanvas* Plot_Functions::GeneratePlot(TString Title, RooRealVar* range, RooDataHist* Data, RooAddPdf Model, std::vector<RooHistPdf*> PDFs, std::vector<TString> pdf_titles)
-{
-  // Initialize the frame for Plotting 
-  RooPlot* xframe = range -> frame(RooFit::Title(Title)); 
-  Data -> plotOn(xframe, RooFit::Name("Measured"));
-  Model.plotOn(xframe, RooFit::Name("Model Fit"));
-  
-  // Loop over the histograms 
-  for (unsigned i = 0; i < PDFs.size(); i++) 
-  {
-    Model.plotOn(xframe, RooFit::Name(pdf_titles[i]), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Constants::Colors[i]));
-  }
- 
-  // Create the canvas  
-  auto f = new TCanvas();
-  gPad -> SetLogy();
-  gStyle -> SetOptStat(0);
-  
-  xframe -> SetXTitle("dEdx [MeV g^{-1} cm^{2}]");
-  xframe -> SetMinimum(1);
-  xframe -> Draw();
-
-  // Create the legend 
-  TLegend* Legend = new TLegend(0.9, 0.9, 0.75, 0.75);
-  Legend -> AddEntry("Measured", "Measured Distribution"); 
-  Legend -> AddEntry("Model Fit", "Model Fit");
-  for ( TString name : pdf_titles )
-  {
-    Legend -> AddEntry(name, name);
-  }
-  Legend -> Draw();
-
-  return f;
-}
-
-void Plot_Functions::View(TCanvas* can, std::vector<TH1F*> Hists)
-{
-  for (int i(0); i < Hists.size(); i++)
-  {
-    can -> cd(i+1);
-    can -> cd(i+1) -> SetLogy();
-    Hists.at(i) -> Draw("SAMEHIST");
-  }
-
 }
 
 // ============= Benchmarking Class ========== //

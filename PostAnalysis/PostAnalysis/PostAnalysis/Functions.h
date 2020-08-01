@@ -78,7 +78,7 @@ class Fit_Functions
     void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offset); 
    
     // Replace the tail of a histogram with another after fitting  
-    std::vector<float> TailReplace(TH1F* Hist, std::vector<float> deconv, float min, float max);
+    std::vector<float> TailReplace(TH1F* hist, std::vector<float> deconv);
 
     // Normalize the histograms
     void Normalizer(TH1F* Hist);
@@ -98,19 +98,11 @@ class Fit_Functions
    
 };
 
-class Plot_Functions
-{
-  public: 
-    TCanvas* GeneratePlot(TString Title, RooRealVar* range, RooDataHist* Data, RooAddPdf Model, std::vector<RooHistPdf*> PDFs, std::vector<TString> pdf_titles); 
-    void View(TCanvas* can, std::vector<TH1F*> Hists);
-};
-
 class Benchmark
 {
   public:
     float WeightedEuclidean(std::vector<float> v1, std::vector<float> v2);
     float PythagoreanDistance(std::vector<float> v1, std::vector<float> v2);
-
 };
 
 namespace Constants
@@ -142,8 +134,6 @@ namespace Constants
                                       "dEdx_ntrk_4_ntru_4"};
 
   const std::vector<TString> Variable_Names = {"ntrk_1", "ntrk_2", "ntrk_3", "ntrk_4"};
-  const std::vector<double> Begin = {0., 0., 0., 0.};
-  const std::vector<double> End = {1e6, 1e6, 1e6, 1e6};
   const std::vector<Color_t> Colors = {kRed, kBlue, kOrange, kCyan, kGreen, kYellow, kViolet, kAzure};
 }
 

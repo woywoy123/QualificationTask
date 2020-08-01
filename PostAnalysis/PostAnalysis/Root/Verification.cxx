@@ -78,57 +78,6 @@ std::vector<float> TestFit(std::vector<TH1F*> PDF, TH1F* Data)
 }
 
 
-
-std::vector<float> TailReplace(TH1F* hist, std::vector<float> deconv)
-{
-
-  // Get basic information 
-  float bins = hist -> GetNbinsX(); // Number of bins in hist
-  float n_D = deconv.size(); // Number of bins for deconv 
-  int delta = n_D - bins; // Difference in length 
-
-  // Make a copy/create new histograms 
-  TH1F* Deconv = (TH1F*)hist -> Clone("Deconv");
-  Deconv -> Reset();
-  Deconv -> SetLineColor(kOrange); // <------ delete after
-  TH1F* Hist = (TH1F*)hist -> Clone("Hist");
-
-  // Fill the Deconv
-  for (int i(0); i < bins; i++)
-  {
-    Deconv -> SetBinContent(i+1, deconv[i]);
-  }
-
-  // Find the peaks of the two histograms 
-  int n_max_D = Deconv -> GetMaximumBin();
-  int n_max_H = Hist -> GetMaximumBin();
-  float max_D = Deconv -> GetBinContent(n_max_D);
-  float max_H = Hist -> GetBinContent(n_max_H);
-  int delta_peak = n_max_D - n_max_H;
-
-  for (int i(n_max_D+1); i < bins; i++)
-  {
-    Deconv -> SetBinContent(i+1, (Hist -> GetBinContent(i+1 - delta_peak))*(max_D/max_H));
-  }
-
-  TCanvas* can = new TCanvas("can", "can", 1600, 800);
-  can -> SetLogy();
-  Hist -> Draw("SAMEHIST");
-  Deconv -> Draw("SAMEHIST");
-
-  
-  std::vector<float> De;
-  for (int i(0); i < n_D; i++)
-  {
-    if ( i < bins ) { De.push_back(Deconv -> GetBinContent(i+1)); }
-    else { De.push_back(deconv[i]*(max_D/max_H)); }
-  }
-  
-  return De;
-
-}
-
-
 void Verification::UnitTesting()
 {
   Functions F;
@@ -147,8 +96,9 @@ void Verification::UnitTesting()
   trk2 -> SetLineColor(kBlue);
   trk3 -> SetLineColor(kOrange);
   trk4 -> SetLineColor(kGreen); 
-
-  //// Fit testing section
+  
+  // ==================== Testing Units: Uncomment test units ==================== //
+  // Fit testing section
   //std::vector<TH1F*> PDF = {trk1, trk2, trk3, trk4};
   //TH1F* Data1 = (TH1F*)trk1 -> Clone("Data1");
   //TH1F* Data2 = (TH1F*)trk2 -> Clone("Data2");
@@ -161,21 +111,50 @@ void Verification::UnitTesting()
 
   // Test Tail replace
   // Create the deconv fake vector  
-  float offset = 0.1;
-  int nbins = trk2 -> GetNbinsX(); 
-  std::vector<float> deconv(nbins + nbins*offset, 0);
-  
-  for (int i(0); i < deconv.size(); i++)
-  {
-    if (i < nbins){deconv[i] = trk2 -> GetBinContent(i+1);}
-    else { deconv[i] = trk2 -> GetBinContent(2*nbins - i -1);}
-  }
-  
- 
-  std::vector<float> deconv = TailReplace(trk1, deconv); 
+  //float offset = 0.1;
+  //int nbins = trk2 -> GetNbinsX(); 
+  //std::vector<float> deconv(nbins + nbins*offset, 0);
+  //
+  //for (int i(0); i < deconv.size(); i++)
+  //{
+  //  if (i < nbins){deconv[i] = trk2 -> GetBinContent(i+1);}
+  //  else { deconv[i] = trk2 -> GetBinContent(2*nbins - i -1);}
+  //}
+  // 
+  //deconv = f.TailReplace(trk1, deconv); 
+   
+  // Deconvolution Test  
+  // Create the Data fake vector  
+  //float offset = 0.1;
+  //int nbins = trk2 -> GetNbinsX(); 
+  //std::vector<float> Data(nbins + nbins*offset, 0);
+  //std::vector<float> deconv(nbins + nbins*offset, 0.5);
+  // 
+  //for (int i(0); i < Data.size(); i++)
+  //{
+  //  if (i < nbins){Data[i] = trk4 -> GetBinContent(i+1);}
+  //  else { Data[i] = trk4 -> GetBinContent(2*nbins - i -1);}
+  //}
 
+  //TH1F* Deconv = (TH1F*)trk2 -> Clone("Deconv");
+  //TCanvas* can = new TCanvas;
+  //can -> SetLogy(); 
+  //Deconv -> GetYaxis() -> SetRangeUser(1e-2, 1e6);
+  //Deconv -> SetLineColor(kGreen);
+  //
+  //for (int y(0); y < 25; y++)
+  //{
+  //  for (int x(0); x < 25; x++)
+  //  {
+  //    Deconv -> Reset();
+  //    deconv = f.LRDeconvolution(Data, deconv, deconv, 0.75); 
+  //    F.VectorToTH1F(deconv, Deconv);
+  //    Deconv -> Draw("SAMEHIST");
+  //    trk2 -> Draw("SAMEHIST");
+  //    can -> Update();
+  //  }
+  //  deconv = f.TailReplace(trk1, deconv);
+  //}
 
-
-
- 
 }
+
