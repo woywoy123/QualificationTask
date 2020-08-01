@@ -200,12 +200,11 @@ void Fit_Functions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offs
   if ( nBins_2 != nBins_1 ) { return; }
 
   // Convert TH1 to vector 
-  std::vector<float> H1, H2, Con;
+  std::vector<float> H1, H2;
   for ( unsigned int i(0); i < nBins_2 - offset; i++ )
   {
     H1.push_back(Hist1 -> GetBinContent(i+1));
     H2.push_back(Hist1 -> GetBinContent(i+1));
-    Con.push_back(Hist1 -> GetBinContent(i+1));
   }
  
   // Set bin content of conv histogram 
@@ -365,7 +364,7 @@ std::vector<float> Fit_Functions::Fractionalizer(std::vector<RooRealVar*> vars, 
   return frac;
 }
 
-std::vector<float> Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk, std::vector<RooRealVar*> var)
+void Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk, std::vector<RooRealVar*> var)
 {
   std::vector<float> frac = Fractionalizer(var, Target);
   
@@ -380,7 +379,6 @@ std::vector<float> Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Tar
     }
     delete var[i];
   }
-  return frac;
 }
 
 // ============= Benchmarking Class ========== //

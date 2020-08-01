@@ -87,7 +87,7 @@ class Fit_Functions
     std::vector<RooRealVar*> FitPDFtoData(std::vector<TH1F*> PDFs, TH1F* Data, float min, float max);
    
     // Cleaning up the cross contamination via subtraction 
-    std::vector<float> Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk, std::vector<RooRealVar*> var);
+    void Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk, std::vector<RooRealVar*> var);
     
     // Fractionalizer
     std::vector<float> Fractionalizer(std::vector<RooRealVar*> vars, TH1F* Data);

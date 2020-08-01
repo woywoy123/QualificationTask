@@ -4,58 +4,6 @@
 
 using namespace RooFit;
 
-std::vector<float> LR( const std::vector<float>& data, const std::vector<float>& current, const std::vector<float>& psf, float dampen)
-{
-  size_t offset = (data.size() - current.size())/2;
-  std::vector<float> next(current.size(), 0);
-
-  for ( size_t i(0); i < current.size(); i++)
-  {
-    float sum_j = 0;
-    size_t upperLimitJ = psf.size();
-    for ( size_t j(i); j < upperLimitJ; j++)
-    {
-      float c_j = 0;
-      size_t upperLimitK = j;
-      for ( size_t k(0); k <= upperLimitK; k++ )
-      {
-        c_j += psf[j-k]*current[k];
-      }
-      if (c_j != 0)
-      {
-        sum_j += data[j] / c_j * psf[j-i];
-      }
-    }
-    next[i] = current[i] * (1+dampen*(sum_j - 1));
-    if (next[i] < 0. || std::isnan(next[i]) || std::isinf(next[i]))
-    {
-      next[i] = 0;
-    }
-  }
-  return next;
-};
-
-void Verification::Debug(std::vector<TH1F*> Hist, std::vector<float> Params)
-{
-  TF1 Lan("Lan", "landau", 0, 20);
-  for (int i(0); i < Params.size(); i++)
-  {
-    Lan.SetParameter(i, Params.at(i));
-  }
-
-  for ( int i(0); i < 500000; i++)
-  {
-    double r1 = Lan.GetRandom();
-    double r2 = Lan.GetRandom();
-    double r3 = Lan.GetRandom();
-    double r4 = Lan.GetRandom();
-    Hist.at(0) -> Fill(r1);  
-    Hist.at(1) -> Fill(r1 + r2); 
-    Hist.at(2) -> Fill(r1 + r2 + r3); 
-    Hist.at(3) -> Fill(r1 + r2 + r3 + r4); 
-  } 
-}
-
 // Test case the Fitting
 std::vector<float> TestFit(std::vector<TH1F*> PDF, TH1F* Data)
 {
@@ -85,7 +33,7 @@ void Verification::UnitTesting()
 
   std::vector<TString> Hist_Names = {"trk1", "trk2", "trk3", "trk4"};
   std::vector<TH1F*> Hists = F.MakeTH1F(Hist_Names, 500, 0, 20);
-  Debug(Hists, {1, 0.9, 0.1}); 
+  //Debug(Hists, {1, 0.9, 0.1}); 
  
   // Histograms - With coloring  
   TH1F* trk1 = Hists.at(0);
@@ -155,6 +103,204 @@ void Verification::UnitTesting()
   //  }
   //  deconv = f.TailReplace(trk1, deconv);
   //}
-
 }
+
+void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target)
+{
+  // Things that need an input 
+  int trkn = 3; 
+  float offset = 0.1;
+  int bins = Target -> GetNbinsX();
+  
+  Fit_Functions f;
+  Functions F;
+
+  TH1F* trk1 = Data.at(0);
+  TH1F* trk2 = Data.at(1);
+  TH1F* trk3 = Data.at(2);
+  TH1F* trk4 = Data.at(3);
+
+  // Data we are using as the target 
+  TH1F* Meas = (TH1F*)Target -> Clone("Target");
+
+  // ==================== Preparation ============================ //
+  // We perform a preliminary fit  
+  std::vector<RooRealVar*> var = f.FitPDFtoData(Data, Meas, 0, 20);
+  std::vector<float> Fit_Var = f.Fractionalizer(var, Meas);  
+
+  // Monitoring purpose. Delete after 
+  std::cout << Fit_Var.at(0) << std::endl;// <<<<<< Delete me 
+  std::cout << Fit_Var.at(1) << std::endl;// <<<<<< Delete me   
+  std::cout << Fit_Var.at(2) << std::endl;// <<<<<< Delete me 
+  std::cout << Fit_Var.at(3) << std::endl;// <<<<<< Delete me 
+
+  // Subtract the estimated cross contamination from the Target copy
+  f.Subtraction(Data, Meas, trkn, var);
+
+  // Now we copy the TH1F into a data vector and take the image of the tail 
+  std::vector<float> Data_Vector(bins + bins*offset, 0);
+  for (int i(0); i < bins; i++)
+  {
+    Data_Vector[i] = Meas -> GetBinContent(i+1);
+    if (i < offset) { Data_Vector[i] = Meas -> GetBinContent(bins - i - 1); }
+  }
+
+  // ==================== Preparation: End ========================= //
+ 
+  // Some histograms for debugging and a TCanvas 
+  TCanvas* can = new TCanvas("can", "can", 1200, 1200);
+  can -> Divide(2,2);
+  can -> cd(1) -> SetLogy();
+  can -> cd(2) -> SetLogy();
+  can -> cd(3) -> SetLogy(); 
+  can -> cd(4) -> SetLogy();
+  
+  TH1F* trk1_C = (TH1F*)trk1 -> Clone("trk1_C"); 
+  trk1_C -> GetYaxis() -> SetRangeUser(1, 1e12);
+  TH1F* trk2_C = (TH1F*)trk2 -> Clone("trk2_C"); 
+  TH1F* trk3_C = (TH1F*)trk3 -> Clone("trk3_C"); 
+  TH1F* trk4_C = (TH1F*)trk4 -> Clone("trk4_C"); 
+  trk1_C -> SetLineStyle(kDashed);
+  trk2_C -> SetLineStyle(kDashed);
+  trk3_C -> SetLineStyle(kDashed);
+  trk4_C -> SetLineStyle(kDashed);
+  
+  // Add some styles 
+  trk1_C -> SetLineColor(kRed);
+  trk2_C -> SetLineColor(kBlue);
+  trk3_C -> SetLineColor(kOrange);
+  trk4_C -> SetLineColor(kGreen); 
+ 
+  // ==================== Main Part ======================= //
+  // Assume flat prior for deconv
+  std::vector<float> deconv = std::vector<float>(bins + offset*bins, 0.5);
+  std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};
+  for (int i(0); i < 25; i++)
+  {
+    //trk1_C -> Reset();
+    //trk2_C -> Reset();
+    //trk3_C -> Reset();
+    //trk4_C -> Reset();
+
+    // Deconvolution process
+    for (int y(0); y < 25; y++)
+    {
+      deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75);
+ 
+      // Tail Replace with a 1trk dataset
+      deconv = f.TailReplace(trk1, deconv);
+    }
+  
+    
+    // === Start building the n-track histograms via convolution 
+    // 1-track
+    F.VectorToTH1F(deconv, trk1_C);
+
+    // 2-track
+    f.ConvolveHists(trk1_C, trk1_C, trk2_C, 0);
+
+    // 3-track 
+    f.ConvolveHists(trk1_C, trk2_C, trk3_C, 0);
+
+    // 4-track
+    f.ConvolveHists(trk2_C, trk2_C, trk4_C, 0);
+      
+    // Now normalize these hists 
+    f.Normalizer(trk1_C);
+    f.Normalizer(trk2_C);
+    f.Normalizer(trk3_C);
+    f.Normalizer(trk4_C);
+ 
+    can -> cd(1); 
+    trk1_C -> Scale(trk1 -> Integral());
+    //trk1 -> Draw("SAMEHIST*");
+    trk1_C -> Draw("SAMEHIST");
+    
+//    can -> cd(2); 
+//    trk2_C -> Scale(trk2 -> Integral()); 
+//    trk2_C -> Draw("SAMEHIST");
+//    trk2 -> Draw("SAMEHIST*");
+//     
+//    can -> cd(3); 
+//    trk3_C -> Scale(trk3 -> Integral());    
+//    trk3_C -> Draw("SAMEHIST");
+//    trk3 -> Draw("SAMEHIST*");
+// 
+//    can -> cd(4); 
+//    trk4_C -> Scale(trk4 -> Integral()); 
+//    trk4_C -> Draw("SAMEHIST");
+//    trk4 -> Draw("SAMEHIST*");
+ 
+    can -> Update();
+
+
+
+
+ 
+    // Perform the fit 
+    // We perform a preliminary fit 
+  //  Meas = (TH1F*)Target -> Clone("Target");
+  //  var = f.FitPDFtoData(PDFs, Meas, 0, 20);
+  //  Fit_Var = f.Fractionalizer(var, Meas);  
+
+  //  // Monitoring purpose. Delete after 
+  //  std::cout << Fit_Var.at(0) << std::endl;// <<<<<< Delete me 
+  //  std::cout << Fit_Var.at(1) << std::endl;// <<<<<< Delete me   
+  //  std::cout << Fit_Var.at(2) << std::endl;// <<<<<< Delete me 
+  //  std::cout << Fit_Var.at(3) << std::endl;// <<<<<< Delete me 
+
+  //  // Subtract the estimated cross contamination from the Target copy
+  //  f.Subtraction(PDFs, Meas, trkn, var);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

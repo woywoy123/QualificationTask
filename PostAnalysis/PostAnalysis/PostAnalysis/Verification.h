@@ -12,9 +12,7 @@ using namespace RooFit;
 class Verification
 {
   public: 
-    void Debug(std::vector<TH1F*> Hist, std::vector<float> Params);
     void UnitTesting();
-
-
+    void MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target);
 };
 #endif 

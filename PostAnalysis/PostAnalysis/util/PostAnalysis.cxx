@@ -1,6 +1,7 @@
 // Including commonly reused functions
 #include<PostAnalysis/Functions.h>
 #include<PostAnalysis/Verification.h>
+#include<TF1.h>
 
 // Including standard C++ libraries 
 #include<iostream>
@@ -17,56 +18,74 @@ void PostAnalysis()
     }
   };
 
+  auto LandauGenerator = [](std::vector<TH1F*> Hists, std::vector<float> Params)
+  {
+    TF1 Lan("Lan", "landau", 0, 20);
+    for (int i(0); i < Params.size(); i++)
+    {
+      Lan.SetParameter(i, Params.at(i));
+    }
+  
+    for ( int i(0); i < 500000; i++)
+    {
+      double r1 = Lan.GetRandom();
+      double r2 = Lan.GetRandom();
+      double r3 = Lan.GetRandom();
+      double r4 = Lan.GetRandom();
+      Hists.at(0) -> Fill(r1);  
+      Hists.at(1) -> Fill(r1 + r2); 
+      Hists.at(2) -> Fill(r1 + r2 + r3); 
+      Hists.at(3) -> Fill(r1 + r2 + r3 + r4); 
+    }
+  };
+
   Verification V;
   
-  V.UnitTesting();
+  //V.UnitTesting();
+ 
+  Functions F;
+
+  // ====================== Generate the data =================== //  
+  // Histograms: Pure with no cross contamination
+  std::vector<TString> Hist_Names = {"trk1_P", "trk2_P", "trk3_P", "trk4_P"};
+  std::vector<TH1F*> Hists = F.MakeTH1F(Hist_Names, 500, 0, 20);
+  LandauGenerator(Hists, {1, 0.9, 0.1}); 
+ 
+  // Create some Datasets which have some contamination
+  // === COMPN is the composition of cross contamination
+  std::vector<float> COMP1 = {0.8, 0.1, 0.075, 0.025};  
+  std::vector<float> COMP2 = {0.0, 0.7, 0.0, 0.0};  
+  std::vector<float> COMP3 = {0.01, 0.1, 0.79, 0.1};  
+  std::vector<float> COMP4 = {0., 0.02, 0.2, 0.78}; 
+  std::vector<TString> Data_Names = {"trk1", "trk2", "trk3", "trk4"};
+  std::vector<TH1F*> Data_ntrk = F.MakeTH1F(Data_Names, 500, 0, 20);
   
+  // === Create the data sets
+  // State the names explicitly 
+  TH1F* trk1 = Data_ntrk.at(0);
+  TH1F* trk2 = Data_ntrk.at(1);
+  TH1F* trk3 = Data_ntrk.at(2);
+  TH1F* trk4 = Data_ntrk.at(3);
+ 
+  // Fill the histograms with the composition fractions  
+  FillHist(trk1, Hists, COMP1);
+  FillHist(trk2, Hists, COMP2);
+  FillHist(trk3, Hists, COMP3);
+  FillHist(trk4, Hists, COMP4);
+
+  // Add some styles 
+  trk1 -> SetLineColor(kRed);
+  trk2 -> SetLineColor(kBlue);
+  trk3 -> SetLineColor(kOrange);
+  trk4 -> SetLineColor(kGreen); 
+ 
+  // ======================= End of Data Generation ================ //  
+  
+  V.MainAlgorithm(Hists, trk3); 
   
   
   
   /*
-
-  // Init the function that hosts common tools
-  Functions F;
-  Fit_Functions f;
-  Benchmark B; 
-  Plot_Functions P;
-
-  // ====================== Generate the data =================== // 
-  // === 0. Parameters for the N-Tracks and fill the generated Hists 
-  std::vector<float> Param1 = {1, 1, 0.5};
-  std::vector<float> Param2 = {1, 2, 1};
-  std::vector<float> Param3 = {1, 5, 10};
-  std::vector<float> Param4 = {1, 6, 20};
-  std::vector<std::vector<float>> Params = {Param1, Param2, Param3, Param4}; 
-  std::vector<TString> nTrk = {"1trk", "2trk", "3trk", "4trk"}; 
-  std::vector<TString> trk = {"trk1", "trk2", "trk3", "trk4"};
-   
-  // Generate the toys 
-  std::vector<TH1F*> nTrkHist = F.MakeTH1F(nTrk, 500, 0, 20);
-  std::vector<TH1F*> ntrk = F.MakeTH1F(trk, 500, 0, 20);
-  V.Debug(nTrkHist, Params);
-   
-  // === 1.: Generate the fake n-Track datasets with closure  
-  // 1-Track Data 
-  std::vector<float> COMP1 = {0.8, 0.1, 0.075, 0.025}; 
-  FillHist(ntrk.at(0), nTrkHist, COMP1);
-  TH1F* trk1Data = ntrk.at(0); 
- 
-  // 2-Track Data 
-  std::vector<float> COMP2 = {0.0, 0.7, 0.0, 0.0}; 
-  FillHist(ntrk.at(1), nTrkHist, COMP2);
-  TH1F* trk2Data = ntrk.at(1); 
-   
-  // 3-Track Data 
-  std::vector<float> COMP3 = {0.01, 0.1, 0.79, 0.1}; 
-  FillHist(ntrk.at(2), nTrkHist, COMP3);
-  TH1F* trk3Data = ntrk.at(2); 
-  
-  // 4-Track Data 
-  std::vector<float> COMP4 = {0., 0.02, 0.2, 0.78}; 
-  FillHist(ntrk.at(3), nTrkHist, COMP4);
-  TH1F* trk4Data = ntrk.at(3);  
 
   // === 2. State the Data we will be using: 
   TH1F* Data_Copy = (TH1F*)trk2Data -> Clone("FAKE");
