@@ -92,6 +92,8 @@ class Fit_Functions
     // Fractionalizer
     std::vector<float> Fractionalizer(std::vector<RooRealVar*> vars, TH1F* Data);
 
+    // Removes the weird artifacts before the peak from the hists
+    void ArtifactRemove(TH1F* Hist);
 
   private:
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);

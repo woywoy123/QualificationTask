@@ -287,16 +287,17 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
   float max_H = Hist -> GetBinContent(n_max_H);
   int delta_peak = n_max_D - n_max_H;
 
-  for (int i(n_max_D+1); i < bins; i++)
+  for (int i(n_max_D); i < bins; i++)
   {
-    Deconv -> SetBinContent(i+1, (Hist -> GetBinContent(i+1 - delta_peak))*(max_D/max_H));
+    float e = Hist -> GetBinContent(i+1);
+  Deconv -> SetBinContent(i+1 + delta_peak, e*(max_D/max_H));
   }
 
-  std::vector<float> De;
-  for (int i(0); i < n_D; i++)
+  std::vector<float> De(n_D, 0);
+  for (int i(0); i < bins; i++)
   {
-    if ( i < bins ) { De.push_back(Deconv -> GetBinContent(i+1)); }
-    else { De.push_back(deconv[i]*(max_D/max_H)); }
+    De[i] = Deconv -> GetBinContent(i+1);
+    if (i < delta){ De[i+bins] = (Hist -> GetBinContent(bins - i - 1))*(max_D/max_H); }
   }
   
   delete Deconv;
@@ -304,7 +305,6 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
 
   return De;
 }
-
 
 std::vector<RooRealVar*> Fit_Functions::FitPDFtoData(std::vector<TH1F*> PDFs, TH1F* Data, float min, float max)
 {
@@ -378,6 +378,39 @@ void Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk,
       Target -> Add(nTrk.at(i), -1);
     }
     delete var[i];
+  }
+}
+
+void Fit_Functions::ArtifactRemove(TH1F* Hist)
+{
+  int max = Hist -> GetMaximumBin();
+ 
+  float f = Hist -> GetBinContent(max);
+  int index = 0; 
+  for (int i(0); i < max; i++)
+  {
+    float e = Hist -> GetBinContent(max - i -1);
+    
+    if ( e < f && index >! 2) 
+    { 
+      f = e; 
+      index = 0;
+    }
+    else
+    {
+      index++;
+      if (index > 1) 
+      {
+        index = max - i - 1;
+        break;
+      }
+    }
+  }
+
+  
+  for (int i(0); i < index; i++)
+  {
+    Hist -> SetBinContent(i+1, 0);
   }
 }
 
