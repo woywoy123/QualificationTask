@@ -290,14 +290,19 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
   for (int i(n_max_D); i < bins; i++)
   {
     float e = Hist -> GetBinContent(i+1);
-  Deconv -> SetBinContent(i+1 + delta_peak, e*(max_D/max_H));
+    float d = Deconv -> GetBinContent(i+1);
+    Deconv -> SetBinContent(i+1 + delta_peak, e*(d/e));
   }
 
   std::vector<float> De(n_D, 0);
   for (int i(0); i < bins; i++)
   {
-    De[i] = Deconv -> GetBinContent(i+1);
-    if (i < delta){ De[i+bins] = (Hist -> GetBinContent(bins - i - 1))*(max_D/max_H); }
+    De[i] = Deconv -> GetBinContent(i+1); 
+    if (i < delta)
+    { 
+      float d = Deconv -> GetBinContent(bins - i - 1);
+      De[i+bins] = d; 
+    }
   }
   
   delete Deconv;
@@ -367,15 +372,16 @@ std::vector<float> Fit_Functions::Fractionalizer(std::vector<RooRealVar*> vars, 
 void Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk, std::vector<RooRealVar*> var)
 {
   std::vector<float> frac = Fractionalizer(var, Target);
-  
+  float lumi = Target -> Integral();
+  Target -> Reset();
+   
   // Subtract the scaled tracks from the Data Copy 
   for (int i(0); i < nTrk.size(); i++)
   {
-    if ( i == ntrk -1 ) { continue; }
-    else
+    Normalizer(nTrk.at(i));
+    if ( i == ntrk -1 )
     {
-      nTrk.at(i) -> Scale(frac[i]);
-      Target -> Add(nTrk.at(i), -1);
+      Target -> Add(nTrk.at(i), frac[i]*lumi);
     }
     delete var[i];
   }

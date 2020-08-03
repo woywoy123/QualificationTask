@@ -24,7 +24,11 @@ void PostAnalysis()
       double r2 = Lan.GetRandom();
       double r3 = Lan.GetRandom();
       double r4 = Lan.GetRandom();
-      Hist -> Fill( Comps[0]*r1 + Comps[1]*(r1 + r2) + Comps[2]*(r1 + r2 + r3) + Comps[3]*(r1 + r2 + r3 + r4)); 
+
+      Hist -> Fill(r1, Comps[0]);
+      Hist -> Fill(r1+r2, Comps[1]);
+      Hist -> Fill(r1 + r2 + r3, Comps[2]);
+      Hist -> Fill(r1 + r2 + r3 + r4, Comps[3]);
     }
 
 
@@ -66,7 +70,7 @@ void PostAnalysis()
  
   // Create some Datasets which have some contamination
   // === COMPN is the composition of cross contamination
-  std::vector<float> COMP1 = {0.8,  0.1, 0.05, 0.05};  
+  std::vector<float> COMP1 = {1.0,  0.0, 0.0, 0.0};  
   std::vector<float> COMP2 = {0.05, 0.8,  0.1,  0.05};  
   std::vector<float> COMP3 = {0.01, 0.2,  0.59,  0.2};  
   std::vector<float> COMP4 = {0.02,   0.2, 0.2,   0.58}; 
@@ -100,6 +104,7 @@ void PostAnalysis()
   trk2 -> Draw("SAMEHIST");
   trk3 -> Draw("SAMEHIST");
   trk4 -> Draw("SAMEHIST");
+  trk2 -> Draw("SAMEHIST*");
   can -> Update();
 
  
