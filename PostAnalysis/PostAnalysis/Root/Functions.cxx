@@ -204,7 +204,7 @@ void Fit_Functions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offs
   for ( unsigned int i(0); i < nBins_2 - offset; i++ )
   {
     H1.push_back(Hist1 -> GetBinContent(i+1));
-    H2.push_back(Hist1 -> GetBinContent(i+1));
+    H2.push_back(Hist2 -> GetBinContent(i+1));
   }
  
   // Set bin content of conv histogram 
@@ -291,7 +291,7 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
   {
     float e = Hist -> GetBinContent(i+1);
     float d = Deconv -> GetBinContent(i+1);
-    Deconv -> SetBinContent(i+1 + delta_peak, e*(d/e));
+    Deconv -> SetBinContent(i+1 + delta_peak, e*(max_D/max_H));
   }
 
   std::vector<float> De(n_D, 0);
@@ -373,18 +373,21 @@ void Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk,
 {
   std::vector<float> frac = Fractionalizer(var, Target);
   float lumi = Target -> Integral();
-  Target -> Reset();
    
-  // Subtract the scaled tracks from the Data Copy 
   for (int i(0); i < nTrk.size(); i++)
   {
     Normalizer(nTrk.at(i));
-    if ( i == ntrk -1 )
-    {
-      Target -> Add(nTrk.at(i), frac[i]*lumi);
+    float f = frac[i]*lumi;
+    if ( i != 1 )
+    { 
+      nTrk.at(i) -> Scale(f);
+      Target -> Add(nTrk.at(i), -1); 
     }
     delete var[i];
+    Normalizer(nTrk.at(i));
   }
+  
+  ArtifactRemove(Target); 
 }
 
 void Fit_Functions::ArtifactRemove(TH1F* Hist)
@@ -457,8 +460,8 @@ float Benchmark::PythagoreanDistance(std::vector<float> v1, std::vector<float> v
   float di(0);
   for ( int i(0); i < v1.size(); i++)
   {
-    di += pow(v1.at(i) - v2.at(i), 2) +di;
+    di += pow(v1.at(i) - v2.at(i), 2);
   }
-  return di;
+  return pow(di, 0.5);
 
 }

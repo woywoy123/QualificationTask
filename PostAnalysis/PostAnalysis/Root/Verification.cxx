@@ -116,6 +116,7 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
   
   Fit_Functions f;
   Functions F;
+  Benchmark B;
 
   TH1F* trk1 = Data.at(0);
   TH1F* trk2 = Data.at(1);
@@ -126,23 +127,10 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
   TH1F* trk2_Clo = Closure.at(1);
   TH1F* trk3_Clo = Closure.at(2);
   TH1F* trk4_Clo = Closure.at(3);
+  trk2_Clo -> SetLineColor(kBlack);
 
   // Data we are using as the target 
   TH1F* Meas = (TH1F*)Target -> Clone("Target");
-
- // // ==================== Preparation ============================ //
- // // We perform a preliminary fit  
- // std::vector<RooRealVar*> var = f.FitPDFtoData(Data, Meas, 0, 20);
- // std::vector<float> Fit_Var = f.Fractionalizer(var, Meas);  
-
- // // Monitoring purpose. Delete after 
- // std::cout << Fit_Var.at(0) << std::endl;// <<<<<< Delete me 
- // std::cout << Fit_Var.at(1) << std::endl;// <<<<<< Delete me   
- // std::cout << Fit_Var.at(2) << std::endl;// <<<<<< Delete me 
- // std::cout << Fit_Var.at(3) << std::endl;// <<<<<< Delete me 
-
- // // Subtract the estimated cross contamination from the Target copy
- // f.Subtraction(Data, Meas, trkn, var);
 
   // Now we copy the TH1F into a data vector and take the image of the tail 
   std::vector<float> Data_Vector(bins + bins*offset, 0);
@@ -152,21 +140,11 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
     if (i < bins*offset) { Data_Vector[i+bins] = trk2 -> GetBinContent(bins - i - 1); }
   }
 
-  // ==================== Preparation: End ========================= //
- 
-
-  // ==================== Main Part ======================= //
-  // Assume flat prior for deconv
-  std::vector<float> deconv = std::vector<float>(bins + offset*bins, 0.5);
-
   // Some histograms for debugging and a TCanvas 
   TCanvas* can = new TCanvas("can", "can", 800, 800);
-  can -> Divide(3,2);
+  can -> Divide(2,1);
   can -> cd(1) -> SetLogy();
   can -> cd(2) -> SetLogy();
-  can -> cd(3) -> SetLogy(); 
-  can -> cd(4) -> SetLogy();
-  can -> cd(5) -> SetLogy();
 
   TH1F* trk1_C = new TH1F("trk1_C", "trk1_C", bins, min, max);
   TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins, min, max); 
@@ -190,15 +168,16 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
   std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};
   std::vector<RooRealVar*> var;
   std::vector<float> Fit_Var;
- 
-  for (int i(0); i < 50; i++)
-  {
-    //trk1_C -> Reset();
-    //trk2_C -> Reset();
-    //trk3_C -> Reset();
-    //trk4_C -> Reset();
 
-    // Deconvolution process
+  
+  std::vector<float> prediction(bins, 0);
+  std::vector<float> closure(bins, 0); 
+  for (int i(0); i < 4; i++)
+  {
+    // Assume flat prior for deconv
+    std::vector<float> deconv = std::vector<float>(bins + offset*bins, 0.5);
+
+    // Deconvolution process 
     for (int y(0); y < 100; y++)
     {
       deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75); 
@@ -222,107 +201,58 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
     F.VectorToTH1F(deconv, trk1_C);
     f.ArtifactRemove(trk1_C);
     f.Normalizer(trk1_C);
-    trk1_C -> Scale(trk1_Clo -> Integral());
 
     // 2-track
     f.ConvolveHists(trk1_C, trk1_C, trk2_C, 0);
     f.ArtifactRemove(trk2_C);
     f.Normalizer(trk2_C);
-    trk2_C -> Scale(trk2_Clo -> Integral());
 
     // 3-track 
     f.ConvolveHists(trk2_C, trk1_C, trk3_C, 0);
     f.ArtifactRemove(trk3_C);
     f.Normalizer(trk3_C);
-    trk3_C -> Scale(trk3_Clo -> Integral());
    
     // 4-track
     f.ConvolveHists(trk2_C, trk2_C, trk4_C, 0);
     f.ArtifactRemove(trk4_C); 
     f.Normalizer(trk4_C);      
-    trk4_C -> Scale(trk4_Clo -> Integral());
 
-    can -> cd(1); 
-    trk1_Clo -> Draw("SAMEHIST");
-    trk1_C -> Draw("SAMEHIST");
-    
-    can -> cd(2); 
-    trk2_Clo -> Draw("SAMEHIST");
-    trk2_C -> Draw("SAMEHIST");
-     
-    can -> cd(3);  
-    trk3_C -> Draw("SAMEHIST");
-    trk3_Clo -> Draw("SAMEHIST");
- 
-    can -> cd(4); 
-    trk4_C -> Draw("SAMEHIST");
-    trk4_Clo -> Draw("SAMEHIST");
- 
     // Perform the fit 
-    // We perform a preliminary fit 
-    Meas = (TH1F*)Target -> Clone("Target");
     var = f.FitPDFtoData(PDFs, Meas, 0, 20);
     Fit_Var = f.Fractionalizer(var, Meas);  
 
-    // Monitoring purpose. Delete after 
-    std::cout << "Fraction of 1: " << Fit_Var.at(0) << std::endl;// <<<<<< Delete me 
-    std::cout << "Fraction of 2: " << Fit_Var.at(1) << std::endl;// <<<<<< Delete me   
-    std::cout << "Fraction of 3: " << Fit_Var.at(2) << std::endl;// <<<<<< Delete me 
-    std::cout << "Fraction of 4: " << Fit_Var.at(3) << std::endl;// <<<<<< Delete me 
-
     // Subtract the estimated cross contamination from the Target copy
-    //if ( i > 2 ) 
-    //{
-    //  f.Subtraction(PDFs, Meas, 2, var);
-    //  //Meas -> Reset();
-
-    //  for (int i(0); i < bins; i++)
-    //  {
-    //    Data_Vector[i] = Meas -> GetBinContent(i+1);
-    //    if (i < bins*offset) { Data_Vector[i+bins] = Meas -> GetBinContent(bins - i - 1); }
-    //  }
-    //}
-
+    f.Subtraction(PDFs, Meas, trkn, var);
+  
     float lumi = Target -> Integral();
-    can -> cd(5);
-    //trk1_C -> Scale(lumi*Fit_Var.at(0));
-    //trk2_C -> Scale(lumi*Fit_Var.at(1));
-    //trk3_C -> Scale(lumi*Fit_Var.at(2));
-    //trk4_C -> Scale(lumi*Fit_Var.at(3));
-    //trk1_C -> Draw("SAMEHIST");
-    //trk2_C -> Draw("SAMEHIST");
-    //trk3_C -> Draw("SAMEHIST");
-    //trk4_C -> Draw("SAMEHIST");
+    trk1_C -> Scale(lumi*Fit_Var.at(0));
+    trk2_C -> Scale(lumi*Fit_Var.at(1));
+    trk3_C -> Scale(lumi*Fit_Var.at(2));
+    trk4_C -> Scale(lumi*Fit_Var.at(3));
+   
+    can -> cd(2);
     Meas -> Draw("SAMEHIST");
+    trk2_Clo -> Draw("SAMEHIST");
+    trk1_C -> Draw("SAMEHIST");
+    trk2_C -> Draw("SAMEHIST");
+    trk3_C -> Draw("SAMEHIST");
+    trk4_C -> Draw("SAMEHIST");
     can -> Update();
 
+    for (int x(0); x < bins; x++)
+    {
+      Data_Vector[x] = Meas -> GetBinContent(x+1);
+      if (x < bins*offset) { Data_Vector[x+bins] = Meas -> GetBinContent(bins - x - 1); }
+    }
 
+    for (int x(0); x < bins; x++)
+    {
+      prediction[x] = trk2_C -> GetBinContent(x+1);
+      closure[x] = trk2_Clo -> GetBinContent(x+1);
+    }
+    std::cout << "Error normalized in the shape of the prediction: " << B.WeightedEuclidean(prediction, closure) << std::endl;
+    std::cout << "Error total in the shape of the prediction: " << B.PythagoreanDistance(prediction, closure) << std::endl;
+    
+    
   } 
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
