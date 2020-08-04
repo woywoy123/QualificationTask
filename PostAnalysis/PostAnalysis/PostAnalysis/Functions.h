@@ -79,6 +79,7 @@ class Fit_Functions
    
     // Replace the tail of a histogram with another after fitting  
     std::vector<float> TailReplace(TH1F* hist, std::vector<float> deconv);
+    std::vector<float> TailReplace(TH1F* hist, std::vector<float> deconv, TCanvas* can);
 
     // Normalize the histograms
     void Normalizer(TH1F* Hist);

@@ -262,6 +262,70 @@ std::vector<float> Fit_Functions::ConvolveHists(std::vector<float> Hist1, std::v
   return conv;
 }
 
+// version using RooFit
+std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> deconv, TCanvas* can)
+{
+  // Bin length 
+  int d_bins = deconv.size();
+  int h_bins = hist -> GetNbinsX();
+  int delta_bins = d_bins - h_bins;
+  int start = delta_bins;
+
+  // Create the histograms 
+  TH1F* Deconv = new TH1F("Deconv", "Deconv", d_bins, 0, d_bins);
+  TH1F* Hist = (TH1F*)Deconv -> Clone("Hist");
+
+  // Fill the histograms with the data entries 
+  for (int i(0); i < d_bins; i++)
+  {
+    Deconv -> SetBinContent(i+1, deconv[i]);
+    if ( i < delta_bins ){ Hist -> SetBinContent(h_bins + i + 1, hist -> GetBinContent(h_bins - i - 1) + 1); }   
+    if ( i < h_bins ){ Hist -> SetBinContent(i+1, hist -> GetBinContent(i+1)); }
+  }
+  
+  int peak = Deconv -> GetMaximumBin() + 5;
+  // ======= Perform a fit of the tail 
+
+  RooRealVar x("x", "x", 1, d_bins -1);
+  x.setRange("Tail", peak, h_bins);
+
+  RooRealVar s("s", "s", 0., -50, 50);
+
+  RooFormulaVar del("del", "del", "x-s", RooArgSet(x, s));
+
+  RooDataHist De("De", "De", x, Deconv); // <---- PDF
+  RooDataHist Hi("hi", "hi", x, Hist); // <---- we fit this to Deconv
+    
+  RooHistPdf model("model", "model", del, x, De, 1);
+  RooFitResult* Result = model.fitTo(De, RooFit::Range("Tail"), RooFit::PrintLevel(0));
+  
+  // ===== Replace the Deconv with the hist ==== //
+  float sum_d = Deconv -> Integral();
+  float sum_h = Hist -> Integral();  
+  int shift = std::round(s.getVal());
+  
+  for (int i(peak); i < d_bins; i++)
+  {
+    float h = Hist -> GetBinContent(i+1);
+    float d = Deconv -> GetBinContent(i+1);
+    Deconv -> SetBinContent(i+1 + shift, h*(sum_d/sum_h));
+  }
+
+  std::vector<float> Dec(d_bins, 0);
+  for (int i(0); i < d_bins; i++)
+  {
+    Dec[i] = Deconv -> GetBinContent(i+1); 
+  }
+
+  delete Deconv;
+  delete Hist;
+  delete Result;
+  return Dec;
+}
+
+
+
+// This is the closure test of the tail replace 
 std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> deconv)
 {
   // Get basic information 

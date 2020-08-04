@@ -160,16 +160,11 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
   trk2_C -> SetLineColor(kBlue);
   trk3_C -> SetLineColor(kOrange);
   trk4_C -> SetLineColor(kGreen); 
-  trk1 -> SetLineColor(kBlack);
-  trk2 -> SetLineColor(kBlack);
-  trk3 -> SetLineColor(kBlack);
-  trk4 -> SetLineColor(kBlack);
  
   std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};
   std::vector<RooRealVar*> var;
   std::vector<float> Fit_Var;
-
-  
+ 
   std::vector<float> prediction(bins, 0);
   std::vector<float> closure(bins, 0); 
   for (int i(0); i < 4; i++)
@@ -181,21 +176,22 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
     for (int y(0); y < 100; y++)
     {
       deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75); 
-
+       
       // Tail Replace with a 1trk dataset       
-      deconv = f.TailReplace(trk1, deconv);
+      deconv = f.TailReplace(trk1, deconv, can); 
 
       can -> cd(1); 
       F.VectorToTH1F(deconv, trk1_C);  
-      f.Normalizer(trk1_C);
-    
-      f.ArtifactRemove(trk1_C);      
+      f.Normalizer(trk1_C); 
+      f.ArtifactRemove(trk1_C);  
+          
       trk1_C -> Scale(trk1_Clo -> Integral());
       trk1_Clo -> Draw("SAMEHIST");
       trk1_C -> Draw("SAMEHIST");
       can -> Update();
-    }
-     
+    }  
+    can -> Update();
+   
     // === Start building the n-track histograms via convolution 
     // 1-track
     F.VectorToTH1F(deconv, trk1_C);
@@ -232,7 +228,7 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
    
     can -> cd(2);
     Meas -> Draw("SAMEHIST");
-    trk2_Clo -> Draw("SAMEHIST");
+    trk2_Clo -> Draw("SAMEHIST*");
     trk1_C -> Draw("SAMEHIST");
     trk2_C -> Draw("SAMEHIST");
     trk3_C -> Draw("SAMEHIST");
