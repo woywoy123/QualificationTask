@@ -167,18 +167,19 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
  
   std::vector<float> prediction(bins, 0);
   std::vector<float> closure(bins, 0); 
+
+  // Assume flat prior for deconv
+  std::vector<float> deconv(bins + offset*bins, 0.5);
+
   for (int i(0); i < 4; i++)
   {
-    // Assume flat prior for deconv
-    std::vector<float> deconv = std::vector<float>(bins + offset*bins, 0.5);
-
     // Deconvolution process 
     for (int y(0); y < 100; y++)
     {
       deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75); 
        
       // Tail Replace with a 1trk dataset       
-      deconv = f.TailReplace(trk1, deconv, can); 
+      deconv = f.TailReplace(trk1, deconv); 
 
       can -> cd(1); 
       F.VectorToTH1F(deconv, trk1_C);  
@@ -215,7 +216,12 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
 
     // Perform the fit 
     var = f.FitPDFtoData(PDFs, Meas, 0, 20);
-    Fit_Var = f.Fractionalizer(var, Meas);  
+    Fit_Var = f.Fractionalizer(var, Meas); 
+    
+    std::cout << "Fraction of 1trk: " << Fit_Var[0] << std::endl;    
+    std::cout << "Fraction of 2trk: " << Fit_Var[1] << std::endl;
+    std::cout << "Fraction of 3trk: " << Fit_Var[2] << std::endl;
+    std::cout << "Fraction of 4trk: " << Fit_Var[3] << std::endl;
 
     // Subtract the estimated cross contamination from the Target copy
     f.Subtraction(PDFs, Meas, trkn, var);
@@ -227,8 +233,8 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
     trk4_C -> Scale(lumi*Fit_Var.at(3));
    
     can -> cd(2);
-    Meas -> Draw("SAMEHIST");
-    trk2_Clo -> Draw("SAMEHIST*");
+    //Meas -> Draw("SAMEHIST");
+    trk2_Clo -> Draw("SAMEHIST");
     trk1_C -> Draw("SAMEHIST");
     trk2_C -> Draw("SAMEHIST");
     trk3_C -> Draw("SAMEHIST");
@@ -247,8 +253,142 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
       closure[x] = trk2_Clo -> GetBinContent(x+1);
     }
     std::cout << "Error normalized in the shape of the prediction: " << B.WeightedEuclidean(prediction, closure) << std::endl;
-    std::cout << "Error total in the shape of the prediction: " << B.PythagoreanDistance(prediction, closure) << std::endl;
-    
-    
+    std::cout << "Error total in the shape of the prediction: " << B.PythagoreanDistance(prediction, closure) << std::endl; 
   } 
 }
+
+void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, std::vector<TH1F*> Closure)
+{
+  
+  // Parameters needed to define 
+  float offset = 0.1;
+  float min = 0;
+  float max = 20;
+
+  Fit_Functions f;
+  Functions F; 
+
+  // Define the datasets explicitly
+  TH1F* trk1 = Data[0];
+  TH1F* trk2 = Data[1];
+  TH1F* trk3 = Data[2];
+  TH1F* trk4 = Data[3];
+  float bins = trk2 -> GetNbinsX();
+
+  // Create the trk convolved hists
+  TH1F* trk1_C = new TH1F("trk1_C", "trk1_C", bins + offset*bins, min, max); 
+  TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins + offset*bins, min, max); 
+  TH1F* trk3_C = new TH1F("trk3_C", "trk3_C", bins + offset*bins, min, max); 
+  TH1F* trk4_C = new TH1F("trk4_C", "trk4_C", bins + offset*bins, min, max);  
+
+  TH1F* GausStatic = new TH1F("Gaus_S", "Gaus_S", bins + offset*bins, min, max);
+  GausStatic -> SetLineStyle(kDashed);
+
+  std::vector<float> Data_Vector = f.TH1FDataVector(trk2, 0.1);
+
+  // Assume flat prior 
+  std::vector<float> deconv(bins + offset*bins, 0.5);
+  
+  for (int i(0); i < 100; i++)
+  {
+    deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75);
+    deconv = f.TailReplace(trk1, deconv);
+  }
+
+  // 1-Track Histogram  
+  F.VectorToTH1F(deconv, trk1_C); 
+  f.Normalizer(trk1_C);
+  trk1_C -> SetLineColor(kRed);
+  
+  // 2-Track Histogram
+  f.ConvolveHists(trk1_C, trk1_C, trk2_C, 0);
+  f.Normalizer(trk2_C);
+
+  // 3-Track Histogram
+  f.ConvolveHists(trk1_C, trk2_C, trk3_C, 0);
+  f.Normalizer(trk3_C);
+  
+  // 4-Track Histogram
+  f.ConvolveHists(trk2_C, trk2_C, trk4_C, 0);
+  f.Normalizer(trk4_C);
+ 
+  // Generate a static Gaussian  
+  f.GaussianGenerator(1, 0.5, 500000, GausStatic);
+  f.Normalizer(GausStatic);
+  std::vector<float> Gaus = F.TH1FToVector(GausStatic);
+ 
+  TCanvas* T = new TCanvas();
+  T -> SetLogy(); 
+  trk1_C -> Draw("SAMEHIST");
+  GausStatic -> Draw("SAMEHIST"); 
+  T -> Update();
+  
+  // Closure testing here.
+  // We have a gaussian, we want to first convolve this with a 1trk
+  TH1F* GausXTrk1 = new TH1F("GausXTrk1", "GausXTrk1", bins + offset*bins, min, max);
+  GausXTrk1 -> SetLineColor(kOrange); 
+  f.ConvolveHists(trk1_C, GausStatic, GausXTrk1);
+  f.Normalizer(GausXTrk1);
+  GausXTrk1 -> Draw("SAMEHIST");
+  T -> Update();
+
+  // We now get the convolved hist as a data vector and then use LR to deconvolve the 1TRK
+  Data_Vector = F.TH1FToVector(GausXTrk1, bins);
+  TH1F* Temp = new TH1F("Temp", "Temp", bins, min, max); 
+  F.VectorToTH1F(Data_Vector, Temp); 
+  Data_Vector = f.TH1FDataVector(Temp, 0.1);
+
+  deconv = std::vector<float>(bins + offset*bins, 0.5);
+  for (int i(0); i < 100; i++)
+  {
+    deconv = f.LRDeconvolution(Data_Vector, Gaus, deconv, 0.75); 
+    F.VectorToTH1F(deconv, GausXTrk1);
+    f.Normalizer(GausXTrk1);
+    f.ArtifactRemove(GausXTrk1, "b");
+    deconv = F.TH1FToVector(GausXTrk1); 
+    GausXTrk1 -> Draw("SAMEHIST");
+    T -> Update();
+  }
+  
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

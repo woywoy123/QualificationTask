@@ -14,5 +14,6 @@ class Verification
   public: 
     void UnitTesting();
     void MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vector<TH1F*> Closure);
+    void MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, std::vector<TH1F*> Closure);
 };
 #endif 

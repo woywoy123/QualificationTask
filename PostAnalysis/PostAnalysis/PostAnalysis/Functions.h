@@ -6,6 +6,7 @@
 #include<TApplication.h>
 #include<TSystem.h>
 #include<TCanvas.h>
+#include<TRandom.h>
 
 // Include the standard C++ library 
 #include<iostream>
@@ -53,6 +54,7 @@ class Functions
 
     TH1F* VectorToTH1F(std::vector<float> Vec, TString name, int bins, int min, int max);
     void VectorToTH1F(std::vector<float> Vec, TH1F* hist);
+    std::vector<float> TH1FToVector(TH1F* histi, int CustomLength = -1);
 };
 
 class Fit_Functions
@@ -75,11 +77,11 @@ class Fit_Functions
     std::vector<float> LRDeconvolution(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y);
     
     // Fast Fourier Transformation of two TH1F histograms  
-    void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offset); 
+    void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offset = 0); 
    
     // Replace the tail of a histogram with another after fitting  
+    std::vector<float> TailReplaceClosure(TH1F* hist, std::vector<float> deconv);
     std::vector<float> TailReplace(TH1F* hist, std::vector<float> deconv);
-    std::vector<float> TailReplace(TH1F* hist, std::vector<float> deconv, TCanvas* can);
 
     // Normalize the histograms
     void Normalizer(TH1F* Hist);
@@ -94,11 +96,18 @@ class Fit_Functions
     std::vector<float> Fractionalizer(std::vector<RooRealVar*> vars, TH1F* Data);
 
     // Removes the weird artifacts before the peak from the hists
-    void ArtifactRemove(TH1F* Hist);
+    void ArtifactRemove(TH1F* Hist, TString mode = "f");
+
+    // Creates the datavector with the mirror tail 
+    std::vector<float> TH1FDataVector(TH1F* Data, float Offset);
+
+    // Produce a gaussian distribution
+    void GaussianGenerator(float mean, float std, int N, TH1F* Hist);
 
   private:
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
-   
+    int ArtifactRemoveForward(TH1F* Hist);
+    int ArtifactRemoveBackward(TH1F* Hist);  
 };
 
 class Benchmark

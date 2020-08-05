@@ -72,6 +72,21 @@ void Functions::VectorToTH1F(std::vector<float> Vec, TH1F* hist)
   } 
 }
 
+std::vector<float> Functions::TH1FToVector(TH1F* hist, int CustomLength)
+{
+  std::vector<float> Out;
+  int bins;
+  if (CustomLength > 0) { bins = CustomLength; }
+  else { bins = hist -> GetNbinsX(); } 
+
+  for (int i(0); i < hist -> GetNbinsX(); i++)
+  {
+    Out.push_back(hist -> GetBinContent(i+1)); 
+  }
+
+  return Out;
+}
+
 // ================== Fitting Base Classes ==============================//
 RooHistPdf* Fit_Functions::ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name, RooRealVar* domain)
 {
@@ -263,7 +278,7 @@ std::vector<float> Fit_Functions::ConvolveHists(std::vector<float> Hist1, std::v
 }
 
 // version using RooFit
-std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> deconv, TCanvas* can)
+std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> deconv)
 {
   // Bin length 
   int d_bins = deconv.size();
@@ -326,7 +341,7 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
 
 
 // This is the closure test of the tail replace 
-std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> deconv)
+std::vector<float> Fit_Functions::TailReplaceClosure(TH1F* hist, std::vector<float> deconv)
 {
   // Get basic information 
   float bins = hist -> GetNbinsX(); // Number of bins in hist
@@ -454,10 +469,44 @@ void Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk,
   ArtifactRemove(Target); 
 }
 
-void Fit_Functions::ArtifactRemove(TH1F* Hist)
+void Fit_Functions::ArtifactRemove(TH1F* Hist, TString mode)
 {
-  int max = Hist -> GetMaximumBin();
- 
+  int index(0);
+  if (mode == "b")
+  { 
+    index = ArtifactRemoveBackward(Hist); 
+    for (int i(0); i < index; i++){ Hist -> SetBinContent(i+1, 0); }
+  }
+  else if (mode == "f")
+  { 
+    int max = Hist -> GetMaximumBin(); 
+    index = ArtifactRemoveForward(Hist);  
+    for (int i(Hist -> GetNbinsX()); i > Hist -> GetNbinsX() - index; i--){ Hist -> SetBinContent(i -1, 0); }      
+  }
+}
+
+int Fit_Functions::ArtifactRemoveForward(TH1F* Hist)
+{
+  int max = Hist -> GetMaximumBin(); 
+  float f = Hist -> GetBinContent(max);
+  int index = 0; 
+  for (int i(Hist -> GetNbinsX()); i > max; i--)
+  {
+    float e = Hist -> GetBinContent(i + 1);
+    
+    if (e <= f) 
+    { 
+      f = e; 
+      index++;
+    }
+    else {break;}
+  }
+  return index;
+}
+
+int Fit_Functions::ArtifactRemoveBackward(TH1F* Hist)
+{
+  int max = Hist -> GetMaximumBin(); 
   float f = Hist -> GetBinContent(max);
   int index = 0; 
   for (int i(0); i < max; i++)
@@ -472,19 +521,36 @@ void Fit_Functions::ArtifactRemove(TH1F* Hist)
     else
     {
       index++;
-      if (index > 1) 
-      {
-        index = max - i - 1;
-        break;
-      }
+      if (index > 1) {break;}
     }
   }
+  return index;
+}
 
-  
-  for (int i(0); i < index; i++)
+
+std::vector<float> Fit_Functions::TH1FDataVector(TH1F* Data, float Offset)
+{
+  int bins = Data -> GetNbinsX();
+  std::vector<float> Data_Vector(bins + bins*Offset, 0);
+  for (int i(0); i < bins; i++)
   {
-    Hist -> SetBinContent(i+1, 0);
+    Data_Vector[i] = Data -> GetBinContent(i+1);
+    if (i < bins*Offset) { Data_Vector[i+bins] = Data -> GetBinContent(bins - i - 1); }
   }
+
+  return Data_Vector;
+}
+
+void Fit_Functions::GaussianGenerator(float mean, float stdev, int N, TH1F* Hist)
+{
+  gRandom = new TRandom();
+
+  for (int i(0); i < N; i++)
+  {
+    Hist -> Fill(gRandom -> Gaus(mean, stdev));
+  }
+  
+  delete gRandom; 
 }
 
 // ============= Benchmarking Class ========== //
