@@ -9,7 +9,7 @@ atlas_subdir(PostAnalysis)
 cmake_minimum_required( VERSION 3.2 FATAL_ERROR )
 
 # Include ROOT for the analysis 
-find_package( ROOT COMPONENTS REQUIRED Graf Gpad RooFitCore Hist RIO MathCore)
+find_package( ROOT COMPONENTS REQUIRED Graf Gpad RooFitCore Hist RIO MathCore RooFit)
 
 atlas_add_root_dictionary(PackageLib PostAnalysisDictSource
   ROOT_HEADERS PostAnalysis/*.h Root/LinkDef.h

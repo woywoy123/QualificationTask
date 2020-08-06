@@ -264,93 +264,190 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
   float offset = 0.1;
   float min = 0;
   float max = 20;
+  float mean = 0; 
+  float stdev = 0.2;
+  float GaussianOffSet = -2;
 
   Fit_Functions f;
   Functions F; 
 
   // Define the datasets explicitly
-  TH1F* trk1 = Data[0];
-  TH1F* trk2 = Data[1];
-  TH1F* trk3 = Data[2];
-  TH1F* trk4 = Data[3];
-  float bins = trk2 -> GetNbinsX();
+  TH1F* trk1 = (TH1F*)Data[0] -> Clone("trk1_Copy");
+  TH1F* trk2 = (TH1F*)Data[1] -> Clone("trk2_Copy");
+  TH1F* trk3 = (TH1F*)Data[2] -> Clone("trk3_Copy");
+  TH1F* trk4 = (TH1F*)Data[3] -> Clone("trk4_Copy");
+  std::vector<TH1F*> Data_Copy = {trk1, trk2, trk3, trk4};
+
+  // Conversion factors
+  float bins = trk2 -> GetNbinsX(); 
+  float ss = (max-min) / bins;
+  int GausOff = std::round(std::abs(GaussianOffSet) / ss);
 
   // Create the trk convolved hists
-  TH1F* trk1_C = new TH1F("trk1_C", "trk1_C", bins + offset*bins, min, max); 
-  TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins + offset*bins, min, max); 
-  TH1F* trk3_C = new TH1F("trk3_C", "trk3_C", bins + offset*bins, min, max); 
-  TH1F* trk4_C = new TH1F("trk4_C", "trk4_C", bins + offset*bins, min, max);  
+  TH1F* trk1_C = new TH1F("trk1_C", "trk1_C", bins + offset*bins + GausOff, GaussianOffSet, max); 
+  TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins + offset*bins + GausOff, GaussianOffSet, max); 
+  TH1F* trk3_C = new TH1F("trk3_C", "trk3_C", bins + offset*bins + GausOff, GaussianOffSet, max); 
+  TH1F* trk4_C = new TH1F("trk4_C", "trk4_C", bins + offset*bins + GausOff, GaussianOffSet, max);  
 
-  TH1F* GausStatic = new TH1F("Gaus_S", "Gaus_S", bins + offset*bins, min, max);
+  // Static Gaussian Histogram used as a PSF
+  TH1F* GausStatic = new TH1F("Gaus_S", "Gaus_S", bins + offset*bins + GausOff, GaussianOffSet, max);
+
+  // ========= Debug Stuff ================== //
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+  trk1_C -> SetLineColor(kRed);
+  trk2_C -> SetLineColor(kOrange);
+  trk3_C -> SetLineColor(kGreen);
+  trk4_C -> SetLineColor(kBlue);
+  trk1_C -> SetLineStyle(kDashed);
+  trk2_C -> SetLineStyle(kDashed);
+  trk3_C -> SetLineStyle(kDashed);
+  trk4_C -> SetLineStyle(kDashed);
   GausStatic -> SetLineStyle(kDashed);
+  GausStatic -> SetLineColor(kBlack);
+  TH1F* GausXTrk1 = new TH1F("Gaus_S", "Gaus_S", bins + offset*bins + GausOff, GaussianOffSet, max);
+  f.Normalizer(Target);
+
 
   std::vector<float> Data_Vector = f.TH1FDataVector(trk2, 0.1);
 
   // Assume flat prior 
   std::vector<float> deconv(bins + offset*bins, 0.5);
   
-  for (int i(0); i < 100; i++)
+  for (int i(0); i < 50; i++)
   {
     deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75);
     deconv = f.TailReplace(trk1, deconv);
   }
 
   // 1-Track Histogram  
-  F.VectorToTH1F(deconv, trk1_C); 
+  F.VectorToTH1F(deconv, trk1_C, GausOff); 
+  f.ArtifactRemove(trk1_C, "b");
   f.Normalizer(trk1_C);
   trk1_C -> SetLineColor(kRed);
   
   // 2-Track Histogram
-  f.ConvolveHists(trk1_C, trk1_C, trk2_C, 0);
+  f.ConvolveHists(trk1_C, trk1_C, trk2_C, GausOff);
+  f.ArtifactRemove(trk2_C);
   f.Normalizer(trk2_C);
 
   // 3-Track Histogram
-  f.ConvolveHists(trk1_C, trk2_C, trk3_C, 0);
+  f.ConvolveHists(trk1_C, trk2_C, trk3_C, GausOff);
+  f.ArtifactRemove(trk3_C);
   f.Normalizer(trk3_C);
   
   // 4-Track Histogram
-  f.ConvolveHists(trk2_C, trk2_C, trk4_C, 0);
+  f.ConvolveHists(trk2_C, trk2_C, trk4_C, GausOff);
+  f.ArtifactRemove(trk4_C);
   f.Normalizer(trk4_C);
  
   // Generate a static Gaussian  
-  f.GaussianGenerator(1, 0.5, 500000, GausStatic);
+  f.GaussianGenerator(0, 0.2, 500000, GausStatic);
   f.Normalizer(GausStatic);
   std::vector<float> Gaus = F.TH1FToVector(GausStatic);
- 
-  TCanvas* T = new TCanvas();
-  T -> SetLogy(); 
+  
+  Target -> Draw("SAMEHIST*");
   trk1_C -> Draw("SAMEHIST");
-  GausStatic -> Draw("SAMEHIST"); 
-  T -> Update();
-  
-  // Closure testing here.
-  // We have a gaussian, we want to first convolve this with a 1trk
-  TH1F* GausXTrk1 = new TH1F("GausXTrk1", "GausXTrk1", bins + offset*bins, min, max);
-  GausXTrk1 -> SetLineColor(kOrange); 
-  f.ConvolveHists(trk1_C, GausStatic, GausXTrk1);
-  f.Normalizer(GausXTrk1);
-  GausXTrk1 -> Draw("SAMEHIST");
-  T -> Update();
+  trk2_C -> Draw("SAMEHIST"); 
+  trk3_C -> Draw("SAMEHIST");
+  trk4_C -> Draw("SAMEHIST");
 
-  // We now get the convolved hist as a data vector and then use LR to deconvolve the 1TRK
-  Data_Vector = F.TH1FToVector(GausXTrk1, bins);
-  TH1F* Temp = new TH1F("Temp", "Temp", bins, min, max); 
-  F.VectorToTH1F(Data_Vector, Temp); 
-  Data_Vector = f.TH1FDataVector(Temp, 0.1);
+  // === Use the Gaussian as the PSF function and do the deconvolution 
+  // Define the Data Vectors
+  std::vector<float> DV1 = f.TH1FDataVector(trk1_C, 0);
+  std::vector<float> DV2 = f.TH1FDataVector(trk2_C, 0);
+  std::vector<float> DV3 = f.TH1FDataVector(trk3_C, 0);
+  std::vector<float> DV4 = f.TH1FDataVector(trk4_C, 0);
 
-  deconv = std::vector<float>(bins + offset*bins, 0.5);
-  for (int i(0); i < 100; i++)
+  // Define the priors for the deconv
+  int len = trk1_C -> GetNbinsX();
+  std::vector<float> deconv1(len, 0.5);
+  std::vector<float> deconv2(len, 0.5);
+  std::vector<float> deconv3(len, 0.5);
+  std::vector<float> deconv4(len, 0.5);
+
+  for (int i(0); i < 50; i++)
   {
-    deconv = f.LRDeconvolution(Data_Vector, Gaus, deconv, 0.75); 
-    F.VectorToTH1F(deconv, GausXTrk1);
-    f.Normalizer(GausXTrk1);
-    f.ArtifactRemove(GausXTrk1, "b");
-    deconv = F.TH1FToVector(GausXTrk1); 
-    GausXTrk1 -> Draw("SAMEHIST");
-    T -> Update();
-  }
-  
+    deconv1 = f.LRDeconvolution(DV1, Gaus, deconv1, 0.75);
+    deconv2 = f.LRDeconvolution(DV2, Gaus, deconv2, 0.75);
+    deconv3 = f.LRDeconvolution(DV3, Gaus, deconv3, 0.75);
+    deconv4 = f.LRDeconvolution(DV4, Gaus, deconv4, 0.75);
+    
+    F.VectorToTH1F(deconv1, trk1_C, GausOff);
+    F.VectorToTH1F(deconv2, trk2_C, GausOff);
+    F.VectorToTH1F(deconv3, trk3_C, GausOff);
+    F.VectorToTH1F(deconv4, trk4_C, GausOff);
+   
+    f.Normalizer(trk1_C);   
+    f.Normalizer(trk2_C);
+    f.Normalizer(trk3_C);
+    f.Normalizer(trk4_C);
 
+
+  }
+
+  trk1_C -> Draw("SAMEHIST");
+  trk2_C -> Draw("SAMEHIST"); 
+  trk3_C -> Draw("SAMEHIST");
+  trk4_C -> Draw("SAMEHIST");
+  can -> Update();
+ 
+  std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};
+  std::vector<RooRealVar*> vars = f.GaussianConvolutionFit(trk2, PDFs,  0.1, 19.5);
+  std::vector<float> O = f.Fractionalizer(vars, trk2);
+
+  std::cout << "Fraction of trk 1: " << O[0] << std::endl;
+  std::cout << "Fraction of trk 2: " << O[1] << std::endl; 
+  std::cout << "Fraction of trk 3: " << O[2] << std::endl;
+  std::cout << "Fraction of trk 4: " << O[3] << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//  // Now convolve the Gaussian with the 1 trk for closure 
+//  f.ConvolveHists(trk1_C, GausStatic, GausXTrk1);
+//  f.Normalizer(GausXTrk1);
+//  f.ArtifactRemove(GausXTrk1);
+//   
+//  GausXTrk1 -> Draw("SAMEHIST");  
+//
+//  // Flat Prior 
+//  deconv = std::vector<float>(bins + offset*bins + GausOff, 0.5);
+//  Data_Vector = f.TH1FDataVector(GausXTrk1, 0);
+//  
+//  for (int i(0); i < 50; i++)
+//  {
+//    deconv = f.LRDeconvolution(Data_Vector, Gaus, deconv, 0.75); 
+//    F.VectorToTH1F(deconv, GausXTrk1);
+//    GausXTrk1 -> Draw("SAMEHIST");
+//    can -> Update(); 
+//    
+//  }
 
 
 

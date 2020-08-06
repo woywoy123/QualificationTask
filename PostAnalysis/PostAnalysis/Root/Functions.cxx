@@ -64,11 +64,11 @@ TH1F* Functions::VectorToTH1F(std::vector<float> Vec, TString name, int bins, in
   return hist;
 }
 
-void Functions::VectorToTH1F(std::vector<float> Vec, TH1F* hist)
+void Functions::VectorToTH1F(std::vector<float> Vec, TH1F* hist, int StartBin)
 { 
-  for (int i(0); i < hist -> GetNbinsX(); i++)
+  for (int i(0); i < Vec.size(); i++)
   {
-    hist -> SetBinContent(i+1, Vec.at(i));  
+    hist -> SetBinContent(i+1 + StartBin, Vec.at(i));  
   } 
 }
 
@@ -111,9 +111,22 @@ RooDataHist* Fit_Functions::ConvertTH1toDataHist(TH1* Hist, RooRealVar* domain)
 
 RooRealVar* Fit_Functions::GenerateVariable(TString name, double begin, double end)
 {
-  RooRealVar* var = new RooRealVar(name, name, begin, 0., end);
+  RooRealVar* var = new RooRealVar(name, name, begin, end);
   return var;
 }
+
+RooGaussian* Fit_Functions::GenerateGaussian(TString name, RooRealVar* mean, RooRealVar* stdev, RooRealVar* domain)
+{
+  RooGaussian* g = new RooGaussian(name, name, *domain, *mean, *stdev);
+  return g;
+}
+
+RooFFTConvPdf* Fit_Functions::GenerateConvolve(TString name, RooHistPdf* PDF, RooGaussian* Gaus, RooRealVar* domain)
+{
+  RooFFTConvPdf* Conv = new RooFFTConvPdf(name, name, *domain, *PDF, *Gaus);
+  return Conv;
+}
+
 
 RooArgList Fit_Functions::VectorToArgList(std::vector<RooRealVar*> Vector)
 {
@@ -134,6 +147,7 @@ RooArgList Fit_Functions::VectorToArgList(std::vector<RooHistPdf*> Vector)
   }
   return List;
 }
+
 
 // ================= Fitting Derived Classes ===========================//
 std::vector<RooDataHist*> Fit_Functions::ConvertTH1toDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain)
@@ -161,13 +175,32 @@ std::vector<RooHistPdf*> Fit_Functions::ConvertTH1FtoPDF(std::vector<TH1F*> Hist
 
 std::vector<RooRealVar*> Fit_Functions::GenerateVariables(std::vector<TString> Names, std::vector<double> Begin, std::vector<double> End)
 {
-  std::vector<RooRealVar*> Variables;
+  std::vector<RooRealVar*> Variables(Names.size());
   for ( unsigned int x = 0; x < Names.size(); x++)
   {
-    RooRealVar* Var = GenerateVariable(Names.at(x), Begin.at(x), End.at(x));
-    Variables.push_back(Var);
+         Variables[x] = GenerateVariable(Names.at(x), Begin.at(x), End.at(x));
   }
   return Variables;
+}
+
+std::vector<RooGaussian*> Fit_Functions::GaussianVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain)
+{
+  std::vector<RooGaussian*> Gaussian(Names.size());
+  for ( unsigned int i(0); i < Names.size(); i++)
+  {
+    Gaussian[i] = GenerateGaussian(Names[i], Mean[i], Stdev[i], Domain); 
+  }
+  return Gaussian;
+}
+
+std::vector<RooFFTConvPdf*> Fit_Functions::ConvolveVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* domain)
+{
+  std::vector<RooFFTConvPdf*> Conv(Names.size());
+  for (unsigned int i(0); i < Names.size(); i++)
+  {
+    Conv[i] = GenerateConvolve(Names[i], PDFs[i], Gaus[i], domain); 
+  }
+  return Conv;
 }
 
 std::vector<float> Fit_Functions::LRDeconvolution(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y)
@@ -206,7 +239,7 @@ std::vector<float> Fit_Functions::LRDeconvolution(std::vector<float> G, std::vec
   return PSF; 
 }
 
-void Fit_Functions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offset)
+void Fit_Functions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int StartBin)
 {
   int nBins_2 = Hist2 -> GetNbinsX();
   int nBins_1 = Hist1 -> GetNbinsX();
@@ -216,17 +249,17 @@ void Fit_Functions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offs
 
   // Convert TH1 to vector 
   std::vector<float> H1, H2;
-  for ( unsigned int i(0); i < nBins_2 - offset; i++ )
+  for ( unsigned int i(StartBin); i < nBins_2; i++ )
   {
     H1.push_back(Hist1 -> GetBinContent(i+1));
     H2.push_back(Hist2 -> GetBinContent(i+1));
   }
- 
+
   // Set bin content of conv histogram 
   std::vector<float> Conv = ConvolveHists(H1, H2);
-  for ( unsigned int i(0); i < nBins_2 - offset; i++ )
+  for ( unsigned int i(0); i < nBins_2 - StartBin; i++ )
   {
-    conv -> SetBinContent(i+1, Conv.at(i));
+    conv -> SetBinContent(i+1 + StartBin, Conv.at(i));
   }
 }
 
@@ -511,22 +544,16 @@ int Fit_Functions::ArtifactRemoveBackward(TH1F* Hist)
   int index = 0; 
   for (int i(0); i < max; i++)
   {
-    float e = Hist -> GetBinContent(max - i -1);
+    float e = Hist -> GetBinContent(max - i - 1);
     
-    if ( e < f && index >! 2) 
+    if ( e < f ) 
     { 
       f = e; 
-      index = 0;
     }
-    else
-    {
-      index++;
-      if (index > 1) {break;}
-    }
+    else { index++; }
   }
   return index;
 }
-
 
 std::vector<float> Fit_Functions::TH1FDataVector(TH1F* Data, float Offset)
 {
@@ -551,6 +578,77 @@ void Fit_Functions::GaussianGenerator(float mean, float stdev, int N, TH1F* Hist
   }
   
   delete gRandom; 
+}
+
+std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(TH1F* trk2, std::vector<TH1F*> PDFs, float min, float max)
+{
+  // Define the range of the dEdx
+  RooRealVar* x = new RooRealVar("x", "x", min, max); 
+
+  // Define the Gaussian Parameter: Mean
+  std::vector<TString> Means_String = { "m1", "m2", "m3", "m4" };
+  std::vector<double> Means_Begin = { -1, -1, -1, -1 };
+  std::vector<double> Means_End = { 2, 2, 2, 2 };
+  std::vector<RooRealVar*> Means = GenerateVariables(Means_String, Means_Begin, Means_End);
+
+  // Define the Gaussian Parameter: Standard Deviation
+  std::vector<TString> Stdev_String = { "s1", "s2", "s3", "s4" };
+  std::vector<double> Stdev_Begin = { 0, 0, 0, 0 };
+  std::vector<double> Stdev_End = { 0.5, 0.5, 0.5, 0.5 };
+  std::vector<RooRealVar*> Stdev = GenerateVariables(Stdev_String, Stdev_Begin, Stdev_End);
+
+  // Define the Gaussian Variables
+  std::vector<TString> Gaus_String = { "g1", "g2", "g3", "g4"};
+  std::vector<RooGaussian*> G_Vars = GaussianVariables(Gaus_String, Means, Stdev, x);
+ 
+  // Import the PDFs as a RooDataHist
+  std::vector<RooHistPdf*> PDF_Vars = ConvertTH1FtoPDF(PDFs, x);
+   
+  // Define the ntrack coefficients:
+  double Lumi = trk2 -> Integral();
+  std::vector<TString> C_String = { "n_trk1", "n_trk2", "n_trk3", "n_trk4" };
+  std::vector<double> C_Begin = { 0, 0, 0, 0 };
+  std::vector<double> C_End = { Lumi, Lumi, Lumi, Lumi };
+  std::vector<RooRealVar*> C_Vars = GenerateVariables(C_String, C_Begin, C_End);
+
+  // Convolve the PDFs with the Gaussians
+  std::vector<TString> Conv_String = { "P1xG1", "P2xG2", "P3xG3", "P4xG4" };
+  std::vector<RooFFTConvPdf*> Conv_Vars = ConvolveVariables(Conv_String, PDF_Vars, G_Vars, x);
+  
+  // Define the model we are using for the fit:
+  RooAddPdf model("model", "model", RooArgList(*Conv_Vars[0], *Conv_Vars[1], *Conv_Vars[2], *Conv_Vars[3]), RooArgList(*C_Vars[0], *C_Vars[1], *C_Vars[2], *C_Vars[3]));   
+  // Import the trk 2 data as a RooDataHist
+  RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, trk2); 
+  model.fitTo(*trk2_D, Constrain(*Means[0]), Constrain(*Means[1]), Constrain(*Means[2]), Constrain(*Means[3]), Constrain(*Stdev[0]), Constrain(*Stdev[1]), Constrain(*Stdev[2]), Constrain(*Stdev[3]));
+
+  
+  RooPlot* xframe = x -> frame(RooFit::Title("Fit"));
+  model.plotOn(xframe, RooFit::Name("Pure1"), RooFit::Components(*Conv_Vars[0]), RooFit::LineStyle(kDotted), RooFit::LineColor(kBlue));  
+  model.plotOn(xframe, RooFit::Name("Pure2"), RooFit::Components(*Conv_Vars[1]), RooFit::LineStyle(kDotted), RooFit::LineColor(kCyan));
+  model.plotOn(xframe, RooFit::Name("Pure3"), RooFit::Components(*Conv_Vars[2]), RooFit::LineStyle(kDotted), RooFit::LineColor(kOrange));
+  model.plotOn(xframe, RooFit::Name("Pure4"), RooFit::Components(*Conv_Vars[3]), RooFit::LineStyle(kDotted), RooFit::LineColor(kGreen));
+  trk2_D -> plotOn(xframe);
+
+  TCanvas* can = new TCanvas();
+  gPad -> SetLogy();
+  
+  xframe -> SetMinimum(1);
+  xframe -> Draw();
+
+  can -> Update();
+
+
+ // for (unsigned int i(0); i < Means.size(); i++)
+ // {
+ //   delete Means[i];
+ //   delete Stdev[i];
+ //   delete G_Vars[i];
+ //   delete PDF_Vars[i];
+ //   delete Conv_Vars[i];
+ // }
+
+  delete trk2_D; 
+  return C_Vars; 
 }
 
 // ============= Benchmarking Class ========== //

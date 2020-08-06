@@ -25,6 +25,8 @@
 #include<TVirtualFFT.h>
 #include<TComplex.h>
 #include<RooFormulaVar.h>
+#include<RooGaussian.h>
+#include<RooFFTConvPdf.h>
 
 using namespace RooFit;
 
@@ -53,22 +55,29 @@ class Functions
     }
 
     TH1F* VectorToTH1F(std::vector<float> Vec, TString name, int bins, int min, int max);
-    void VectorToTH1F(std::vector<float> Vec, TH1F* hist);
-    std::vector<float> TH1FToVector(TH1F* histi, int CustomLength = -1);
+    void VectorToTH1F(std::vector<float> Vec, TH1F* hist, int StartBin = 0);
+    std::vector<float> TH1FToVector(TH1F* hist, int CustomLength = -1);
 };
 
 class Fit_Functions
 {
   public:
+    
+    // Bulk variable generation.
     std::vector<RooDataHist*> ConvertTH1toDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain);
     std::vector<RooHistPdf*> ConvertTH1FtoPDF(std::vector<TH1F*> Histograms, RooRealVar* domain);
     std::vector<RooRealVar*> GenerateVariables(std::vector<TString>, std::vector<double> Begin, std::vector<double> End); 
-    
+    std::vector<RooGaussian*> GaussianVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain);
+    std::vector<RooFFTConvPdf*> ConvolveVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* domain);
+
+    // Base variables used for vector derivation 
     RooHistPdf* ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name, RooRealVar* domain);
     RooDataHist* ConvertTH1toDataHist(TH1F* Hist, RooRealVar* domain);
     RooDataHist* ConvertTH1toDataHist(TH1* Hist, RooRealVar* domain);
     RooRealVar* GenerateVariable(TString name, double begin, double end);   
- 
+    RooGaussian* GenerateGaussian(TString name, RooRealVar* mean, RooRealVar* stdev, RooRealVar* domain);
+    RooFFTConvPdf* GenerateConvolve(TString name, RooHistPdf* PDF, RooGaussian* Gaus, RooRealVar* domain);
+
     // Generate the RooArgList varibles for a model 
     RooArgList VectorToArgList(std::vector<RooRealVar*> Vector);
     RooArgList VectorToArgList(std::vector<RooHistPdf*> Vector);
@@ -77,7 +86,7 @@ class Fit_Functions
     std::vector<float> LRDeconvolution(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y);
     
     // Fast Fourier Transformation of two TH1F histograms  
-    void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int offset = 0); 
+    void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv, int StartBin = 0); 
    
     // Replace the tail of a histogram with another after fitting  
     std::vector<float> TailReplaceClosure(TH1F* hist, std::vector<float> deconv);
@@ -96,13 +105,16 @@ class Fit_Functions
     std::vector<float> Fractionalizer(std::vector<RooRealVar*> vars, TH1F* Data);
 
     // Removes the weird artifacts before the peak from the hists
-    void ArtifactRemove(TH1F* Hist, TString mode = "f");
+    void ArtifactRemove(TH1F* Hist, TString mode = "b");
 
     // Creates the datavector with the mirror tail 
     std::vector<float> TH1FDataVector(TH1F* Data, float Offset);
 
     // Produce a gaussian distribution
     void GaussianGenerator(float mean, float std, int N, TH1F* Hist);
+
+    // Gaussian convolution fit 
+    std::vector<RooRealVar*> GaussianConvolutionFit(TH1F* trk2, std::vector<TH1F*> PDFs, float min, float max); 
 
   private:
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
