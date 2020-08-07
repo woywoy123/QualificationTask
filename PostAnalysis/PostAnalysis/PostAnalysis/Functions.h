@@ -66,7 +66,7 @@ class Fit_Functions
     // Bulk variable generation.
     std::vector<RooDataHist*> ConvertTH1toDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain);
     std::vector<RooHistPdf*> ConvertTH1FtoPDF(std::vector<TH1F*> Histograms, RooRealVar* domain);
-    std::vector<RooRealVar*> GenerateVariables(std::vector<TString>, std::vector<double> Begin, std::vector<double> End); 
+    std::vector<RooRealVar*> GenerateVariables(std::vector<TString>, std::vector<float> Begin, std::vector<float> End); 
     std::vector<RooGaussian*> GaussianVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain);
     std::vector<RooFFTConvPdf*> ConvolveVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* domain);
 
@@ -74,7 +74,7 @@ class Fit_Functions
     RooHistPdf* ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name, RooRealVar* domain);
     RooDataHist* ConvertTH1toDataHist(TH1F* Hist, RooRealVar* domain);
     RooDataHist* ConvertTH1toDataHist(TH1* Hist, RooRealVar* domain);
-    RooRealVar* GenerateVariable(TString name, double begin, double end);   
+    RooRealVar* GenerateVariable(TString name, float begin, float end);   
     RooGaussian* GenerateGaussian(TString name, RooRealVar* mean, RooRealVar* stdev, RooRealVar* domain);
     RooFFTConvPdf* GenerateConvolve(TString name, RooHistPdf* PDF, RooGaussian* Gaus, RooRealVar* domain);
 
@@ -114,7 +114,7 @@ class Fit_Functions
     void GaussianGenerator(float mean, float std, int N, TH1F* Hist);
 
     // Gaussian convolution fit 
-    std::vector<RooRealVar*> GaussianConvolutionFit(TH1F* trk2, std::vector<TH1F*> PDFs, float min, float max); 
+    std::vector<RooRealVar*> GaussianConvolutionFit(std::vector<TH1F*> PDFs, TH1F* trk2, float min, float max, float stdev_s, float stdev_e, float mean_s, float mean_e); 
 
   private:
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);

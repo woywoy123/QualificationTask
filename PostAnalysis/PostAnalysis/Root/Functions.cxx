@@ -109,7 +109,7 @@ RooDataHist* Fit_Functions::ConvertTH1toDataHist(TH1* Hist, RooRealVar* domain)
   return Histo;
 }
 
-RooRealVar* Fit_Functions::GenerateVariable(TString name, double begin, double end)
+RooRealVar* Fit_Functions::GenerateVariable(TString name, float begin, float end)
 {
   RooRealVar* var = new RooRealVar(name, name, begin, end);
   return var;
@@ -173,7 +173,7 @@ std::vector<RooHistPdf*> Fit_Functions::ConvertTH1FtoPDF(std::vector<TH1F*> Hist
   return PDFs;
 }
 
-std::vector<RooRealVar*> Fit_Functions::GenerateVariables(std::vector<TString> Names, std::vector<double> Begin, std::vector<double> End)
+std::vector<RooRealVar*> Fit_Functions::GenerateVariables(std::vector<TString> Names, std::vector<float> Begin, std::vector<float> End)
 {
   std::vector<RooRealVar*> Variables(Names.size());
   for ( unsigned int x = 0; x < Names.size(); x++)
@@ -434,8 +434,8 @@ std::vector<RooRealVar*> Fit_Functions::FitPDFtoData(std::vector<TH1F*> PDFs, TH
   }
 
   // Define required variables
-  std::vector<double> Parms_S(Names.size(), 0);
-  std::vector<double> Parms_E(Names.size(), Data -> Integral());
+  std::vector<float> Parms_S(Names.size(), 0);
+  std::vector<float> Parms_E(Names.size(), Data -> Integral());
 
   // Variable Generation
   RooRealVar* x = new RooRealVar("x", "x", min, max);
@@ -580,21 +580,21 @@ void Fit_Functions::GaussianGenerator(float mean, float stdev, int N, TH1F* Hist
   delete gRandom; 
 }
 
-std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(TH1F* trk2, std::vector<TH1F*> PDFs, float min, float max)
+std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*> PDFs, TH1F* trk2, float min, float max, float stdev_s, float stdev_e, float mean_s, float mean_e)
 {
   // Define the range of the dEdx
   RooRealVar* x = new RooRealVar("x", "x", min, max); 
 
   // Define the Gaussian Parameter: Mean
   std::vector<TString> Means_String = { "m1", "m2", "m3", "m4" };
-  std::vector<double> Means_Begin = { -1, -1, -1, -1 };
-  std::vector<double> Means_End = { 2, 2, 2, 2 };
+  std::vector<float> Means_Begin(Means_String.size(), mean_s);
+  std::vector<float> Means_End(Means_String.size(), mean_e);
   std::vector<RooRealVar*> Means = GenerateVariables(Means_String, Means_Begin, Means_End);
 
   // Define the Gaussian Parameter: Standard Deviation
   std::vector<TString> Stdev_String = { "s1", "s2", "s3", "s4" };
-  std::vector<double> Stdev_Begin = { 0, 0, 0, 0 };
-  std::vector<double> Stdev_End = { 0.5, 0.5, 0.5, 0.5 };
+  std::vector<float> Stdev_Begin(Stdev_String.size(), stdev_s);
+  std::vector<float> Stdev_End(Stdev_String.size(), stdev_e);
   std::vector<RooRealVar*> Stdev = GenerateVariables(Stdev_String, Stdev_Begin, Stdev_End);
 
   // Define the Gaussian Variables
@@ -605,10 +605,10 @@ std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(TH1F* trk2, std::
   std::vector<RooHistPdf*> PDF_Vars = ConvertTH1FtoPDF(PDFs, x);
    
   // Define the ntrack coefficients:
-  double Lumi = trk2 -> Integral();
+  float Lumi = trk2 -> Integral();
   std::vector<TString> C_String = { "n_trk1", "n_trk2", "n_trk3", "n_trk4" };
-  std::vector<double> C_Begin = { 0, 0, 0, 0 };
-  std::vector<double> C_End = { Lumi, Lumi, Lumi, Lumi };
+  std::vector<float> C_Begin = { 0, 0, 0, 0 };
+  std::vector<float> C_End = { Lumi, Lumi, Lumi, Lumi };
   std::vector<RooRealVar*> C_Vars = GenerateVariables(C_String, C_Begin, C_End);
 
   // Convolve the PDFs with the Gaussians
@@ -620,32 +620,16 @@ std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(TH1F* trk2, std::
   // Import the trk 2 data as a RooDataHist
   RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, trk2); 
   model.fitTo(*trk2_D, Constrain(*Means[0]), Constrain(*Means[1]), Constrain(*Means[2]), Constrain(*Means[3]), Constrain(*Stdev[0]), Constrain(*Stdev[1]), Constrain(*Stdev[2]), Constrain(*Stdev[3]));
+ 
 
-  
-  RooPlot* xframe = x -> frame(RooFit::Title("Fit"));
-  model.plotOn(xframe, RooFit::Name("Pure1"), RooFit::Components(*Conv_Vars[0]), RooFit::LineStyle(kDotted), RooFit::LineColor(kBlue));  
-  model.plotOn(xframe, RooFit::Name("Pure2"), RooFit::Components(*Conv_Vars[1]), RooFit::LineStyle(kDotted), RooFit::LineColor(kCyan));
-  model.plotOn(xframe, RooFit::Name("Pure3"), RooFit::Components(*Conv_Vars[2]), RooFit::LineStyle(kDotted), RooFit::LineColor(kOrange));
-  model.plotOn(xframe, RooFit::Name("Pure4"), RooFit::Components(*Conv_Vars[3]), RooFit::LineStyle(kDotted), RooFit::LineColor(kGreen));
-  trk2_D -> plotOn(xframe);
-
-  TCanvas* can = new TCanvas();
-  gPad -> SetLogy();
-  
-  xframe -> SetMinimum(1);
-  xframe -> Draw();
-
-  can -> Update();
-
-
- // for (unsigned int i(0); i < Means.size(); i++)
- // {
- //   delete Means[i];
- //   delete Stdev[i];
- //   delete G_Vars[i];
- //   delete PDF_Vars[i];
- //   delete Conv_Vars[i];
- // }
+  for (unsigned int i(0); i < Means.size(); i++)
+  {
+    delete Means[i];
+    delete Stdev[i];
+    delete G_Vars[i];
+    delete PDF_Vars[i];
+    delete Conv_Vars[i];
+  }
 
   delete trk2_D; 
   return C_Vars; 
