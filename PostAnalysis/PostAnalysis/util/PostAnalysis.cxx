@@ -30,9 +30,6 @@ void PostAnalysis()
       Hist -> Fill(r1 + r2 + r3, Comps[2]);
       Hist -> Fill(r1 + r2 + r3 + r4, Comps[3]);
     }
-
-
-
   };
 
   auto LandauGenerator = [](std::vector<TH1F*> Hists, std::vector<float> Params)
@@ -56,10 +53,8 @@ void PostAnalysis()
     }
   };
 
-  Verification V;
-  
-  //V.UnitTesting();
- 
+  Verification V; 
+  Fit_Functions f;
   Functions F;
 
   // ====================== Generate the data =================== //  
@@ -70,8 +65,8 @@ void PostAnalysis()
  
   // Create some Datasets which have some contamination
   // === COMPN is the composition of cross contamination
-  std::vector<float> COMP1 = {1.0,  0.0, 0.0, 0.0};  
-  std::vector<float> COMP2 = {0.05, 0.8,  0.1,  0.05};  
+  std::vector<float> COMP1 = {1.0,  0., 0.0, 0.0};  
+  std::vector<float> COMP2 = {0., 0.25,  0.,  0.};  
   std::vector<float> COMP3 = {0.01, 0.2,  0.59,  0.2};  
   std::vector<float> COMP4 = {0.02,   0.2, 0.2,   0.58}; 
   std::vector<TString> Data_Names = {"trk1", "trk2", "trk3", "trk4"};
@@ -98,18 +93,30 @@ void PostAnalysis()
  
   // ======================= End of Data Generation ================ //  
 
-  TCanvas* can = new TCanvas("Cant", "Cant", 800, 800);
-  can -> SetLogy();
-  trk1 ->Draw("SAMEHIST"); 
-  trk2 -> Draw("SAMEHIST");
-  trk3 -> Draw("SAMEHIST");
-  trk4 -> Draw("SAMEHIST");
-  trk2 -> Draw("SAMEHIST*");
-  can -> Update();
+//  TCanvas* can = new TCanvas("Cant", "Cant", 800, 800);
+//  can -> SetLogy();
+//  trk1 ->Draw("SAMEHIST"); 
+//  trk2 -> Draw("SAMEHIST");
+//  trk3 -> Draw("SAMEHIST");
+//  trk4 -> Draw("SAMEHIST");
+//  trk2 -> Draw("SAMEHIST*");
+//  can -> Update();
+
+  //V.UnitTesting();
 
   //V.MainAlgorithm(Data_ntrk, trk2, Hists); 
  
-  V.MainGaussianUnfolding(Data_ntrk, trk2, Hists); 
+  //V.MainGaussianUnfolding(Data_ntrk, trk2, Hists); 
+  
+  // Delete me: 
+  //f.ConvolveHists(trk1, trk2, trk1); 
+  f.ArtifactRemove(trk1, "b");
+
+  V.Debug(trk1, trk2);
+
+  //V.CalibrationDataConvolution();
+  
+  //V.NewLRTesting(trk1);
  }
 
 void StandaloneApplications(int argc, char**argv)

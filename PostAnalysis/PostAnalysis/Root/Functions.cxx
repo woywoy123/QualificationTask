@@ -72,21 +72,46 @@ void Functions::VectorToTH1F(std::vector<float> Vec, TH1F* hist, int StartBin)
   } 
 }
 
-std::vector<float> Functions::TH1FToVector(TH1F* hist, int CustomLength)
+std::vector<float> Functions::TH1FToVector(TH1F* hist, int CustomLength, int start)
 {
+
   std::vector<float> Out;
-  int bins;
-  if (CustomLength > 0) { bins = CustomLength; }
-  else { bins = hist -> GetNbinsX(); } 
+  for (int i(0); i < start; i++)
+  {
+    Out.push_back(0);
+  }
 
   for (int i(0); i < hist -> GetNbinsX(); i++)
   {
     Out.push_back(hist -> GetBinContent(i+1)); 
   }
+  
+  int delta = CustomLength - hist -> GetNbinsX() - start;
+  for (int i(0); i < delta; i++)
+  {
+    Out.push_back(0);
+  }
 
   return Out;
 }
 
+void Functions::CutTH1F(TH1F* Input, TH1F* Output)
+{
+  int bins = Output -> GetNbinsX();
+  for (int i(0); i < bins; i++)
+  {
+    Output -> SetBinContent(i+1, Input -> GetBinContent(i+1));
+  }
+}
+
+void Functions::ExpandTH1F(TH1F* Input, TH1F* Output, int start)
+{
+  int bins = Input -> GetNbinsX();
+  for (int i(0); i < bins; i++)
+  {
+    Output -> SetBinContent(start + i +1, Input -> GetBinContent(i+1)); 
+  }
+}
 // ================== Fitting Base Classes ==============================//
 RooHistPdf* Fit_Functions::ConvertTH1FtoPDF(RooDataHist* Histogram, TString Name, RooRealVar* domain)
 {
@@ -236,6 +261,7 @@ std::vector<float> Fit_Functions::LRDeconvolution(std::vector<float> G, std::vec
       if (PSF[i] < 0. || std::isnan(PSF[i]) || std::isinf(PSF[i]))  {PSF[i] = 0.;}
     }  
   }
+
   return PSF; 
 }
 
@@ -330,14 +356,17 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
     if ( i < delta_bins ){ Hist -> SetBinContent(h_bins + i + 1, hist -> GetBinContent(h_bins - i - 1) + 1); }   
     if ( i < h_bins ){ Hist -> SetBinContent(i+1, hist -> GetBinContent(i+1)); }
   }
+ 
+  Normalizer(Deconv);
+  Normalizer(Hist);
   
   int peak = Deconv -> GetMaximumBin() + 5;
   // ======= Perform a fit of the tail 
 
   RooRealVar x("x", "x", 1, d_bins -1);
-  x.setRange("Tail", peak, h_bins);
+  x.setRange("Tail", peak, h_bins - 400);
 
-  RooRealVar s("s", "s", 0., -50, 50);
+  RooRealVar s("s", "s", -50, 50);
 
   RooFormulaVar del("del", "del", "x-s", RooArgSet(x, s));
 
@@ -350,13 +379,13 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
   // ===== Replace the Deconv with the hist ==== //
   float sum_d = Deconv -> Integral();
   float sum_h = Hist -> Integral();  
-  int shift = std::round(s.getVal());
+  int shift = s.getVal();
   
   for (int i(peak); i < d_bins; i++)
   {
     float h = Hist -> GetBinContent(i+1);
     float d = Deconv -> GetBinContent(i+1);
-    Deconv -> SetBinContent(i+1 + shift, h*(sum_d/sum_h));
+    Deconv -> SetBinContent(i+1 + shift, h*(sum_h/sum_d));
   }
 
   std::vector<float> Dec(d_bins, 0);
@@ -368,7 +397,7 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
   delete Deconv;
   delete Hist;
   delete Result;
-  return Dec;
+  return deconv;
 }
 
 
@@ -512,9 +541,8 @@ void Fit_Functions::ArtifactRemove(TH1F* Hist, TString mode)
   }
   else if (mode == "f")
   { 
-    int max = Hist -> GetMaximumBin(); 
     index = ArtifactRemoveForward(Hist);  
-    for (int i(Hist -> GetNbinsX()); i > Hist -> GetNbinsX() - index; i--){ Hist -> SetBinContent(i -1, 0); }      
+    for (int i(index); i < Hist -> GetNbinsX(); i++){ Hist -> SetBinContent(i + 1, 0); }      
   }
 }
 
@@ -523,23 +551,29 @@ int Fit_Functions::ArtifactRemoveForward(TH1F* Hist)
   int max = Hist -> GetMaximumBin(); 
   float f = Hist -> GetBinContent(max);
   int index = 0; 
-  for (int i(Hist -> GetNbinsX()); i > max; i--)
+  for (int i(max); i < Hist -> GetNbinsX(); i++)
   {
     float e = Hist -> GetBinContent(i + 1);
     
-    if (e <= f) 
+    if (e < f) 
     { 
       f = e; 
       index++;
     }
     else {break;}
   }
-  return index;
+  return max + index;
 }
 
 int Fit_Functions::ArtifactRemoveBackward(TH1F* Hist)
 {
   int max = Hist -> GetMaximumBin(); 
+  if (max < 2) 
+  { 
+    Hist -> SetBinContent(max, 0);
+    max = Hist -> GetMaximumBin();
+  }
+
   float f = Hist -> GetBinContent(max);
   int index = 0; 
   for (int i(0); i < max; i++)

@@ -56,7 +56,9 @@ class Functions
 
     TH1F* VectorToTH1F(std::vector<float> Vec, TString name, int bins, int min, int max);
     void VectorToTH1F(std::vector<float> Vec, TH1F* hist, int StartBin = 0);
-    std::vector<float> TH1FToVector(TH1F* hist, int CustomLength = -1);
+    std::vector<float> TH1FToVector(TH1F* hist, int CustomLength = 0, int start = 0);
+    void CutTH1F(TH1F* Input, TH1F* Output);
+    void ExpandTH1F(TH1F* Input, TH1F* Output, int Start = 0);
 };
 
 class Fit_Functions
@@ -120,6 +122,7 @@ class Fit_Functions
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
     int ArtifactRemoveForward(TH1F* Hist);
     int ArtifactRemoveBackward(TH1F* Hist);  
+    
 };
 
 class Benchmark

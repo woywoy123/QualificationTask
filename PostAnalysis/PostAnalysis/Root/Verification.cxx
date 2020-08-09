@@ -279,20 +279,33 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
   TH1F* trk3 = (TH1F*)Data[2] -> Clone("trk3_Copy");
   TH1F* trk4 = (TH1F*)Data[3] -> Clone("trk4_Copy");
   std::vector<TH1F*> Data_Copy = {trk1, trk2, trk3, trk4};
-
+  
   // Conversion factors
   float bins = trk2 -> GetNbinsX(); 
   float ss = (max-min) / bins;
   int GausOff = std::round(std::abs(GaussianOffSet) / ss);
 
   // Create the trk convolved hists
-  TH1F* trk1_C = new TH1F("trk1_C", "trk1_C", bins + offset*bins + GausOff, GaussianOffSet, max); 
-  TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins + offset*bins + GausOff, GaussianOffSet, max); 
-  TH1F* trk3_C = new TH1F("trk3_C", "trk3_C", bins + offset*bins + GausOff, GaussianOffSet, max); 
-  TH1F* trk4_C = new TH1F("trk4_C", "trk4_C", bins + offset*bins + GausOff, GaussianOffSet, max);  
+  TH1F* trk1_C = new TH1F("trk1_C", "trk1_C", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
+  TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
+  TH1F* trk3_C = new TH1F("trk3_C", "trk3_C", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
+  TH1F* trk4_C = new TH1F("trk4_C", "trk4_C", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
 
+  // Create the trk convolved hists
+  TH1F* trk1_nom = new TH1F("trk1_nom", "trk1_nom", bins, min, max); 
+  TH1F* trk2_nom = new TH1F("trk2_nom", "trk2_nom", bins, min, max); 
+  TH1F* trk3_nom = new TH1F("trk3_nom", "trk3_nom", bins, min, max); 
+  TH1F* trk4_nom = new TH1F("trk4_nom", "trk4_nom", bins, min, max); 
+
+  // Create the data hist with the same length as the convoluted histograms
+  TH1F* trknD = new TH1F("trknD", "trknD", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
+
+  // Fill the above hists
+  std::vector<float> Target_V = F.TH1FToVector(Target);
+  F.VectorToTH1F(Target_V, trknD, GausOff);
+   
   // Static Gaussian Histogram used as a PSF
-  TH1F* GausStatic = new TH1F("Gaus_S", "Gaus_S", bins + offset*bins + GausOff, GaussianOffSet, max);
+  TH1F* GausStatic = new TH1F("Gaus_S", "Gaus_S", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins);
 
   // ========= Debug Stuff ================== //
   TCanvas* can = new TCanvas();
@@ -301,23 +314,22 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
   trk2_C -> SetLineColor(kOrange);
   trk3_C -> SetLineColor(kGreen);
   trk4_C -> SetLineColor(kBlue);
-  trk1_C -> SetLineStyle(kDashed);
-  trk2_C -> SetLineStyle(kDashed);
-  trk3_C -> SetLineStyle(kDashed);
-  trk4_C -> SetLineStyle(kDashed);
+  //trk1_C -> SetLineStyle(kDashed);
+  //trk2_C -> SetLineStyle(kDashed);
+  //trk3_C -> SetLineStyle(kDashed);
+  //trk4_C -> SetLineStyle(kDashed);
   GausStatic -> SetLineStyle(kDashed);
   GausStatic -> SetLineColor(kBlack);
-  TH1F* GausXTrk1 = new TH1F("Gaus_S", "Gaus_S", bins + offset*bins + GausOff, GaussianOffSet, max);
 
   // Vector declarations: Priors 
-  std::vector<float> deconv(bins + offset*bins, 0.5);
+  std::vector<float> deconv(bins + offset*bins, offset);
   std::vector<float> deconv1;
   std::vector<float> deconv2;
   std::vector<float> deconv3;
   std::vector<float> deconv4;
   
   // Vector declarations: Data Vectors
-  std::vector<float> Data_Vector = f.TH1FDataVector(trk2, 0.1);
+  std::vector<float> Data_Vector = f.TH1FDataVector(trk2, offset);
   std::vector<float> DV1;
   std::vector<float> DV2;
   std::vector<float> DV3;
@@ -332,7 +344,7 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
   std::vector<float> Gaus = F.TH1FToVector(GausStatic);
 
 
-  for (int y(0); y < 5; y++)
+  for (int y(0); y < 1; y++)
   { 
     for (int i(0); i < 50; i++)
     {
@@ -341,31 +353,44 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
     }
 
     // 1-Track Histogram  
-    F.VectorToTH1F(deconv, trk1_C, GausOff); 
-    f.ArtifactRemove(trk1_C, "b");
-    f.Normalizer(trk1_C);
+    F.VectorToTH1F(deconv, trk1_nom); 
+    f.ArtifactRemove(trk1_nom, "b");
+    f.Normalizer(trk1_nom);
     
     // 2-Track Histogram
-    f.ConvolveHists(trk1_C, trk1_C, trk2_C, GausOff);
-    f.ArtifactRemove(trk2_C);
-    f.Normalizer(trk2_C);
+    f.ConvolveHists(trk1_nom, trk1_nom, trk2_nom);
+    f.ArtifactRemove(trk2_nom);
+    f.Normalizer(trk2_nom);
 
     // 3-Track Histogram
-    f.ConvolveHists(trk1_C, trk2_C, trk3_C, GausOff);
-    f.ArtifactRemove(trk3_C);
-    f.Normalizer(trk3_C);
+    f.ConvolveHists(trk1_nom, trk2_nom, trk3_nom);
+    f.ArtifactRemove(trk3_nom);
+    f.Normalizer(trk3_nom);
     
     // 4-Track Histogram
-    f.ConvolveHists(trk2_C, trk2_C, trk4_C, GausOff);
-    f.ArtifactRemove(trk4_C);
-    f.Normalizer(trk4_C); 
+    f.ConvolveHists(trk2_nom, trk2_nom, trk4_nom);
+    f.ArtifactRemove(trk4_nom);
+    f.Normalizer(trk4_nom); 
+
  
     // === Use the Gaussian as the PSF function and do the deconvolution 
     // Define the Data Vectors
-    DV1 = f.TH1FDataVector(trk1_C, 0);
-    DV2 = f.TH1FDataVector(trk2_C, 0);
-    DV3 = f.TH1FDataVector(trk3_C, 0);
-    DV4 = f.TH1FDataVector(trk4_C, 0);
+    DV1 = std::vector<float>(GausOff, 0);
+    DV2 = std::vector<float>(GausOff, 0);
+    DV3 = std::vector<float>(GausOff, 0);
+    DV4 = std::vector<float>(GausOff, 0);
+   
+    // Create the vectors with the nominal TH1F entries    
+    std::vector<float> temp1 = f.TH1FDataVector(trk1_nom, offset);
+    std::vector<float> temp2 = f.TH1FDataVector(trk2_nom, offset);
+    std::vector<float> temp3 = f.TH1FDataVector(trk3_nom, offset);
+    std::vector<float> temp4 = f.TH1FDataVector(trk4_nom, offset);
+
+    // Append the vector to the initial DVNs
+    DV1.insert(DV1.end(), temp1.begin(), temp1.end());
+    DV2.insert(DV2.end(), temp2.begin(), temp2.end());
+    DV3.insert(DV3.end(), temp3.begin(), temp3.end());
+    DV4.insert(DV4.end(), temp4.begin(), temp4.end());
 
     // Define the priors for the deconv
     deconv1 = std::vector<float>(len, 0.5);
@@ -380,73 +405,402 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
       deconv3 = f.LRDeconvolution(DV3, Gaus, deconv3, 0.75);
       deconv4 = f.LRDeconvolution(DV4, Gaus, deconv4, 0.75);
       
-      F.VectorToTH1F(deconv1, trk1_C, GausOff);
-      F.VectorToTH1F(deconv2, trk2_C, GausOff);
-      F.VectorToTH1F(deconv3, trk3_C, GausOff);
-      F.VectorToTH1F(deconv4, trk4_C, GausOff);
-     
+      F.VectorToTH1F(deconv1, trk1_C);
+      F.VectorToTH1F(deconv2, trk2_C);
+      F.VectorToTH1F(deconv3, trk3_C);
+      F.VectorToTH1F(deconv4, trk4_C);
+
+      f.ArtifactRemove(trk1_C);
+      f.ArtifactRemove(trk2_C);
+      f.ArtifactRemove(trk3_C);      
+      f.ArtifactRemove(trk4_C);      
+              
       f.Normalizer(trk1_C);   
       f.Normalizer(trk2_C);
       f.Normalizer(trk3_C);
       f.Normalizer(trk4_C);
     }
 
-    std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};
-    std::vector<RooRealVar*> vars = f.GaussianConvolutionFit(PDFs, Target, 0, 20, 0.01, 1, -1, 1);
-    std::vector<float> O = f.Fractionalizer(vars, trk2);
-
-    std::cout << "Fraction of trk 1: " << O[0] << std::endl;
-    std::cout << "Fraction of trk 2: " << O[1] << std::endl; 
-    std::cout << "Fraction of trk 3: " << O[2] << std::endl;
-    std::cout << "Fraction of trk 4: " << O[3] << std::endl;
-
-    trk2 -> Draw("SAMEHIST");
-    trk1_C -> Scale(Target -> Integral()*O[0]);
-    trk2_C -> Scale(Target -> Integral()*O[1]);
-    trk3_C -> Scale(Target -> Integral()*O[2]);
-    trk4_C -> Scale(Target -> Integral()*O[3]);
-     
     trk1_C -> Draw("SAMEHIST");
-    trk4_C -> Draw("SAMEHIST");
-    trk2_C -> Draw("SAMEHIST");
-    trk3_C -> Draw("SAMEHIST");
+   // trk4_C -> Draw("SAMEHIST");
+   // trk2_C -> Draw("SAMEHIST");
+   // trk3_C -> Draw("SAMEHIST");
+    //trknD -> Draw("SAMEHIST*");
     can -> Update();
 
+    
+
+
+    std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};
+    //std::vector<RooRealVar*> vars = f.GaussianConvolutionFit(PDFs, trknD, 0, 20, 0.01, 5, -5, 1);
+   // std::vector<float> O = f.Fractionalizer(vars, trknD);
+
+   // std::cout << "Fraction of trk 1: " << O[0] << std::endl;
+   // std::cout << "Fraction of trk 2: " << O[1] << std::endl; 
+   // std::cout << "Fraction of trk 3: " << O[2] << std::endl;
+   // std::cout << "Fraction of trk 4: " << O[3] << std::endl;
+
+    TH1F* trk = (TH1F*)trk1_C -> Clone("trk");
+    trk -> Reset();
+    f.ConvolveHists(GausStatic, trk1_C, trk);
+    
+
+    trk1_C -> Draw("SAMEHIST");
+    trk -> Draw("SAMEHIST*"); 
+   // trk4_C -> Draw("SAMEHIST");
+   // trk2_C -> Draw("SAMEHIST");
+   // trk3_C -> Draw("SAMEHIST");
+    //trknD -> Draw("SAMEHIST*");
+    can -> Update();
+
+
+
+
+
+    //trk1_C -> Scale(Target -> Integral()*O[0]);
+    //trk2_C -> Scale(Target -> Integral()*O[1]);
+    //trk3_C -> Scale(Target -> Integral()*O[2]);
+    //trk4_C -> Scale(Target -> Integral()*O[3]);
+     
+
+
     // Subtract the estimated cross contamination from the Target copy
-    f.Subtraction(PDFs, trk2, trkn, vars);   
+    //f.Subtraction(PDFs, Target, trkn, vars);   
  
-    Data_Vector = f.TH1FDataVector(Target, 0.1);   
+    //Data_Vector = f.TH1FDataVector(Target, 0.1);   
     
   }
 }
 
+void Verification::Debug(TH1F* trk1, TH1F* trk2)
+{
+
+  // Things that need an input 
+  float offset = 0.1;
+  int bins = trk1 -> GetNbinsX();
+  float min = 0;
+  float max = 20;
+  float Padding = 10;
+  
+  Fit_Functions f;
+  Functions F;
+
+  // Conversion factors
+  float ss = (max-min) / bins;
+  int Pad = std::round(std::abs(Padding) / ss);
+
+  // Some histograms for debugging and a TCanvas 
+  TCanvas* can = new TCanvas("can", "can", 800, 800);
+  can -> SetLogy();
+ 
+  // Histograms  
+  TH1F* PSF_HL = new TH1F("PSF_HL", "PSF_HL", bins + 2*Pad, min - Padding, max + Padding);  
+  TH1F* Data_HL = new TH1F("Data_HL", "Data_HL", bins + 2*Pad, min - Padding, max + Padding);
+  TH1F* Deconv_HL = new TH1F("Deconv_HL", "Deconv_HL", bins + 2*Pad, min - Padding, max + Padding);
+  TH1F* Closure_HL = new TH1F("Closure_HL", "Closure_HL", bins + 2*Pad, min - Padding, max + Padding);
+ 
+  // Colors 
+  PSF_HL -> SetLineColor(kRed);
+  Data_HL -> SetLineColor(kViolet);
+  Deconv_HL -> SetLineColor(kBlack);
+  Closure_HL -> SetLineColor(kCyan);
+  // Note To Self:
+  // RED = Gaus/PSF
+  // BLACK = Deconv
+  // VIOLET = Data
+  // CYAN = Closure
+
+  // Fill the PSF with a Gaussian
+  f.GaussianGenerator(-0.2, 0.2, 500000, PSF_HL);
+
+  // Fill the Data hist
+  std::vector<float> temp = f.TH1FDataVector(trk1, offset);
+  F.VectorToTH1F(temp, Data_HL, Pad);
+
+  // Normalize the histograms 
+  f.Normalizer(PSF_HL);
+  f.Normalizer(Data_HL);
+
+  // Populate the vectors 
+  std::vector<float> PSF_V = F.TH1FToVector(PSF_HL);
+  std::vector<float> Data_V = F.TH1FToVector(Data_HL);
+  std::vector<float> deconv(PSF_V.size(), 0.5);
+
+  PSF_HL -> Draw("SAMEHIST");
+  Data_HL -> Draw("SAMEHIST");
+  can -> Update();
+  
+  // Deconvolve the data with the PSF
+  for (int i(0); i < 25; i++)
+  {
+    deconv = f.LRDeconvolution(Data_V, PSF_V, deconv, 1.);
+
+  }
+  F.VectorToTH1F(deconv, Deconv_HL, Pad);
+  f.Normalizer(Deconv_HL);
+
+  Deconv_HL -> Draw("SAMEHIST");
+  can -> Update();   
+
+  // Now we try to fit the data histogram to the deconvolution in RooFit 
+  // ============================= RooFit =========================== //
+
+  // Define the range of the dEdx
+  RooRealVar* x = new RooRealVar("x", "x", min - Padding, max + Padding); 
+
+  // Define the Gaussian Parameter: Mean
+  std::vector<TString> Means_String = { "m1" };
+  std::vector<float> Means_Begin = {-2};
+  std::vector<float> Means_End = {2};
+  std::vector<RooRealVar*> Means = f.GenerateVariables(Means_String, Means_Begin, Means_End);
+
+  // Define the Gaussian Parameter: Standard Deviation
+  std::vector<TString> Stdev_String = { "s1" };
+  std::vector<float> Stdev_Begin = {0.001};
+  std::vector<float> Stdev_End = {1};
+  std::vector<RooRealVar*> Stdev = f.GenerateVariables(Stdev_String, Stdev_Begin, Stdev_End);
+
+  // Define the Gaussian Variables
+  std::vector<TString> Gaus_String = { "g1" };
+  std::vector<RooGaussian*> G_Vars = f.GaussianVariables(Gaus_String, Means, Stdev, x);
+
+  // Define the ntrack coefficients:
+  float Lumi = Data_HL -> Integral();
+  std::vector<TString> C_String = { "n_trk1" };
+  std::vector<float> C_Begin = { 0 };
+  std::vector<float> C_End = { Lumi };
+  std::vector<RooRealVar*> C_Vars = f.GenerateVariables(C_String, C_Begin, C_End);
+
+  // Import the PDFs as a RooDataHist
+  std::vector<RooHistPdf*> PDF_Vars = f.ConvertTH1FtoPDF({Deconv_HL}, x);
+ 
+  // Convolve the PDFs with the Gaussians
+  std::vector<TString> Conv_String = { "P1xG1" };
+  std::vector<RooFFTConvPdf*> Conv_Vars = f.ConvolveVariables(Conv_String, PDF_Vars, G_Vars, x);
+
+  // Define the model we are using for the fit:
+  RooAddPdf model("model", "model", RooArgList(*Conv_Vars[0]), RooArgList(*C_Vars[0]));   
+
+  // Import the trk 2 data as a RooDataHist
+  RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, Data_HL); 
+  model.fitTo(*trk2_D, Constrain(*Means[0]), Constrain(*Stdev[0]));
+  
+  RooPlot* xframe = x -> frame(RooFit::Title("loL"));
+  trk2_D -> plotOn(xframe);
+  model.plotOn(xframe);
+  xframe -> SetMinimum(1e-5);
+  xframe -> Draw();
+    
+}
 
 
+void Verification::CalibrationDataConvolution()
+{
+  TString Data = "/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/Merger/Merger.root";
+  
+  TFile* File = new TFile(Data);
+  if (!File -> IsOpen()){ std::cout << "Failed to open file" << std::endl; };
+ 
+  // I am using the 1-trk in hist for the 1 track distribution because in the paper this is how 
+  // the 1 track template is sampled. The 2 track templates are generated within the jet code  
+  std::vector<TString> Histograms = {"dEdx_out_ntrk1_calib", "dEdx_in_ntrk2_calib"};
+  std::vector<TString> Layers = {"IBL", "Blayer", "layer1", "layer2"};
+  
+  TH1F* trk1 = new TH1F("trk1", "trk1", 300, -0.5, 14.5);
+  TH1F* trk2_D = new TH1F("trk2_D", "trk2_D", 300, -0.5, 14.5);
+  
+  trk1 -> SetLineColor(kRed);
+  trk2_D -> SetLineColor(kGreen); 
+  trk2_D -> SetLineStyle(kDashed);
+   
+  for (TString layer : Layers)
+  {
+    File -> cd(layer + "/200_up_GeV");
+    trk1 -> Add((TH1F*)gDirectory -> Get(Histograms[0]));
+    File -> cd(layer + "/1000_1200_GeV");
+    trk2_D -> Add((TH1F*)gDirectory -> Get(Histograms[1])); 
+    File -> cd(); 
+  }
+
+  TH1F* trk2_C = (TH1F*)trk1 -> Clone("trk2_C");
+  trk2_C -> SetLineColor(kBlack);
+
+  Fit_Functions f;
+  f.ConvolveHists(trk1, trk1, trk2_C);
+
+  f.Normalizer(trk2_C);
+  trk2_C -> Scale(trk2_D -> Integral()); 
+
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+  trk1 -> Draw("SAMEHIST");
+  trk2_D -> Draw("SAMEHIST");
+  trk2_C -> Draw("SAMEHIST");
+  can -> Update();
+}
 
 
+const TString *DeconvolutionRL(Double_t *source, const Double_t *response, int posit,
+                                       int ssize, int numberIterations,
+                                       int numberRepetitions, Double_t boost )
+ {
+    if (ssize <= 0)
+       return new TString("Wrong Parameters");
+  
+    if (numberRepetitions <= 0)
+       return new TString("Wrong Parameters");
+  
+        //   working_space-pointer to the working vector
+        //   (its size must be 4*ssize of source spectrum)
+    Double_t *working_space = new Double_t[4 * ssize];
+    int i, j, k, lindex, lh_gold, repet, kmin, kmax;
+    Double_t lda, ldb, ldc, maximum;
+    lh_gold = -1;
+    maximum = 0;
+  
+ //read response vector
+    for (i = 0; i < ssize; i++) {
+       lda = response[i];
+       if (lda != 0)
+          lh_gold = i + 1;
+       working_space[ssize + i] = lda;
+    }
+    if (lh_gold == -1) {
+       delete [] working_space;
+       return new TString("ZERO RESPONSE VECTOR");
+    }
+  
+ //read source vector
+    for (i = 0; i < ssize; i++)
+       working_space[2 * ssize + i] = source[i];
+  
+ //initialization of resulting vector
+    for (i = 0; i < ssize; i++){
+       if (i <= ssize - lh_gold)
+          working_space[i] = 1;
+  
+       else
+          working_space[i] = 0;
+  
+    }
+        //**START OF ITERATIONS**
+    for (repet = 0; repet < numberRepetitions; repet++) {
+       if (repet != 0) {
+          for (i = 0; i < ssize; i++)
+             working_space[i] = TMath::Power(working_space[i], boost);
+       }
+       for (lindex = 0; lindex < numberIterations; lindex++) {
+          for (i = 0; i <= ssize - lh_gold; i++){
+             lda = 0;
+             if (working_space[i] > 0){//x[i]
+                for (j = i; j < i + lh_gold; j++){
+                   ldb = working_space[2 * ssize + j];//y[j]
+                   if (j < ssize){
+                      if (ldb > 0){//y[j]
+                         kmax = j;
+                         if (kmax > lh_gold - 1)
+                            kmax = lh_gold - 1;
+                         kmin = j + lh_gold - ssize;
+                         if (kmin < 0)
+                            kmin = 0;
+                         ldc = 0;
+                         for (k = kmax; k >= kmin; k--){
+                            ldc += working_space[ssize + k] * working_space[j - k];//h[k]*x[j-k]
+                         }
+                         if (ldc > 0)
+                            ldb = ldb / ldc;
+  
+                         else
+                            ldb = 0;
+                      }
+                      ldb = ldb * working_space[ssize + j - i];//y[j]*h[j-i]/suma(h[j][k]x[k])
+                   }
+                   lda += ldb;
+                }
+                lda = lda * working_space[i];
+             }
+             working_space[3 * ssize + i] = lda;
+          }
+          for (i = 0; i < ssize; i++)
+             working_space[i] = working_space[3 * ssize + i];
+       }
+    }
+  
+ //shift resulting spectrum
+    for (i = 0; i < ssize; i++) {
+       lda = working_space[i];
+       j = i + posit;
+       j = j % ssize;
+       working_space[ssize + j] = lda;
+    }
+  
+ //write back resulting spectrum
+    for (i = 0; i < ssize; i++)
+       source[i] = working_space[ssize + i];
+    delete[]working_space;
+    return 0;
+ }
+
+void Verification::NewLRTesting(TH1F* trk)
+{
+
+  Fit_Functions f; 
+  Functions F;
+  
+  // Things that need an input 
+  float offset = 0.1;
+  float min = 0;
+  float max = 20;
+  float GaussianOffSet = -2; 
+
+  // Conversion factors
+  float bins = trk -> GetNbinsX(); 
+  float ss = (max-min) / bins;
+  int GausOff = std::round(std::abs(GaussianOffSet) / ss);
+
+  // Static Gaussian Histogram used as a PSF
+  int LengthBins = bins + offset*bins + GausOff;
+  TH1F* Gau_H = new TH1F("Gaus_S", "Gaus_S", LengthBins, GaussianOffSet, max + ss*offset*bins);
+  f.GaussianGenerator(4, 0.2, 500000, Gau_H);
+
+  std::vector<float> temp = F.TH1FToVector(trk, LengthBins, GausOff);
+  TH1F* Trk_H = F.VectorToTH1F(temp, "Gaussian", LengthBins, GaussianOffSet, max + ss*offset*bins);
+
+  // Get the maximum of the Gaussian since this would be considered the zerobin
+  Int_t zeroBin = Gau_H -> GetMaximumBin();
+
+  // Convert the track hist to double 
+  Double_t source[Trk_H -> GetNbinsX()];
+  Double_t response[Gau_H -> GetNbinsX()];
+
+  Int_t i;
+  const Int_t nbins = Gau_H -> GetNbinsX();
+  for (i = 0; i < nbins; i++) source[i] = Trk_H -> GetBinContent(i + 1);
+  Int_t off = 0;
+  for (i = 0; i < off; i++) response[i]=0;
+  for (i = 0; i < nbins; i++) response[i + off] = Gau_H -> GetBinContent(i + 1); 
+
+  // Deconvolution
+  auto results = DeconvolutionRL(source, response, zeroBin, nbins, 1, 1, 1);
+ 
+  // Revert back to hist   
+  TH1F* Gau_C = (TH1F*)Gau_H -> Clone("Gau_C");
+  TH1F* Trk_C = (TH1F*)Gau_H -> Clone("Trk_C");
+  Gau_C -> Reset();
+  Trk_C -> Reset();
+  Gau_C -> SetLineColor(kOrange);
+  Trk_C -> SetLineColor(kRed); 
+
+  for (i = 0; i < nbins; i++) Trk_C -> SetBinContent(i + 1, source[i]);
+  for (i = 0; i < nbins; i++) Gau_C -> SetBinContent(i + 1, response[i]);
+
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+  Trk_C -> Draw("SAMEHIST");
+  Gau_C -> Draw("SAMEHIST");
+  can -> Update(); 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
 
 
