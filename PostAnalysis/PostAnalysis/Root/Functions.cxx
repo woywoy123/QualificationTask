@@ -397,7 +397,7 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
   delete Deconv;
   delete Hist;
   delete Result;
-  return deconv;
+  return Dec;
 }
 
 
@@ -614,8 +614,59 @@ void Fit_Functions::GaussianGenerator(float mean, float stdev, int N, TH1F* Hist
   delete gRandom; 
 }
 
-std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*> PDFs, TH1F* trk2, float min, float max, float stdev_s, float stdev_e, float mean_s, float mean_e)
+std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*> PDFs, TH1F* trk2, float min, float max, float offset, float stdev_s, float stdev_e, float mean_s, float mean_e)
 {
+  // Namespace
+  Functions F;
+ 
+  // Constants in the code 
+  const float Padding = max / 2;
+  const int bins = trk2 -> GetNbinsX(); 
+  const float ss = (max-min) / bins;
+  const int Pad = std::round(std::abs(Padding) / ss);
+  const float GaussianMean = 0; /// need to add later
+  const float STDev = 0.1; // Need to add later
+  const float Damp = 0.75;
+  const int iteration = 50;
+
+  // Define the static Gaussian PSF
+  TH1F* PSF_HL = new TH1F("PSF_HL", "PSF_HL", bins + 2*Pad, min - Padding, max + Padding);   
+  GaussianGenerator(GaussianMean, STDev, 500000, PSF_HL);
+  Normalizer(PSF_HL); 
+  std::vector<float> PSF_V = F.TH1FToVector(PSF_HL);
+  delete PSF_HL;
+
+  std::vector<TH1F*> PDF_HLs;
+  for (TH1F* trk : PDFs)
+  {
+    // Configure the histograms 
+    TString name = trk -> GetName(); name+=("_PDF");
+    TH1F* PDF = new TH1F(name, name, bins + 2*Pad, min - Padding, max + Padding);
+    
+    // Fill the histograms with an offset 
+    std::vector<float> temp = TH1FDataVector(trk, offset);
+    F.VectorToTH1F(temp, PDF, Pad);
+
+    // Normalize the histograms 
+    Normalizer(PDF);
+    
+    // Convert to vector 
+    std::vector<float> PDF_V = F.TH1FToVector(PDF);
+
+    // Start the deconvolution 
+    std::vector<float> deconv(PSF_V.size(), 0.5);
+    for (int i(0); i < iteration; i++)
+    {
+      deconv = LRDeconvolution(PDF_V, PSF_V, deconv, Damp);  
+    }
+    
+    // Write deconv to a histogram 
+    PDF -> Reset(); 
+    F.VectorToTH1F(deconv, PDF, Pad);
+    Normalizer(PDF);
+    PDF_HLs.push_back(PDF);
+  }
+
   // Define the range of the dEdx
   RooRealVar* x = new RooRealVar("x", "x", min, max); 
 
@@ -636,7 +687,7 @@ std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*
   std::vector<RooGaussian*> G_Vars = GaussianVariables(Gaus_String, Means, Stdev, x);
  
   // Import the PDFs as a RooDataHist
-  std::vector<RooHistPdf*> PDF_Vars = ConvertTH1FtoPDF(PDFs, x);
+  std::vector<RooHistPdf*> PDF_Vars = ConvertTH1FtoPDF(PDF_HLs, x);
    
   // Define the ntrack coefficients:
   float Lumi = trk2 -> Integral();
@@ -654,7 +705,6 @@ std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*
   // Import the trk 2 data as a RooDataHist
   RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, trk2); 
   model.fitTo(*trk2_D, Constrain(*Means[0]), Constrain(*Means[1]), Constrain(*Means[2]), Constrain(*Means[3]), Constrain(*Stdev[0]), Constrain(*Stdev[1]), Constrain(*Stdev[2]), Constrain(*Stdev[3]));
- 
 
   for (unsigned int i(0); i < Means.size(); i++)
   {
@@ -663,6 +713,7 @@ std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*
     delete G_Vars[i];
     delete PDF_Vars[i];
     delete Conv_Vars[i];
+    delete PDF_HLs[i];
   }
 
   delete trk2_D; 

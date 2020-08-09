@@ -65,8 +65,8 @@ void PostAnalysis()
  
   // Create some Datasets which have some contamination
   // === COMPN is the composition of cross contamination
-  std::vector<float> COMP1 = {1.0,  0., 0.0, 0.0};  
-  std::vector<float> COMP2 = {0., 0.25,  0.,  0.};  
+  std::vector<float> COMP1 = {0.75,  0.20, 0.05, 0.0};  
+  std::vector<float> COMP2 = {0.1, 0.8,  0.1,  0.};  
   std::vector<float> COMP3 = {0.01, 0.2,  0.59,  0.2};  
   std::vector<float> COMP4 = {0.02,   0.2, 0.2,   0.58}; 
   std::vector<TString> Data_Names = {"trk1", "trk2", "trk3", "trk4"};
@@ -106,13 +106,9 @@ void PostAnalysis()
 
   //V.MainAlgorithm(Data_ntrk, trk2, Hists); 
  
-  //V.MainGaussianUnfolding(Data_ntrk, trk2, Hists); 
-  
-  // Delete me: 
-  //f.ConvolveHists(trk1, trk2, trk1); 
-  f.ArtifactRemove(trk1, "b");
+  V.MainGaussianUnfolding(Data_ntrk, trk2, Hists); 
 
-  V.Debug(trk1, trk2);
+  //V.Debug(trk1, trk2);
 
   //V.CalibrationDataConvolution();
   

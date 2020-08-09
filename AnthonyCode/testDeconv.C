@@ -588,8 +588,8 @@ void testDeconv()
     }
     ++iterFit;
   }
-  can->SetLogy(false);
-  graphFrac2.Draw("ap");
+  can->SetLogy(false); 
+  graphFrac2.Draw("ap*");
   graphFrac2.GetXaxis()->SetTitle("Iteration");
   can->Print("RooFitCan.pdf");
 

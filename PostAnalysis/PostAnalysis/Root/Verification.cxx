@@ -264,10 +264,12 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
   float offset = 0.1;
   float min = 0;
   float max = 20;
-  float mean = 0; 
-  float stdev = 0.2;
-  float GaussianOffSet = -2;
+  float mean_s = -5; 
+  float mean_e = 5;
+  float stdev_s = 0.001;
+  float stdev_e = 1;
   int trkn = 2;
+  int bins = Target -> GetNbinsX();
 
   Fit_Functions f;
   Functions F; 
@@ -280,33 +282,12 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
   TH1F* trk4 = (TH1F*)Data[3] -> Clone("trk4_Copy");
   std::vector<TH1F*> Data_Copy = {trk1, trk2, trk3, trk4};
   
-  // Conversion factors
-  float bins = trk2 -> GetNbinsX(); 
-  float ss = (max-min) / bins;
-  int GausOff = std::round(std::abs(GaussianOffSet) / ss);
-
   // Create the trk convolved hists
-  TH1F* trk1_C = new TH1F("trk1_C", "trk1_C", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
-  TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
-  TH1F* trk3_C = new TH1F("trk3_C", "trk3_C", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
-  TH1F* trk4_C = new TH1F("trk4_C", "trk4_C", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
-
-  // Create the trk convolved hists
-  TH1F* trk1_nom = new TH1F("trk1_nom", "trk1_nom", bins, min, max); 
-  TH1F* trk2_nom = new TH1F("trk2_nom", "trk2_nom", bins, min, max); 
-  TH1F* trk3_nom = new TH1F("trk3_nom", "trk3_nom", bins, min, max); 
-  TH1F* trk4_nom = new TH1F("trk4_nom", "trk4_nom", bins, min, max); 
-
-  // Create the data hist with the same length as the convoluted histograms
-  TH1F* trknD = new TH1F("trknD", "trknD", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins); 
-
-  // Fill the above hists
-  std::vector<float> Target_V = F.TH1FToVector(Target);
-  F.VectorToTH1F(Target_V, trknD, GausOff);
+  TH1F* trk1_C = new TH1F("trk1_C", "trk1_C", bins, min, max); 
+  TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins, min, max); 
+  TH1F* trk3_C = new TH1F("trk3_C", "trk3_C", bins, min, max); 
+  TH1F* trk4_C = new TH1F("trk4_C", "trk4_C", bins, min, max); 
    
-  // Static Gaussian Histogram used as a PSF
-  TH1F* GausStatic = new TH1F("Gaus_S", "Gaus_S", bins + offset*bins + GausOff, GaussianOffSet, max + ss*offset*bins);
-
   // ========= Debug Stuff ================== //
   TCanvas* can = new TCanvas();
   can -> SetLogy();
@@ -314,160 +295,73 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
   trk2_C -> SetLineColor(kOrange);
   trk3_C -> SetLineColor(kGreen);
   trk4_C -> SetLineColor(kBlue);
-  //trk1_C -> SetLineStyle(kDashed);
-  //trk2_C -> SetLineStyle(kDashed);
-  //trk3_C -> SetLineStyle(kDashed);
-  //trk4_C -> SetLineStyle(kDashed);
-  GausStatic -> SetLineStyle(kDashed);
-  GausStatic -> SetLineColor(kBlack);
+
+  // Vector declaration: Data_Vector
+  std::vector<float> Data_Vector = f.TH1FDataVector(trk2, offset);
 
   // Vector declarations: Priors 
-  std::vector<float> deconv(bins + offset*bins, offset);
-  std::vector<float> deconv1;
-  std::vector<float> deconv2;
-  std::vector<float> deconv3;
-  std::vector<float> deconv4;
-  
-  // Vector declarations: Data Vectors
-  std::vector<float> Data_Vector = f.TH1FDataVector(trk2, offset);
-  std::vector<float> DV1;
-  std::vector<float> DV2;
-  std::vector<float> DV3;
-  std::vector<float> DV4;
-
-  // Constants
-  const int len = trk1_C -> GetNbinsX();
-
-  // Generate a static Gaussian for deconvolution
-  f.GaussianGenerator(0, 0.2, 500000, GausStatic);
-  f.Normalizer(GausStatic);
-  std::vector<float> Gaus = F.TH1FToVector(GausStatic);
-
-
-  for (int y(0); y < 1; y++)
+  std::vector<float> deconv(bins + offset*bins, 0.5);
+ 
+  for (int y(0); y < 3; y++)
   { 
-    for (int i(0); i < 50; i++)
+    for (int z(0); z < 100; z++)
     {
       deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75);
       deconv = f.TailReplace(trk1, deconv);
+
+      F.VectorToTH1F(deconv, trk1_C);  
+      f.ArtifactRemove(trk1_C); 
+      f.Normalizer(trk1_C); 
     }
 
     // 1-Track Histogram  
-    F.VectorToTH1F(deconv, trk1_nom); 
-    f.ArtifactRemove(trk1_nom, "b");
-    f.Normalizer(trk1_nom);
+    F.VectorToTH1F(deconv, trk1_C); 
+    f.ArtifactRemove(trk1_C);
+    f.Normalizer(trk1_C);
     
     // 2-Track Histogram
-    f.ConvolveHists(trk1_nom, trk1_nom, trk2_nom);
-    f.ArtifactRemove(trk2_nom);
-    f.Normalizer(trk2_nom);
+    f.ConvolveHists(trk1_C, trk1_C, trk2_C);
+    f.ArtifactRemove(trk2_C);
+    f.Normalizer(trk2_C);
 
     // 3-Track Histogram
-    f.ConvolveHists(trk1_nom, trk2_nom, trk3_nom);
-    f.ArtifactRemove(trk3_nom);
-    f.Normalizer(trk3_nom);
+    f.ConvolveHists(trk1_C, trk2_C, trk3_C);
+    f.ArtifactRemove(trk3_C);
+    f.Normalizer(trk3_C);
     
     // 4-Track Histogram
-    f.ConvolveHists(trk2_nom, trk2_nom, trk4_nom);
-    f.ArtifactRemove(trk4_nom);
-    f.Normalizer(trk4_nom); 
+    f.ConvolveHists(trk2_C, trk2_C, trk4_C);
+    f.ArtifactRemove(trk4_C);
+    f.Normalizer(trk4_C); 
 
- 
-    // === Use the Gaussian as the PSF function and do the deconvolution 
-    // Define the Data Vectors
-    DV1 = std::vector<float>(GausOff, 0);
-    DV2 = std::vector<float>(GausOff, 0);
-    DV3 = std::vector<float>(GausOff, 0);
-    DV4 = std::vector<float>(GausOff, 0);
-   
-    // Create the vectors with the nominal TH1F entries    
-    std::vector<float> temp1 = f.TH1FDataVector(trk1_nom, offset);
-    std::vector<float> temp2 = f.TH1FDataVector(trk2_nom, offset);
-    std::vector<float> temp3 = f.TH1FDataVector(trk3_nom, offset);
-    std::vector<float> temp4 = f.TH1FDataVector(trk4_nom, offset);
-
-    // Append the vector to the initial DVNs
-    DV1.insert(DV1.end(), temp1.begin(), temp1.end());
-    DV2.insert(DV2.end(), temp2.begin(), temp2.end());
-    DV3.insert(DV3.end(), temp3.begin(), temp3.end());
-    DV4.insert(DV4.end(), temp4.begin(), temp4.end());
-
-    // Define the priors for the deconv
-    deconv1 = std::vector<float>(len, 0.5);
-    deconv2 = std::vector<float>(len, 0.5);
-    deconv3 = std::vector<float>(len, 0.5);
-    deconv4 = std::vector<float>(len, 0.5);
-
-    for (int i(0); i < 50; i++)
-    {
-      deconv1 = f.LRDeconvolution(DV1, Gaus, deconv1, 0.75);
-      deconv2 = f.LRDeconvolution(DV2, Gaus, deconv2, 0.75);
-      deconv3 = f.LRDeconvolution(DV3, Gaus, deconv3, 0.75);
-      deconv4 = f.LRDeconvolution(DV4, Gaus, deconv4, 0.75);
-      
-      F.VectorToTH1F(deconv1, trk1_C);
-      F.VectorToTH1F(deconv2, trk2_C);
-      F.VectorToTH1F(deconv3, trk3_C);
-      F.VectorToTH1F(deconv4, trk4_C);
-
-      f.ArtifactRemove(trk1_C);
-      f.ArtifactRemove(trk2_C);
-      f.ArtifactRemove(trk3_C);      
-      f.ArtifactRemove(trk4_C);      
-              
-      f.Normalizer(trk1_C);   
-      f.Normalizer(trk2_C);
-      f.Normalizer(trk3_C);
-      f.Normalizer(trk4_C);
-    }
-
-    trk1_C -> Draw("SAMEHIST");
-   // trk4_C -> Draw("SAMEHIST");
-   // trk2_C -> Draw("SAMEHIST");
-   // trk3_C -> Draw("SAMEHIST");
-    //trknD -> Draw("SAMEHIST*");
-    can -> Update();
-
-    
-
-
+    // Vectors of the templates
     std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};
-    //std::vector<RooRealVar*> vars = f.GaussianConvolutionFit(PDFs, trknD, 0, 20, 0.01, 5, -5, 1);
-   // std::vector<float> O = f.Fractionalizer(vars, trknD);
 
-   // std::cout << "Fraction of trk 1: " << O[0] << std::endl;
-   // std::cout << "Fraction of trk 2: " << O[1] << std::endl; 
-   // std::cout << "Fraction of trk 3: " << O[2] << std::endl;
-   // std::cout << "Fraction of trk 4: " << O[3] << std::endl;
+    std::vector<RooRealVar*> vars = f.GaussianConvolutionFit(PDFs, trk2, min, max, offset, stdev_s, stdev_e, mean_s, mean_e);
+    std::vector<float> O = f.Fractionalizer(vars, trk2);
 
-    TH1F* trk = (TH1F*)trk1_C -> Clone("trk");
-    trk -> Reset();
-    f.ConvolveHists(GausStatic, trk1_C, trk);
-    
+    std::cout << "Fraction of trk 1: " << O[0] << std::endl;
+    std::cout << "Fraction of trk 2: " << O[1] << std::endl; 
+    std::cout << "Fraction of trk 3: " << O[2] << std::endl;
+    std::cout << "Fraction of trk 4: " << O[3] << std::endl;
 
+
+    float Lumi = trk2 -> Integral();
+    trk1_C -> Scale(Lumi*O[0]);    
+    trk2_C -> Scale(Lumi*O[1]);
+    trk3_C -> Scale(Lumi*O[2]); 
+    trk4_C -> Scale(Lumi*O[3]);
     trk1_C -> Draw("SAMEHIST");
-    trk -> Draw("SAMEHIST*"); 
-   // trk4_C -> Draw("SAMEHIST");
-   // trk2_C -> Draw("SAMEHIST");
-   // trk3_C -> Draw("SAMEHIST");
-    //trknD -> Draw("SAMEHIST*");
+    trk2_C -> Draw("SAMEHIST");
+    trk3_C -> Draw("SAMEHIST");
+    trk4_C -> Draw("SAMEHIST");
+    trk2 -> Draw("SAMEHIST*");
     can -> Update();
-
-
-
-
-
-    //trk1_C -> Scale(Target -> Integral()*O[0]);
-    //trk2_C -> Scale(Target -> Integral()*O[1]);
-    //trk3_C -> Scale(Target -> Integral()*O[2]);
-    //trk4_C -> Scale(Target -> Integral()*O[3]);
      
 
-
     // Subtract the estimated cross contamination from the Target copy
-    //f.Subtraction(PDFs, Target, trkn, vars);   
- 
-    //Data_Vector = f.TH1FDataVector(Target, 0.1);   
+    f.Subtraction(PDFs, trk2, trkn, vars);    
+    Data_Vector = f.TH1FDataVector(trk2, offset);   
     
   }
 }

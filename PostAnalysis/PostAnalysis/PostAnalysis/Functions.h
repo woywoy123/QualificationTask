@@ -116,7 +116,7 @@ class Fit_Functions
     void GaussianGenerator(float mean, float std, int N, TH1F* Hist);
 
     // Gaussian convolution fit 
-    std::vector<RooRealVar*> GaussianConvolutionFit(std::vector<TH1F*> PDFs, TH1F* trk2, float min, float max, float stdev_s, float stdev_e, float mean_s, float mean_e); 
+    std::vector<RooRealVar*> GaussianConvolutionFit(std::vector<TH1F*> PDFs, TH1F* trk2, float min, float max, float offset, float stdev_s, float stdev_e, float mean_s, float mean_e); 
 
   private:
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
