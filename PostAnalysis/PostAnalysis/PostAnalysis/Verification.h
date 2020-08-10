@@ -12,12 +12,9 @@ using namespace RooFit;
 class Verification
 {
   public: 
-    void UnitTesting();
     void MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vector<TH1F*> Closure);
     void MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, std::vector<TH1F*> Closure);
     void DeconvolutionGaussianDebug(TH1F* trk1, TH1F* trk2); 
     void CalibrationDataConvolution();
-    void NewLRTesting(TH1F* trk);
-    void Debug(TH1F* trk1, TH1F* trk2);
 };
 #endif 

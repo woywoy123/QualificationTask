@@ -164,5 +164,4 @@ namespace Constants
   const std::vector<Color_t> Colors = {kRed, kBlue, kOrange, kCyan, kGreen, kYellow, kViolet, kAzure};
 }
 
-
 #endif
