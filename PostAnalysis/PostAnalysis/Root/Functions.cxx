@@ -400,56 +400,46 @@ std::vector<float> Fit_Functions::TailReplace(TH1F* hist, std::vector<float> dec
   return Dec;
 }
 
-
-
 // This is the closure test of the tail replace 
 std::vector<float> Fit_Functions::TailReplaceClosure(TH1F* hist, std::vector<float> deconv)
 {
-  // Get basic information 
-  float bins = hist -> GetNbinsX(); // Number of bins in hist
-  float n_D = deconv.size(); // Number of bins for deconv 
-  int delta = n_D - bins; // Difference in length 
+   
+  Functions F;
+  Fit_Functions f;
 
-  // Make a copy/create new histograms 
-  TH1F* Deconv = (TH1F*)hist -> Clone("Deconv");
-  Deconv -> Reset();
-  TH1F* Hist = (TH1F*)hist -> Clone("Hist");
+  // ========= Constants and Inputs =================== //
+  const float bins = hist -> GetNbinsX();
+  const float v_size = deconv.size();
+  const float offset = (v_size - bins)/bins;
+ 
+  // ========= Add Padding to the histograms ========== //
+  TH1F* Source = new TH1F("Source", "Source", deconv.size(), 0, 20);
+  TH1F* Target = new TH1F("Target", "Target", deconv.size(), 0, 20);
 
-  // Fill the Deconv
-  for (int i(0); i < bins; i++)
+  std::vector<float> Replacement = f.TH1FDataVector(hist, offset);
+   
+  F.VectorToTH1F(Replacement, Source);
+  F.VectorToTH1F(deconv, Target);
+
+  float TLumi = Target -> Integral();
+  float SLumi = Source -> Integral();
+ 
+  const int UpTo = std::round(2*(Target -> GetMaximumBin()));
+  if (Target -> GetBinContent(UpTo) == deconv[0]) { return deconv; }
+
+  for (int i(UpTo); i < v_size; i++) 
   {
-    Deconv -> SetBinContent(i+1, deconv[i]);
+    float t_e = Source -> GetBinContent(i + 1);
+    float d_e = Target -> GetBinContent(i + 1);
+    Target -> SetBinContent(i+1, t_e * (TLumi/SLumi) );    
   }
 
-  // Find the peaks of the two histograms 
-  int n_max_D = Deconv -> GetMaximumBin();
-  int n_max_H = Hist -> GetMaximumBin();
-  float max_D = Deconv -> GetBinContent(n_max_D);
-  float max_H = Hist -> GetBinContent(n_max_H);
-  int delta_peak = n_max_D - n_max_H;
+  std::vector<float> De = F.TH1FToVector(Target);
 
-  for (int i(n_max_D); i < bins; i++)
-  {
-    float e = Hist -> GetBinContent(i+1);
-    float d = Deconv -> GetBinContent(i+1);
-    Deconv -> SetBinContent(i+1 + delta_peak, e*(max_D/max_H));
-  }
-
-  std::vector<float> De(n_D, 0);
-  for (int i(0); i < bins; i++)
-  {
-    De[i] = Deconv -> GetBinContent(i+1); 
-    if (i < delta)
-    { 
-      float d = Deconv -> GetBinContent(bins - i - 1);
-      De[i+bins] = d; 
-    }
-  }
-  
-  delete Deconv;
-  delete Hist;
-
+  delete Target;
+  delete Source;
   return De;
+
 }
 
 std::vector<RooRealVar*> Fit_Functions::FitPDFtoData(std::vector<TH1F*> PDFs, TH1F* Data, float min, float max)

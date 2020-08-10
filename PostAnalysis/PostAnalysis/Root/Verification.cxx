@@ -179,7 +179,7 @@ void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vec
       deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75); 
        
       // Tail Replace with a 1trk dataset       
-      deconv = f.TailReplace(trk1, deconv); 
+      deconv = f.TailReplaceClosure(trk1, deconv); 
 
       can -> cd(1); 
       F.VectorToTH1F(deconv, trk1_C);  
@@ -307,7 +307,7 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
     for (int z(0); z < 100; z++)
     {
       deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75);
-      deconv = f.TailReplace(trk1, deconv);
+      deconv = f.TailReplaceClosure(trk1, deconv);
 
       F.VectorToTH1F(deconv, trk1_C);  
       f.ArtifactRemove(trk1_C); 
@@ -366,7 +366,7 @@ void Verification::MainGaussianUnfolding(std::vector<TH1F*> Data, TH1F* Target, 
   }
 }
 
-void Verification::Debug(TH1F* trk1, TH1F* trk2)
+void Verification::DeconvolutionGaussianDebug(TH1F* trk1, TH1F* trk2)
 {
 
   // Things that need an input 
@@ -693,8 +693,71 @@ void Verification::NewLRTesting(TH1F* trk)
   Trk_C -> Draw("SAMEHIST");
   Gau_C -> Draw("SAMEHIST");
   can -> Update(); 
-
-
 }
 
 
+// Testing the replace part 
+std::vector<float> Replace(TH1F* trk1, std::vector<float> deconv)
+{
+   
+  Functions F;
+  Fit_Functions f;
+
+  // ========= Constants and Inputs =================== //
+  const float bins = trk1 -> GetNbinsX();
+  const float v_size = deconv.size();
+  const float offset = (v_size - bins)/bins;
+ 
+  // ========= Add Padding to the histograms ========== //
+  TH1F* Source = new TH1F("Source", "Source", deconv.size(), 0, 20);
+  TH1F* Target = new TH1F("Target", "Target", deconv.size(), 0, 20);
+
+  std::vector<float> Replacement = f.TH1FDataVector(trk1, offset);
+   
+  F.VectorToTH1F(Replacement, Source);
+  F.VectorToTH1F(deconv, Target);
+
+  float TLumi = Target -> Integral();
+  float SLumi = Source -> Integral();
+ 
+  const int UpTo = std::round(2*(Target -> GetMaximumBin()));
+  if (Target -> GetBinContent(UpTo) == deconv[0]) { return deconv; }
+
+  for (int i(UpTo); i < v_size; i++) 
+  {
+    float t_e = Source -> GetBinContent(i + 1);
+    float d_e = Target -> GetBinContent(i + 1);
+    Target -> SetBinContent(i+1, t_e * (TLumi/SLumi) );    
+  }
+
+  std::vector<float> De = F.TH1FToVector(Target);
+
+  delete Target;
+  delete Source;
+  return De;
+}
+
+void Verification::Debug(TH1F* trk1, TH1F* trk2)
+{
+  Fit_Functions f;
+  Functions F;
+
+  std::vector<float> Data_V = f.TH1FDataVector(trk2, 0.1);
+  std::vector<float> deconv(Data_V.size(), 0.5);
+
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+  can -> Update();
+
+  TH1F* Target = new TH1F("Target", "Target", deconv.size(), 0, 20);
+  Target -> GetYaxis() -> SetRangeUser(1e-2, 1e6);
+  for (int i(0); i < 300; i++)
+  {
+    deconv = f.LRDeconvolution(Data_V, deconv, deconv, 0.75);
+    deconv = Replace(trk1, deconv);
+    F.VectorToTH1F(deconv, Target);
+    Target -> Draw("SAMEHIST");
+    can -> Update();
+  }
+
+}
