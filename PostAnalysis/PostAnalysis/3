@@ -1,0 +1,396 @@
+#include<PostAnalysis/Functions.h>
+#include<PostAnalysis/UnitClosures.h>
+
+void UnitClosures::TestFit(std::vector<TH1F*> PDF, std::vector<TH1F*> Data, float min, float max, std::vector<std::vector<float>> Closure)
+{
+  Fit_Functions f;
+  Benchmark B;
+   
+  // Get each of the trks  
+  TH1F* trk1 = Data[0];
+  TH1F* trk2 = Data[1];
+  TH1F* trk3 = Data[2];
+  TH1F* trk4 = Data[3];
+
+  // Get the closure constants
+  std::vector<float> t1_C = Closure[0];
+  std::vector<float> t2_C = Closure[1];
+  std::vector<float> t3_C = Closure[2];
+  std::vector<float> t4_C = Closure[3];
+
+  // Fit them to data
+  std::vector<RooRealVar*> vars1 = f.FitPDFtoData(PDF, trk1, min, max);
+  std::vector<RooRealVar*> vars2 = f.FitPDFtoData(PDF, trk2, min, max);
+  std::vector<RooRealVar*> vars3 = f.FitPDFtoData(PDF, trk3, min, max);
+  std::vector<RooRealVar*> vars4 = f.FitPDFtoData(PDF, trk4, min, max);
+
+  // Get the fractions 
+  std::vector<float> v1 = f.Fractionalizer(vars1, trk1);
+  std::vector<float> v2 = f.Fractionalizer(vars2, trk2);
+  std::vector<float> v3 = f.Fractionalizer(vars3, trk3);
+  std::vector<float> v4 = f.Fractionalizer(vars4, trk4);
+  std::vector<std::vector<float>> v = {v1, v2, v3, v4};
+
+  // Comparing the difference between the prediction and closure
+  float s1 = B.PythagoreanDistance(v1, t1_C);
+  float s2 = B.PythagoreanDistance(v2, t2_C);
+  float s3 = B.PythagoreanDistance(v3, t3_C);
+  float s4 = B.PythagoreanDistance(v4, t4_C);
+  std::vector<float> s = {s1, s2, s3, s4};
+
+  for (int i(0); i < Data.size(); i++)
+  {
+    std::cout << "###################### TRK: " << i+1 << " ################### " << std::endl;
+    std::cout << "Prediction: " << v[i][0] << " "  << v[i][1] << " " << v[i][2] << " " << v[i][3] << std::endl;
+    std::cout << "Truth: " << Closure[i][0] << " "  << Closure[i][1] << " " << Closure[i][2] << " " << Closure[i][3] << std::endl;
+    std::cout << "Error: " << s[i] << std::endl;
+  }
+}
+
+void UnitClosures::TestTailAndDeconv(TH1F* trk1, TH1F* trk2, int iter, float min, float max)
+{
+  Fit_Functions f;
+  Functions F;
+
+  std::vector<float> Data_V = f.TH1FDataVector(trk2, 0.1);
+  std::vector<float> deconv(Data_V.size(), 0.5);
+
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+  can -> Update();
+
+  TH1F* Target = new TH1F("Target1", "Target1", deconv.size(), min, max); 
+  TH1F* Closure = new TH1F("Closure1", "Closure1", deconv.size(), min, max);
+  F.ExpandTH1F(trk1, Closure);
+  Closure -> SetLineStyle(kDashed);
+  Closure -> Draw("SAMEHIST");  
+  
+  Target -> SetLineColor(kRed);
+  Target -> GetYaxis() -> SetRangeUser(1e-2, 1e6);
+  
+  for (int i(0); i < iter; i++)
+  {
+    deconv = f.LRDeconvolution(Data_V, deconv, deconv, 0.75);
+    deconv = f.TailReplaceClosure(trk1, deconv);
+    F.VectorToTH1F(deconv, Target);
+    Target -> Draw("SAMEHIST");
+    can -> Update();
+  }
+}
+
+void UnitClosures::TestDeconvolution(TH1F* h1, TH1F* PSF, int iter)
+{
+  Fit_Functions f;
+  Functions F;
+ 
+  TH1F* Conv = (TH1F*)h1 -> Clone("Convolved");
+  Conv -> Reset();
+  Conv -> SetLineStyle(kDotted); 
+
+  TH1F* Deconv = (TH1F*)h1 -> Clone("Deconv");
+  Deconv -> Reset();
+  Deconv -> SetLineColor(kRed);
+  Deconv -> GetYaxis() -> SetRangeUser(1e-2, h1 -> Integral());
+
+  h1 -> SetLineColor(kBlack);
+  h1 -> SetLineStyle(kDotted);
+
+  PSF -> SetLineColor(kGreen);
+
+  f.ConvolveHists(h1, PSF, Conv);
+  f.ArtifactRemove(Conv, "b");
+  f.Normalizer(Conv);
+  Conv -> Scale(PSF -> Integral());
+  
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+
+  std::vector<float> H1 = f.TH1FDataVector(Conv, 0.1);
+  std::vector<float> PSF_V = f.TH1FDataVector(PSF, 0.1);
+  std::vector<float> deconv(H1.size(), 0.5);
+
+  Conv -> Draw("SAMEHIST");
+   
+  for (int i(0); i < iter; i++)
+  {
+    deconv = f.LRDeconvolution(H1, PSF_V, deconv, 0.75);
+    F.VectorToTH1F(deconv, Deconv);
+    f.Normalizer(Deconv);
+    Deconv -> Scale(PSF -> Integral());
+    Deconv -> Draw("SAMEHIST");
+    PSF -> Draw("SAMEHIST");
+    h1 -> Draw("SAMEHIST");
+    can -> Update();
+  }
+  
+}
+
+void UnitClosures::TestSubtraction(TH1F* Data, int trk, std::vector<TH1F*> PDFs, float min, float max, std::vector<float> Closure)
+{
+  Fit_Functions f;
+
+  // ======= Closure plot 
+  TCanvas* can = new TCanvas();
+  gStyle -> SetOptStat(0);
+  can -> Divide(2,1);
+  can -> cd(1) -> SetLogy();
+  can -> cd(1);
+  
+  TH1F* Clo = (TH1F*)Data -> Clone("Closure Figure");
+  Clo -> SetLineColor(kBlack);
+  Clo -> Draw("SAMEHIST");
+   
+  TLegend* leg = new TLegend(0.9, 0.9, 0.75, 0.75);
+ // leg -> AddEntry(Clo, "Data");
+   
+  for (int i(0); i < PDFs.size(); i++)
+  {
+    f.Normalizer(PDFs[i]);
+    PDFs[i] -> SetLineColor(Constants::Colors[i]);
+    PDFs[i] -> Scale(Closure[i]*(Data -> Integral())); 
+    PDFs[i] -> Draw("SAMEHIST"); 
+    leg -> AddEntry(PDFs[i], PDFs[i] -> GetTitle());
+  }
+  leg -> Draw("SAME");
+
+  // ======== Prediction Plot   
+  std::vector<RooRealVar*> vars = f.FitPDFtoData(PDFs, Data, min, max);
+  //f.Subtraction(PDFs, Data, trk, vars); 
+  
+  can -> cd(2) -> SetLogy();
+  can -> cd(2);
+  Data -> Draw("SAMEHIST"); 
+  PDFs[trk -1] -> Draw("SAMEHIST*");
+}
+
+
+
+
+
+
+
+void Presentation::Threshold(TString DataDir)
+{
+  TFile* File = new TFile(DataDir);
+  if (!File -> IsOpen()){ std::cout << "Failed to open file" << std::endl; };
+ 
+  // I am using the 1-trk in hist for the 1 track distribution because in the paper this is how 
+  // the 1 track template is sampled. The 2 track templates are generated within the jet code  
+  int bins = 300;
+  float min = -0.5;
+  float max = 14.5;
+  TString Energy_trk1 = "/200_up_GeV";
+  TString Energy_trk2 = "/1000_1200_GeV";
+  std::vector<TString> Histograms = {"dEdx_out_ntrk1_calib", "dEdx_in_ntrk2_calib"};
+  std::vector<TString> Layers = Constants::Detector;
+   
+  TH1F* trk1_D = new TH1F("trk1_D", "trk1_D", bins, min, max);
+  TH1F* trk2_D = new TH1F("trk2_D", "trk2_D", bins, min, max);
+  TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins, min, max);
+ 
+  for (TString layer : Layers)
+  {
+    File -> cd(layer + Energy_trk1);
+    trk1_D -> Add((TH1F*)gDirectory -> Get(Histograms[0]));
+    File -> cd(layer + Energy_trk2);
+    trk2_D -> Add((TH1F*)gDirectory -> Get(Histograms[1])); 
+    File -> cd(); 
+  }
+
+  Fit_Functions f;
+  f.ConvolveHists(trk1_D, trk1_D, trk2_C);
+  f.ArtifactRemove(trk2_C, "b");
+
+  f.Normalizer(trk2_C);
+  trk2_C -> Scale(trk2_D -> Integral()); 
+
+  trk1_D -> SetLineColor(kRed);
+  trk2_D -> SetLineColor(kGreen);
+  trk2_C -> SetLineColor(kBlack);
+  trk1_D -> GetXaxis() -> SetTitle("dEdx (MeV g^{-1} cm^{2})");
+  trk1_D -> SetTitle("Convolution of 1-Track data for 2-Track Production");
+
+  TLegend* leg = new TLegend(0.9, 0.9, 0.75, 0.75);
+  leg -> AddEntry(trk1_D, "1-Track Data" + Energy_trk1);
+  leg -> AddEntry(trk2_D, "2-Track Data" + Energy_trk2);
+  leg -> AddEntry(trk2_C, "Convolved 2-Track");
+
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+  gStyle -> SetOptStat(0);
+  trk1_D -> Draw("SAMEHIST");
+  trk2_D -> Draw("SAMEHIST");
+  trk2_C -> Draw("SAMEHIST");
+  leg -> Draw("SAME");
+  can -> Update();
+  can -> Print("Threshold.png");
+}
+
+
+
+
+
+
+
+
+
+const TString *DeconvolutionRL(Double_t *source, const Double_t *response, int posit,
+                                       int ssize, int numberIterations,
+                                       int numberRepetitions, Double_t boost )
+ {
+    if (ssize <= 0)
+       return new TString("Wrong Parameters");
+  
+    if (numberRepetitions <= 0)
+       return new TString("Wrong Parameters");
+  
+        //   working_space-pointer to the working vector
+        //   (its size must be 4*ssize of source spectrum)
+    Double_t *working_space = new Double_t[4 * ssize];
+    int i, j, k, lindex, lh_gold, repet, kmin, kmax;
+    Double_t lda, ldb, ldc, maximum;
+    lh_gold = -1;
+    maximum = 0;
+  
+ //read response vector
+    for (i = 0; i < ssize; i++) {
+       lda = response[i];
+       if (lda != 0)
+          lh_gold = i + 1;
+       working_space[ssize + i] = lda;
+    }
+    if (lh_gold == -1) {
+       delete [] working_space;
+       return new TString("ZERO RESPONSE VECTOR");
+    }
+  
+ //read source vector
+    for (i = 0; i < ssize; i++)
+       working_space[2 * ssize + i] = source[i];
+  
+ //initialization of resulting vector
+    for (i = 0; i < ssize; i++){
+       if (i <= ssize - lh_gold)
+          working_space[i] = 1;
+  
+       else
+          working_space[i] = 0;
+  
+    }
+        //**START OF ITERATIONS**
+    for (repet = 0; repet < numberRepetitions; repet++) {
+       if (repet != 0) {
+          for (i = 0; i < ssize; i++)
+             working_space[i] = TMath::Power(working_space[i], boost);
+       }
+       for (lindex = 0; lindex < numberIterations; lindex++) {
+          for (i = 0; i <= ssize - lh_gold; i++){
+             lda = 0;
+             if (working_space[i] > 0){//x[i]
+                for (j = i; j < i + lh_gold; j++){
+                   ldb = working_space[2 * ssize + j];//y[j]
+                   if (j < ssize){
+                      if (ldb > 0){//y[j]
+                         kmax = j;
+                         if (kmax > lh_gold - 1)
+                            kmax = lh_gold - 1;
+                         kmin = j + lh_gold - ssize;
+                         if (kmin < 0)
+                            kmin = 0;
+                         ldc = 0;
+                         for (k = kmax; k >= kmin; k--){
+                            ldc += working_space[ssize + k] * working_space[j - k];//h[k]*x[j-k]
+                         }
+                         if (ldc > 0)
+                            ldb = ldb / ldc;
+  
+                         else
+                            ldb = 0;
+                      }
+                      ldb = ldb * working_space[ssize + j - i];//y[j]*h[j-i]/suma(h[j][k]x[k])
+                   }
+                   lda += ldb;
+                }
+                lda = lda * working_space[i];
+             }
+             working_space[3 * ssize + i] = lda;
+          }
+          for (i = 0; i < ssize; i++)
+             working_space[i] = working_space[3 * ssize + i];
+       }
+    }
+  
+ //shift resulting spectrum
+    for (i = 0; i < ssize; i++) {
+       lda = working_space[i];
+       j = i + posit;
+       j = j % ssize;
+       working_space[ssize + j] = lda;
+    }
+  
+ //write back resulting spectrum
+    for (i = 0; i < ssize; i++)
+       source[i] = working_space[ssize + i];
+    delete[]working_space;
+    return 0;
+ }
+
+void Debug::NewLRTesting(TH1F* trk)
+{
+
+  Fit_Functions f; 
+  Functions F;
+  
+  // Things that need an input 
+  float offset = 0.1;
+  float min = 0;
+  float max = 20;
+  float GaussianOffSet = -2; 
+
+  // Conversion factors
+  float bins = trk -> GetNbinsX(); 
+  float ss = (max-min) / bins;
+  int GausOff = std::round(std::abs(GaussianOffSet) / ss);
+
+  // Static Gaussian Histogram used as a PSF
+  int LengthBins = bins + offset*bins + GausOff;
+  TH1F* Gau_H = new TH1F("Gaus_S", "Gaus_S", LengthBins, GaussianOffSet, max + ss*offset*bins);
+  f.GaussianGenerator(4, 0.2, 500000, Gau_H);
+
+  std::vector<float> temp = F.TH1FToVector(trk, LengthBins, GausOff);
+  TH1F* Trk_H = F.VectorToTH1F(temp, "Gaussian", LengthBins, GaussianOffSet, max + ss*offset*bins);
+
+  // Get the maximum of the Gaussian since this would be considered the zerobin
+  Int_t zeroBin = Gau_H -> GetMaximumBin();
+
+  // Convert the track hist to double 
+  Double_t source[Trk_H -> GetNbinsX()];
+  Double_t response[Gau_H -> GetNbinsX()];
+
+  Int_t i;
+  const Int_t nbins = Gau_H -> GetNbinsX();
+  for (i = 0; i < nbins; i++) source[i] = Trk_H -> GetBinContent(i + 1);
+  Int_t off = 0;
+  for (i = 0; i < off; i++) response[i]=0;
+  for (i = 0; i < nbins; i++) response[i + off] = Gau_H -> GetBinContent(i + 1); 
+
+  // Deconvolution
+  auto results = DeconvolutionRL(source, response, zeroBin, nbins, 1, 1, 1);
+ 
+  // Revert back to hist   
+  TH1F* Gau_C = (TH1F*)Gau_H -> Clone("Gau_C");
+  TH1F* Trk_C = (TH1F*)Gau_H -> Clone("Trk_C");
+  Gau_C -> Reset();
+  Trk_C -> Reset();
+  Gau_C -> SetLineColor(kOrange);
+  Trk_C -> SetLineColor(kRed); 
+
+  for (i = 0; i < nbins; i++) Trk_C -> SetBinContent(i + 1, source[i]);
+  for (i = 0; i < nbins; i++) Gau_C -> SetBinContent(i + 1, response[i]);
+
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+  Trk_C -> Draw("SAMEHIST");
+  Gau_C -> Draw("SAMEHIST");
+  can -> Update(); 
+}

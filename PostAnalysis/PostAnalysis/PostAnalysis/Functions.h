@@ -121,20 +121,30 @@ class Fit_Functions
   private:
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
     int ArtifactRemoveForward(TH1F* Hist);
-    int ArtifactRemoveBackward(TH1F* Hist);  
-    
+    int ArtifactRemoveBackward(TH1F* Hist);   
 };
+
+class Algorithms
+{
+  public:
+    void MinimalAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*> O_PDFs, float min, float max, float offset, int iter, int trkn = 2);
+    std::vector<float> GaussianAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*> O_PDFs, float min, float max, float offset, float mean_s, float mean_e, float stdev_s, float stdev_e, int iter, int trkn = 2);
+ 
+
+};
+
 
 class Benchmark
 {
   public:
     float WeightedEuclidean(std::vector<float> v1, std::vector<float> v2);
     float PythagoreanDistance(std::vector<float> v1, std::vector<float> v2);
+    TCanvas* ClosurePlot(TString Name, std::vector<TH1F*> Data, std::vector<TH1F*> PDFs, std::vector<std::vector<float>> Closure);
 };
 
 namespace Constants
 {
-  const std::vector<TString> Detector = {"IBL", "Blayer", "layer1", "layer2"};
+  const std::vector<TString> Detector = {"Blayer"};
   const std::vector<TString> Pure_Names = {"dEdx_ntrk_1_ntru_1", 
                                            "dEdx_ntrk_2_ntru_2", 
                                            "dEdx_ntrk_3_ntru_3", 

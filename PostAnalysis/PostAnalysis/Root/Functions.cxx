@@ -1,4 +1,6 @@
 #include<PostAnalysis/Functions.h>
+#include<sstream>
+#include<iomanip>
 
 std::vector<TH1F*> Functions::MakeTH1F(std::vector<TString> Names, int bins, int min, int max, TString Extension)
 {
@@ -507,18 +509,16 @@ void Fit_Functions::Subtraction(std::vector<TH1F*> nTrk, TH1F* Target, int ntrk,
    
   for (int i(0); i < nTrk.size(); i++)
   {
-    Normalizer(nTrk.at(i));
-    float f = frac[i]*lumi;
-    if ( i != 1 )
+    if ( i != ntrk -1 )
     { 
+      Normalizer(nTrk.at(i));
+      float f = frac[i]*lumi;
       nTrk.at(i) -> Scale(f);
       Target -> Add(nTrk.at(i), -1); 
     }
-    delete var[i];
-    Normalizer(nTrk.at(i));
-  }
-  
-  ArtifactRemove(Target); 
+  } 
+  for (RooRealVar* r : var){ delete r; } 
+  ArtifactRemove(Target, "b"); 
 }
 
 void Fit_Functions::ArtifactRemove(TH1F* Hist, TString mode)
@@ -617,7 +617,7 @@ std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*
   const float GaussianMean = 0; /// need to add later
   const float STDev = 0.1; // Need to add later
   const float Damp = 0.75;
-  const int iteration = 50;
+  const int iteration = 25;
 
   // Define the static Gaussian PSF
   TH1F* PSF_HL = new TH1F("PSF_HL", "PSF_HL", bins + 2*Pad, min - Padding, max + Padding);   
@@ -698,16 +698,15 @@ std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*
 
   for (unsigned int i(0); i < Means.size(); i++)
   {
-    delete Means[i];
-    delete Stdev[i];
     delete G_Vars[i];
     delete PDF_Vars[i];
     delete Conv_Vars[i];
     delete PDF_HLs[i];
   }
-
   delete trk2_D; 
-  return C_Vars; 
+  
+  std::vector<RooRealVar*> Out = F.AppendVectors<RooRealVar*>({C_Vars, Means, Stdev});
+  return Out; 
 }
 
 // ============= Benchmarking Class ========== //
@@ -750,5 +749,127 @@ float Benchmark::PythagoreanDistance(std::vector<float> v1, std::vector<float> v
     di += pow(v1.at(i) - v2.at(i), 2);
   }
   return pow(di, 0.5);
+}
 
+TCanvas* Benchmark::ClosurePlot(TString Name, std::vector<TH1F*> Data, std::vector<TH1F*> PDFs, std::vector<std::vector<float>> Scales)
+{ 
+  Fit_Functions f;
+
+  TCanvas* can = new TCanvas(Name); 
+  gStyle -> SetOptStat(0); 
+  can -> Divide(2,2);  
+  for (int i(0); i < Data.size(); i++)
+  {
+    can -> cd(i+1) -> SetLogy();
+    can -> cd(i+1);
+    Data[i] -> SetLineColor(kBlack);
+    Data[i] -> Draw("SAMEHIST");
+ 
+    TLegend* leg = new TLegend(0.9, 0.9, 0.75, 0.75);  
+    leg -> AddEntry(Data[i], "Data" );  
+    for (int x(0); x < PDFs.size(); x++)
+    {
+      f.Normalizer(PDFs[x]);
+      if (Scales[i][x] != 0.)
+      {
+        // Convert the Scales entries to 3 Decimals 
+        std::stringstream ss;
+        ss << std::fixed << std::setprecision(4) << Scales[i][x];
+        TString s = ss.str();
+        TString Name = PDFs[x] -> GetTitle(); 
+        Name += ("_S_"); 
+        Name += (s);
+        
+        TH1F* Hist = (TH1F*)PDFs[x] -> Clone(Name);
+        Hist -> Scale(Scales[i][x]*Data[i] -> Integral());
+        Hist -> SetLineColor(Constants::Colors[x]); 
+        Hist -> Draw("SAMEHIST");
+        leg -> AddEntry(Hist, Name);  
+        leg -> Draw("SAME");
+      } 
+    }  
+  }
+  return can;
+}
+
+void Algorithms::MinimalAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*> O_PDFs, float min, float max, float offset, int iter, int trkn)
+{
+  // Importing functions 
+  Fit_Functions f; 
+  Functions F;
+
+  // ############ Constants and histograms ############  
+  // == Output PDFs
+  TH1F* trk1_C = O_PDFs[0]; 
+  TH1F* trk2_C = O_PDFs[1];
+  TH1F* trk3_C = O_PDFs[2];
+  TH1F* trk4_C = O_PDFs[3]; 
+  std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};
+
+  // == Forward declarations 
+  std::vector<RooRealVar*> var;
+  std::vector<float> Fit_Var; 
+ 
+  // == Data Vector
+  std::vector<float> Data_Vector = f.TH1FDataVector(trk2_D, offset); 
+
+  // == Prior: Flat
+  int bins = trk1_D -> GetNbinsX();
+  std::vector<float> deconv(bins + offset*bins, 0.5);
+  // ################################################## 
+
+  for (int y(0); y < iter; y++)
+  {
+    // Deconvolution  
+    deconv = f.LRDeconvolution(Data_Vector, deconv, deconv, 0.75); 
+     
+    // Tail Replace with a 1trk dataset       
+    deconv = f.TailReplaceClosure(trk1_D, deconv);
+  } 
+ 
+  // === Start building the n-track histograms via convolution 
+  // 1-track
+  F.VectorToTH1F(deconv, trk1_C);
+  f.ArtifactRemove(trk1_C, "b");
+  f.Normalizer(trk1_C);
+
+  // 2-track
+  f.ConvolveHists(trk1_C, trk1_C, trk2_C, 0);
+  f.ArtifactRemove(trk2_C, "b");
+  f.Normalizer(trk2_C);
+
+  // 3-track 
+  f.ConvolveHists(trk2_C, trk1_C, trk3_C, 0);
+  f.ArtifactRemove(trk3_C, "b");
+  f.Normalizer(trk3_C);
+  
+  // 4-track
+  f.ConvolveHists(trk2_C, trk2_C, trk4_C, 0);
+  f.ArtifactRemove(trk4_C, "b"); 
+  f.Normalizer(trk4_C);      
+
+  // Perform the fit 
+  var = f.FitPDFtoData(PDFs, trk2_D, min, max);
+
+  // Subtract the estimated cross contamination from the Target copy
+  f.Subtraction(PDFs, trk2_D, trkn, var);
+}
+std::vector<float> Algorithms::GaussianAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*> O_PDFs, float min, float max, float offset, float mean_s, float mean_e, float stdev_s, float stdev_e, int iter, int trkn)
+{
+  Fit_Functions f;
+  Functions F; 
+
+  // Introduce the minimal algorithm for the basic stuff 
+  MinimalAlgorithm(trk1_D, trk2_D, O_PDFs, min, max, offset, iter, trkn);
+ 
+  // Do the Gaussian Convolution and Deconvolution
+  std::vector<RooRealVar*> vars = f.GaussianConvolutionFit(O_PDFs, trk2_D, min, max, offset, stdev_s, stdev_e, mean_s, mean_e);
+  
+  std::vector<float> Values;
+  for (RooRealVar* r : vars){Values.push_back(r -> getVal());}
+
+  // Subtract the estimated cross contamination from the Target copy
+  f.Subtraction(O_PDFs, trk2_D, trkn, vars);    
+  
+  return Values; 
 }
