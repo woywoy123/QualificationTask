@@ -265,51 +265,88 @@ void Presentation::Threshold(TString DataDir)
   int bins = 300;
   float min = -0.5;
   float max = 14.5;
+
+  std::vector<TString> energies = {"/200_up_GeV", "/200_400_GeV", 
+                                   "/400_600_GeV", "/600_800_GeV", 
+                                   "/800_1000_GeV", "/1000_1200_GeV", 
+                                   "/1200_1400_GeV", "/1400_1600_GeV", 
+                                   "/1600_1800_GeV", "/1800_2000_GeV", 
+                                   "/2000_2200_GeV", "/2200_2400_GeV", 
+                                   "/2400_2600_GeV", "/2600_2800_GeV", 
+                                   "/2800_3000_GeV", "/higher_GeV"}; 
+
   TString Energy_trk1 = "/200_up_GeV";
   TString Energy_trk2 = "/600_800_GeV";
   std::vector<TString> Histograms = {"dEdx_out_ntrk1_calib", "dEdx_in_ntrk2_calib"};
   std::vector<TString> Layers = Constants::Detector;
    
-  TH1F* trk1_D = new TH1F("trk1_D", "trk1_D", bins, min, max);
-  TH1F* trk2_D = new TH1F("trk2_D", "trk2_D", bins, min, max);
-  TH1F* trk2_C = new TH1F("trk2_C", "trk2_C", bins, min, max);
- 
-  for (TString layer : Layers)
-  {
-    File -> cd(layer + Energy_trk1);
-    trk1_D -> Add((TH1F*)gDirectory -> Get(Histograms[0]));
-    File -> cd(layer + Energy_trk2);
-    trk2_D -> Add((TH1F*)gDirectory -> Get(Histograms[1])); 
-    File -> cd(); 
-  }
-
+  // Create the 2-trk histograms 
+  Functions F;
   Fit_Functions f;
-  f.ConvolveHists(trk1_D, trk1_D, trk2_C);
-  f.ArtifactRemove(trk2_C, "b");
+  std::vector<TH1F*> trk2_Hists = F.MakeTH1F(energies, bins, min, max, "_2trk");
+  std::vector<TH1F*> trk1_Hists = F.MakeTH1F(energies, bins, min, max, "_1trk");
+  std::vector<TH1F*> trk2_trk1_C = F.MakeTH1F(energies, bins, min, max, "_Convolved");
 
-  f.Normalizer(trk2_C);
-  trk2_C -> Scale(trk2_D -> Integral()); 
-
-  trk1_D -> SetLineColor(kRed);
-  trk2_D -> SetLineColor(kGreen);
-  trk2_C -> SetLineColor(kBlack);
-  trk1_D -> GetXaxis() -> SetTitle("dEdx (MeV g^{-1} cm^{2})");
-  trk1_D -> SetTitle("Convolution of 1-Track data for 2-Track Production");
-
-  TLegend* leg = new TLegend(0.9, 0.9, 0.75, 0.75);
-  leg -> AddEntry(trk1_D, "1-Track Data" + Energy_trk1);
-  leg -> AddEntry(trk2_D, "2-Track Data" + Energy_trk2);
-  leg -> AddEntry(trk2_C, "Convolved 2-Track");
+     
+  trk2_trk1_C[0] -> SetTitle("Convolution of 1-Track data for 2-Track Production"); 
 
   TCanvas* can = new TCanvas();
-  can -> SetLogy();
+  can -> Divide(3, 1); 
+  can -> cd(1) -> SetLogy();
+  can -> cd(2) -> SetLogy();
+  can -> cd(3) -> SetLogy();
   gStyle -> SetOptStat(0);
-  trk1_D -> Draw("SAMEHIST");
-  trk2_D -> Draw("SAMEHIST");
-  trk2_C -> Draw("SAMEHIST");
-  leg -> Draw("SAME");
+ 
+  TLegend* leg1 = new TLegend(0.9, 0.9, 0.6, 0.75);
+  TLegend* leg2 = new TLegend(0.9, 0.9, 0.6, 0.75);
+  TLegend* leg3 = new TLegend(0.9, 0.9, 0.6, 0.75);
+  leg1 -> SetTextSize(.01);
+  leg2 -> SetTextSize(.01);
+  leg3 -> SetTextSize(.01);
+  
+  for (TString layer : Layers)
+  {
+    for (int i(0); i < energies.size(); i++)
+    {
+  
+      File -> cd(layer + energies[i]); 
+      trk2_Hists[i] -> GetXaxis() -> SetTitle("dEdx (MeV g^{-1} cm^{2})");
+      trk1_Hists[i] -> GetXaxis() -> SetTitle("dEdx (MeV g^{-1} cm^{2})");
+      trk2_trk1_C[i] -> GetXaxis() -> SetTitle("dEdx (MeV g^{-1} cm^{2})");
+    
+      trk2_Hists[i] -> Add((TH1F*)gDirectory -> Get(Histograms[1]));  
+      trk1_Hists[i] -> Add((TH1F*)gDirectory -> Get(Histograms[0]));
+      f.ConvolveHists(trk1_Hists[i], trk1_Hists[i], trk2_trk1_C[i]);
+      f.ArtifactRemove(trk2_trk1_C[i], "b");
+      f.Normalizer(trk2_trk1_C[i]); 
+      f.Normalizer(trk1_Hists[i]);
+      f.Normalizer(trk2_Hists[i]);
+      
+      trk1_Hists[i] -> SetLineColor(Constants::Colors[i]);
+      trk2_Hists[i] -> SetLineColor(Constants::Colors[i]); 
+      trk2_trk1_C[i] -> SetLineColor(Constants::Colors[i]); 
+      
+      leg1 -> AddEntry(trk1_Hists[i], "1-Track Data" + energies[i]);
+      leg2 -> AddEntry(trk2_Hists[i], "2-Track Data" + energies[i]);
+      leg3 -> AddEntry(trk2_trk1_C[i], trk2_trk1_C[i] -> GetTitle());
+
+      can -> cd(1);
+      trk1_Hists[i] -> Draw("SAMEHIST");
+      leg1 -> Draw("SAME");
+      
+      can -> cd(2);  
+      trk2_Hists[i] -> Draw("SAMEHIST");
+      leg2 -> Draw("SAME"); 
+
+      can -> cd(3);
+      trk2_trk1_C[i] -> Draw("SAMEHIST");
+      leg3 -> Draw("SAME");
+
+      File -> cd();
+    }
+  }
   can -> Update();
-  can -> Print("Threshold.png");
+  can -> Print("Threshold.jpeg");
 }
 
 

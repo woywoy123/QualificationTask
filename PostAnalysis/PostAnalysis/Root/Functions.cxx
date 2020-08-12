@@ -2,7 +2,7 @@
 #include<sstream>
 #include<iomanip>
 
-std::vector<TH1F*> Functions::MakeTH1F(std::vector<TString> Names, int bins, int min, int max, TString Extension)
+std::vector<TH1F*> Functions::MakeTH1F(std::vector<TString> Names, int bins, float min, float max, TString Extension)
 {
   std::vector<TH1F*> Histograms;
   for (TString name : Names)

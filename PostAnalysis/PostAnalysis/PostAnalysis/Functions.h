@@ -36,7 +36,7 @@ using namespace RooFit;
 class Functions
 {
   public:
-    std::vector<TH1F*> MakeTH1F(std::vector<TString> Names,  int bins, int min, int max, TString Extension = "");
+    std::vector<TH1F*> MakeTH1F(std::vector<TString> Names,  int bins, float min, float max, TString Extension = "");
 
     void FillTH1F_From_File(std::vector<TH1F*> Histograms, TFile* File, TString DetectorLayer, TString Extension = "");
     void FillTH1F_From_File(TH1F* Histogram, TFile* File, TString DetectorLayer, std::vector<TString> List, TString Extension = "");
@@ -63,8 +63,7 @@ class Functions
 
 class Fit_Functions
 {
-  public:
-    
+  public: 
     // Bulk variable generation.
     std::vector<RooDataHist*> ConvertTH1toDataHist(std::vector<TH1F*> Histograms, RooRealVar* domain);
     std::vector<RooHistPdf*> ConvertTH1FtoPDF(std::vector<TH1F*> Histograms, RooRealVar* domain);
@@ -129,8 +128,6 @@ class Algorithms
   public:
     void MinimalAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*> O_PDFs, float min, float max, float offset, int iter, int trkn = 2);
     std::vector<float> GaussianAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*> O_PDFs, float min, float max, float offset, float mean_s, float mean_e, float stdev_s, float stdev_e, int iter, int trkn = 2);
- 
-
 };
 
 
@@ -171,7 +168,7 @@ namespace Constants
                                       "dEdx_ntrk_4_ntru_4"};
 
   const std::vector<TString> Variable_Names = {"ntrk_1", "ntrk_2", "ntrk_3", "ntrk_4"};
-  const std::vector<Color_t> Colors = {kRed, kBlue, kOrange, kCyan, kGreen, kYellow, kViolet, kAzure};
+  const std::vector<Color_t> Colors = {kOrange, kRed, kPink, kMagenta, kViolet, kBlue, kAzure, kCyan, kTeal, kGreen, kSpring, kYellow, kGray, kBlack, kCoffee, kAurora};
 }
 
 #endif

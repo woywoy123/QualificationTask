@@ -107,25 +107,14 @@ void PostAnalysis()
 //  trk2 -> Draw("SAMEHIST*");
 //  can -> Update();
 
-   
-
+  
   //U.TestFit(Hists, Data_ntrk, 0, 20, Closure);
   //U.TestTailAndDeconv(Hists[0], Hists[1], 300, 0, 20);
   //U.TestDeconvolution(Hists[0], Hists[1], 300);
   //U.TestSubtraction(trk4, 4, Hists, 0, 20, COMP4);
-  //P.Threshold("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/Merger/Merger.root");  
+  P.Threshold("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/Merger/Merger.root");  
   //P.TestMinimalAlgorithm(Data, 0, 20, 0.1, Hists, Closure);
-  P.TestGaussianAlgorithm(Data, 0, 20, 0.1, Hists, Closure);
-
-
-
-
-  ///V.MainAlgorithm(Data_ntrk, trk2, Hists); 
- 
-  //V.MainGaussianUnfolding(Data_ntrk, trk2, Hists); 
-
-  //V.DeconvolutionGaussian(trk1, trk2);
- 
+  //P.TestGaussianAlgorithm(Data, 0, 20, 0.1, Hists, Closure);
   
  }
 
