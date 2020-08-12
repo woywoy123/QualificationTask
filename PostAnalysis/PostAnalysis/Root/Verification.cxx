@@ -4,15 +4,6 @@
 
 using namespace RooFit;
 
-
-
-
-
-
-
-
-
-
 void Verification::MainAlgorithm(std::vector<TH1F*> Data, TH1F* Target, std::vector<TH1F*> Closure)
 {
   // Things that need an input 

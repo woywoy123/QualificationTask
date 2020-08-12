@@ -168,7 +168,7 @@ namespace Constants
                                       "dEdx_ntrk_4_ntru_4"};
 
   const std::vector<TString> Variable_Names = {"ntrk_1", "ntrk_2", "ntrk_3", "ntrk_4"};
-  const std::vector<Color_t> Colors = {kOrange, kRed, kPink, kMagenta, kViolet, kBlue, kAzure, kCyan, kTeal, kGreen, kSpring, kYellow, kGray, kBlack, kCoffee, kAurora};
+  const std::vector<Color_t> Colors = {kBlack, kRed, kMagenta, kViolet, kBlue, kAzure, kCyan, kTeal, kGreen, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora};
 }
 
 #endif

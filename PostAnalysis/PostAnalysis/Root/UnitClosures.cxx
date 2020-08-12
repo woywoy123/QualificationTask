@@ -275,78 +275,71 @@ void Presentation::Threshold(TString DataDir)
                                    "/2400_2600_GeV", "/2600_2800_GeV", 
                                    "/2800_3000_GeV", "/higher_GeV"}; 
 
-  TString Energy_trk1 = "/200_up_GeV";
-  TString Energy_trk2 = "/600_800_GeV";
+  std::vector<std::vector<TString>> Batch = {{"/200_up_GeV"}, {"/200_400_GeV","/400_600_GeV"}, {"/600_800_GeV","/800_1000_GeV", "/1000_1200_GeV"}, {"/1200_1400_GeV", "/1400_1600_GeV","/1600_1800_GeV"}, {"/1800_2000_GeV","/2000_2200_GeV", "/2200_2400_GeV","/2400_2600_GeV", "/2600_2800_GeV","/2800_3000_GeV", "/higher_GeV"}};
+
+  std::vector<TString> Titles = { "<200", "200-600", "600-1200", "12000-1800", "1800+"};
   std::vector<TString> Histograms = {"dEdx_out_ntrk1_calib", "dEdx_in_ntrk2_calib"};
   std::vector<TString> Layers = Constants::Detector;
    
-  // Create the 2-trk histograms 
   Functions F;
   Fit_Functions f;
-  std::vector<TH1F*> trk2_Hists = F.MakeTH1F(energies, bins, min, max, "_2trk");
-  std::vector<TH1F*> trk1_Hists = F.MakeTH1F(energies, bins, min, max, "_1trk");
-  std::vector<TH1F*> trk2_trk1_C = F.MakeTH1F(energies, bins, min, max, "_Convolved");
-
-     
-  trk2_trk1_C[0] -> SetTitle("Convolution of 1-Track data for 2-Track Production"); 
+  std::vector<TH1F*> trk2_Hists = F.MakeTH1F(Titles, bins, min, max, "_2trk");
+  std::vector<TH1F*> trk1_Hists = F.MakeTH1F(Titles, bins, min, max, "_1trk");
+  std::vector<TH1F*> trk2_trk1_C = F.MakeTH1F(Titles, bins, min, max, "_Convolved");
 
   TCanvas* can = new TCanvas();
-  can -> Divide(3, 1); 
+  can -> Divide(2,1);
   can -> cd(1) -> SetLogy();
   can -> cd(2) -> SetLogy();
-  can -> cd(3) -> SetLogy();
   gStyle -> SetOptStat(0);
  
   TLegend* leg1 = new TLegend(0.9, 0.9, 0.6, 0.75);
   TLegend* leg2 = new TLegend(0.9, 0.9, 0.6, 0.75);
-  TLegend* leg3 = new TLegend(0.9, 0.9, 0.6, 0.75);
   leg1 -> SetTextSize(.01);
   leg2 -> SetTextSize(.01);
-  leg3 -> SetTextSize(.01);
-  
+    
   for (TString layer : Layers)
   {
-    for (int i(0); i < energies.size(); i++)
+    for (int i(0); i < Batch.size(); i++)
     {
-  
-      File -> cd(layer + energies[i]); 
+      std::vector<TString> B = Batch[i];
+
+      for (int x(0); x < B.size(); x++)
+      {
+           TString Dir = B[x];
+           File -> cd(layer + Dir);
+           trk2_Hists[i] -> Add((TH1F*)gDirectory -> Get(Histograms[1]));
+           trk1_Hists[i] -> Add((TH1F*)gDirectory -> Get(Histograms[0]));        
+           File -> cd(); 
+      }  
+      f.ConvolveHists(trk1_Hists[i], trk1_Hists[i], trk2_trk1_C[i]);
+      f.Normalizer(trk1_Hists[i]);
+      f.Normalizer(trk2_Hists[i]);  
+      f.Normalizer(trk2_trk1_C[i]);  
+      f.ArtifactRemove(trk2_trk1_C[i], "b");
       trk2_Hists[i] -> GetXaxis() -> SetTitle("dEdx (MeV g^{-1} cm^{2})");
       trk1_Hists[i] -> GetXaxis() -> SetTitle("dEdx (MeV g^{-1} cm^{2})");
       trk2_trk1_C[i] -> GetXaxis() -> SetTitle("dEdx (MeV g^{-1} cm^{2})");
-    
-      trk2_Hists[i] -> Add((TH1F*)gDirectory -> Get(Histograms[1]));  
-      trk1_Hists[i] -> Add((TH1F*)gDirectory -> Get(Histograms[0]));
-      f.ConvolveHists(trk1_Hists[i], trk1_Hists[i], trk2_trk1_C[i]);
-      f.ArtifactRemove(trk2_trk1_C[i], "b");
-      f.Normalizer(trk2_trk1_C[i]); 
-      f.Normalizer(trk1_Hists[i]);
-      f.Normalizer(trk2_Hists[i]);
-      
       trk1_Hists[i] -> SetLineColor(Constants::Colors[i]);
-      trk2_Hists[i] -> SetLineColor(Constants::Colors[i]); 
-      trk2_trk1_C[i] -> SetLineColor(Constants::Colors[i]); 
+      trk2_Hists[i] -> SetLineColor(Constants::Colors[i]);    
+      trk2_trk1_C[i] -> SetLineColor(Constants::Colors[i]);   
+      trk2_trk1_C[i] -> SetLineStyle(kDashed);
+      leg1 -> AddEntry(trk2_trk1_C[i], trk2_trk1_C[i] -> GetTitle());
+      leg1 -> AddEntry(trk2_Hists[i], trk2_Hists[i] -> GetTitle());
+      leg2 -> AddEntry(trk1_Hists[i], trk1_Hists[i] -> GetTitle());
       
-      leg1 -> AddEntry(trk1_Hists[i], "1-Track Data" + energies[i]);
-      leg2 -> AddEntry(trk2_Hists[i], "2-Track Data" + energies[i]);
-      leg3 -> AddEntry(trk2_trk1_C[i], trk2_trk1_C[i] -> GetTitle());
-
       can -> cd(1);
       trk1_Hists[i] -> Draw("SAMEHIST");
-      leg1 -> Draw("SAME");
-      
-      can -> cd(2);  
+      leg2 -> Draw("SAME");
+
+      can -> cd(2);
       trk2_Hists[i] -> Draw("SAMEHIST");
-      leg2 -> Draw("SAME"); 
-
-      can -> cd(3);
       trk2_trk1_C[i] -> Draw("SAMEHIST");
-      leg3 -> Draw("SAME");
-
-      File -> cd();
-    }
+      leg2 -> Draw("SAME"); 
+    } 
   }
   can -> Update();
-  can -> Print("Threshold.jpeg");
+  can -> Print("Threshold.png");
 }
 
 
