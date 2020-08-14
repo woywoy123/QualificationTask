@@ -2,93 +2,116 @@
 #include<PostAnalysis/Functions.h>
 #include<PostAnalysis/Verification.h>
 #include<PostAnalysis/UnitClosures.h>
-#include<TF1.h>
-
-// Including standard C++ libraries 
 #include<iostream>
-
-using namespace RooFit;
 
 void PostAnalysis()
 {
-  auto FillHist = [](TH1F* Hist, std::vector<float> Comps, std::vector<float> Params)
-  {
-    TF1 Lan("Lan", "landau", 0, 20);
-    for (int i(0); i < Params.size(); i++)
-    {
-      Lan.SetParameter(i, Params.at(i));
-    }
-  
-    for ( int i(0); i < 500000; i++)
-    {
-      double r1 = Lan.GetRandom();
-      double r2 = Lan.GetRandom();
-      double r3 = Lan.GetRandom();
-      double r4 = Lan.GetRandom();
 
-      Hist -> Fill(r1, Comps[0]);
-      Hist -> Fill(r1+r2, Comps[1]);
-      Hist -> Fill(r1 + r2 + r3, Comps[2]);
-      Hist -> Fill(r1 + r2 + r3 + r4, Comps[3]);
-    }
-  };
-
-  auto LandauGenerator = [](std::vector<TH1F*> Hists, std::vector<float> Params)
-  {
-    TF1 Lan("Lan", "landau", 0, 20);
-    for (int i(0); i < Params.size(); i++)
-    {
-      Lan.SetParameter(i, Params.at(i));
-    }
-  
-    for ( int i(0); i < 500000; i++)
-    {
-      double r1 = Lan.GetRandom();
-      double r2 = Lan.GetRandom();
-      double r3 = Lan.GetRandom();
-      double r4 = Lan.GetRandom();
-      Hists.at(0) -> Fill(r1);  
-      Hists.at(1) -> Fill(r1 + r2); 
-      Hists.at(2) -> Fill(r1 + r2 + r3); 
-      Hists.at(3) -> Fill(r1 + r2 + r3 + r4); 
-    }
-  };
 
   Verification V; 
   Fit_Functions f;
   Functions F;
   UnitClosures U;
   Presentation P;
+  DataGeneration D; 
 
-  // ====================== Generate the data =================== //  
-  // Histograms: Pure with no cross contamination
-  std::vector<TString> Hist_Names = {"trk1_P", "trk2_P", "trk3_P", "trk4_P"};
-  std::vector<TH1F*> Hists = F.MakeTH1F(Hist_Names, 500, 0, 20);
-  LandauGenerator(Hists, {1, 0.9, 0.1}); 
- 
-  // Create some Datasets which have some contamination
-  // === COMPN is the composition of cross contamination
-  std::vector<float> COMP1 = {1.  , 0. , 0.  , 0.  };  
-  std::vector<float> COMP2 = {0.  , 1. , 0.  , 0.  };  
-  std::vector<float> COMP3 = {0.01, 0.2, 0.59, 0.2 };  
-  std::vector<float> COMP4 = {0.02, 0.2, 0.2 , 0.58};
-  std::vector<std::vector<float>> Closure = {COMP1, COMP2, COMP3, COMP4};
- 
-  // === Create the data sets
-  // State the names explicitly 
+  // ======================== Base Variables ======================== // 
+  std::string Mode = "MC";
+  int bins = 50;
+  int min = 0;
+  int max = 20;
+  float offset = 0.1;
+  int iter = 100;
+  
+  // ===== Data vectors
   std::vector<TString> Data_Names = {"trk1", "trk2", "trk3", "trk4"};
-  std::vector<TH1F*> Data_ntrk = F.MakeTH1F(Data_Names, 500, 0, 20); 
-  TH1F* trk1 = Data_ntrk.at(0);
-  TH1F* trk2 = Data_ntrk.at(1);
-  TH1F* trk3 = Data_ntrk.at(2);
-  TH1F* trk4 = Data_ntrk.at(3);
-  std::vector<TH1F*> Data = {trk1, trk2, trk3, trk4};
- 
-  // Fill the histograms with the composition fractions  
-  FillHist(trk1, COMP1, {1, 0.9, 0.1});
-  FillHist(trk2, COMP2, {1, 0.9, 0.1});
-  FillHist(trk3, COMP3, {1, 0.9, 0.1});
-  FillHist(trk4, COMP4, {1, 0.9, 0.1});
+  std::vector<TH1F*> Data_ntrk = F.MakeTH1F(Data_Names, bins, min, max); 
+
+  // ===== Monte Carlo dir
+  TString dir = "/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/MonteCarlo/Merged.root"; 
+   
+
+  // ===== Landau Parameter
+  std::vector<float> LP = {1, 0.9, 0.1};
+
+  // Contamination Composition 
+  std::vector<float> COMP1;
+  std::vector<float> COMP2; 
+  std::vector<float> COMP3; 
+  std::vector<float> COMP4; 
+  std::vector<std::vector<float>> Closure;
+  std::vector<TH1F*> trk_P;
+
+  // ====================== Get the Monte Carlo data ================ //
+  if ( Mode == "MC")
+  { 
+    // ===== Define the names  
+    std::vector<TString> trk_P_n = Constants::Pure_Names;
+    std::vector<TString> trk_1_n = Constants::trk_1;
+    std::vector<TString> trk_2_n = Constants::trk_2;
+    std::vector<TString> trk_3_n = Constants::trk_3;
+    std::vector<TString> trk_4_n = Constants::trk_4;
+
+    // ===== Create the histograms
+    trk_P = F.MakeTH1F(trk_P_n, bins, min, max, "_P");
+    std::vector<TH1F*> trk_1_V = F.MakeTH1F(trk_1_n, bins, min, max);
+    std::vector<TH1F*> trk_2_V = F.MakeTH1F(trk_2_n, bins, min, max);
+    std::vector<TH1F*> trk_3_V = F.MakeTH1F(trk_3_n, bins, min, max);
+    std::vector<TH1F*> trk_4_V = F.MakeTH1F(trk_4_n, bins, min, max);
+
+    // ===== Fill the histograms through the MC 
+    D.MonteCarlo(trk_P,   dir, "_P");
+    D.MonteCarlo(trk_1_V, dir);
+    D.MonteCarlo(trk_2_V, dir);
+    D.MonteCarlo(trk_3_V, dir);
+    D.MonteCarlo(trk_4_V, dir);
+  
+    // ===== Merge the histograms and get the composition  
+    COMP1 = D.MergeToys(trk_1_V, Data_ntrk.at(0));
+    COMP2 = D.MergeToys(trk_2_V, Data_ntrk.at(1));   
+    COMP3 = D.MergeToys(trk_3_V, Data_ntrk.at(2));   
+    COMP4 = D.MergeToys(trk_4_V, Data_ntrk.at(3));   
+    Closure = {COMP1, COMP2, COMP3, COMP4};
+  }
+  
+  // ======================= Toy Data ===================== //
+  if ( Mode == "Landau" )
+  {  
+
+    // ===== Define the names  
+    std::vector<TString> trk_P_n = Constants::Pure_Names;
+    std::vector<TString> trk_1_n = Constants::trk_1;
+    std::vector<TString> trk_2_n = Constants::trk_2;
+    std::vector<TString> trk_3_n = Constants::trk_3;
+    std::vector<TString> trk_4_n = Constants::trk_4;
+
+    // ===== Create the histograms
+    trk_P = F.MakeTH1F(trk_P_n, bins, min, max, "_P");
+    std::vector<TH1F*> trk_1_V = F.MakeTH1F(trk_1_n, bins, min, max);
+    std::vector<TH1F*> trk_2_V = F.MakeTH1F(trk_2_n, bins, min, max);
+    std::vector<TH1F*> trk_3_V = F.MakeTH1F(trk_3_n, bins, min, max);
+    std::vector<TH1F*> trk_4_V = F.MakeTH1F(trk_4_n, bins, min, max);
+
+    // ===== Histograms: Pure, 1trk, 2trk, 3trk, 4trk
+    D.IdealLandau(trk_P, {1, 1, 1, 1}, LP);
+    D.IdealLandau(trk_1_V, {0.8  , 0.2 , 0.  , 0.  }, LP);
+    D.IdealLandau(trk_2_V, {0.  , 1. , 0.  , 0.  }, LP);
+    D.IdealLandau(trk_3_V, {0.01, 0.2, 0.59, 0.2 }, LP);
+    D.IdealLandau(trk_4_V, {0.02, 0.2, 0.2 , 0.58}, LP);
+    
+    //  ===== Merge the vectors into a single TH1F for data 
+    COMP1 = D.MergeToys(trk_1_V, Data_ntrk[0]);
+    COMP2 = D.MergeToys(trk_2_V, Data_ntrk[1]);
+    COMP3 = D.MergeToys(trk_3_V, Data_ntrk[2]);
+    COMP4 = D.MergeToys(trk_4_V, Data_ntrk[3]);
+    Closure = {COMP1, COMP2, COMP3, COMP4};
+  }
+
+ // ===== Explicity write out the trks 
+  TH1F* trk1 = Data_ntrk[0];  
+  TH1F* trk2 = Data_ntrk[1];
+  TH1F* trk3 = Data_ntrk[2];
+  TH1F* trk4 = Data_ntrk[3];
 
   // Add some styles 
   trk1 -> SetLineColor(kRed);
@@ -98,23 +121,26 @@ void PostAnalysis()
  
   // ======================= End of Data Generation ================ //  
 
-//  TCanvas* can = new TCanvas("Cant", "Cant", 800, 800);
-//  can -> SetLogy();
-//  trk1 ->Draw("SAMEHIST"); 
-//  trk2 -> Draw("SAMEHIST");
-//  trk3 -> Draw("SAMEHIST");
-//  trk4 -> Draw("SAMEHIST");
-//  trk2 -> Draw("SAMEHIST*");
-//  can -> Update();
+  TCanvas* can = new TCanvas("Cant", "Cant", 800, 800);
+  can -> SetLogy();
+  trk1 ->Draw("SAMEHIST"); 
+  trk2 -> Draw("SAMEHIST");
+  trk3 -> Draw("SAMEHIST");
+  trk4 -> Draw("SAMEHIST");
+  can -> Update();
 
   
-  //U.TestFit(Hists, Data_ntrk, 0, 20, Closure);
-  //U.TestTailAndDeconv(Hists[0], Hists[1], 300, 0, 20);
-  //U.TestDeconvolution(Hists[0], Hists[1], 300);
-  //U.TestSubtraction(trk4, 4, Hists, 0, 20, COMP4);
-  P.Threshold("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/Merger/Merger.root");  
-  //P.TestMinimalAlgorithm(Data, 0, 20, 0.1, Hists, Closure);
-  //P.TestGaussianAlgorithm(Data, 0, 20, 0.1, Hists, Closure);
+  //U.TestFit(trk_P, Data_ntrk, min, max, Closure);
+  //U.TestTailAndDeconv(trk_P[0], trk_P[1], iter, min, max);
+  //U.TestDeconvolution(trk_P[0], trk_P[1], iter);
+  //U.TestSubtraction(trk4, 4, trk_P, min, max, COMP4);
+  //P.Threshold(dir);  
+  //P.TestMinimalAlgorithm(Data_ntrk, min, max, offset, trk_P, Closure);
+  P.TestGaussianAlgorithm(Data_ntrk, min, max, offset, trk_P, Closure);
+  
+ 
+ 
+ 
   
  }
 

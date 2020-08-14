@@ -28,7 +28,14 @@ class Presentation
     void Threshold(TString DataDir);
     void TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<TH1F*> Pure, std::vector<std::vector<float>> Closure);
     void TestGaussianAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<TH1F*> Pure, std::vector<std::vector<float>> Closure);
+};
 
+class DataGeneration
+{
+  public:
+    void MonteCarlo(std::vector<TH1F*> Hists, TString dir, TString Extension = "");
+    void IdealLandau(std::vector<TH1F*> Hists, std::vector<float> COMP, std::vector<float> LandauParams);
+    std::vector<float> MergeToys(std::vector<TH1F*> Hists, TH1F* trk);    
 };
 
 class Debug

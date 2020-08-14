@@ -1,5 +1,9 @@
 #include<PostAnalysis/Functions.h>
 #include<PostAnalysis/UnitClosures.h>
+#include<TF1.h>
+#include<iostream>
+
+using namespace RooFit;
 
 void UnitClosures::TestFit(std::vector<TH1F*> PDF, std::vector<TH1F*> Data, float min, float max, std::vector<std::vector<float>> Closure)
 {
@@ -73,6 +77,8 @@ void UnitClosures::TestTailAndDeconv(TH1F* trk1, TH1F* trk2, int iter, float min
     deconv = f.LRDeconvolution(Data_V, deconv, deconv, 0.75);
     deconv = f.TailReplaceClosure(trk1, deconv);
     F.VectorToTH1F(deconv, Target);
+    f.Normalizer(Target);
+    Target -> Scale(trk1 -> Integral());
     Target -> Draw("SAMEHIST");
     can -> Update();
   }
@@ -90,11 +96,10 @@ void UnitClosures::TestDeconvolution(TH1F* h1, TH1F* PSF, int iter)
   TH1F* Deconv = (TH1F*)h1 -> Clone("Deconv");
   Deconv -> Reset();
   Deconv -> SetLineColor(kRed);
-  Deconv -> GetYaxis() -> SetRangeUser(1e-2, h1 -> Integral());
+  Deconv -> GetYaxis() -> SetRangeUser(1, h1 -> Integral());
 
   h1 -> SetLineColor(kBlack);
   h1 -> SetLineStyle(kDotted);
-
   PSF -> SetLineColor(kGreen);
 
   f.ConvolveHists(h1, PSF, Conv);
@@ -116,10 +121,10 @@ void UnitClosures::TestDeconvolution(TH1F* h1, TH1F* PSF, int iter)
     deconv = f.LRDeconvolution(H1, PSF_V, deconv, 0.75);
     F.VectorToTH1F(deconv, Deconv);
     f.Normalizer(Deconv);
-    Deconv -> Scale(PSF -> Integral());
+    Deconv -> Scale(h1 -> Integral());
     Deconv -> Draw("SAMEHIST");
     PSF -> Draw("SAMEHIST");
-    h1 -> Draw("SAMEHIST");
+    h1 -> Draw("SAMEHIST*");
     can -> Update();
   }
   
@@ -178,6 +183,11 @@ void Presentation::TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, floa
   // Make PDF output histograms
   std::vector<TString> PDFNames = {"trk1", "trk2", "trk3", "trk4"};
   std::vector<TH1F*> PDFs = F.MakeTH1F(PDFNames, trk1_Clone -> GetNbinsX(), min, max, "_PDF");
+  
+  for (TH1F* H : PDFs)
+  {
+    H -> SetLineStyle(kDashed);
+  }
 
   for (int i(0); i < 10; i++)
   {
@@ -275,7 +285,7 @@ void Presentation::Threshold(TString DataDir)
                                    "/2400_2600_GeV", "/2600_2800_GeV", 
                                    "/2800_3000_GeV", "/higher_GeV"}; 
 
-  std::vector<std::vector<TString>> Batch = {{"/200_up_GeV"}, {"/200_400_GeV","/400_600_GeV"}, {"/600_800_GeV","/800_1000_GeV", "/1000_1200_GeV"}, {"/1200_1400_GeV", "/1400_1600_GeV","/1600_1800_GeV"}, {"/1800_2000_GeV","/2000_2200_GeV", "/2200_2400_GeV","/2400_2600_GeV", "/2600_2800_GeV","/2800_3000_GeV", "/higher_GeV"}};
+  std::vector<std::vector<TString>> Batch = {{"/200_up_GeV"}, {"/200_400_GeV","/400_600_GeV", "/600_800_GeV","/800_1000_GeV", "/1000_1200_GeV", "/1200_1400_GeV", "/1400_1600_GeV","/1600_1800_GeV"}, {"/1800_2000_GeV","/2000_2200_GeV", "/2200_2400_GeV","/2400_2600_GeV", "/2600_2800_GeV","/2800_3000_GeV", "/higher_GeV"}};
 
   std::vector<TString> Titles = { "<200", "200-600", "600-1200", "12000-1800", "1800+"};
   std::vector<TString> Histograms = {"dEdx_out_ntrk1_calib", "dEdx_in_ntrk2_calib"};
@@ -342,4 +352,60 @@ void Presentation::Threshold(TString DataDir)
   can -> Print("Threshold.png");
 }
 
+void DataGeneration::MonteCarlo(std::vector<TH1F*> Hists, TString dir, TString Extension)
+{
+  Functions F;
+  TFile* File = new TFile(dir);
+  if (!File -> IsOpen()) 
+  { 
+    std::cout << "Error Reading the entered file" << std::endl; 
+  }
 
+  for (TString Layer : Constants::Detector)
+  {
+    F.FillTH1F_From_File(Hists, File, Layer, Extension);
+  } 
+}
+
+void DataGeneration::IdealLandau(std::vector<TH1F*> Hists, std::vector<float> COMP, std::vector<float> LandauParams)
+{
+  auto FillHist = [](std::vector<TH1F*> Hists, std::vector<float> Comps, std::vector<float> Params)
+  {
+    TF1 Lan("Lan", "landau", 0, 20);
+    for (int i(0); i < Params.size(); i++)
+    {
+      Lan.SetParameter(i, Params.at(i));
+    }
+  
+    for ( int i(0); i < 500000; i++)
+    {
+      double r1 = Lan.GetRandom();
+      double r2 = Lan.GetRandom();
+      double r3 = Lan.GetRandom();
+      double r4 = Lan.GetRandom();
+      
+      if ( Comps[0] > 0){ Hists[0] -> Fill(r1, Comps[0]); }
+      if ( Comps[1] > 0){ Hists[1] -> Fill(r1+r2, Comps[1]); }
+      if ( Comps[2] > 0){ Hists[2] -> Fill(r1 + r2 + r3, Comps[2]); }
+      if ( Comps[3] > 0){ Hists[3] -> Fill(r1 + r2 + r3 + r4, Comps[3]); }
+    }
+  };
+  FillHist(Hists, COMP, LandauParams);
+}
+
+std::vector<float>  DataGeneration::MergeToys(std::vector<TH1F*> Hists, TH1F* trk)
+{
+  for (TH1F* H : Hists)
+  {
+    trk -> Add(H);
+  }
+
+  float lumi = trk -> Integral();
+  std::vector<float> Out; 
+  for (TH1F* H : Hists)
+  {
+    float ratio = H -> Integral() / lumi;
+    Out.push_back(ratio);
+  }
+  return Out;
+}

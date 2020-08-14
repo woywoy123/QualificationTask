@@ -783,6 +783,7 @@ TCanvas* Benchmark::ClosurePlot(TString Name, std::vector<TH1F*> Data, std::vect
         TH1F* Hist = (TH1F*)PDFs[x] -> Clone(Name);
         Hist -> Scale(Scales[i][x]*Data[i] -> Integral());
         Hist -> SetLineColor(Constants::Colors[x]); 
+        Hist -> SetLineStyle(kDashed);
         Hist -> Draw("SAMEHIST");
         leg -> AddEntry(Hist, Name);  
         leg -> Draw("SAME");
