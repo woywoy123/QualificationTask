@@ -16,8 +16,8 @@ void PostAnalysis()
   DataGeneration D; 
 
   // ======================== Base Variables ======================== // 
-  std::string Mode = "MC";
-  int bins = 50;
+  TString Mode = "MC";
+  int bins = 500;
   int min = 0;
   int max = 20;
   float offset = 0.1;
@@ -40,8 +40,7 @@ void PostAnalysis()
   std::vector<float> COMP3; 
   std::vector<float> COMP4; 
   std::vector<std::vector<float>> Closure;
-  std::vector<TH1F*> trk_P;
-
+  
   // ====================== Get the Monte Carlo data ================ //
   if ( Mode == "MC")
   { 
@@ -53,14 +52,15 @@ void PostAnalysis()
     std::vector<TString> trk_4_n = Constants::trk_4;
 
     // ===== Create the histograms
-    trk_P = F.MakeTH1F(trk_P_n, bins, min, max, "_P");
+    std::vector<TH1F*> Pure_trks = F.MakeTH1F(trk_P_n, bins, min, max, "_P");
     std::vector<TH1F*> trk_1_V = F.MakeTH1F(trk_1_n, bins, min, max);
     std::vector<TH1F*> trk_2_V = F.MakeTH1F(trk_2_n, bins, min, max);
     std::vector<TH1F*> trk_3_V = F.MakeTH1F(trk_3_n, bins, min, max);
     std::vector<TH1F*> trk_4_V = F.MakeTH1F(trk_4_n, bins, min, max);
+    std::vector<std::vector<TH1F*>> trk_P = {trk_1_V, trk_2_V, trk_3_V, trk_4_V};
 
     // ===== Fill the histograms through the MC 
-    D.MonteCarlo(trk_P,   dir, "_P");
+    D.MonteCarlo(Pure_trks, dir, "_P");
     D.MonteCarlo(trk_1_V, dir);
     D.MonteCarlo(trk_2_V, dir);
     D.MonteCarlo(trk_3_V, dir);
@@ -72,6 +72,14 @@ void PostAnalysis()
     COMP3 = D.MergeToys(trk_3_V, Data_ntrk.at(2));   
     COMP4 = D.MergeToys(trk_4_V, Data_ntrk.at(3));   
     Closure = {COMP1, COMP2, COMP3, COMP4};
+  
+   
+    //U.TestFit(trk_P, Data_ntrk, min, max, Closure);
+    //U.TestTailAndDeconv(Pure_trks[0], Pure_trks[1], iter, min, max); 
+    //U.TestDeconvolution(Pure_trks[0], Pure_trks[1], iter); 
+    //U.TestSubtraction(Data_ntrk.at(2), 3, trk_3_V, min, max, COMP3); 
+    P.TestMinimalAlgorithm(Data_ntrk, min, max, offset, trk_P);
+  
   }
   
   // ======================= Toy Data ===================== //
@@ -86,7 +94,7 @@ void PostAnalysis()
     std::vector<TString> trk_4_n = Constants::trk_4;
 
     // ===== Create the histograms
-    trk_P = F.MakeTH1F(trk_P_n, bins, min, max, "_P");
+    std::vector<TH1F*> trk_P = F.MakeTH1F(trk_P_n, bins, min, max, "_P");
     std::vector<TH1F*> trk_1_V = F.MakeTH1F(trk_1_n, bins, min, max);
     std::vector<TH1F*> trk_2_V = F.MakeTH1F(trk_2_n, bins, min, max);
     std::vector<TH1F*> trk_3_V = F.MakeTH1F(trk_3_n, bins, min, max);
@@ -105,6 +113,13 @@ void PostAnalysis()
     COMP3 = D.MergeToys(trk_3_V, Data_ntrk[2]);
     COMP4 = D.MergeToys(trk_4_V, Data_ntrk[3]);
     Closure = {COMP1, COMP2, COMP3, COMP4};
+  
+  
+    //U.TestFit(trk_P, Data_ntrk, min, max, Closure); 
+    //U.TestTailAndDeconv(trk_P[0], trk_P[1], iter, min, max);
+    //P.TestMinimalAlgorithm(Data_ntrk, min, max, offset, trk_P, Closure);
+
+
   }
 
  // ===== Explicity write out the trks 
@@ -119,24 +134,28 @@ void PostAnalysis()
   trk3 -> SetLineColor(kOrange);
   trk4 -> SetLineColor(kGreen); 
  
-  // ======================= End of Data Generation ================ //  
-
-  TCanvas* can = new TCanvas("Cant", "Cant", 800, 800);
-  can -> SetLogy();
-  trk1 ->Draw("SAMEHIST"); 
-  trk2 -> Draw("SAMEHIST");
-  trk3 -> Draw("SAMEHIST");
-  trk4 -> Draw("SAMEHIST");
-  can -> Update();
+  // Plot the distributions
+//  TPaveText* t = new TPaveText(0.5, 0.9, 0.3, 1.0, "brNDC");
+//  TCanvas* can = new TCanvas("Cant", "Cant", 800, 800);
+//  can -> SetLogy();
+//  gStyle -> SetOptStat(0);
+//  gStyle -> SetOptTitle(0); 
+//  trk1 -> SetTitle(Mode + " 1 Track");
+//  trk2 -> SetTitle(Mode + " 2 Track");
+//  trk3 -> SetTitle(Mode + " 3 Track");
+//  trk4 -> SetTitle(Mode + " 4 Track");
+//
+//  t -> AddText(Mode + " Measurement n-Track");
+//  trk1 -> Draw("SAMEHIST"); 
+//  trk2 -> Draw("SAMEHIST");
+//  trk3 -> Draw("SAMEHIST");
+//  trk4 -> Draw("SAMEHIST"); 
+//  t -> Draw("SAME");
+//  can -> Update();
 
   
-  //U.TestFit(trk_P, Data_ntrk, min, max, Closure);
-  //U.TestTailAndDeconv(trk_P[0], trk_P[1], iter, min, max);
-  //U.TestDeconvolution(trk_P[0], trk_P[1], iter);
-  //U.TestSubtraction(trk4, 4, trk_P, min, max, COMP4);
   //P.Threshold(dir);  
-  //P.TestMinimalAlgorithm(Data_ntrk, min, max, offset, trk_P, Closure);
-  P.TestGaussianAlgorithm(Data_ntrk, min, max, offset, trk_P, Closure);
+  //P.TestGaussianAlgorithm(Data_ntrk, min, max, offset, trk_P, Closure);
   
  
  

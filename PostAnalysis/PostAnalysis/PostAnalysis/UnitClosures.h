@@ -12,13 +12,13 @@ class UnitClosures
 {
   public:
     void TestFit(std::vector<TH1F*> PDF, std::vector<TH1F*> Data, float min, float max, std::vector<std::vector<float>> Closure);
+    void TestFit(std::vector<std::vector<TH1F*>> PDF, std::vector<TH1F*> Data, float min, float max, std::vector<std::vector<float>> Closure);
     void TestTailAndDeconv(TH1F* trk1, TH1F* trk2, int iter, float min, float max);
     void TestDeconvolution(TH1F* h1, TH1F* PSF, int iter);
     void TestSubtraction(TH1F* Data, int trk, std::vector<TH1F*> PDFs, float min, float max, std::vector<float> Closure); 
 
-    // Need to write test units for:
-    // - GaussianUnfold (with data being convolved with gaussian)
-    // - Getting MC data for closure
+  private:
+    void ClosureBaseFit(std::vector<TH1F*> PDFs, TH1F* d_trk, std::vector<float> Clos, float min, float max);
 
 };
 
@@ -27,7 +27,10 @@ class Presentation
   public:
     void Threshold(TString DataDir);
     void TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<TH1F*> Pure, std::vector<std::vector<float>> Closure);
+    void TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<std::vector<TH1F*>> Pure);
     void TestGaussianAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<TH1F*> Pure, std::vector<std::vector<float>> Closure);
+  private:
+    std::vector<std::vector<float>> MinimalAlgorithmBase(std::vector<TH1F*> Data, std::vector<TH1F*> PDFs, float min, float max, float offset);
 };
 
 class DataGeneration

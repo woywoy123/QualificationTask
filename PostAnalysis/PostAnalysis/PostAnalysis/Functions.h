@@ -27,6 +27,7 @@
 #include<RooFormulaVar.h>
 #include<RooGaussian.h>
 #include<RooFFTConvPdf.h>
+#include<TPaveText.h>
 
 using namespace RooFit;
 
@@ -137,11 +138,12 @@ class Benchmark
     float WeightedEuclidean(std::vector<float> v1, std::vector<float> v2);
     float PythagoreanDistance(std::vector<float> v1, std::vector<float> v2);
     TCanvas* ClosurePlot(TString Name, std::vector<TH1F*> Data, std::vector<TH1F*> PDFs, std::vector<std::vector<float>> Closure);
+    TCanvas* ClosurePlot(TString Name, std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDFs);
 };
 
 namespace Constants
 {
-  const std::vector<TString> Detector = {"Blayer"};
+  const std::vector<TString> Detector = {"IBL", "Blayer", "layer1", "layer2"};
   const std::vector<TString> Pure_Names = {"dEdx_ntrk_1_ntru_1", 
                                            "dEdx_ntrk_2_ntru_2", 
                                            "dEdx_ntrk_3_ntru_3", 
@@ -168,7 +170,7 @@ namespace Constants
                                       "dEdx_ntrk_4_ntru_4"};
 
   const std::vector<TString> Variable_Names = {"ntrk_1", "ntrk_2", "ntrk_3", "ntrk_4"};
-  const std::vector<Color_t> Colors = {kBlack, kRed, kBlue, kAzure, kCyan, kTeal, kGreen, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora, kMagenta, kViolet};
+  const std::vector<Color_t> Colors = {kBlack, kRed, kBlue, kCyan, kTeal, kGreen, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora, kMagenta, kViolet};
 }
 
 #endif

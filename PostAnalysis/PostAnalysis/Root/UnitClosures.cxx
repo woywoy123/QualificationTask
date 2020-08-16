@@ -5,50 +5,51 @@
 
 using namespace RooFit;
 
+void UnitClosures::TestFit(std::vector<std::vector<TH1F*>> PDF, std::vector<TH1F*> Data, float min, float max, std::vector<std::vector<float>> Closure)
+{
+
+  for (int i(0); i < PDF.size(); i++)
+  {
+    std::vector<TH1F*> PDFs = PDF[i]; 
+    TH1F* trk = Data[i];
+    std::vector<float> Clo_trk = Closure[i];
+    std::cout << "###################### TRK: " << i+1 << " ################### " << std::endl; 
+    ClosureBaseFit(PDFs, trk, Clo_trk, min, max); 
+  }
+}
+
 void UnitClosures::TestFit(std::vector<TH1F*> PDF, std::vector<TH1F*> Data, float min, float max, std::vector<std::vector<float>> Closure)
+{
+   
+  for (int i(0); i < Data.size(); i++)
+  {
+    TH1F* trk = Data[i];
+    std::vector<float> Clo_trk = Closure[i];
+    std::cout << "###################### TRK: " << i+1 << " ################### " << std::endl; 
+    ClosureBaseFit(PDF, trk, Clo_trk, min, max); 
+  }
+}
+
+void UnitClosures::ClosureBaseFit(std::vector<TH1F*> PDFs, TH1F* d_trk, std::vector<float> Clos, float min, float max)
 {
   Fit_Functions f;
   Benchmark B;
-   
-  // Get each of the trks  
-  TH1F* trk1 = Data[0];
-  TH1F* trk2 = Data[1];
-  TH1F* trk3 = Data[2];
-  TH1F* trk4 = Data[3];
 
-  // Get the closure constants
-  std::vector<float> t1_C = Closure[0];
-  std::vector<float> t2_C = Closure[1];
-  std::vector<float> t3_C = Closure[2];
-  std::vector<float> t4_C = Closure[3];
+  int fd = dup(1);
+  int nullfd = open("/dev/null", O_WRONLY);  
+  dup2(nullfd, 1); 
+  close(nullfd);
 
-  // Fit them to data
-  std::vector<RooRealVar*> vars1 = f.FitPDFtoData(PDF, trk1, min, max);
-  std::vector<RooRealVar*> vars2 = f.FitPDFtoData(PDF, trk2, min, max);
-  std::vector<RooRealVar*> vars3 = f.FitPDFtoData(PDF, trk3, min, max);
-  std::vector<RooRealVar*> vars4 = f.FitPDFtoData(PDF, trk4, min, max);
+  std::vector<RooRealVar*> var = f.FitPDFtoData(PDFs, d_trk, min, max);
+  dup2(fd, 1);
+  close(fd);
 
-  // Get the fractions 
-  std::vector<float> v1 = f.Fractionalizer(vars1, trk1);
-  std::vector<float> v2 = f.Fractionalizer(vars2, trk2);
-  std::vector<float> v3 = f.Fractionalizer(vars3, trk3);
-  std::vector<float> v4 = f.Fractionalizer(vars4, trk4);
-  std::vector<std::vector<float>> v = {v1, v2, v3, v4};
-
-  // Comparing the difference between the prediction and closure
-  float s1 = B.PythagoreanDistance(v1, t1_C);
-  float s2 = B.PythagoreanDistance(v2, t2_C);
-  float s3 = B.PythagoreanDistance(v3, t3_C);
-  float s4 = B.PythagoreanDistance(v4, t4_C);
-  std::vector<float> s = {s1, s2, s3, s4};
-
-  for (int i(0); i < Data.size(); i++)
-  {
-    std::cout << "###################### TRK: " << i+1 << " ################### " << std::endl;
-    std::cout << "Prediction: " << v[i][0] << " "  << v[i][1] << " " << v[i][2] << " " << v[i][3] << std::endl;
-    std::cout << "Truth: " << Closure[i][0] << " "  << Closure[i][1] << " " << Closure[i][2] << " " << Closure[i][3] << std::endl;
-    std::cout << "Error: " << s[i] << std::endl;
-  }
+  std::vector<float> v = f.Fractionalizer(var, d_trk);
+  float s = B.PythagoreanDistance(v, Clos);
+  std::cout << "Prediction: " << v[0] << " "  << v[1] << " " << v[2] << " " << v[3] << std::endl;
+  std::cout << "Truth: " << Clos[0] << " "  << Clos[1] << " " << Clos[2] << " " << Clos[3] << std::endl;
+  std::cout << "Error: " << s << std::endl;
+  
 }
 
 void UnitClosures::TestTailAndDeconv(TH1F* trk1, TH1F* trk2, int iter, float min, float max)
@@ -63,8 +64,8 @@ void UnitClosures::TestTailAndDeconv(TH1F* trk1, TH1F* trk2, int iter, float min
   can -> SetLogy();
   can -> Update();
 
-  TH1F* Target = new TH1F("Target1", "Target1", deconv.size(), min, max); 
-  TH1F* Closure = new TH1F("Closure1", "Closure1", deconv.size(), min, max);
+  TH1F* Target = new TH1F("Target", "Target", deconv.size(), min, max); 
+  TH1F* Closure = new TH1F("Closure", "Closure", deconv.size(), min, max);
   F.ExpandTH1F(trk1, Closure);
   Closure -> SetLineStyle(kDashed);
   Closure -> Draw("SAMEHIST");  
@@ -74,9 +75,10 @@ void UnitClosures::TestTailAndDeconv(TH1F* trk1, TH1F* trk2, int iter, float min
   
   for (int i(0); i < iter; i++)
   {
-    deconv = f.LRDeconvolution(Data_V, deconv, deconv, 0.75);
+    deconv = f.LRDeconvolution(Data_V, deconv, deconv, 1);
     deconv = f.TailReplaceClosure(trk1, deconv);
     F.VectorToTH1F(deconv, Target);
+     
     f.Normalizer(Target);
     Target -> Scale(trk1 -> Integral());
     Target -> Draw("SAMEHIST");
@@ -89,42 +91,39 @@ void UnitClosures::TestDeconvolution(TH1F* h1, TH1F* PSF, int iter)
   Fit_Functions f;
   Functions F;
  
-  TH1F* Conv = (TH1F*)h1 -> Clone("Convolved");
-  Conv -> Reset();
-  Conv -> SetLineStyle(kDotted); 
-
+  TH1F* Conv = (TH1F*)h1 -> Clone("Convolved"); 
   TH1F* Deconv = (TH1F*)h1 -> Clone("Deconv");
+  Conv -> Reset();
   Deconv -> Reset();
-  Deconv -> SetLineColor(kRed);
-  Deconv -> GetYaxis() -> SetRangeUser(1, h1 -> Integral());
-
-  h1 -> SetLineColor(kBlack);
-  h1 -> SetLineStyle(kDotted);
-  PSF -> SetLineColor(kGreen);
 
   f.ConvolveHists(h1, PSF, Conv);
   f.ArtifactRemove(Conv, "b");
   f.Normalizer(Conv);
-  Conv -> Scale(PSF -> Integral());
-  
-  TCanvas* can = new TCanvas();
-  can -> SetLogy();
-
+  f.Normalizer(PSF);
+  Conv -> Scale(h1 -> GetBinContent(h1 -> GetMaximumBin()));
+ 
   std::vector<float> H1 = f.TH1FDataVector(Conv, 0.1);
   std::vector<float> PSF_V = f.TH1FDataVector(PSF, 0.1);
   std::vector<float> deconv(H1.size(), 0.5);
 
-  Conv -> Draw("SAMEHIST");
-   
+  Conv -> SetLineStyle(kDotted); 
+  Deconv -> SetLineColor(kRed);
+  h1 -> SetLineColor(kBlack);
+ 
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+      
   for (int i(0); i < iter; i++)
   {
-    deconv = f.LRDeconvolution(H1, PSF_V, deconv, 0.75);
+    deconv = f.LRDeconvolution(H1, PSF_V, deconv, 1);
     F.VectorToTH1F(deconv, Deconv);
     f.Normalizer(Deconv);
     Deconv -> Scale(h1 -> Integral());
+  
+    Deconv -> GetYaxis() -> SetRangeUser(1, h1 -> GetBinContent(h1 -> GetMaximumBin()));
     Deconv -> Draw("SAMEHIST");
-    PSF -> Draw("SAMEHIST");
-    h1 -> Draw("SAMEHIST*");
+    Conv -> Draw("SAMEHIST");
+    h1 -> Draw("SAMEHIST");
     can -> Update();
   }
   
@@ -171,36 +170,13 @@ void UnitClosures::TestSubtraction(TH1F* Data, int trk, std::vector<TH1F*> PDFs,
 
 void Presentation::TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<TH1F*> Pure, std::vector<std::vector<float>> Closure)
 {
-  Algorithms A;
   Functions F;
-  Fit_Functions f; 
   Benchmark B; 
-
-  // Define the histograms individually
-  TH1F* trk1_Clone = (TH1F*)Data[0] -> Clone("1-Track");
-  TH1F* trk2_Clone = (TH1F*)Data[1] -> Clone("2-Track");
 
   // Make PDF output histograms
   std::vector<TString> PDFNames = {"trk1", "trk2", "trk3", "trk4"};
-  std::vector<TH1F*> PDFs = F.MakeTH1F(PDFNames, trk1_Clone -> GetNbinsX(), min, max, "_PDF");
-  
-  for (TH1F* H : PDFs)
-  {
-    H -> SetLineStyle(kDashed);
-  }
-
-  for (int i(0); i < 10; i++)
-  {
-    A.MinimalAlgorithm(trk1_Clone, trk2_Clone, PDFs, min, max, offset, 25);
-  }
-  
-  std::vector<std::vector<float>> Prediction;
-  for (int i(0); i < PDFs.size(); i++)
-  { 
-    std::vector<RooRealVar*> vars = f.FitPDFtoData(PDFs, Data[i], min, max);
-    std::vector<float> v = f.Fractionalizer(vars, Data[i]); 
-    Prediction.push_back(v);
-  }
+  std::vector<TH1F*> PDFs = F.MakeTH1F(PDFNames, Data[0] -> GetNbinsX(), min, max, "_DataPDF"); 
+  std::vector<std::vector<float>> Prediction = MinimalAlgorithmBase(Data, PDFs, min, max, offset);
   
   // ====== Plotting ====== //
   // === Truth Canvas 
@@ -211,6 +187,53 @@ void Presentation::TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, floa
 
   Truth -> Draw();
   Algorithm -> Draw();
+}
+
+void Presentation::TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<std::vector<TH1F*>> Pure)
+{
+  Benchmark B; 
+  Functions F;
+
+  // Make PDF output histograms
+  std::vector<TString> PDFNames = {"trk1", "trk2", "trk3", "trk4"};
+  std::vector<TH1F*> PDFs = F.MakeTH1F(PDFNames, Data[0] -> GetNbinsX(), min, max, "_DataPDF"); 
+  std::vector<std::vector<float>> Prediction = MinimalAlgorithmBase(Data, PDFs, min, max, offset);
+  
+  //// ====== Plotting ====== //
+  //// === Truth Canvas  
+  //TCanvas* Truth = B.ClosurePlot("Truth", Data, Pure);
+  // 
+  //// === Algorithm Canvas
+  //TCanvas* Algorithm = B.ClosurePlot("Algorithm", Data, PDFs, Prediction);
+
+  //Truth -> Draw();
+  //Algorithm -> Draw();
+}
+
+std::vector<std::vector<float>> Presentation::MinimalAlgorithmBase(std::vector<TH1F*> Data, std::vector<TH1F*> PDFs, float min, float max, float offset)
+{
+  Algorithms A; 
+  Fit_Functions f;
+  
+  for (int i(0); i < PDFs.size(); i++)
+  {
+    PDFs[i] -> SetLineStyle(kDashed);
+    PDFs[i] -> SetLineStyle(Constants::Colors[i]);
+  }
+  TH1F* trk2 = (TH1F*)Data[1] -> Clone("2 Track");
+  trk2 -> SetBinContent(trk2 -> GetNbinsX(), trk2 -> GetBinContent(trk2 -> GetNbinsX()-1));
+  TH1F* trk1 = (TH1F*)Data[0] -> Clone("1 Track");
+  for (int i(0); i < 1; i++){A.MinimalAlgorithm(trk1, trk2, PDFs, min, max, offset, 25);}
+
+  std::vector<std::vector<float>> Prediction;
+  for (int i(0); i < PDFs.size(); i++)
+  { 
+    std::vector<RooRealVar*> vars = f.FitPDFtoData(PDFs, Data[i], min, max);
+    std::vector<float> v = f.Fractionalizer(vars, Data[i]); 
+    Prediction.push_back(v);
+  }
+
+  return Prediction;
 }
 
 void Presentation::TestGaussianAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<TH1F*> Pure, std::vector<std::vector<float>> Closure)

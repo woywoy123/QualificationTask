@@ -426,16 +426,26 @@ std::vector<float> Fit_Functions::TailReplaceClosure(TH1F* hist, std::vector<flo
   float TLumi = Target -> Integral();
   float SLumi = Source -> Integral();
  
-  const int UpTo = std::round(2*(Target -> GetMaximumBin()));
-  if (Target -> GetBinContent(UpTo) == deconv[0]) { return deconv; }
-
-  for (int i(UpTo); i < v_size; i++) 
+  const int UpTo = std::round(1.5*(Target -> GetMaximumBin()));
+  if (Target -> GetBinContent(UpTo) == deconv[0]) 
   {
-    float t_e = Source -> GetBinContent(i + 1);
-    float d_e = Target -> GetBinContent(i + 1);
-    Target -> SetBinContent(i+1, t_e * (TLumi/SLumi) );    
+    delete Source;
+    delete Target; 
+    return deconv; 
   }
 
+  for (int z(UpTo); z < v_size; z++)
+  {
+    float t_S = Source -> GetBinContent(z + 1);
+    float t_T = Target -> GetBinContent(z + 1);
+    for (int i(z); i < v_size; i++) 
+    {
+      float S_e = Source -> GetBinContent(i + 1);
+      float T_e = Target -> GetBinContent(i + 1);
+     
+      Target -> SetBinContent(i+1, S_e*(t_T/t_S));
+    }
+  }
   std::vector<float> De = F.TH1FToVector(Target);
 
   delete Target;
@@ -583,10 +593,10 @@ std::vector<float> Fit_Functions::TH1FDataVector(TH1F* Data, float Offset)
 {
   int bins = Data -> GetNbinsX();
   std::vector<float> Data_Vector(bins + bins*Offset, 0);
-  for (int i(0); i < bins; i++)
+  for (int i(0); i < bins -1; i++)
   {
     Data_Vector[i] = Data -> GetBinContent(i+1);
-    if (i < bins*Offset) { Data_Vector[i+bins] = Data -> GetBinContent(bins - i - 1); }
+    if (i < bins*Offset+1) { Data_Vector[i+bins-1] = Data -> GetBinContent(bins - i - 1); }
   }
 
   return Data_Vector;
@@ -793,6 +803,36 @@ TCanvas* Benchmark::ClosurePlot(TString Name, std::vector<TH1F*> Data, std::vect
   return can;
 }
 
+TCanvas* Benchmark::ClosurePlot(TString Name, std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDFs)
+{ 
+  Fit_Functions f;
+
+  TCanvas* can = new TCanvas(Name); 
+  gStyle -> SetOptStat(0); 
+  can -> Divide(2,2);  
+  for (int i(0); i < Data.size(); i++)
+  {
+    can -> cd(i+1) -> SetLogy();
+    can -> cd(i+1);
+    Data[i] -> SetLineColor(kBlack);
+    Data[i] -> Draw("SAMEHIST");
+ 
+    TLegend* leg = new TLegend(0.9, 0.9, 0.75, 0.75);  
+    leg -> AddEntry(Data[i], "Data" );  
+    
+    std::vector<TH1F*> PDF = PDFs[i];
+    for (int x(0); x < PDF.size(); x++)
+    {  
+      PDF[x] -> SetLineColor(Constants::Colors[x]); 
+      PDF[x] -> SetLineStyle(kDashed);
+      PDF[x] -> Draw("SAMEHIST");
+      leg -> AddEntry(PDF[x], PDF[x] -> GetTitle());  
+      leg -> Draw("SAME"); 
+    }  
+  }
+  return can;
+}
+
 void Algorithms::MinimalAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*> O_PDFs, float min, float max, float offset, int iter, int trkn)
 {
   // Importing functions 
@@ -800,13 +840,6 @@ void Algorithms::MinimalAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*>
   Functions F;
 
   // ############ Constants and histograms ############  
-  // == Output PDFs
-  TH1F* trk1_C = O_PDFs[0]; 
-  TH1F* trk2_C = O_PDFs[1];
-  TH1F* trk3_C = O_PDFs[2];
-  TH1F* trk4_C = O_PDFs[3]; 
-  std::vector<TH1F*> PDFs = {trk1_C, trk2_C, trk3_C, trk4_C};
-
   // == Forward declarations 
   std::vector<RooRealVar*> var;
   std::vector<float> Fit_Var; 
@@ -816,9 +849,9 @@ void Algorithms::MinimalAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*>
 
   // == Prior: Flat
   int bins = trk1_D -> GetNbinsX();
-  std::vector<float> deconv(bins + offset*bins, 0.5);
-  // ################################################## 
+  std::vector<float> deconv(bins + offset*bins, offset);
 
+  // ################################################## 
   for (int y(0); y < iter; y++)
   {
     // Deconvolution  
@@ -830,31 +863,44 @@ void Algorithms::MinimalAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*>
  
   // === Start building the n-track histograms via convolution 
   // 1-track
-  F.VectorToTH1F(deconv, trk1_C);
-  f.ArtifactRemove(trk1_C, "b");
-  f.Normalizer(trk1_C);
+  F.VectorToTH1F(deconv, O_PDFs[0]);
+  f.ArtifactRemove(O_PDFs[0], "b");
+  f.Normalizer(O_PDFs[0]);
 
   // 2-track
-  f.ConvolveHists(trk1_C, trk1_C, trk2_C, 0);
-  f.ArtifactRemove(trk2_C, "b");
-  f.Normalizer(trk2_C);
+  f.ConvolveHists(O_PDFs[0], O_PDFs[0], O_PDFs[1], 0);
+  f.ArtifactRemove(O_PDFs[1], "b");
+  f.Normalizer(O_PDFs[1]);
 
   // 3-track 
-  f.ConvolveHists(trk2_C, trk1_C, trk3_C, 0);
-  f.ArtifactRemove(trk3_C, "b");
-  f.Normalizer(trk3_C);
+  f.ConvolveHists(O_PDFs[1], O_PDFs[0], O_PDFs[2], 0);
+  f.ArtifactRemove(O_PDFs[2], "b");
+  f.Normalizer(O_PDFs[2]);
   
   // 4-track
-  f.ConvolveHists(trk2_C, trk2_C, trk4_C, 0);
-  f.ArtifactRemove(trk4_C, "b"); 
-  f.Normalizer(trk4_C);      
+  f.ConvolveHists(O_PDFs[1], O_PDFs[1], O_PDFs[3], 0);
+  f.ArtifactRemove(O_PDFs[3], "b"); 
+  f.Normalizer(O_PDFs[3]);      
 
   // Perform the fit 
-  var = f.FitPDFtoData(PDFs, trk2_D, min, max);
+  var = f.FitPDFtoData(O_PDFs, trk2_D, min, max);
 
+
+
+
+///// +++++++++++++++++ Debug here!!!!!!!!!!!!!!!!!!! ++++++++++++++++++++++++ //
+  TCanvas* can = new TCanvas();
+  can -> SetLogy();
+  for (TH1F* H : O_PDFs)
+  {
+    H -> Draw("SAMEHIST");
+  }
+  //f.Normalizer(trk2_D);
+  trk2_D -> Draw("SAMEHIST*"); 
   // Subtract the estimated cross contamination from the Target copy
-  f.Subtraction(PDFs, trk2_D, trkn, var);
+  //f.Subtraction(O_PDFs, trk2_D, trkn, var);
 }
+
 std::vector<float> Algorithms::GaussianAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*> O_PDFs, float min, float max, float offset, float mean_s, float mean_e, float stdev_s, float stdev_e, int iter, int trkn)
 {
   Fit_Functions f;
