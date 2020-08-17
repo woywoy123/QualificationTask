@@ -28,7 +28,7 @@ class Presentation
     void Threshold(TString DataDir);
     void TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<TH1F*> Pure, std::vector<std::vector<float>> Closure);
     void TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<std::vector<TH1F*>> Pure);
-    void TestGaussianAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<TH1F*> Pure, std::vector<std::vector<float>> Closure);
+    void TestGaussianAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset);
   private:
     std::vector<std::vector<float>> MinimalAlgorithmBase(std::vector<TH1F*> Data, std::vector<TH1F*> PDFs, float min, float max, float offset);
 };

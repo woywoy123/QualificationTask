@@ -199,15 +199,15 @@ void Presentation::TestMinimalAlgorithm(std::vector<TH1F*> Data, float min, floa
   std::vector<TH1F*> PDFs = F.MakeTH1F(PDFNames, Data[0] -> GetNbinsX(), min, max, "_DataPDF"); 
   std::vector<std::vector<float>> Prediction = MinimalAlgorithmBase(Data, PDFs, min, max, offset);
   
-  //// ====== Plotting ====== //
-  //// === Truth Canvas  
-  //TCanvas* Truth = B.ClosurePlot("Truth", Data, Pure);
-  // 
-  //// === Algorithm Canvas
-  //TCanvas* Algorithm = B.ClosurePlot("Algorithm", Data, PDFs, Prediction);
+  // ====== Plotting ====== //
+  // === Truth Canvas  
+  TCanvas* Truth = B.ClosurePlot("Truth", Data, Pure);
+   
+  // === Algorithm Canvas
+  TCanvas* Algorithm = B.ClosurePlot("Algorithm", Data, PDFs, Prediction);
 
-  //Truth -> Draw();
-  //Algorithm -> Draw();
+  Truth -> Draw();
+  Algorithm -> Draw();
 }
 
 std::vector<std::vector<float>> Presentation::MinimalAlgorithmBase(std::vector<TH1F*> Data, std::vector<TH1F*> PDFs, float min, float max, float offset)
@@ -221,9 +221,8 @@ std::vector<std::vector<float>> Presentation::MinimalAlgorithmBase(std::vector<T
     PDFs[i] -> SetLineStyle(Constants::Colors[i]);
   }
   TH1F* trk2 = (TH1F*)Data[1] -> Clone("2 Track");
-  trk2 -> SetBinContent(trk2 -> GetNbinsX(), trk2 -> GetBinContent(trk2 -> GetNbinsX()-1));
   TH1F* trk1 = (TH1F*)Data[0] -> Clone("1 Track");
-  for (int i(0); i < 1; i++){A.MinimalAlgorithm(trk1, trk2, PDFs, min, max, offset, 25);}
+  for (int i(0); i < 2; i++){A.MinimalAlgorithm(trk1, trk2, PDFs, min, max, offset, 100);}
 
   std::vector<std::vector<float>> Prediction;
   for (int i(0); i < PDFs.size(); i++)
@@ -236,7 +235,7 @@ std::vector<std::vector<float>> Presentation::MinimalAlgorithmBase(std::vector<T
   return Prediction;
 }
 
-void Presentation::TestGaussianAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset, std::vector<TH1F*> Pure, std::vector<std::vector<float>> Closure)
+void Presentation::TestGaussianAlgorithm(std::vector<TH1F*> Data, float min, float max, float offset)
 {
   Algorithms A;
   Functions F;
@@ -252,15 +251,15 @@ void Presentation::TestGaussianAlgorithm(std::vector<TH1F*> Data, float min, flo
   std::vector<TH1F*> PDFs = F.MakeTH1F(PDFNames, trk1_Clone -> GetNbinsX(), min, max, "_PDF");
   
   // Gaussian algorithm
-  float mean_s = -1;
-  float mean_e = 1; 
+  float mean_s = -2;
+  float mean_e = 2; 
   float stdev_s= 0.001; 
   float stdev_e= 1;
 
   std::vector<float> Parameters;
   for (int x(0); x < 1; x++)
   { 
-    Parameters = A.GaussianAlgorithm(trk1_Clone, trk2_Clone, PDFs, min, max, offset, mean_s, mean_e, stdev_s, stdev_e, 25);
+    Parameters = A.GaussianAlgorithm(trk1_Clone, trk2_Clone, PDFs, min, max, offset, mean_s, mean_e, stdev_s, stdev_e, 150);
   }
    
   std::vector<std::vector<float>> Prediction;
@@ -271,14 +270,8 @@ void Presentation::TestGaussianAlgorithm(std::vector<TH1F*> Data, float min, flo
     Prediction.push_back(v);
   }
   
-  // ====== Plotting ====== //
-  // === Truth Canvas 
-  TCanvas* Truth = B.ClosurePlot("Truth", Data, Pure, Closure);
-   
   // === Algorithm Canvas
   TCanvas* Algorithm = B.ClosurePlot("Algorithm", Data, PDFs, Prediction);
-
-  Truth -> Draw();
   Algorithm -> Draw();
 
   for (float i : Parameters)

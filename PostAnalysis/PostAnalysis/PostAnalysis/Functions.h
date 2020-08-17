@@ -108,6 +108,8 @@ class Fit_Functions
 
     // Removes the weird artifacts before the peak from the hists
     void ArtifactRemove(TH1F* Hist, TString mode = "b");
+    void ArtifactRemoveExperimental(TH1F* Hist);
+    void CorrectArtifactShift(TH1F* Hist);
 
     // Creates the datavector with the mirror tail 
     std::vector<float> TH1FDataVector(TH1F* Data, float Offset);

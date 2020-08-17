@@ -67,11 +67,11 @@ TH1F* Functions::VectorToTH1F(std::vector<float> Vec, TString name, int bins, in
 }
 
 void Functions::VectorToTH1F(std::vector<float> Vec, TH1F* hist, int StartBin)
-{ 
+{
   for (int i(0); i < Vec.size(); i++)
   {
-    hist -> SetBinContent(i+1 + StartBin, Vec.at(i));  
-  } 
+    hist -> SetBinContent(i+1 + StartBin, Vec[i]);
+  }
 }
 
 std::vector<float> Functions::TH1FToVector(TH1F* hist, int CustomLength, int start)
@@ -426,7 +426,7 @@ std::vector<float> Fit_Functions::TailReplaceClosure(TH1F* hist, std::vector<flo
   float TLumi = Target -> Integral();
   float SLumi = Source -> Integral();
  
-  const int UpTo = std::round(1.5*(Target -> GetMaximumBin()));
+  const int UpTo = std::round(1.01*(Target -> GetMaximumBin()));
   if (Target -> GetBinContent(UpTo) == deconv[0]) 
   {
     delete Source;
@@ -446,6 +446,7 @@ std::vector<float> Fit_Functions::TailReplaceClosure(TH1F* hist, std::vector<flo
       Target -> SetBinContent(i+1, S_e*(t_T/t_S));
     }
   }
+
   std::vector<float> De = F.TH1FToVector(Target);
 
   delete Target;
@@ -461,11 +462,12 @@ std::vector<RooRealVar*> Fit_Functions::FitPDFtoData(std::vector<TH1F*> PDFs, TH
   std::vector<TString> Names;
   for ( int i(0); i < PDFs.size(); i++)
   {
-    Names.push_back(PDFs[i] -> GetName());
+    TString string = "trk "; string +=(i+1);
+    Names.push_back(string);
   }
 
   // Define required variables
-  std::vector<float> Parms_S(Names.size(), 0);
+  std::vector<float> Parms_S(Names.size(), 1e-16);
   std::vector<float> Parms_E(Names.size(), Data -> Integral());
 
   // Variable Generation
@@ -478,7 +480,20 @@ std::vector<RooRealVar*> Fit_Functions::FitPDFtoData(std::vector<TH1F*> PDFs, TH
 
   // Model 
   RooAddPdf model("model", "model", pdfs_List, var_List);
-  model.fitTo(*D);
+  model.fitTo(*D, Range(min+0.5, max -0.5));
+
+ // RooPlot* xframe = x -> frame(RooFit::Title("Hello"));
+ // D -> plotOn(xframe, Name("Data"));
+ // model.plotOn(xframe, Name("1trk"), Components(*pdfs[0]), LineStyle(kDotted), LineColor(kBlue));
+ // model.plotOn(xframe, Name("2trk"), Components(*pdfs[1]), LineStyle(kDotted), LineColor(kCyan)); 
+ // model.plotOn(xframe, Name("3trk"), Components(*pdfs[2]), LineStyle(kDotted), LineColor(kOrange));
+ // model.plotOn(xframe, Name("4trk"), Components(*pdfs[3]), LineStyle(kDotted), LineColor(kGreen));
+
+ // TCanvas* z = new TCanvas();
+ // gPad -> SetLogy();
+ // xframe -> SetMinimum(1);
+ // xframe -> Draw();
+ // z -> Update();
 
   delete x; 
   delete D;
@@ -544,6 +559,66 @@ void Fit_Functions::ArtifactRemove(TH1F* Hist, TString mode)
     index = ArtifactRemoveForward(Hist);  
     for (int i(index); i < Hist -> GetNbinsX(); i++){ Hist -> SetBinContent(i + 1, 0); }      
   }
+}
+
+void Fit_Functions::CorrectArtifactShift(TH1F* Hist)
+{
+  int bins = Hist -> GetNbinsX();
+  int local_min(0);
+  std::vector<float> temp;
+
+  for (int i(0); i < bins; i++)
+  {
+    float v1 = Hist -> GetBinContent(i+1);
+    float v2 = Hist -> GetBinContent(i+2);
+    float delta = v2 - v1;
+    if (delta <= 0)
+    { 
+      local_min = i+1; 
+      temp.push_back(v1);   
+    }
+    if (delta > 0) { break; }
+  }
+
+  int z=0;
+  for (int i(0); i < bins; i++)
+  {
+    if (i >= bins - local_min)
+    {
+      Hist -> SetBinContent(i+1, temp[z]);
+      z++;
+    } 
+    else
+    {
+      float v = Hist -> GetBinContent(i+1+local_min);
+      Hist -> SetBinContent(i+1, v);
+    }
+  } 
+}
+
+
+void Fit_Functions::ArtifactRemoveExperimental(TH1F* Hist)
+{
+  TH1F* H = (TH1F*)Hist -> Clone("Copy"); 
+ 
+  int local_min(0); 
+  for (int i(0); i < Hist -> GetNbinsX(); i++)
+  {
+    float v1 = H -> GetBinContent(i+1);
+    float v2 = H -> GetBinContent(i+2);
+    float delta = v2 - v1;
+    if (delta <= 0){ local_min = i+1; }
+    if (delta > 0) { break; }
+  }
+  
+  for (int i(0); i < local_min; i++)
+  {
+    float min_l = H -> GetBinContent(local_min +1);
+    float val = H -> GetBinContent(i+1);
+    Hist -> SetBinContent(i + 1, 2*min_l - val);
+  }
+
+  delete H;
 }
 
 int Fit_Functions::ArtifactRemoveForward(TH1F* Hist)
@@ -625,9 +700,9 @@ std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*
   const float ss = (max-min) / bins;
   const int Pad = std::round(std::abs(Padding) / ss);
   const float GaussianMean = 0; /// need to add later
-  const float STDev = 0.1; // Need to add later
-  const float Damp = 0.75;
-  const int iteration = 25;
+  const float STDev = 0.2; // Need to add later
+  const float Damp = 1;
+  const int iteration = 100;
 
   // Define the static Gaussian PSF
   TH1F* PSF_HL = new TH1F("PSF_HL", "PSF_HL", bins + 2*Pad, min - Padding, max + Padding);   
@@ -705,6 +780,23 @@ std::vector<RooRealVar*> Fit_Functions::GaussianConvolutionFit(std::vector<TH1F*
   // Import the trk 2 data as a RooDataHist
   RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, trk2); 
   model.fitTo(*trk2_D, Constrain(*Means[0]), Constrain(*Means[1]), Constrain(*Means[2]), Constrain(*Means[3]), Constrain(*Stdev[0]), Constrain(*Stdev[1]), Constrain(*Stdev[2]), Constrain(*Stdev[3]));
+
+
+  // Plotting 
+  RooPlot* xframe = x -> frame(RooFit::Title("Hello"));
+  trk2_D -> plotOn(xframe, Name("Data"), DataError(RooAbsData::None), XErrorSize(0));
+  model.plotOn(xframe, Name("1trk"), Components(*Conv_Vars[0]), LineStyle(kDotted), LineColor(kBlue));
+  model.plotOn(xframe, Name("2trk"), Components(*Conv_Vars[1]), LineStyle(kDotted), LineColor(kCyan)); 
+  model.plotOn(xframe, Name("3trk"), Components(*Conv_Vars[2]), LineStyle(kDotted), LineColor(kOrange));
+  model.plotOn(xframe, Name("4trk"), Components(*Conv_Vars[3]), LineStyle(kDotted), LineColor(kGreen));
+
+  TCanvas* z = new TCanvas();
+  gPad -> SetLogy();
+  xframe -> SetMinimum(1);
+  xframe -> Draw();
+  z -> Update();
+
+
 
   for (unsigned int i(0); i < Means.size(); i++)
   {
@@ -835,6 +927,7 @@ TCanvas* Benchmark::ClosurePlot(TString Name, std::vector<TH1F*> Data, std::vect
 
 void Algorithms::MinimalAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*> O_PDFs, float min, float max, float offset, int iter, int trkn)
 {
+
   // Importing functions 
   Fit_Functions f; 
   Functions F;
@@ -864,39 +957,29 @@ void Algorithms::MinimalAlgorithm(TH1F* trk1_D, TH1F* trk2_D, std::vector<TH1F*>
   // === Start building the n-track histograms via convolution 
   // 1-track
   F.VectorToTH1F(deconv, O_PDFs[0]);
-  f.ArtifactRemove(O_PDFs[0], "b");
+  f.ArtifactRemoveExperimental(O_PDFs[0]); 
   f.Normalizer(O_PDFs[0]);
 
   // 2-track
   f.ConvolveHists(O_PDFs[0], O_PDFs[0], O_PDFs[1], 0);
-  f.ArtifactRemove(O_PDFs[1], "b");
+  //f.ArtifactRemove(O_PDFs[1], "b");
   f.Normalizer(O_PDFs[1]);
 
   // 3-track 
   f.ConvolveHists(O_PDFs[1], O_PDFs[0], O_PDFs[2], 0);
+  //f.CorrectArtifactShift(O_PDFs[2]);
   f.ArtifactRemove(O_PDFs[2], "b");
   f.Normalizer(O_PDFs[2]);
   
   // 4-track
   f.ConvolveHists(O_PDFs[1], O_PDFs[1], O_PDFs[3], 0);
+  //f.CorrectArtifactShift(O_PDFs[3]);
   f.ArtifactRemove(O_PDFs[3], "b"); 
   f.Normalizer(O_PDFs[3]);      
 
   // Perform the fit 
   var = f.FitPDFtoData(O_PDFs, trk2_D, min, max);
 
-
-
-
-///// +++++++++++++++++ Debug here!!!!!!!!!!!!!!!!!!! ++++++++++++++++++++++++ //
-  TCanvas* can = new TCanvas();
-  can -> SetLogy();
-  for (TH1F* H : O_PDFs)
-  {
-    H -> Draw("SAMEHIST");
-  }
-  //f.Normalizer(trk2_D);
-  trk2_D -> Draw("SAMEHIST*"); 
   // Subtract the estimated cross contamination from the Target copy
   //f.Subtraction(O_PDFs, trk2_D, trkn, var);
 }
