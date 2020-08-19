@@ -1,0 +1,8 @@
+[release_metadata]
+release:21.2.47
+nightly name:master
+project name:WorkDir
+nightly release:52ed32b
+date:2020-08-19T1520
+compiler:GNU-6.2.0
+cxxpath:/cvmfs/sft.cern.ch/lcg/releases/gcc/6.2.0-2bc78/x86_64-slc6-gcc62-opt/bin/g++

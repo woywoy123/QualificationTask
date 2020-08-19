@@ -1,6 +1,6 @@
 #!/bin/bash
 
-Data=./CalibrationData
+Data=/CERN/QT/CalibrationData/2018/
 
 mkdir Merger
 cd Merger
@@ -30,8 +30,8 @@ done
 
 ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
 source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
-lsetup "root 6.20.06-x86_64-centos7-gcc-opt"
+lsetup "root 6.20.06-x86_64-centos7-gcc8-opt"
 
 $ROOTSYS/bin/hadd Merger.root $string
 
-
+echo "Done"

@@ -1,0 +1,4 @@
+[ libPackageLib.so ]
+# List of selected classes
+class BaseFunctions
+header PostAnalysis/BaseFunctions.h
