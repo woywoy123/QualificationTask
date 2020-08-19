@@ -1,178 +1,156 @@
-// Including commonly reused functions
-#include<PostAnalysis/Functions.h>
-#include<PostAnalysis/Verification.h>
-#include<PostAnalysis/UnitClosures.h>
-#include<iostream>
+#include<PostAnalysis/BaseFunctions.h>
+#include<PostAnalysis/Constants.h>
+#include<PostAnalysis/Plotting.h>
+#include<PostAnalysis/UnitTest.h>
+#include<TApplication.h>
+
+using namespace Constants;
 
 void PostAnalysis()
 {
+  // ==== Classes being imported ==== //
+  BaseFunctions B;
+  DistributionGenerators D; 
+  Plotting P; 
+  BaseFunctionTest BFT; 
+  DerivedFunctionTest DFT;
 
-  Benchmark B;
-  Verification V; 
-  Fit_Functions f;
-  Functions F;
-  UnitClosures U;
-  Presentation P;
-  DataGeneration D; 
+  // ==== Constants used for the algorithm ==== //
+  int Mode = 1; 
+  bool Test = true;
+  float bins = 500;
+  float min = 0;
+  float max = 20;
+  float npts = 500000; 
 
-  // ======================== Base Variables ======================== // 
-  TString Mode = "MC";
-  int bins = 500;
-  int min = 0;
-  int max = 20;
-  float offset = 0.1;
-  int iter = 1000;
-  
-  // ===== Data vectors
-  std::vector<TString> Data_Names = {"trk1", "trk2", "trk3", "trk4"};
-  std::vector<TH1F*> Data_ntrk = F.MakeTH1F(Data_Names, bins, min, max); 
+  // ==== Forward declaration for Histograms ==== //
+  std::vector<TH1F*> Pure; 
+  std::vector<TH1F*> trk1_N;
+  std::vector<TH1F*> trk2_N;
+  std::vector<TH1F*> trk3_N;
+  std::vector<TH1F*> trk4_N;
+  std::vector<TH1F*> ntrk_Data; 
+  std::vector<std::vector<TH1F*>> Truth_Sets; 
+  std::vector<float> CLS1;
+  std::vector<float> CLS2;
+  std::vector<float> CLS3;
+  std::vector<float> CLS4; 
+  std::vector<std::vector<float>> Closure; 
 
-  // ===== Monte Carlo dir
-  TString dir = "/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/MonteCarlo/Merged.root"; 
+  // Monte Carlo Reading 
+  if( Mode == 0 )
+  {
+    // Generate hists and fill with MC data
+    trk1_N = D.FillTH1F(trk_1, MC_dir); 
+    trk2_N = D.FillTH1F(trk_2, MC_dir); 
+    trk3_N = D.FillTH1F(trk_3, MC_dir); 
+    trk4_N = D.FillTH1F(trk_4, MC_dir);
+    ntrk_Data = D.FillTH1F(Data_Names, MC_dir);  
+    Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N}; 
    
-
-  // ===== Landau Parameter
-  std::vector<float> LP = {1, 0.9, 0.1};
-
-  // Contamination Composition 
-  std::vector<float> COMP1;
-  std::vector<float> COMP2; 
-  std::vector<float> COMP3; 
-  std::vector<float> COMP4; 
-  std::vector<std::vector<float>> Closure;
-  
-  // ====================== Get the Monte Carlo data ================ //
-  if ( Mode == "MC")
-  { 
-    // ===== Define the names  
-    std::vector<TString> trk_P_n = Constants::Pure_Names;
-    std::vector<TString> trk_1_n = Constants::trk_1;
-    std::vector<TString> trk_2_n = Constants::trk_2;
-    std::vector<TString> trk_3_n = Constants::trk_3;
-    std::vector<TString> trk_4_n = Constants::trk_4;
-
-    // ===== Create the histograms
-    std::vector<TH1F*> Pure_trks = F.MakeTH1F(trk_P_n, bins, min, max, "_P");
-    std::vector<TH1F*> trk_1_V = F.MakeTH1F(trk_1_n, bins, min, max);
-    std::vector<TH1F*> trk_2_V = F.MakeTH1F(trk_2_n, bins, min, max);
-    std::vector<TH1F*> trk_3_V = F.MakeTH1F(trk_3_n, bins, min, max);
-    std::vector<TH1F*> trk_4_V = F.MakeTH1F(trk_4_n, bins, min, max);
-    std::vector<std::vector<TH1F*>> trk_P = {trk_1_V, trk_2_V, trk_3_V, trk_4_V};
-
-    // ===== Fill the histograms through the MC 
-    D.MonteCarlo(Pure_trks, dir, "_P");
-    D.MonteCarlo(trk_1_V, dir);
-    D.MonteCarlo(trk_2_V, dir);
-    D.MonteCarlo(trk_3_V, dir);
-    D.MonteCarlo(trk_4_V, dir);
-  
-    // ===== Merge the histograms and get the composition  
-    COMP1 = D.MergeToys(trk_1_V, Data_ntrk.at(0));
-    COMP2 = D.MergeToys(trk_2_V, Data_ntrk.at(1));   
-    COMP3 = D.MergeToys(trk_3_V, Data_ntrk.at(2));   
-    COMP4 = D.MergeToys(trk_4_V, Data_ntrk.at(3));   
-    Closure = {COMP1, COMP2, COMP3, COMP4};
-  
-   
-    //U.TestFit(trk_P, Data_ntrk, min, max, Closure);
-    //U.TestTailAndDeconv(Pure_trks[0], Pure_trks[1], iter, min, max); 
-    //U.TestDeconvolution(Pure_trks[0], Pure_trks[1], iter); 
-    //U.TestSubtraction(Data_ntrk.at(2), 3, trk_3_V, min, max, COMP3); 
-    //P.TestMinimalAlgorithm(Data_ntrk, min, max, offset, trk_P);
-    P.TestGaussianAlgorithm(Data_ntrk, min, max, offset); 
-    TCanvas* Truth = B.ClosurePlot("Truth", Data_ntrk, trk_P);
+    // Get Closure values and fill data 
+    CLS1 = B.ClosureAndData(trk1_N, ntrk_Data[0]); 
+    CLS2 = B.ClosureAndData(trk2_N, ntrk_Data[1]); 
+    CLS3 = B.ClosureAndData(trk3_N, ntrk_Data[2]); 
+    CLS4 = B.ClosureAndData(trk4_N, ntrk_Data[3]);   
+    Closure = {CLS1, CLS2, CLS3, CLS4};  
   }
-  
-  // ======================= Toy Data ===================== //
-  if ( Mode == "Landau" )
-  {  
 
-    // ===== Define the names  
-    std::vector<TString> trk_P_n = Constants::Pure_Names;
-    std::vector<TString> trk_1_n = Constants::trk_1;
-    std::vector<TString> trk_2_n = Constants::trk_2;
-    std::vector<TString> trk_3_n = Constants::trk_3;
-    std::vector<TString> trk_4_n = Constants::trk_4;
-
-    // ===== Create the histograms
-    std::vector<TH1F*> trk_P = F.MakeTH1F(trk_P_n, bins, min, max, "_P");
-    std::vector<TH1F*> trk_1_V = F.MakeTH1F(trk_1_n, bins, min, max);
-    std::vector<TH1F*> trk_2_V = F.MakeTH1F(trk_2_n, bins, min, max);
-    std::vector<TH1F*> trk_3_V = F.MakeTH1F(trk_3_n, bins, min, max);
-    std::vector<TH1F*> trk_4_V = F.MakeTH1F(trk_4_n, bins, min, max);
-
-    // ===== Histograms: Pure, 1trk, 2trk, 3trk, 4trk
-    D.IdealLandau(trk_P, {1, 1, 1, 1}, LP);
-    D.IdealLandau(trk_1_V, {0.8  , 0.2 , 0.  , 0.  }, LP);
-    D.IdealLandau(trk_2_V, {0.  , 1. , 0.  , 0.  }, LP);
-    D.IdealLandau(trk_3_V, {0.01, 0.2, 0.59, 0.2 }, LP);
-    D.IdealLandau(trk_4_V, {0.02, 0.2, 0.2 , 0.58}, LP);
+  // Toy model 
+  if( Mode == 1 )     
+  {
+    // Make Hists
+    trk1_N = B.MakeTH1F(trk_1, bins, min, max);    
+    trk2_N = B.MakeTH1F(trk_2, bins, min, max);    
+    trk3_N = B.MakeTH1F(trk_3, bins, min, max);    
+    trk4_N = B.MakeTH1F(trk_4, bins, min, max); 
+    ntrk_Data = B.MakeTH1F(Data_Names, bins, min, max);  
+    Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N};
+   
+    // Fill Hists 
+    D.Landau(trk1_N, COMP1, LandauParameters, npts, min, max);
+    D.Landau(trk2_N, COMP2, LandauParameters, npts, min, max);
+    D.Landau(trk3_N, COMP3, LandauParameters, npts, min, max);
+    D.Landau(trk4_N, COMP4, LandauParameters, npts, min, max); 
     
-    //  ===== Merge the vectors into a single TH1F for data 
-    COMP1 = D.MergeToys(trk_1_V, Data_ntrk[0]);
-    COMP2 = D.MergeToys(trk_2_V, Data_ntrk[1]);
-    COMP3 = D.MergeToys(trk_3_V, Data_ntrk[2]);
-    COMP4 = D.MergeToys(trk_4_V, Data_ntrk[3]);
-    Closure = {COMP1, COMP2, COMP3, COMP4};
-  
-  
-    //U.TestFit(trk_P, Data_ntrk, min, max, Closure); 
-    //U.TestTailAndDeconv(trk_P[0], trk_P[1], iter, min, max);
-    //P.TestMinimalAlgorithm(Data_ntrk, min, max, offset, trk_P, Closure);
-    P.TestMinimalAlgorithm(Data_ntrk, min, max, offset, trk_P, Closure);
+    // Get Closure values and fill data 
+    CLS1 = B.ClosureAndData(trk1_N, ntrk_Data[0]); 
+    CLS2 = B.ClosureAndData(trk2_N, ntrk_Data[1]); 
+    CLS3 = B.ClosureAndData(trk3_N, ntrk_Data[2]); 
+    CLS4 = B.ClosureAndData(trk4_N, ntrk_Data[3]);  
+    Closure = {CLS1, CLS2, CLS3, CLS4}; 
   }
 
- // ===== Explicity write out the trks 
-  TH1F* trk1 = Data_ntrk[0];  
-  TH1F* trk2 = Data_ntrk[1];
-  TH1F* trk3 = Data_ntrk[2];
-  TH1F* trk4 = Data_ntrk[3];
-
-  // Add some styles 
-  trk1 -> SetLineColor(kRed);
-  trk2 -> SetLineColor(kBlue);
-  trk3 -> SetLineColor(kOrange);
-  trk4 -> SetLineColor(kGreen); 
+  // Component testing 
+  if( Test == true)
+  {
+    // Test the subtraction 
+    //BFT.Subtraction();  
+    //BFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0.04, 20); 
+    DFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0, 20); 
+  }
  
-  // Plot the distributions
-  //TPaveText* t = new TPaveText(0.5, 0.9, 0.3, 1.0, "brNDC");
-  //TCanvas* can = new TCanvas("Cant", "Cant", 800, 800);
-  //can -> SetLogy();
-  ////gStyle -> SetOptStat(0);
-  //gStyle -> SetOptTitle(0); 
-  //trk1 -> SetTitle(Mode + " 1 Track");
-  //trk2 -> SetTitle(Mode + " 2 Track");
-  //trk3 -> SetTitle(Mode + " 3 Track");
-  //trk4 -> SetTitle(Mode + " 4 Track");
-
-  //t -> AddText(Mode + " Measurement n-Track");
-  //trk1 -> Draw("SAMEHIST"); 
-  //trk2 -> Draw("SAMEHIST");
-  //trk3 -> Draw("SAMEHIST");
-  //trk4 -> Draw("SAMEHIST"); 
-  //t -> Draw("SAME");
-  //can -> Update();
-
-  
-  //P.Threshold(dir);  
-  //P.TestGaussianAlgorithm(Data_ntrk, min, max, offset, trk_P, Closure);
-  
+ 
+  std::cout << "Fin" << std::endl;
  
  
  
   
- }
-
-void StandaloneApplications(int argc, char**argv)
-{
-  PostAnalysis();
+  // To do:
+  // - write LR function 
+  // - write RooFit class
+  // - Define the ROOFIT tail replace class as experimental
+  // - Write Gaussian function 
+  // - write minimal where the tail replace happens after LR loop
+  // - Write the threshold function and do a fit to remove 1 trk  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void StandaloneApplications(int argc, char** argv){PostAnalysis();}
 int main(int argc, char** argv)
 {
   TApplication app("ROOT Application", &argc, argv);
   StandaloneApplications(app.Argc(), app.Argv());
   app.Run();
-
-  return 0;
+  return 0; 
 }

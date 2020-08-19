@@ -1,4 +1,4 @@
-#include <PostAnalysis/Functions.h>
+#include <PostAnalysis/BaseFunctions.h>
 
 #ifdef __CINT__
 
@@ -10,7 +10,7 @@
 #endif
 
 #ifdef __CINT__
-#pragma link C++ class Functions+;
+#pragma link C++ class BaseFunctions+;
 #endif
 
 
