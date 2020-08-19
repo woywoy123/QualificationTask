@@ -54,6 +54,39 @@ void BaseFunctionTest::NormalFit(std::vector<TH1F*> Hists, TH1F* Data, std::vect
   can -> Draw(); 
 }
 
+void BaseFunctionTest::Convolve(TH1F* Hist1, TH1F* Hist2, TH1F* Expectation)
+{
+  BaseFunctions B; 
+  Plotting P;
+   
+  TH1F* Conv = (TH1F*)Expectation -> Clone("Conv"); 
+  B.ConvolveHists(Hist1, Hist2, Conv);
+  B.Normalize(Conv);
+  Conv -> Scale(Expectation -> Integral());
+  TCanvas* can = P.PlotHists(Conv, Expectation);
+  can -> Draw();
+}
+
+void BaseFunctionTest::Deconvolve(TH1F* Trk2, TH1F* Trk1, float offset, int iter)
+{
+  BaseFunctions B;
+  Plotting P;
+   
+  std::vector<float> Data_V = B.TH1FDataVector(Trk2, offset);
+  std::vector<float> deconv(Data_V.size(), 0.5); 
+  for (int i(0); i < iter; i++)
+  {
+    deconv = B.LucyRichardson(Data_V, deconv, deconv, 1);  
+  }  
+  
+  TH1F* Hist = new TH1F("Hist", "Hist", 500, 0, 20); 
+  B.ToTH1F(deconv, Hist);
+ 
+  P.PlotHists(Hist, Trk1); 
+
+
+}
+
 void DerivedFunctionTest::NormalFit(std::vector<TH1F*> Hists, TH1F* Data, std::vector<float> CL, float min, float max)
 {
   DerivedFunctions DF; 

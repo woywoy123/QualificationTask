@@ -143,5 +143,132 @@ void BaseFunctions::PredictionTruthPrint(std::vector<float> Truth, std::vector<f
   {
     std::cout << "trk-" << i+1 << " Truth: " << Truth[i] << " Prediction: " << Prediction[i] << std::endl;
   }
-
 }
+
+std::vector<float> BaseFunctions::LucyRichardson(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y)
+{
+  // G - Measured Signal
+  // F - Current estimate of PSF
+  // H - Estimate of truth signal P(G|F) = H
+  // Alg: F(j+1) = F(j)*Sum(i) [ H(ij) * G(i) / Sum(k) [H(jk) * F(k)] ]
+  // y - Dampening 
+  std::vector<float> PSF(F.size(), 0);
+
+  // Each bin is calculated separately  
+  for ( unsigned int i(0); i < H.size(); i++)
+  {
+    float sum_i(0); 
+    for (unsigned int j(i); j < F.size(); j++)
+    {
+      //Sum(k) [H(jk) * F(k)]
+      float sum_k(0); 
+      for (int k(0); k <= j; k++)
+      {
+        float H_jk = H[j-k];
+        float F_k = F[k];
+        sum_k += H_jk*F_k;
+      }
+      if (sum_k != 0) 
+      { 
+        sum_i += (G[j]*H[j-i]) / sum_k; 
+      } 
+
+      PSF[i] = F[i] * ( 1 + y * (sum_i -1) );
+      if (PSF[i] < 0. || std::isnan(PSF[i]) || std::isinf(PSF[i]))  {PSF[i] = 0.;}
+    }  
+  }
+  return PSF; 
+}
+
+void BaseFunctions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
+{
+  int nBins_2 = Hist2 -> GetNbinsX();
+  int nBins_1 = Hist1 -> GetNbinsX();
+   
+  // Make sure the bins are equally sized  
+  if ( nBins_2 != nBins_1 ) { return; }
+
+  // Convert TH1 to vector 
+  std::vector<float> H1, H2;
+  for ( unsigned int i(0); i < nBins_2; i++ )
+  {
+    H1.push_back(Hist1 -> GetBinContent(i+1));
+    H2.push_back(Hist2 -> GetBinContent(i+1));
+  }
+
+  // Set bin content of conv histogram 
+  std::vector<float> Conv = ConvolveHists(H1, H2);
+  for ( unsigned int i(0); i < nBins_2; i++ )
+  {
+    conv -> SetBinContent(i+1, Conv.at(i));
+  }
+}
+
+std::vector<float> BaseFunctions::ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2)
+{
+  int n = Hist1.size();
+  std::vector<float> conv(n, 0);
+
+  // Initialize the FFT method by giving it the data points  
+  TVirtualFFT* fft1 = TVirtualFFT::FFT(1, &n, "R2C K P");
+  TVirtualFFT* fft2 = TVirtualFFT::FFT(1, &n, "R2C K P");
+  
+  for ( Int_t i(0); i < n; i++ )
+  {
+    fft1 -> SetPoint(i, Hist1.at(i), 0); 
+    fft2 -> SetPoint(i, Hist2.at(i), 0); 
+  }
+  fft1 -> Transform();
+  fft2 -> Transform();
+
+  // Main part of the FFT 
+  TVirtualFFT* fft2r = TVirtualFFT::FFT(1, &n, "C2R K P");  
+  for ( Int_t i(0); i < n/2 +1; i++ )
+  {
+    Double_t r1, r2, i1, i2;
+    fft1 -> GetPointComplex(i, r1, i1);   
+    fft2 -> GetPointComplex(i, r2, i2); 
+    
+    Double_t re = r1*r2 - i1*i2;
+    Double_t im = r1*i2 + r2*i1;
+    
+    TComplex t(re, im);
+    fft2r -> SetPointComplex(i, t);  
+  }
+
+  // Reverse FFT to real space
+  fft2r -> Transform();
+  for ( Int_t i(0); i < n; i++ )
+  {
+    Double_t r1, i1;
+    fft2r -> GetPointComplex(i, r1, i1);
+    conv[i] = r1;
+  }
+  delete fft1; 
+  delete fft2;
+  delete fft2r;
+  
+  return conv;
+}
+
+std::vector<float> BaseFunctions::TH1FDataVector(TH1F* Data, float Offset)
+{
+  int bins = Data -> GetNbinsX();
+  std::vector<float> Data_Vector(bins + bins*Offset, 0);
+  for (int i(0); i < bins -1; i++)
+  {
+    Data_Vector[i] = Data -> GetBinContent(i+1);
+    if (i < bins*Offset+1) { Data_Vector[i+bins-1] = Data -> GetBinContent(bins - i - 1); }
+  }
+
+  return Data_Vector;
+}
+
+void BaseFunctions::ToTH1F(std::vector<float> Vector, TH1F* Hist)
+{
+  for (int i(0); i < Vector.size(); i++)
+  {
+    Hist -> SetBinContent(i+1, Vector[i]);
+  }
+}
+

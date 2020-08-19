@@ -22,6 +22,7 @@ void PostAnalysis()
   float min = 0;
   float max = 20;
   float npts = 500000; 
+  float offset = 0.1;
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> Pure; 
@@ -87,7 +88,9 @@ void PostAnalysis()
     // Test the subtraction 
     //BFT.Subtraction();  
     //BFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0.04, 20); 
-    DFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0, 20); 
+    //DFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0, 20); 
+    //BFT.Convolve(trk1_N[1], trk1_N[1], trk1_N[3]); 
+    BFT.Deconvolve(trk2_N[1], trk1_N[0], offset, 25);
   }
  
  
@@ -97,8 +100,6 @@ void PostAnalysis()
  
   
   // To do:
-  // - write LR function 
-  // - write RooFit class
   // - Define the ROOFIT tail replace class as experimental
   // - Write Gaussian function 
   // - write minimal where the tail replace happens after LR loop

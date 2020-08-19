@@ -4,6 +4,9 @@
 #include<RooDataHist.h>
 #include<RooHistPdf.h>
 #include<RooAddPdf.h>
+#include<TVirtualFFT.h>
+#include<TComplex.h>
+
 
 #ifndef BASEFUNCTIONS_H
 #define BASEFUNCTIONS_H
@@ -27,6 +30,14 @@ class BaseFunctions
   
     float ChiSquare(std::vector<float> V1, std::vector<float> V2);
     void PredictionTruthPrint(std::vector<float> Truth, std::vector<float> Prediction);
+
+    std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y);
+    
+    void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv);
+    std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
+    
+    std::vector<float> TH1FDataVector(TH1F* Data, float offset);
+    void ToTH1F(std::vector<float> Vector, TH1F* Hist);
 
 };
 
