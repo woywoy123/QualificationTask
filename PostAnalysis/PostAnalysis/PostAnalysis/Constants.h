@@ -50,6 +50,7 @@ namespace Constants
   const std::vector<float> COMP3 = {0.01, 0.2, 0.59, 0.2};
   const std::vector<float> COMP4 = {0.02, 0.2, 0.2, 0.58};
   const std::vector<float> LandauParameters = {1, 0.9, 0.1};
+  const int GaussianToys = 500000;
 
   const TString MC_dir = "/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/MonteCarlo/Merged.root";
 

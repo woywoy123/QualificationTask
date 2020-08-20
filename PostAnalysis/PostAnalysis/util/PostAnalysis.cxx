@@ -23,6 +23,10 @@ void PostAnalysis()
   float max = 20;
   float npts = 500000; 
   float offset = 0.1;
+  int Shift = 0;
+  float mean = 0;
+  float stdev = 0.1; 
+  int iter = 25; 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> Pure; 
@@ -90,7 +94,11 @@ void PostAnalysis()
     //BFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0.04, 20); 
     //DFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0, 20); 
     //BFT.Convolve(trk1_N[1], trk1_N[1], trk1_N[3]); 
-    BFT.Deconvolve(trk2_N[1], trk1_N[0], offset, 25);
+    //BFT.Deconvolve(trk2_N[1], trk1_N[0], offset, 25);
+    //DFT.ShiftTest(trk1_N[0], Shift);
+    //DFT.ReplaceShiftTail(trk1_N[0], trk1_N[1], Shift);
+    //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
+    DFT.ConvolveDeconvolveGaussianFit(trk1_N[0], trk1_N[0], mean, stdev, offset, iter);
   }
  
  

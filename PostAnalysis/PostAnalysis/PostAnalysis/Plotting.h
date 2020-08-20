@@ -23,8 +23,11 @@ class Plotting
     TCanvas* PlotHists(std::vector<TH1F*> Hists, TH1F* Data);
     TCanvas* PlotHists(TH1F* Hists, TH1F* Data);
     TCanvas* PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data);
+    TCanvas* PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data);
     TCanvas* PlotHists(std::vector<std::vector<TH1F*>> Hists);
     TCanvas* PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data);
+    TCanvas* PlotHists(RooHistPdf model, RooRealVar Domain, RooDataHist Data);
+
 };
 
 class DistributionGenerators

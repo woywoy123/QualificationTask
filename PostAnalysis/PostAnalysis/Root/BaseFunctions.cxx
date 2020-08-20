@@ -14,6 +14,19 @@ std::vector<TH1F*> BaseFunctions::MakeTH1F(std::vector<TString> Names, int bins,
   return Histograms;
 }
 
+std::vector<TH1F*> BaseFunctions::MakeTH1F(std::vector<TString> Names, TH1F* Input)
+{
+  std::vector<TH1F*> Output(Names.size()); 
+  for (int i(0); i < Names.size(); i++)
+  {
+    TH1F* H = (TH1F*)Input -> Clone(Names[i]);
+    H -> Reset();
+    H -> SetTitle(Names[i]);
+    Output[i] = H;  
+  }
+  return Output;
+}
+
 std::vector<float> BaseFunctions::Ratio(std::vector<TH1F*> Hists, TH1F* Data)
 {
   float Lumi = Data -> Integral(); 
@@ -271,4 +284,19 @@ void BaseFunctions::ToTH1F(std::vector<float> Vector, TH1F* Hist)
     Hist -> SetBinContent(i+1, Vector[i]);
   }
 }
+
+void BaseFunctions::ShiftExpandTH1F(TH1F* In, TH1F* Out, int start)
+{
+  int binI = In -> GetNbinsX();
+  int binO = Out -> GetNbinsX();
+  int Padding = (binO - binI)/2;
+
+  for (int i(0); i < binI; i++)
+  {
+    float e = In -> GetBinContent(i+1);
+    Out -> SetBinContent(Padding + start + i + 1, e);
+  }
+}
+
+
 

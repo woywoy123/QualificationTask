@@ -83,8 +83,6 @@ void BaseFunctionTest::Deconvolve(TH1F* Trk2, TH1F* Trk1, float offset, int iter
   B.ToTH1F(deconv, Hist);
  
   P.PlotHists(Hist, Trk1); 
-
-
 }
 
 void DerivedFunctionTest::NormalFit(std::vector<TH1F*> Hists, TH1F* Data, std::vector<float> CL, float min, float max)
@@ -97,3 +95,97 @@ void DerivedFunctionTest::NormalFit(std::vector<TH1F*> Hists, TH1F* Data, std::v
   std::cout << distance << std::endl;
   B.PredictionTruthPrint(CL, pred); 
 }
+
+
+void DerivedFunctionTest::ShiftTest(TH1F* H1, int Shift)
+{
+  BaseFunctions B;
+  DerivedFunctions D;
+  Plotting P;
+
+  int bins = H1 -> GetNbinsX();
+  int Padding = bins/2;
+ 
+  TH1F* Hist = new TH1F("Test", "Test", bins, 0, 20); //2*bins, -Padding, bins + Padding);
+  B.ShiftExpandTH1F(H1, Hist, Shift);
+  //D.RooShift(Hist, H1);
+  int shift = D.NumericalShift(H1, Hist);
+  std::cout << " The histograms are shifted by: " << shift << std::endl;
+}
+
+void DerivedFunctionTest::ReplaceShiftTail(TH1F* Source, TH1F* Target, int Shift)
+{
+  BaseFunctions B;
+  DerivedFunctions D;
+  Plotting P; 
+ 
+  // Create a shifted version of the Target 
+  TH1F* Copy = (TH1F*)Target -> Clone("Copy");  
+  Copy -> Reset();
+  Copy -> SetTitle("Copy");
+  B.ShiftExpandTH1F(Target, Copy, Shift); 
+  D.ReplaceShiftTail(Source, Copy);
+
+  TCanvas* can = P.PlotHists({Source, Target}, Copy);
+}
+
+void DerivedFunctionTest::DeconvolveReconvolve(std::vector<TH1F*> ntrk, float offset, int iter)
+{
+  DerivedFunctions DF;
+  Plotting P; 
+
+  std::vector<TH1F*> PDFs = DF.nTRKGenerator(ntrk[0], ntrk[1], offset, iter);
+
+  for (int i(0); i < ntrk.size(); i++)
+  {
+    PDFs[i] -> Scale(ntrk[i] -> Integral()); 
+  }
+  
+  P.PlotHists(PDFs, ntrk); 
+}
+
+void DerivedFunctionTest::ConvolveDeconvolveGaussianFit(TH1F* trk1, TH1F* trk2,  float mean, float stdev, float offset, int iter)
+{
+  DerivedFunctions DF; 
+  Plotting P; 
+ 
+  std::vector<TH1F*> PDFs = DF.nTRKGenerator(trk1, trk2, offset, iter);
+  
+  std::vector<TH1F*> Convolved;
+  for (int i(0); i < PDFs.size(); i++)
+  { 
+    Convolved.push_back(DF.GaussianConvolve(PDFs[i], mean, stdev)); 
+  } 
+  
+  DF.FitGaussian(Convolved, PDFs, mean, stdev, -1, 1, 0.01, 1, offset, iter); 
+
+
+
+
+  //P.PlotHists(Convolved, Convolved);  
+   
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
