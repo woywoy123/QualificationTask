@@ -16,17 +16,31 @@ void PostAnalysis()
   DerivedFunctionTest DFT;
 
   // ==== Constants used for the algorithm ==== //
-  int Mode = 1; 
-  bool Test = true;
-  float bins = 500;
+  // Execution parameter 
+  int Mode = 0;  // Change to 0 - MC, 1 - Toy, 2 - RealData
+  bool Test = true; // Test Components 
+  int Shift = 0;
+
+  // Histogram parameters  
+  float bins = 500; 
   float min = 0;
   float max = 20;
+
+  // Gaussian Parameter
   float npts = 500000; 
-  float offset = 0.1;
-  int Shift = 0;
   float mean = 0;
   float stdev = 0.1; 
-  int iter = 25; 
+  float m_s = -1;
+  float m_e = 1;
+  float s_s = 0.001;
+  float s_e = 1;
+
+  // Other parameters
+  float offset = 0.1;
+  float Gamma = 0.25;
+  int iter = 250;
+  int cor_loop = 10; // Correction loop number 
+  std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> Pure; 
@@ -98,19 +112,17 @@ void PostAnalysis()
     //DFT.ShiftTest(trk1_N[0], Shift);
     //DFT.ReplaceShiftTail(trk1_N[0], trk1_N[1], Shift);
     //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
-    DFT.ConvolveDeconvolveGaussianFit(trk1_N[0], trk1_N[0], mean, stdev, offset, iter);
+    //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
+    DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma);  
+    
+    P.PlotHists(Truth_Sets, ntrk_Data);
   }
  
  
   std::cout << "Fin" << std::endl;
  
- 
- 
   
   // To do:
-  // - Define the ROOFIT tail replace class as experimental
-  // - Write Gaussian function 
-  // - write minimal where the tail replace happens after LR loop
   // - Write the threshold function and do a fit to remove 1 trk  
  
  

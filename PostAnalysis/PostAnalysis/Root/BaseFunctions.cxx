@@ -96,6 +96,26 @@ std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names,
   return Variables;
 }
 
+std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain)
+{
+  std::vector<RooGaussian*> Gaussian(Names.size());
+  for (int i(0); i < Names.size(); i++)
+  {
+    Gaussian[i] = new RooGaussian(Names[i], Names[i], *Domain, *Mean[i], *Stdev[i]); 
+  }
+  return Gaussian;
+}
+
+std::vector<RooFFTConvPdf*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* Domain)
+{
+  std::vector<RooFFTConvPdf*> FFT(Names.size());
+  for (int i(0); i < Names.size(); i++)
+  {
+    FFT[i] = new RooFFTConvPdf(Names[i], Names[i], *Domain, *PDFs[i], *Gaus[i]);
+  }
+  return FFT; 
+}
+
 std::vector<RooDataHist*> BaseFunctions::RooData(std::vector<TH1F*> Hist, RooRealVar* Domain)
 {
   std::vector<RooDataHist*> DataHist(Hist.size());

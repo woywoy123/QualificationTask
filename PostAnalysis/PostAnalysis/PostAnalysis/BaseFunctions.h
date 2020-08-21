@@ -6,7 +6,8 @@
 #include<RooAddPdf.h>
 #include<TVirtualFFT.h>
 #include<TComplex.h>
-
+#include<RooGaussian.h>
+#include<RooFFTConvPdf.h>
 
 #ifndef BASEFUNCTIONS_H
 #define BASEFUNCTIONS_H
@@ -22,14 +23,14 @@ class BaseFunctions
     std::vector<float> Ratio(std::vector<TH1F*> Hists, TH1F* Data); 
     std::vector<float> Ratio(std::vector<RooRealVar*>, TH1F* Data);
     std::vector<float> ClosureAndData(std::vector<TH1F*> Hists, TH1F* Data);  
-    std::vector<float> TH1FDataVector(TH1F* Data, float offset);
+    std::vector<float> TH1FDataVector(TH1F* Data, float offset = 0);
     void ToTH1F(std::vector<float> Vector, TH1F* Hist);
 
     // ==== Operational Functions  
     void Normalize(TH1F* Hist);
     void Normalize(std::vector<TH1F*> Hist);
     void Subtraction(std::vector<TH1F*> ntrk, TH1F* Data, int Exclude, std::vector<float> Ratios);  
-    void ShiftExpandTH1F(TH1F* In, TH1F* Out, int start);
+    void ShiftExpandTH1F(TH1F* In, TH1F* Out, int start = 0);
 
     // ==== RooFit functions 
     // Simple Scale Fits
@@ -41,7 +42,8 @@ class BaseFunctions
     RooArgList RooList(std::vector<RooHistPdf*> Vector);
     
     // Gaussian Convolution Fit
-    
+    std::vector<RooGaussian*> RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain); 
+    std::vector<RooFFTConvPdf*> RooVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* Domain);
    
     // ==== Benchmarks  
     float ChiSquare(std::vector<float> V1, std::vector<float> V2);

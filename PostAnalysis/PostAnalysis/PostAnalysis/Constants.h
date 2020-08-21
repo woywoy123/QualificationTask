@@ -43,7 +43,7 @@ namespace Constants
 
 
 
-  const std::vector<Color_t> Colors = {kRed, kBlack, kBlue, kCyan, kTeal, kGreen, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora, kMagenta, kViolet};
+  const std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kTeal, kBlack, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora, kMagenta, kViolet};
  
   const std::vector<float> COMP1 = {0.8, 0.1, 0.1, 0.1};
   const std::vector<float> COMP2 = {0.1, 0.89, 0.05, 0.05};

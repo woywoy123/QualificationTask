@@ -144,28 +144,41 @@ void DerivedFunctionTest::DeconvolveReconvolve(std::vector<TH1F*> ntrk, float of
   P.PlotHists(PDFs, ntrk); 
 }
 
-void DerivedFunctionTest::ConvolveDeconvolveGaussianFit(TH1F* trk1, TH1F* trk2,  float mean, float stdev, float offset, int iter)
+void DerivedFunctionTest::DeconvolveGaussianFit(TH1F* trk1, TH1F* trk2,  float mean, float stdev, float offset, int iter)
 {
   DerivedFunctions DF; 
+  BaseFunctions B; 
   Plotting P; 
  
   std::vector<TH1F*> PDFs = DF.nTRKGenerator(trk1, trk2, offset, iter);
-  
-  std::vector<TH1F*> Convolved;
-  for (int i(0); i < PDFs.size(); i++)
-  { 
-    Convolved.push_back(DF.GaussianConvolve(PDFs[i], mean, stdev)); 
-  } 
-  
-  DF.FitGaussian(Convolved, PDFs, mean, stdev, -1, 1, 0.01, 1, offset, iter); 
+  std::map<TString, float> Parameters = DF.FitGaussian(trk2, PDFs, mean, stdev, -1, 1, 0.01, 1, offset, iter);  
+  std::vector<TString> Names = {"n_trk1", "n_trk2", "n_trk3", "n_trk4"};
+  std::vector<TString> Stdev = {"s1", "s2", "s3", "s4"};
+  std::vector<TString> Mean = {"m1", "m2", "m3", "m4"};
 
-
-
-
-  //P.PlotHists(Convolved, Convolved);  
+  for (int i(0); i < Names.size(); i++)
+  {
+    TH1F* H = DF.GaussianConvolve(PDFs[i], Parameters[Mean[i]], Parameters[Stdev[i]]);
+    PDFs[i] -> Reset();
+    B.ShiftExpandTH1F(H, PDFs[i]);
    
+    float e = Parameters[Names[i]];  
+    PDFs[i] -> Scale(e);   
+  }
+ 
+  P.PlotHists(PDFs, trk2);   
+}
+
+void DerivedFunctionTest::MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<float> Params, float offset, int iter, int cor_loop, float Gamma)
+{
+  DerivedFunctions DF; 
+  std::vector<TH1F*> PDFs = DF.MainAlgorithm(ntrk[0], ntrk[1], Params, offset, Gamma, iter, cor_loop);
+
+
 
 }
+
+
 
 
 

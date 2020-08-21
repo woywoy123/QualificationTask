@@ -20,8 +20,8 @@ class DerivedFunctionTest
     void ShiftTest(TH1F* H1, int Shift);
     void ReplaceShiftTail(TH1F* Source, TH1F* Target, int Shift);
     void DeconvolveReconvolve(std::vector<TH1F*> trk1, float offset, int iter);
-    void ConvolveDeconvolveGaussianFit(TH1F* trk1, TH1F* trk2, float mean, float stdev, float offset, int iter);
-
+    void DeconvolveGaussianFit(TH1F* trk1, TH1F* trk2, float mean, float stdev, float offset, int iter);
+    void MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<float> Params, float offset, int iter, int cor_loop, float Gamma);
 
 };
 
