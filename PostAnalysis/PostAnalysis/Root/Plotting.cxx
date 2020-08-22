@@ -53,6 +53,18 @@ TCanvas* Plotting::PlotHists(std::vector<TH1F*> Hists, TH1F* Data)
   return can; 
 }
 
+void Plotting::PlotHists(std::vector<TH1F*> Hists, TH1F* Data, TCanvas* can)
+{
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+  can -> SetLogy(); 
+  gStyle -> SetOptStat(0); 
+  Data -> SetLineColor(kBlack);
+  Data -> SetMinimum(1);
+  Data -> Draw("SAMEHIST");
+  Populate(Hists, can, len);
+  len -> AddEntry(Data, Data -> GetTitle()); 
+}
+
 TCanvas* Plotting::PlotHists(TH1F* Hists, TH1F* Data)
 {
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);

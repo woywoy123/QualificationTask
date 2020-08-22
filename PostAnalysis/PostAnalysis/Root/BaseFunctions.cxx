@@ -318,5 +318,28 @@ void BaseFunctions::ShiftExpandTH1F(TH1F* In, TH1F* Out, int start)
   }
 }
 
-
+void BaseFunctions::ResidualRemove(TH1F* Hist)
+{
+  int max = Hist -> GetMaximumBin();
+ 
+  float T = 1e10; 
+  int iter = 0; 
+  int breaker = 0; 
+  for (int i(1); i < max; i++)
+  {
+    float e = Hist -> GetBinContent(max - i - 1);
+    if (e < T)
+    {
+      T = e;
+      iter = max - i;
+      breaker=0;
+    }
+    if ( e > T ){breaker++;}
+    if (breaker == 2){break;} 
+  }
+  for (int i(0); i < iter; i++)
+  {
+    Hist -> SetBinContent(i+1, 0);
+  }
+}
 

@@ -30,16 +30,16 @@ void PostAnalysis()
   float npts = 500000; 
   float mean = 0;
   float stdev = 0.1; 
-  float m_s = -1;
-  float m_e = 1;
+  float m_s = -2;
+  float m_e = 2;
   float s_s = 0.001;
   float s_e = 1;
 
   // Other parameters
   float offset = 0.1;
-  float Gamma = 0.25;
-  int iter = 250;
-  int cor_loop = 10; // Correction loop number 
+  float Gamma = 0.8;
+  int iter = 100;
+  int cor_loop = 8; // Correction loop number 
   std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
   // ==== Forward declaration for Histograms ==== //

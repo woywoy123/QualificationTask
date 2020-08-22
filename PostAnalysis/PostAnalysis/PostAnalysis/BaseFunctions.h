@@ -8,6 +8,7 @@
 #include<TComplex.h>
 #include<RooGaussian.h>
 #include<RooFFTConvPdf.h>
+#include<RooFitResult.h>
 
 #ifndef BASEFUNCTIONS_H
 #define BASEFUNCTIONS_H
@@ -53,6 +54,7 @@ class BaseFunctions
     std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y = 0.75); 
     void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv);
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
+    void ResidualRemove(TH1F* Hist);
     
 
 

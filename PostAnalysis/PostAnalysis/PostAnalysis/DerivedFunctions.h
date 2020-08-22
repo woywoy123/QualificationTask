@@ -9,7 +9,6 @@ class DerivedFunctions
 {
   public:
     std::vector<RooRealVar*> FitToData(std::vector<TH1F*> Hists, TH1F* Data, RooRealVar* Domain, std::vector<float> Begin, std::vector<float> End, std::vector<TString> Names);
-    std::vector<RooRealVar*> FitToData(std::vector<TH1F*> Hists, TH1F* Data);
     std::vector<RooRealVar*> FitToData(std::vector<TH1F*> Hists, TH1F* Data, float min, float max);
     void RooShift(TH1F* H1, TH1F* H2);
 

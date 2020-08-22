@@ -21,6 +21,7 @@ class Plotting
     void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len);
     TCanvas* PlotHists(std::vector<TH1F*> Hists);
     TCanvas* PlotHists(std::vector<TH1F*> Hists, TH1F* Data);
+    void PlotHists(std::vector<TH1F*> Hists, TH1F* Data, TCanvas* can);
     TCanvas* PlotHists(TH1F* Hists, TH1F* Data);
     TCanvas* PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data);
     TCanvas* PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data);
