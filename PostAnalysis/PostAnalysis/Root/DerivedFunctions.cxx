@@ -30,7 +30,7 @@ std::vector<RooRealVar*> DerivedFunctions::FitToData(std::vector<TH1F*> Hists,
 std::vector<RooRealVar*> DerivedFunctions::FitToData(std::vector<TH1F*> Hists, TH1F* Data, float min, float max)
 {
   RooRealVar* x = new RooRealVar("x", "x", min, max);
-  std::vector<float> Begin(Hists.size(), 0);
+  std::vector<float> Begin(Hists.size(), 0.);
   std::vector<float> End(Hists.size(), Data -> Integral());
   std::vector<RooRealVar*> Vars = FitToData(Hists, Data, x, Begin, End, Constants::FitNames);
   return Vars; 
@@ -95,7 +95,7 @@ int DerivedFunctions::NumericalShift(TH1F* H1, TH1F* H2)
   return shifted;
 }
 
-
+// Likely useless function. Need to see if I will remove this 
 void DerivedFunctions::RemoveArtifact(TH1F* Conv)
 {
   int max = Conv -> GetMaximumBin();
@@ -204,12 +204,6 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   B.Normalize(PDFs[3]);
   B.ResidualRemove(PDFs[3]); 
  
-  
-  //for (TH1F* H : PDFs)
-  //{
-  //  RemoveArtifact(H); 
-  //}
-
   return PDFs;
 }
 
@@ -360,7 +354,7 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
                                             RooFit::Constrain(*Stdev[2]), 
                                             RooFit::Constrain(*Stdev[3]));
   
-  RooFitResult* stat = model.fitTo(*trk2_D, RooFit::Save(), RooFit::SumW2Error(true), RooFit::NumCPU(1), RooFit::Range(1, bins_pdf-2)); 
+  RooFitResult* stat = model.fitTo(*trk2_D, RooFit::Save(), RooFit::SumW2Error(true), RooFit::NumCPU(4)); 
   
   
    
@@ -424,21 +418,21 @@ std::vector<TH1F*> DerivedFunctions::MainAlgorithm(TH1F* trk1, TH1F* trk2, std::
 
   RooRealVar* x = new RooRealVar("x", "x", 0, trk1 -> GetNbinsX());
   
-  TCanvas* can = new TCanvas("Outside");
-  can -> SetLogy(); 
+  TCanvas* can = new TCanvas("Outside", "Outside");
 
   TH1F* trk2_L = new TH1F("trk2_L", "trk2_L", trk2 -> GetNbinsX(), 0, trk2 -> GetNbinsX());
+  TH1F* trk1_L = new TH1F("trk1_L", "trk1_L", trk1 -> GetNbinsX(), 0, trk1 -> GetNbinsX());
   B.ShiftExpandTH1F(trk2, trk2_L); 
+  B.ShiftExpandTH1F(trk1, trk1_L); 
 
   for (int x(0); x < cor_loop; x++)
   { 
-    TH1F* trk2_Copy = (TH1F*)trk2_L -> Clone("trk2_Copy"); 
+    TH1F* trk2_Copy = (TH1F*)trk2_L -> Clone("trk2_Copy");
     for (int v(0); v < 5; v++)
     { 
       PDFs = nTRKGenerator(trk1, trk2_Copy, offset, iter);
       std::map<TString, float> Parameters = FitGaussian(trk2_Copy, PDFs, mean, stdev, m_s, m_e, s_s, s_e, offset, iter);  
-      
-      float lumi = trk2_Copy -> Integral();
+  
       for (int i(0); i < Names.size(); i++)
       {
         TH1F* H = GaussianConvolve(PDFs[i], Parameters[Mean[i]], Parameters[Stdev[i]]);
@@ -457,7 +451,7 @@ std::vector<TH1F*> DerivedFunctions::MainAlgorithm(TH1F* trk1, TH1F* trk2, std::
         float z = Parameters[Names[i]];  
         if (Parameters["Status"] == 0 || Parameters["Status"] == 4)
         {
-          PDFs[i] -> Scale(0.1*(z/Norm)*lumi);
+          PDFs[i] -> Scale(0.05*z);
         }
       }
       if (Parameters["Status"] == 0)
@@ -481,13 +475,28 @@ std::vector<TH1F*> DerivedFunctions::MainAlgorithm(TH1F* trk1, TH1F* trk2, std::
       }
     }
     
+    B.Normalize(PDFs);  
+    std::vector<RooRealVar*> vars_trk1 = FitToData(PDFs, trk1_L, 0, trk1_L -> GetNbinsX()); 
+    float t1_t1 = vars_trk1[0] -> getVal(); 
+    float t2_t1 = vars_trk1[1] -> getVal();
+    float t3_t1 = vars_trk1[2] -> getVal(); 
+    float t4_t1 = vars_trk1[3] -> getVal();
+  
+    PDFs[0] -> Scale(0.25*(t1_t1)); 
+    PDFs[1] -> Scale(0.25*(t2_t1));
+    PDFs[2] -> Scale(0.25*(t3_t1));
+    PDFs[3] -> Scale(0.25*(t4_t1)); 
+    
+    trk1_L -> Add(PDFs[1], -1);
+    trk1_L -> Add(PDFs[2], -1);
+    trk1_L -> Add(PDFs[3], -1); 
+    
     B.Normalize(PDFs);
     std::vector<RooRealVar*> vars = FitToData(PDFs, trk2_L, 0, trk2_L -> GetNbinsX());
     float t1 = vars[0] -> getVal(); 
     float t2 = vars[1] -> getVal();
     float t3 = vars[2] -> getVal(); 
     float t4 = vars[3] -> getVal();
-    float Normal = t1 + t2 + t3 + t4;      
   
     PDFs[0] -> Scale(Gamma*(t1)); 
     PDFs[1] -> Scale(Gamma*(t2));
@@ -498,12 +507,14 @@ std::vector<TH1F*> DerivedFunctions::MainAlgorithm(TH1F* trk1, TH1F* trk2, std::
     trk2_L -> Add(PDFs[2], -1);
     trk2_L -> Add(PDFs[3], -1);
    
-    if (x > 4){B.ResidualRemove(trk2_L);} 
-    
-  
+    if (x > 2){B.ResidualRemove(trk2_L);} 
+     
     P.PlotHists(PDFs, trk2_L, can);  
     can -> Update(); 
-    iter = iter + 25; 
+
+
+
+    //iter = iter + 25; 
   
     std::cout << "################### " << x << std::endl;
 
@@ -511,13 +522,10 @@ std::vector<TH1F*> DerivedFunctions::MainAlgorithm(TH1F* trk1, TH1F* trk2, std::
     if (x == cor_loop){return PDFs;}     
     for (int i(0); i < PDFs.size(); i++){delete PDFs[i];} 
     std::vector<float> scales = B.Ratio(vars, trk2_L);  
-
+    std::vector<float> scales1 = B.Ratio(vars_trk1, trk1_L); 
   }
   return PDFs;
 }
-
-// Note to self - try to simply place the entries in the PDFs into a new TH1F.... 
-
 
 
 
