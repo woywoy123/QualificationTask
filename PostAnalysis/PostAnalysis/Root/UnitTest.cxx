@@ -39,7 +39,7 @@ void BaseFunctionTest::NormalFit(std::vector<TH1F*> Hists, TH1F* Data, std::vect
   B.Normalize(Hists);
   RooRealVar* x = new RooRealVar("x", "x", min, max); 
  
-  std::vector<float> Begin(Constants::trk_2.size(), 1); 
+  std::vector<float> Begin(Constants::trk_2.size(), 0); 
   std::vector<float> End(Constants::trk_2.size(), Data -> Integral()); 
   
   std::vector<RooRealVar*> Var = B.RooVariables(Constants::trk_2, Begin, End);
@@ -169,13 +169,49 @@ void DerivedFunctionTest::DeconvolveGaussianFit(TH1F* trk1, TH1F* trk2,  float m
   P.PlotHists(PDFs, trk2);   
 }
 
-void DerivedFunctionTest::MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<float> Params, float offset, int iter, int cor_loop, float Gamma)
+void DerivedFunctionTest::MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<float> Params, float offset, int iter, int cor_loop, float Gamma, std::vector<std::vector<TH1F*>> Closure)
 {
   DerivedFunctions DF; 
-  std::vector<TH1F*> PDFs = DF.MainAlgorithm(ntrk[0], ntrk[1], Params, offset, Gamma, iter, cor_loop);
+  BaseFunctions B;
+   
+  std::map<TH1F*, std::vector<TH1F*>> PDFs = DF.MainAlgorithm(ntrk, Params, offset, Gamma, iter, cor_loop);
 
+  std::vector<TH1F*> truth;
+  std::vector<std::vector<TH1F*>> result;
 
+  int i = 0; 
+  std::vector<TString> Names = {"trk1_pure", "trk2_pure", "trk3_pure", "trk4_pure"};
+  std::vector<TString> PDF_Names = {"trk1_pdf", "trk2_pdf", "trk3_pdf", "trk4_pdf"};
+  for (auto &x : PDFs)
+  {
+    std::vector<TH1F*> Hists = x.second;
+    std::vector<TH1F*> Cl_Hists = Closure[i]; 
+    
+    TH1F* t = x.first;
+    TH1F* H2 = Cl_Hists[i]; 
 
+    TH1F* H1 = (TH1F*)H2 -> Clone(Names[i]);
+    H1 -> Reset();
+    H1 -> SetTitle(Names[i]);
+    
+    TH1F* H3 = (TH1F*)H2 -> Clone(PDF_Names[i]);
+    H3 -> Reset();
+    H3 -> SetTitle(PDF_Names[i]);   
+    
+    B.ShiftExpandTH1F(t, H1);
+    B.ShiftExpandTH1F(Hists[i], H3);
+
+    truth.push_back(H2);
+    std::vector<TH1F*> Out;
+    Out.push_back(H1);
+    Out.push_back(H3);
+
+    result.push_back(Out);
+    i++;
+  }
+
+  Plotting P;
+  TCanvas* can = P.PlotHists(result, truth);
 }
 
 

@@ -20,6 +20,7 @@ class Plotting
     TCanvas* SimplePlot(TH1F* Hist);
     void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len);
     TCanvas* PlotHists(std::vector<TH1F*> Hists);
+    void PlotHists(std::vector<TH1F*> Hists, TCanvas* can);
     TCanvas* PlotHists(std::vector<TH1F*> Hists, TH1F* Data);
     void PlotHists(std::vector<TH1F*> Hists, TH1F* Data, TCanvas* can);
     TCanvas* PlotHists(TH1F* Hists, TH1F* Data);
@@ -44,6 +45,7 @@ class DistributionGenerators
 
     // Monte Carlo
     std::vector<TH1F*> FillTH1F(std::vector<TString>, TString dir);
+    TH1F* FillTH1F(TString name, std::vector<TString> SubDir, TString dir);
 
   private:
     TH1F* TH1FFromFile(TString Name, TString Layer, TFile* file);  

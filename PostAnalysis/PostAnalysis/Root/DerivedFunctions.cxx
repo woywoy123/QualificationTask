@@ -8,7 +8,7 @@ std::vector<RooRealVar*> DerivedFunctions::FitToData(std::vector<TH1F*> Hists,
                                                      std::vector<TString> Names)
 {
   BaseFunctions B;
-  B.Normalize(Hists);
+  //B.Normalize(Hists);
   std::vector<RooRealVar*> Var = B.RooVariables(Names, Begin, End);
   std::vector<RooHistPdf*> Hist = B.RooPDF(Hists, Domain);
   RooDataHist* data = B.RooData(Data, Domain);
@@ -121,7 +121,7 @@ void DerivedFunctions::RemoveArtifact(TH1F* Conv)
   }
 }
 
-void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target)
+void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset)
 {
   BaseFunctions B;
 
@@ -131,15 +131,15 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target)
   B.Normalize({Source, Target});
 
   // Extend the source and target hist to avoid nan 
-  std::vector<float> Source_V = B.TH1FDataVector(Source, 0.1);
-  std::vector<float> Target_V = B.TH1FDataVector(Target, 0.1);  
+  std::vector<float> Source_V = B.TH1FDataVector(Source, offset);
+  std::vector<float> Target_V = B.TH1FDataVector(Target, offset);  
   TH1F* Source_E = new TH1F("Source_E", "Source_E", Source_V.size(), 0, Source_V.size());
   TH1F* Target_E = new TH1F("Target_E", "Target_E", Target_V.size(), 0, Target_V.size()); 
   B.ToTH1F(Source_V, Source_E); 
   B.ToTH1F(Target_V, Target_E);
 
   // Define the tail to be replaced and move away from peak 
-  int max_bin = Target -> GetMaximumBin() + bin_s*0.05;
+  int max_bin = Target -> GetMaximumBin() + bin_s*0.01;
   int max_bin_s = Source -> GetMaximumBin();
   TH1F* Temp = (TH1F*)Source -> Clone("Temp"); 
   
@@ -148,14 +148,18 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target)
     Temp -> SetBinContent(i+1, 0);
   }
   int shift = NumericalShift(Temp, Target); 
-   
+  
   float t_S = Source_E -> GetBinContent(max_bin + 1 - shift -1);
   float t_T = Target_E -> GetBinContent(max_bin + 1);
+  float sum_S = 0;
+  float sum_T = 0;  
   for (int i(max_bin); i < bin_s; i++) 
   {
     float S_e = Source_E -> GetBinContent(i + 1 - shift -1);
     float T_e = Target_E -> GetBinContent(i + 1); 
-    Target -> SetBinContent(i+1, S_e*(t_T/t_S));
+    sum_S += S_e;
+    sum_T += T_e;  
+    Target -> SetBinContent(i+1, S_e); // << Check this!!!
   }
  
   Target -> Scale(Lumi);
@@ -185,7 +189,7 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   B.ToTH1F(deconv, PDFs[0]);
 
   // === TRK1
-  ReplaceShiftTail(trk1, PDFs[0]); 
+  ReplaceShiftTail(trk1, PDFs[0], offset); 
   B.Normalize(PDFs);
   RemoveArtifact(PDFs[0]);
 
@@ -373,7 +377,6 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   //z -> Update();
  
   std::map<TString, float> Out;
-
   if (!stat){Out["Status"] = -1;}
   else{Out["Status"] = stat -> status();}
 
@@ -400,8 +403,43 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   return Out;   
 }
 
-std::vector<TH1F*> DerivedFunctions::MainAlgorithm(TH1F* trk1, TH1F* trk2, std::vector<float> Params, float offset, float Gamma, int iter, int cor_loop)
+std::map<TH1F*, std::vector<TH1F*>> DerivedFunctions::MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<float> Params, float offset, float Gamma, int iter, int cor_loop)
 {
+  auto MakeGaussianConvoluted = [](TString n, std::vector<TH1F*> PDFs, std::map<TString, float> trkn_Params, TH1F* trkn_L, float Gamma)
+  {
+    BaseFunctions B;
+    DerivedFunctions DF;
+    const std::vector<TString> Names = {"n_trk1", "n_trk2", "n_trk3", "n_trk4"}; 
+    const std::vector<TString> Stdev = {"s1", "s2", "s3", "s4"}; 
+    const std::vector<TString> Mean = {"m1", "m2", "m3", "m4"};
+    
+    std::vector<TH1F*> GxTrkN(Names.size());
+    for (int i(0); i < Names.size(); i++)
+    {
+      TString Name = n; Name += Names[i];
+      TH1F* trknXg = (TH1F*)trkn_L -> Clone(Name);
+      trknXg -> SetTitle(Name);
+      TH1F* trkn_H = DF.GaussianConvolve(PDFs[i], trkn_Params[Mean[i]], trkn_Params[Stdev[i]]);
+      B.ShiftExpandTH1F(trkn_H, trknXg);
+      delete trkn_H;
+
+      float lumi = trkn_L -> Integral();
+      trknXg -> Scale(Gamma*trkn_Params[Names[i]]*lumi);
+      GxTrkN[i] = trknXg;
+    }
+    return GxTrkN;
+  };
+
+  auto Check = [](std::map<TString, float> trkn_Params)
+  {
+    const std::vector<TString> Names = {"n_trk1", "n_trk2", "n_trk3", "n_trk4"}; 
+    bool passed = false;
+    if (trkn_Params[Names[0]] == trkn_Params[Names[0]] == trkn_Params[Names[0]] == trkn_Params[Names[0]]){ passed = false; }
+    else { passed = true; }
+    return passed;
+  };
+
+
   BaseFunctions B;
   Plotting P; 
 
@@ -411,120 +449,117 @@ std::vector<TH1F*> DerivedFunctions::MainAlgorithm(TH1F* trk1, TH1F* trk2, std::
   float m_e = Params[3]; 
   float s_s = Params[4];
   float s_e = Params[5];
-  std::vector<TH1F*> PDFs;
-  const std::vector<TString> Names = {"n_trk1", "n_trk2", "n_trk3", "n_trk4"}; 
-  const std::vector<TString> Stdev = {"s1", "s2", "s3", "s4"}; 
-  const std::vector<TString> Mean = {"m1", "m2", "m3", "m4"};
 
-  RooRealVar* x = new RooRealVar("x", "x", 0, trk1 -> GetNbinsX());
-  
-  TCanvas* can = new TCanvas("Outside", "Outside");
-
-  TH1F* trk2_L = new TH1F("trk2_L", "trk2_L", trk2 -> GetNbinsX(), 0, trk2 -> GetNbinsX());
-  TH1F* trk1_L = new TH1F("trk1_L", "trk1_L", trk1 -> GetNbinsX(), 0, trk1 -> GetNbinsX());
-  B.ShiftExpandTH1F(trk2, trk2_L); 
-  B.ShiftExpandTH1F(trk1, trk1_L); 
+  std::map<TH1F*, std::vector<TH1F*>> Output; 
+  RooRealVar* x = new RooRealVar("x", "x", 0, ntrk[0] -> GetNbinsX());  
+  TH1F* trk1_L = new TH1F("trk1_L", "trk1_L", ntrk[0] -> GetNbinsX(), 0, ntrk[0] -> GetNbinsX());
+  TH1F* trk2_L = new TH1F("trk2_L", "trk2_L", ntrk[1] -> GetNbinsX(), 0, ntrk[1] -> GetNbinsX());
+  TH1F* trk3_L = new TH1F("trk3_L", "trk3_L", ntrk[2] -> GetNbinsX(), 0, ntrk[2] -> GetNbinsX());
+  TH1F* trk4_L = new TH1F("trk4_L", "trk4_L", ntrk[3] -> GetNbinsX(), 0, ntrk[3] -> GetNbinsX());
+ 
+  B.ShiftExpandTH1F(ntrk[0], trk1_L); 
+  B.ShiftExpandTH1F(ntrk[1], trk2_L);  
+  B.ShiftExpandTH1F(ntrk[2], trk3_L); 
+  B.ShiftExpandTH1F(ntrk[3], trk4_L); 
 
   for (int x(0); x < cor_loop; x++)
   { 
-    TH1F* trk2_Copy = (TH1F*)trk2_L -> Clone("trk2_Copy");
+    std::vector<TH1F*> GxTrk1;
+    std::vector<TH1F*> GxTrk2;
+    std::vector<TH1F*> GxTrk3;
+    std::vector<TH1F*> GxTrk4;
+    std::vector<TH1F*> PDFs; 
+   
     for (int v(0); v < 5; v++)
     { 
-      PDFs = nTRKGenerator(trk1, trk2_Copy, offset, iter);
-      std::map<TString, float> Parameters = FitGaussian(trk2_Copy, PDFs, mean, stdev, m_s, m_e, s_s, s_e, offset, iter);  
-  
-      for (int i(0); i < Names.size(); i++)
-      {
-        TH1F* H = GaussianConvolve(PDFs[i], Parameters[Mean[i]], Parameters[Stdev[i]]);
-        PDFs[i] -> Reset();
-        B.ShiftExpandTH1F(H, PDFs[i]);
-        delete H; 
-     
-        float Norm(0); 
-        for (TString N : Names)
-        { 
-          float e = Parameters[N]; 
-          Norm = Norm + e; 
-        }
-        
-          
-        float z = Parameters[Names[i]];  
-        if (Parameters["Status"] == 0 || Parameters["Status"] == 4)
-        {
-          PDFs[i] -> Scale(0.05*z);
-        }
+      // Generate the minimal version of the PDFs
+      PDFs = nTRKGenerator(trk1_L, trk2_L, offset, iter);
+
+      // Generate the Gaussian Parameters for the convolution from a fit 
+      std::map<TString, float> trk1_Params = FitGaussian(trk1_L, PDFs, mean, stdev, m_s, m_e, s_s, s_e, offset, iter);
+      std::map<TString, float> trk2_Params = FitGaussian(trk2_L, PDFs, mean, stdev, m_s, m_e, s_s, s_e, offset, iter);   
+      GxTrk1 = MakeGaussianConvoluted("GxT1", PDFs, trk1_Params, trk1_L, Gamma); 
+      GxTrk2 = MakeGaussianConvoluted("GxT2", PDFs, trk2_Params, trk2_L, Gamma);     
+   
+      if (trk1_Params["Status"] == 4 && Check(trk1_Params) == true) 
+      { 
+        trk1_L -> Add(GxTrk1[1], -1);
+        trk1_L -> Add(GxTrk1[2], -1);
+        trk1_L -> Add(GxTrk1[3], -1);
       }
-      if (Parameters["Status"] == 0)
-      {
-        trk2_Copy -> Add(PDFs[0], -1);
-        trk2_Copy -> Add(PDFs[2], -1);
-        trk2_Copy -> Add(PDFs[3], -1);
+ 
+      if (trk2_Params["Status"] == 4 && Check(trk2_Params) == true) 
+      {      
+        trk2_L -> Add(GxTrk2[0], -1);
+        trk2_L -> Add(GxTrk2[2], -1);
+        trk2_L -> Add(GxTrk2[3], -1);
+        std::cout << "############################# cuts" << std::endl;
       }
-      else 
-      {
-        trk2_Copy -> Reset();
-        trk2_Copy -> Add(trk2_L);
-      }
-      
-      std::cout << "###################" << v << std::endl; 
-      std::cout << "###################" << Parameters["Status"] << std::endl; 
-     
+           
+      TCanvas* can = P.PlotHists({GxTrk1, GxTrk2}, {trk1_L, trk2_L});
       if( v < 4)
       {
-        for (int i(0); i < PDFs.size(); i++){delete PDFs[i];}
+        for (int y(0); y < GxTrk1.size(); y++)
+        {
+          delete GxTrk1[y];
+          delete GxTrk2[y];
+ 
+          delete PDFs[y];
+        }
       }
     }
-    
-    B.Normalize(PDFs);  
-    std::vector<RooRealVar*> vars_trk1 = FitToData(PDFs, trk1_L, 0, trk1_L -> GetNbinsX()); 
-    float t1_t1 = vars_trk1[0] -> getVal(); 
-    float t2_t1 = vars_trk1[1] -> getVal();
-    float t3_t1 = vars_trk1[2] -> getVal(); 
-    float t4_t1 = vars_trk1[3] -> getVal();
-  
-    PDFs[0] -> Scale(0.25*(t1_t1)); 
-    PDFs[1] -> Scale(0.25*(t2_t1));
-    PDFs[2] -> Scale(0.25*(t3_t1));
-    PDFs[3] -> Scale(0.25*(t4_t1)); 
-    
-    trk1_L -> Add(PDFs[1], -1);
-    trk1_L -> Add(PDFs[2], -1);
-    trk1_L -> Add(PDFs[3], -1); 
-    
-    B.Normalize(PDFs);
-    std::vector<RooRealVar*> vars = FitToData(PDFs, trk2_L, 0, trk2_L -> GetNbinsX());
-    float t1 = vars[0] -> getVal(); 
-    float t2 = vars[1] -> getVal();
-    float t3 = vars[2] -> getVal(); 
-    float t4 = vars[3] -> getVal();
-  
-    PDFs[0] -> Scale(Gamma*(t1)); 
-    PDFs[1] -> Scale(Gamma*(t2));
-    PDFs[2] -> Scale(Gamma*(t3));
-    PDFs[3] -> Scale(Gamma*(t4)); 
-    
-    trk2_L -> Add(PDFs[0], -1);
-    trk2_L -> Add(PDFs[2], -1);
-    trk2_L -> Add(PDFs[3], -1);
-   
-    if (x > 2){B.ResidualRemove(trk2_L);} 
+       
+    std::map<TString, float> trk3_Params = FitGaussian(trk3_L, PDFs, mean, stdev, m_s, m_e, s_s, s_e, offset, iter);
+    std::map<TString, float> trk4_Params = FitGaussian(trk4_L, PDFs, mean, stdev, m_s, m_e, s_s, s_e, offset, iter);   
+
+    GxTrk3 = MakeGaussianConvoluted("GxT3", PDFs, trk3_Params, trk3_L, Gamma);     
+    GxTrk4 = MakeGaussianConvoluted("GxT4", PDFs, trk4_Params, trk4_L, Gamma);         
      
-    P.PlotHists(PDFs, trk2_L, can);  
-    can -> Update(); 
+    if (trk3_Params["Status"] == 0 && Check(trk3_Params) == true) 
+    {      
+      trk3_L -> Add(GxTrk1[0], -1);
+      trk3_L -> Add(GxTrk1[1], -1);
+      trk3_L -> Add(GxTrk1[3], -1);
+    }
+       
+    if (trk4_Params["Status"] == 0 && Check(trk4_Params) == true) 
+    {      
+      trk4_L -> Add(GxTrk2[0], -1);
+      trk4_L -> Add(GxTrk2[1], -1);
+      trk4_L -> Add(GxTrk2[2], -1);
+    } 
+ 
+              
+    if (x == 0)
+    {
+      B.ResidualRemove(trk2_L);
+      B.ResidualRemove(trk3_L);
+      B.ResidualRemove(trk4_L);
+    } 
+ 
 
-
-
-    //iter = iter + 25; 
-  
+    iter = iter + 25;  
     std::cout << "################### " << x << std::endl;
 
-    delete trk2_Copy;
-    if (x == cor_loop){return PDFs;}     
-    for (int i(0); i < PDFs.size(); i++){delete PDFs[i];} 
-    std::vector<float> scales = B.Ratio(vars, trk2_L);  
-    std::vector<float> scales1 = B.Ratio(vars_trk1, trk1_L); 
+    // Output 
+    Output.insert(std::pair<TH1F*, std::vector<TH1F*>>(trk1_L, GxTrk1));
+    Output.insert(std::pair<TH1F*, std::vector<TH1F*>>(trk2_L, GxTrk2));
+    Output.insert(std::pair<TH1F*, std::vector<TH1F*>>(trk3_L, GxTrk3));
+    Output.insert(std::pair<TH1F*, std::vector<TH1F*>>(trk4_L, GxTrk4));
+
+    if (x == cor_loop -1){return Output;}     
+    
+    // Clean up memory  
+    for (int i(0); i < GxTrk1.size(); i++)
+    {
+      delete GxTrk1[i];
+      delete GxTrk2[i];
+      delete GxTrk3[i];
+      delete GxTrk4[i];
+      delete PDFs[i];
+    }
   }
-  return PDFs;
+  return Output;
 }
 
 

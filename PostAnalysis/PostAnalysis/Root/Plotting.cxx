@@ -40,6 +40,14 @@ TCanvas* Plotting::PlotHists(std::vector<TH1F*> Hists)
   return can;
 }
 
+void Plotting::PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
+{
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+  can -> SetLogy(); 
+  gStyle -> SetOptStat(0); 
+  Populate(Hists, can, len);
+}
+
 TCanvas* Plotting::PlotHists(std::vector<TH1F*> Hists, TH1F* Data)
 {
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
@@ -80,7 +88,8 @@ TCanvas* Plotting::PlotHists(TH1F* Hists, TH1F* Data)
 
 TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data)
 {
-  TCanvas* can = new TCanvas();  
+  TCanvas* can = new TCanvas();
+  can -> SetWindowSize(2400, 1200); 
   can -> SetLogy(); 
   gStyle -> SetOptStat(0);
   can -> Divide(Data.size()); 
@@ -93,9 +102,11 @@ TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<
     Data[i] -> Draw("SAMEHIST"); 
     Populate(Hists[i], can, len);
     len -> AddEntry(Data[i], Data[i] -> GetTitle()); 
+    can -> Update();
   }
-  return can; 
+  return can;
 }
+
 
 TCanvas* Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data)
 {
@@ -205,6 +216,27 @@ std::vector<TH1F*> DistributionGenerators::FillTH1F(std::vector<TString> Names, 
 
   return Hists; 
 }
+
+TH1F* DistributionGenerators::FillTH1F(TString name, std::vector<TString> SubDir, TString dir)
+{
+  TFile* File = new TFile(dir); 
+  TH1F* Hist; 
+  int i=0;
+  for (TString Layer : Constants::Detector)
+  {
+    for (TString sub : SubDir)
+    {
+      TString directory = Layer + sub;
+      if (i == 0){ Hist = TH1FFromFile(name, directory, File); }
+      else { Hist -> Add(TH1FFromFile(name, directory, File)); } 
+      i++;
+    }
+  }
+
+  return Hist; 
+}
+
+
 
 
 // === Private 

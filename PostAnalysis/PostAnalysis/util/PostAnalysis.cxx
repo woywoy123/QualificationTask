@@ -17,7 +17,7 @@ void PostAnalysis()
 
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
-  int Mode = 0;  // Change to 0 - MC, 1 - Toy, 2 - RealData
+  int Mode = 2;  // Change to 0 - MC, 1 - Toy, 2 - RealData
   bool Test = true; // Test Components 
   int Shift = 0;
 
@@ -29,17 +29,17 @@ void PostAnalysis()
   // Gaussian Parameter
   float npts = 500000; 
   float mean = 0;
-  float stdev = 0.1; 
-  float m_s = -5;
-  float m_e = 10;
+  float stdev = 0.01; 
+  float m_s = -2;
+  float m_e = 2;
   float s_s = 0.001;
-  float s_e = 5;
+  float s_e = 0.1;
 
   // Other parameters
   float offset = 0.1;
-  float Gamma = 1;
-  int iter = 100;
-  int cor_loop = 8; // Correction loop number 
+  float Gamma = 0.1;
+  int iter = 250;
+  int cor_loop = 3; // Correction loop number 
   std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
   // ==== Forward declaration for Histograms ==== //
@@ -100,22 +100,46 @@ void PostAnalysis()
     Closure = {CLS1, CLS2, CLS3, CLS4}; 
   }
 
+  // Data
+  if ( Mode == 2 )
+  {
+    TH1F* trk1 = D.FillTH1F("dEdx_out_ntrk1_calib", energies, MC_dir); 
+    ntrk_Data.push_back(trk1);
+    
+    for (TH1F* H : D.FillTH1F({"dEdx_ntrk_2", "dEdx_ntrk_3", "dEdx_ntrk_4"} , MC_dir))
+    {
+      ntrk_Data.push_back(H);
+    } 
+ 
+    /// Delete below    
+    trk1_N = D.FillTH1F(trk_1, MC_dir); 
+    trk2_N = D.FillTH1F(trk_2, MC_dir); 
+    trk3_N = D.FillTH1F(trk_3, MC_dir); 
+    trk4_N = D.FillTH1F(trk_4, MC_dir);
+    Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N}; 
+    // ==================  
+     
+    DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets); // << Replace this later  
+    
+    Test = false;
+  }
+
   // Component testing 
   if( Test == true)
   {
     // Test the subtraction 
     //BFT.Subtraction();  
     //BFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0.04, 20); 
-    //DFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0, 20); 
+    //DFT.NormalFit(trk1_N, ntrk_Data[0], CLS2, 0, 20); 
     //BFT.Convolve(trk1_N[1], trk1_N[1], trk1_N[3]); 
     //BFT.Deconvolve(trk2_N[1], trk1_N[0], offset, 25);
     //DFT.ShiftTest(trk1_N[0], Shift);
     //DFT.ReplaceShiftTail(trk1_N[0], trk1_N[1], Shift);
     //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
-    DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma);  
-    
-    P.PlotHists(Truth_Sets, ntrk_Data);
+  
+    //P.PlotHists(Truth_Sets, ntrk_Data);
+    //DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets);   
   }
  
  

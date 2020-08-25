@@ -19,10 +19,11 @@ class BaseFunctions
     // ==== Histogram Generators
     std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, float max, TString Extension = "");
     std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, TH1F* Input);
+    std::vector<TH1F*> CopyTH1F(std::vector<TH1F*> Hists, TString Extension);
 
     // ==== Data Generators and Properties 
     std::vector<float> Ratio(std::vector<TH1F*> Hists, TH1F* Data); 
-    std::vector<float> Ratio(std::vector<RooRealVar*>, TH1F* Data);
+    std::vector<float> Ratio(std::vector<RooRealVar*> Vars, TH1F* Data);
     std::vector<float> ClosureAndData(std::vector<TH1F*> Hists, TH1F* Data);  
     std::vector<float> TH1FDataVector(TH1F* Data, float offset = 0);
     void ToTH1F(std::vector<float> Vector, TH1F* Hist);

@@ -41,11 +41,18 @@ namespace Constants
                                          "ntrk_3", 
                                          "ntrk_4"};
 
-
+  const std::vector<TString> energies = {"/200_up_GeV/", "/200_400_GeV/", 
+                                         "/400_600_GeV/", "/600_800_GeV/", 
+                                         "/800_1000_GeV/", "/1000_1200_GeV/", 
+                                         "/1200_1400_GeV/", "/1400_1600_GeV/", 
+                                         "/1600_1800_GeV/", "/1800_2000_GeV/", 
+                                         "/2000_2200_GeV/", "/2200_2400_GeV/", 
+                                         "/2400_2600_GeV/", "/2600_2800_GeV/", 
+                                         "/2800_3000_GeV/", "/higher_GeV/"}; 
 
   const std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kTeal, kBlack, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora, kMagenta, kViolet};
  
-  const std::vector<float> COMP1 = {0.8, 0.1, 0.1, 0.1};
+  const std::vector<float> COMP1 = {1.0, 0.0001, 0.0001, 0.0001};
   const std::vector<float> COMP2 = {0.1, 0.89, 0.05, 0.05};
   const std::vector<float> COMP3 = {0.01, 0.2, 0.59, 0.2};
   const std::vector<float> COMP4 = {0.02, 0.2, 0.2, 0.58};

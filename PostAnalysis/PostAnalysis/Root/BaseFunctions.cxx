@@ -27,6 +27,20 @@ std::vector<TH1F*> BaseFunctions::MakeTH1F(std::vector<TString> Names, TH1F* Inp
   return Output;
 }
 
+std::vector<TH1F*> BaseFunctions::CopyTH1F(std::vector<TH1F*> Hists, TString Extension)
+{
+  std::vector<TH1F*> Output(Hists.size()); 
+  for (int i(0); i < Hists.size(); i++)
+  {
+    TString Name = Hists[i] -> GetTitle(); 
+    TH1F* H = (TH1F*)Hists[i] -> Clone(Name + Extension);
+    H -> SetTitle(Name + Extension);
+    Output[i] = H;  
+  }
+  return Output;
+}
+
+
 std::vector<float> BaseFunctions::Ratio(std::vector<TH1F*> Hists, TH1F* Data)
 {
   float Lumi = Data -> Integral(); 
@@ -59,8 +73,12 @@ std::vector<float> BaseFunctions::ClosureAndData(std::vector<TH1F*> Hists, TH1F*
 
 void BaseFunctions::Normalize(TH1F* Hist)
 {
-  float e = Hist -> Integral(); 
-  Hist -> Scale(1/e);
+  float sum(0); 
+  for (int i(0); i < Hist -> GetNbinsX(); i++)
+  {
+    sum = sum + Hist -> GetBinContent(i+1); 
+  }
+  Hist -> Scale(1/sum);
 }
 
 void BaseFunctions::Normalize(std::vector<TH1F*> Hist)

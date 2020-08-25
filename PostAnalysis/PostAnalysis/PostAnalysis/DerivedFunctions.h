@@ -13,12 +13,12 @@ class DerivedFunctions
     void RooShift(TH1F* H1, TH1F* H2);
 
     int NumericalShift(TH1F* H1, TH1F* H2); 
-    void ReplaceShiftTail(TH1F* Source, TH1F* Target); 
+    void ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset = 0); 
     std::vector<TH1F*> nTRKGenerator(TH1F* trk1, TH1F* trk2, float offset, int iter);    
     TH1F* GaussianConvolve(TH1F* Hist, float mean, float stdev, int Toys = Constants::GaussianToys);
     std::map<TString, float> FitGaussian(TH1F* GxTrk, std::vector<TH1F*> PDFs, float mean, float stdev, float m_s, float m_e, float s_s, float s_e, float offset, int iter);
     void RemoveArtifact(TH1F* Conv); // Move to base later
-    std::vector<TH1F*> MainAlgorithm(TH1F* trk1, TH1F* trk2, std::vector<float> Params, float offset, float Gamma, int iter, int cor_loop); 
+    std::map<TH1F*, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<float> Params, float offset, float Gamma, int iter, int cor_loop); 
 
 };
 
