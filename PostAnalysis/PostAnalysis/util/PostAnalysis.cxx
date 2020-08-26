@@ -17,7 +17,7 @@ void PostAnalysis()
 
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
-  int Mode = 2;  // Change to 0 - MC, 1 - Toy, 2 - RealData
+  int Mode = 0;  // Change to 0 - MC, 1 - Toy, 2 - RealData
   bool Test = true; // Test Components 
   int Shift = 0;
 
@@ -29,17 +29,17 @@ void PostAnalysis()
   // Gaussian Parameter
   float npts = 500000; 
   float mean = 0;
-  float stdev = 0.01; 
-  float m_s = -2;
-  float m_e = 2;
-  float s_s = 0.001;
-  float s_e = 0.1;
+  float stdev = 0.0001; 
+  float m_s = -1;
+  float m_e = 1;
+  float s_s = 0.0001;
+  float s_e = 5;
 
   // Other parameters
-  float offset = 0.1;
-  float Gamma = 0.1;
-  int iter = 250;
-  int cor_loop = 3; // Correction loop number 
+  float offset = 0.2;
+  float Gamma = 1;
+  int iter = 150;
+  int cor_loop = 2; // Correction loop number 
   std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
   // ==== Forward declaration for Histograms ==== //
@@ -64,7 +64,7 @@ void PostAnalysis()
     trk2_N = D.FillTH1F(trk_2, MC_dir); 
     trk3_N = D.FillTH1F(trk_3, MC_dir); 
     trk4_N = D.FillTH1F(trk_4, MC_dir);
-    ntrk_Data = D.FillTH1F(Data_Names, MC_dir);  
+    ntrk_Data = D.FillTH1F({"dEdx_ntrk_1_ntru_1", "dEdx_ntrk_2", "dEdx_ntrk_3", "dEdx_ntrk_4"}, MC_dir);  
     Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N}; 
    
     // Get Closure values and fill data 
@@ -119,9 +119,9 @@ void PostAnalysis()
     Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N}; 
     // ==================  
      
-    DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets); // << Replace this later  
+    //DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets); // << Replace this later  
     
-    Test = false;
+    //Test = false;
   }
 
   // Component testing 
@@ -139,7 +139,7 @@ void PostAnalysis()
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
   
     //P.PlotHists(Truth_Sets, ntrk_Data);
-    //DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets);   
+    DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets);   
   }
  
  

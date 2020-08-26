@@ -139,7 +139,7 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset
   B.ToTH1F(Target_V, Target_E);
 
   // Define the tail to be replaced and move away from peak 
-  int max_bin = Target -> GetMaximumBin() + bin_s*0.01;
+  int max_bin = Target -> GetMaximumBin() + bin_s*0.05;
   int max_bin_s = Source -> GetMaximumBin();
   TH1F* Temp = (TH1F*)Source -> Clone("Temp"); 
   
@@ -202,7 +202,7 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   B.ConvolveHists(PDFs[1], PDFs[0], PDFs[2]);  
   B.Normalize(PDFs[2]);
   B.ResidualRemove(PDFs[2]); 
- 
+
   // === TRK4 
   B.ConvolveHists(PDFs[1], PDFs[1], PDFs[3]);  
   B.Normalize(PDFs[3]);
@@ -335,7 +335,7 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   // Define the ntrack coefficients:
   float Lumi = Data_G -> Integral();
   std::vector<TString> C_String = { "n_trk1", "n_trk2", "n_trk3", "n_trk4" };
-  std::vector<float> C_Begin = { 0., 0., 0., 0. };
+  std::vector<float> C_Begin = { 0, 0, 0, 0 };
   std::vector<float> C_End = { Lumi, Lumi, Lumi, Lumi };
   std::vector<RooRealVar*> C_Vars = B.RooVariables(C_String, C_Begin, C_End);
 
@@ -349,14 +349,14 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   // Import the trk 2 data as a RooDataHist
   RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, Data_G); 
 
-  model.fitTo(*trk2_D, RooFit::Constrain(*Means[0]), 
-                                            RooFit::Constrain(*Means[1]), 
-                                            RooFit::Constrain(*Means[2]), 
-                                            RooFit::Constrain(*Means[3]), 
-                                            RooFit::Constrain(*Stdev[0]), 
-                                            RooFit::Constrain(*Stdev[1]), 
-                                            RooFit::Constrain(*Stdev[2]), 
-                                            RooFit::Constrain(*Stdev[3]));
+  //model.fitTo(*trk2_D, RooFit::Constrain(*Means[0]), 
+  //                                          RooFit::Constrain(*Means[1]), 
+  //                                          RooFit::Constrain(*Means[2]), 
+  //                                          RooFit::Constrain(*Means[3]), 
+  //                                          RooFit::Constrain(*Stdev[0]), 
+  //                                          RooFit::Constrain(*Stdev[1]), 
+  //                                          RooFit::Constrain(*Stdev[2]), 
+  //                                          RooFit::Constrain(*Stdev[3]));
   
   RooFitResult* stat = model.fitTo(*trk2_D, RooFit::Save(), RooFit::SumW2Error(true), RooFit::NumCPU(4)); 
   
@@ -403,7 +403,7 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   return Out;   
 }
 
-std::map<TH1F*, std::vector<TH1F*>> DerivedFunctions::MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<float> Params, float offset, float Gamma, int iter, int cor_loop)
+std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<float> Params, float offset, float Gamma, int iter, int cor_loop)
 {
   auto MakeGaussianConvoluted = [](TString n, std::vector<TH1F*> PDFs, std::map<TString, float> trkn_Params, TH1F* trkn_L, float Gamma)
   {
@@ -419,6 +419,7 @@ std::map<TH1F*, std::vector<TH1F*>> DerivedFunctions::MainAlgorithm(std::vector<
       TString Name = n; Name += Names[i];
       TH1F* trknXg = (TH1F*)trkn_L -> Clone(Name);
       trknXg -> SetTitle(Name);
+      trknXg -> Reset();
       TH1F* trkn_H = DF.GaussianConvolve(PDFs[i], trkn_Params[Mean[i]], trkn_Params[Stdev[i]]);
       B.ShiftExpandTH1F(trkn_H, trknXg);
       delete trkn_H;
@@ -434,7 +435,7 @@ std::map<TH1F*, std::vector<TH1F*>> DerivedFunctions::MainAlgorithm(std::vector<
   {
     const std::vector<TString> Names = {"n_trk1", "n_trk2", "n_trk3", "n_trk4"}; 
     bool passed = false;
-    if (trkn_Params[Names[0]] == trkn_Params[Names[0]] == trkn_Params[Names[0]] == trkn_Params[Names[0]]){ passed = false; }
+    if (trkn_Params[Names[0]] == trkn_Params[Names[1]] == trkn_Params[Names[1]] == trkn_Params[Names[1]]){ passed = false; }
     else { passed = true; }
     return passed;
   };
@@ -450,7 +451,7 @@ std::map<TH1F*, std::vector<TH1F*>> DerivedFunctions::MainAlgorithm(std::vector<
   float s_s = Params[4];
   float s_e = Params[5];
 
-  std::map<TH1F*, std::vector<TH1F*>> Output; 
+  std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> Output; 
   RooRealVar* x = new RooRealVar("x", "x", 0, ntrk[0] -> GetNbinsX());  
   TH1F* trk1_L = new TH1F("trk1_L", "trk1_L", ntrk[0] -> GetNbinsX(), 0, ntrk[0] -> GetNbinsX());
   TH1F* trk2_L = new TH1F("trk2_L", "trk2_L", ntrk[1] -> GetNbinsX(), 0, ntrk[1] -> GetNbinsX());
@@ -461,6 +462,9 @@ std::map<TH1F*, std::vector<TH1F*>> DerivedFunctions::MainAlgorithm(std::vector<
   B.ShiftExpandTH1F(ntrk[1], trk2_L);  
   B.ShiftExpandTH1F(ntrk[2], trk3_L); 
   B.ShiftExpandTH1F(ntrk[3], trk4_L); 
+
+  TH1F* trk1_L_C = (TH1F*)trk1_L -> Clone("trk1_L_C");
+  TH1F* trk2_L_C = (TH1F*)trk2_L -> Clone("trk2_L_C");
 
   for (int x(0); x < cor_loop; x++)
   { 
@@ -481,32 +485,42 @@ std::map<TH1F*, std::vector<TH1F*>> DerivedFunctions::MainAlgorithm(std::vector<
       GxTrk1 = MakeGaussianConvoluted("GxT1", PDFs, trk1_Params, trk1_L, Gamma); 
       GxTrk2 = MakeGaussianConvoluted("GxT2", PDFs, trk2_Params, trk2_L, Gamma);     
    
-      if (trk1_Params["Status"] == 4 && Check(trk1_Params) == true) 
-      { 
-        trk1_L -> Add(GxTrk1[1], -1);
-        trk1_L -> Add(GxTrk1[2], -1);
-        trk1_L -> Add(GxTrk1[3], -1);
-      }
+      //if (trk1_Params["Status"] == 0 && Check(trk1_Params) == true) 
+      //{ 
+      //  trk1_L -> Add(GxTrk1[1], -1);
+      //  trk1_L -> Add(GxTrk1[2], -1);
+      //  trk1_L -> Add(GxTrk1[3], -1);
+      //}
  
-      if (trk2_Params["Status"] == 4 && Check(trk2_Params) == true) 
+      if (trk2_Params["Status"] == 0 && Check(trk2_Params) == true) 
       {      
         trk2_L -> Add(GxTrk2[0], -1);
         trk2_L -> Add(GxTrk2[2], -1);
         trk2_L -> Add(GxTrk2[3], -1);
-        std::cout << "############################# cuts" << std::endl;
+      }
+      else 
+      {
+        trk2_L -> Reset(); 
+        trk2_L -> Add(trk2_L_C);
       }
            
       TCanvas* can = P.PlotHists({GxTrk1, GxTrk2}, {trk1_L, trk2_L});
+      can -> Draw();
       if( v < 4)
       {
         for (int y(0); y < GxTrk1.size(); y++)
         {
           delete GxTrk1[y];
-          delete GxTrk2[y];
- 
+          delete GxTrk2[y]; 
           delete PDFs[y];
         }
       }
+
+      if (v == 2)
+      {
+        B.ResidualRemove(trk2_L);
+      } 
+
     }
        
     std::map<TString, float> trk3_Params = FitGaussian(trk3_L, PDFs, mean, stdev, m_s, m_e, s_s, s_e, offset, iter);
@@ -528,8 +542,7 @@ std::map<TH1F*, std::vector<TH1F*>> DerivedFunctions::MainAlgorithm(std::vector<
       trk4_L -> Add(GxTrk2[1], -1);
       trk4_L -> Add(GxTrk2[2], -1);
     } 
- 
-              
+                
     if (x == 0)
     {
       B.ResidualRemove(trk2_L);
@@ -541,11 +554,11 @@ std::map<TH1F*, std::vector<TH1F*>> DerivedFunctions::MainAlgorithm(std::vector<
     iter = iter + 25;  
     std::cout << "################### " << x << std::endl;
 
-    // Output 
-    Output.insert(std::pair<TH1F*, std::vector<TH1F*>>(trk1_L, GxTrk1));
-    Output.insert(std::pair<TH1F*, std::vector<TH1F*>>(trk2_L, GxTrk2));
-    Output.insert(std::pair<TH1F*, std::vector<TH1F*>>(trk3_L, GxTrk3));
-    Output.insert(std::pair<TH1F*, std::vector<TH1F*>>(trk4_L, GxTrk4));
+    // Output
+    Output[0] = std::make_pair(trk1_L, GxTrk1);
+    Output[1] = std::make_pair(trk2_L, GxTrk2);
+    Output[2] = std::make_pair(trk3_L, GxTrk3); 
+    Output[3] = std::make_pair(trk4_L, GxTrk4);
 
     if (x == cor_loop -1){return Output;}     
     

@@ -174,22 +174,24 @@ void DerivedFunctionTest::MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<flo
   DerivedFunctions DF; 
   BaseFunctions B;
    
-  std::map<TH1F*, std::vector<TH1F*>> PDFs = DF.MainAlgorithm(ntrk, Params, offset, Gamma, iter, cor_loop);
+  std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> PDFs = DF.MainAlgorithm(ntrk, Params, offset, Gamma, iter, cor_loop);
 
   std::vector<TH1F*> truth;
   std::vector<std::vector<TH1F*>> result;
 
-  int i = 0; 
   std::vector<TString> Names = {"trk1_pure", "trk2_pure", "trk3_pure", "trk4_pure"};
   std::vector<TString> PDF_Names = {"trk1_pdf", "trk2_pdf", "trk3_pdf", "trk4_pdf"};
-  for (auto &x : PDFs)
+  
+   
+  for (int i(0); i < Closure.size(); i++)
   {
-    std::vector<TH1F*> Hists = x.second;
-    std::vector<TH1F*> Cl_Hists = Closure[i]; 
-    
-    TH1F* t = x.first;
+    std::vector<TH1F*> Cl_Hists = Closure[i];  
     TH1F* H2 = Cl_Hists[i]; 
 
+    std::pair<TH1F*, std::vector<TH1F*>> m = PDFs[i]; 
+    TH1F* trkN = m.first; 
+    std::vector<TH1F*> PDF_H = m.second;
+    
     TH1F* H1 = (TH1F*)H2 -> Clone(Names[i]);
     H1 -> Reset();
     H1 -> SetTitle(Names[i]);
@@ -198,16 +200,14 @@ void DerivedFunctionTest::MainAlgorithm(std::vector<TH1F*> ntrk, std::vector<flo
     H3 -> Reset();
     H3 -> SetTitle(PDF_Names[i]);   
     
-    B.ShiftExpandTH1F(t, H1);
-    B.ShiftExpandTH1F(Hists[i], H3);
-
-    truth.push_back(H2);
-    std::vector<TH1F*> Out;
-    Out.push_back(H1);
-    Out.push_back(H3);
-
-    result.push_back(Out);
-    i++;
+    B.ShiftExpandTH1F(trkN, H1);
+    B.ShiftExpandTH1F(PDF_H[i], H3);
+    
+    std::vector<TH1F*> out;
+    out.push_back(H1); 
+    out.push_back(H3);
+    result.push_back(out);
+    truth.push_back(H2); 
   }
 
   Plotting P;
