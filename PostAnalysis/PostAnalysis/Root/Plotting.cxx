@@ -107,6 +107,19 @@ TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<
   return can;
 }
 
+void Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data, TCanvas* can)
+{
+  for (int i(0); i < Hists.size(); i++)
+  {
+    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+    can -> cd(i+1) -> SetLogy(); 
+    can -> cd(i+1);
+    Data[i] -> SetLineColor(kBlack);
+    Data[i] -> Draw("SAMEHIST"); 
+    Populate(Hists[i], can, len);
+    len -> AddEntry(Data[i], Data[i] -> GetTitle()); 
+  }
+}
 
 TCanvas* Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data)
 {

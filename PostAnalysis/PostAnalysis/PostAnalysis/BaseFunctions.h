@@ -33,6 +33,8 @@ class BaseFunctions
     void Normalize(std::vector<TH1F*> Hist);
     void Subtraction(std::vector<TH1F*> ntrk, TH1F* Data, int Exclude, std::vector<float> Ratios);  
     void ShiftExpandTH1F(TH1F* In, TH1F* Out, int start = 0);
+    void ShiftExpandTH1F(std::vector<TH1F*> In, std::vector<TH1F*> Out, int start = 0); 
+    void Scale(std::vector<TH1F*> PDFs, std::vector<RooRealVar*> Vars);
 
     // ==== RooFit functions 
     // Simple Scale Fits

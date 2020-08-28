@@ -104,6 +104,15 @@ void BaseFunctions::Subtraction(std::vector<TH1F*> ntrk, TH1F* Data, int Exclude
   }
 }
 
+void BaseFunctions::Scale(std::vector<TH1F*> PDFs, std::vector<RooRealVar*> Vars)
+{
+  for (int i(0); i < PDFs.size(); i++)
+  {
+    PDFs[i] -> Scale(Vars[i] -> getVal()); 
+    delete Vars[i];  
+  }
+}
+
 std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<float> Begin, std::vector<float> End)
 {
   std::vector<RooRealVar*> Variables(Names.size()); 
@@ -336,6 +345,14 @@ void BaseFunctions::ShiftExpandTH1F(TH1F* In, TH1F* Out, int start)
   }
 }
 
+void BaseFunctions::ShiftExpandTH1F(std::vector<TH1F*> In, std::vector<TH1F*> Out, int start)
+{
+  for (int i(0); i < In.size(); i++)
+  {
+    ShiftExpandTH1F(In[i], Out[i], start);
+  }
+}
+
 void BaseFunctions::ResidualRemove(TH1F* Hist)
 {
   int max = Hist -> GetMaximumBin();
@@ -357,7 +374,7 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
   }
   for (int i(0); i < iter; i++)
   {
-    Hist -> SetBinContent(i+1, 1e-9);
+    Hist -> SetBinContent(i+1, 1e-32);
   }
 }
 
