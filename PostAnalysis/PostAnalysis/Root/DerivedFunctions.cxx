@@ -139,7 +139,7 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset
   B.ToTH1F(Target_V, Target_E);
 
   // Define the tail to be replaced and move away from peak 
-  int max_bin = Target -> GetMaximumBin() + bin_s*0.05;
+  int max_bin = Target -> GetMaximumBin() + bin_s*0.01;
   int max_bin_s = Source -> GetMaximumBin();
   TH1F* Temp = (TH1F*)Source -> Clone("Temp"); 
   
@@ -159,7 +159,7 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset
     float T_e = Target_E -> GetBinContent(i + 1); 
     sum_S += S_e;
     sum_T += T_e;  
-    Target -> SetBinContent(i+1, S_e); // << Check this!!!
+    Target -> SetBinContent(i+1, S_e);
   }
  
   Target -> Scale(Lumi);
@@ -191,6 +191,7 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   // === TRK1
   ReplaceShiftTail(trk1, PDFs[0], offset); 
   B.Normalize(PDFs);
+  RemoveArtifact(PDFs[0]);
   RemoveArtifact(PDFs[0]);
 
   // === TRK2
@@ -244,10 +245,16 @@ TH1F* DerivedFunctions::GaussianConvolve(TH1F* Hist, float mean, float stdev, in
 std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<TH1F*> PDFs, std::map<TString, std::vector<float>> Params, float offset, int iter)
 {
   DistributionGenerators DG; 
-  BaseFunctions B; 
-  
+  BaseFunctions B;  
+  Plotting P; 
+
+
+  ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2");
+
+
   // Define Padding 
   int bins_pdf = PDFs[0] -> GetNbinsX(); 
+  TString H_N = GxTrk -> GetTitle();
 
   // Create temorary histograms 
   std::vector<TString> names; 
@@ -257,7 +264,9 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
     names.push_back(name); 
   } 
 
-  std::vector<TH1F*> Hists = B.MakeTH1F(names, GxTrk);   
+  std::vector<TH1F*> Hists = B.MakeTH1F(names, GxTrk);    
+  std::vector<float> l = B.TH1FDataVector(PDFs[0], offset);  
+  TH1F* Temp = new TH1F("Temp" + H_N, "Temp" + H_N, l.size(), 0, l.size());
   for (int i(0); i < PDFs.size(); i++)
   {
     // Import and extend the TH1F* data
@@ -265,9 +274,9 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
    
     // Rescale the data to have the same length has the GxTrk 
     TString v = "Temp"; v+=(i+1);
-    TH1F* Temp = new TH1F(v, v, PDF_V.size(), 0, PDF_V.size());
     B.ToTH1F(PDF_V, Temp);
     B.ShiftExpandTH1F(Temp, Hists[i], bins_pdf*offset/2); 
+    Temp -> Reset();
 
     // Convert into a vector for the deconv 
     PDF_V = B.TH1FDataVector(Hists[i], 0);
@@ -291,43 +300,47 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
     }
     
     B.ToTH1F(deconv, Hists[i]);   
-
-    delete Temp;
-  }
-  
+    
+  }  
+  delete Temp;
+ 
   // Convert the histograms back to the original format 
   std::vector<TH1F*> DeconvPDFs;
   for (int i(0); i < PDFs.size(); i++)
   {
     std::vector<float> Data = B.TH1FDataVector(Hists[i]);  
   
-    TString name = PDFs[i] -> GetTitle(); name += ("_"); name += (i+1);
+    TString name = PDFs[i] -> GetTitle(); name += ("_"); name += (i+1); name += (H_N);
     TH1F* H = new TH1F(name, name, bins_pdf, 0, bins_pdf);  
     H -> Reset();
     B.ToTH1F(Data, H);
+    B.ResidualRemove(H);
     DeconvPDFs.push_back(H); 
   }
-  TH1F* Data_G = new TH1F("Data_Gaus_Fit", "Data_Gaus_Fit", bins_pdf, 0, bins_pdf);
+  TH1F* Data_G = new TH1F("Data_Gaus_Fit" + H_N, "Data_Gaus_Fit" + H_N, bins_pdf, 0, bins_pdf);
   B.ShiftExpandTH1F(GxTrk, Data_G, 0);
+  Data_G -> SetBinContent(bins_pdf, Data_G -> GetBinContent(bins_pdf-1));
   B.Normalize(Data_G);
- 
+
+  //TCanvas* c = P.PlotHists(DeconvPDFs);
+  //c -> Print("out1.pdf"); 
   // Define the range of the dEdx
-  RooRealVar* x = new RooRealVar("x", "x", 0, bins_pdf); 
+  RooRealVar* x = new RooRealVar("x" + H_N, "x" + H_N, 0, bins_pdf); 
 
   // Define the Gaussian Parameter: Mean
-  std::vector<TString> Means_String = { "m1", "m2", "m3", "m4" };
+  std::vector<TString> Means_String = { "m1" + H_N, "m2" + H_N, "m3" + H_N, "m4" + H_N };
   std::vector<float> Means_Begin = Params["m_s"];
   std::vector<float> Means_End = Params["m_e"];
   std::vector<RooRealVar*> Means = B.RooVariables(Means_String, Means_Begin, Means_End);
 
   // Define the Gaussian Parameter: Standard Deviation
-  std::vector<TString> Stdev_String = { "s1", "s2", "s3", "s4" };
+  std::vector<TString> Stdev_String = { "s1" + H_N, "s2" + H_N, "s3" + H_N, "s4" + H_N };
   std::vector<float> Stdev_Begin = Params["s_s"];
   std::vector<float> Stdev_End = Params["s_e"];
   std::vector<RooRealVar*> Stdev = B.RooVariables(Stdev_String, Stdev_Begin, Stdev_End);
 
   // Define the Gaussian Variables
-  std::vector<TString> Gaus_String = { "g1", "g2", "g3", "g4"};
+  std::vector<TString> Gaus_String = { "g1" + H_N, "g2" + H_N, "g3" + H_N, "g4" + H_N};
   std::vector<RooGaussian*> G_Vars = B.RooVariables(Gaus_String, Means, Stdev, x);
  
   // Import the PDFs as a RooDataHist
@@ -335,20 +348,20 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
    
   // Define the ntrack coefficients:
   float Lumi = Data_G -> Integral();
-  std::vector<TString> C_String = { "n_trk1", "n_trk2", "n_trk3", "n_trk4" };
+  std::vector<TString> C_String = { "n_trk1" + H_N, "n_trk2" + H_N, "n_trk3" + H_N, "n_trk4" + H_N };
   std::vector<float> C_Begin = { 0, 0, 0, 0 };
   std::vector<float> C_End = { Lumi, Lumi, Lumi, Lumi };
   std::vector<RooRealVar*> C_Vars = B.RooVariables(C_String, C_Begin, C_End);
 
   // Convolve the PDFs with the Gaussians
-  std::vector<TString> Conv_String = { "P1xG1", "P2xG2", "P3xG3", "P4xG4" };
+  std::vector<TString> Conv_String = { "P1xG1" + H_N, "P2xG2" + H_N, "P3xG3" + H_N, "P4xG4" + H_N };
   std::vector<RooFFTConvPdf*> Conv_Vars = B.RooVariables(Conv_String, PDF_Vars, G_Vars, x);
   
   // Define the model we are using for the fit:
-  RooAddPdf model("model", "model", RooArgList(*Conv_Vars[0], *Conv_Vars[1], *Conv_Vars[2], *Conv_Vars[3]), RooArgList(*C_Vars[0], *C_Vars[1], *C_Vars[2], *C_Vars[3]));   
+  RooAddPdf model("model" + H_N, "model" + H_N, RooArgList(*Conv_Vars[0], *Conv_Vars[1], *Conv_Vars[2], *Conv_Vars[3]), RooArgList(*C_Vars[0], *C_Vars[1], *C_Vars[2], *C_Vars[3]));   
 
   // Import the trk 2 data as a RooDataHist
-  RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, Data_G); 
+  RooDataHist* trk2_D = new RooDataHist("trk2_D" + H_N, "trk2_D" + H_N, *x, Data_G); 
 
   model.fitTo(*trk2_D, RooFit::Constrain(*Means[0]), 
                                             RooFit::Constrain(*Means[1]), 
@@ -359,7 +372,11 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
                                             RooFit::Constrain(*Stdev[2]), 
                                             RooFit::Constrain(*Stdev[3]));
   
-  RooFitResult* stat = model.fitTo(*trk2_D, RooFit::Save(), RooFit::SumW2Error(true), RooFit::NumCPU(4)); 
+  RooFitResult* stat = model.fitTo(*trk2_D, RooFit::Save(), RooFit::SumW2Error(true)); 
+    
+   //TCanvas* can = P.PlotHists(model, x, Conv_Vars, trk2_D);
+   //can -> Print("out.pdf"); 
+ 
   
   std::map<TString, float> Out;
   if (!stat){Out["Status"] = -1;}
@@ -416,18 +433,21 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     return GxTrkN;
   };
 
-  auto Check = [](std::map<TString, float> trkn_Params)
+  auto Parallel = [&MakeGaussianConvoluted](TH1F* trk, std::vector<TH1F*> PDFs, std::map<TString, std::vector<float>> Params, float offset, int iter, std::vector<TH1F*>* GxTrk, TString name)
   {
-    const std::vector<TString> Names = {"n_trk1", "n_trk2", "n_trk3", "n_trk4"}; 
-    bool passed = false;
-    if (trkn_Params[Names[0]] == trkn_Params[Names[1]] == trkn_Params[Names[1]] == trkn_Params[Names[1]]){ passed = false; }
-    else { passed = true; }
-    return passed;
+    DerivedFunctions DF; 
+    std::map<TString, float> trk_Param = DF.FitGaussian(trk, PDFs, Params, offset, iter);
+    std::vector<TH1F*> Out = MakeGaussianConvoluted(name, PDFs, trk_Param, trk, 1);
+    for (int i(0); i < Out.size(); i++)
+    {
+      GxTrk -> push_back(Out[i]);     
+    }
   };
-
 
   BaseFunctions B;
   Plotting P; 
+  ROOT::EnableThreadSafety();
+  TH1::AddDirectory(false);
 
   std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> Output; 
   RooRealVar* x = new RooRealVar("x", "x", 0, ntrk[0] -> GetNbinsX());  
@@ -443,7 +463,9 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
 
   TH1F* trk1_L_C = (TH1F*)trk1_L -> Clone("trk1_L_C");
   TH1F* trk2_L_C = (TH1F*)trk2_L -> Clone("trk2_L_C");
-
+  TH1F* trk3_L_C = (TH1F*)trk3_L -> Clone("trk3_L_C");
+  TH1F* trk4_L_C = (TH1F*)trk4_L -> Clone("trk4_L_C");
+  
   // =========================== Plotting variables 
   TString Title_Params = "GlobalSettings-Gamma-"; Title_Params += (Gamma); Title_Params += ("-iter-"); Title_Params += (iter); Title_Params += ("-cor_loop-"); Title_Params += (cor_loop); 
    
@@ -466,208 +488,141 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
   can -> Print(Title_Params + "[");
   gStyle -> SetOptStat(0);
 
-  // =======================================================
- 
-  std::vector<TH1F*> GxTrk1;
-  std::vector<TH1F*> GxTrk2;
-  std::vector<TH1F*> GxTrk3;
-  std::vector<TH1F*> GxTrk4; 
+  // ======================================================= 
   for (int x(0); x < cor_loop; x++)
   { 
+    std::vector<TH1F*>* GxTrk1 = new std::vector<TH1F*>();   
+    std::vector<TH1F*>* GxTrk2 = new std::vector<TH1F*>();
+    std::vector<TH1F*>* GxTrk3 = new std::vector<TH1F*>();
+    std::vector<TH1F*>* GxTrk4 = new std::vector<TH1F*>(); 
+    std::vector<TH1F*> PDFs;  
+    std::vector<std::thread> th;
 
-    std::vector<TH1F*> PDFs; 
+    // Generate the minimal version of the PDFs
+    PDFs = nTRKGenerator(trk1_L, trk2_L, offset, iter);
+
+    // Generate the Gaussian Parameters for the convolution from a fit 
+    th.push_back(std::thread(Parallel, trk1_L, PDFs, Params, offset, iter, GxTrk1, "GxTrk1")); 
+    th.push_back(std::thread(Parallel, trk2_L, PDFs, Params, offset, iter, GxTrk2, "GxTrk2")); 
+    //usleep(5000);
+    //th.push_back(std::thread(Parallel, trk3_L, PDFs, Params, offset, iter, GxTrk3, "GxTrk3")); 
+    //usleep(5000); 
+    //th.push_back(std::thread(Parallel, trk4_L, PDFs, Params, offset, iter, GxTrk4, "GxTrk4")); 
    
-    for (int v(0); v < 5; v++)
+    th[0].join();
+    //th[1].join();
+    //th[2].join();
+    //th[3].join();
+        
+    float sc = cor_loop; 
+    float it = x; 
+    float del = 0.1; //(1/sc)*it;     
+    trk2_L -> Add(GxTrk2 -> at(0), -1);
+    trk2_L -> Add(GxTrk2 -> at(2), -del);
+    trk2_L -> Add(GxTrk2 -> at(3), -del);
+
+    if ( x > 3)
     { 
-      // Generate the minimal version of the PDFs
-      PDFs = nTRKGenerator(trk1_L, trk2_L, offset, iter);
 
-      // Generate the Gaussian Parameters for the convolution from a fit 
-      std::map<TString, float> trk1_Params = FitGaussian(trk1_L, PDFs, Params, offset, iter);
-      std::map<TString, float> trk2_Params = FitGaussian(trk2_L, PDFs, Params, offset, iter);   
-      GxTrk1 = MakeGaussianConvoluted("GxT1", PDFs, trk1_Params, trk1_L, Gamma); 
-      GxTrk2 = MakeGaussianConvoluted("GxT2", PDFs, trk2_Params, trk2_L, Gamma);     
- 
-      if (trk2_Params["Status"] == 0 && Check(trk2_Params) == true && v > 1) 
-      {      
-        trk2_L -> Add(GxTrk2[0], -1);
-        trk2_L -> Add(GxTrk2[2], -1);
-        trk2_L -> Add(GxTrk2[3], -1);
-      }
-      else 
-      {
-        trk2_L -> Reset(); 
-        trk2_L -> Add(trk2_L_C);
-      }
-      
-      can -> Clear(); 
-      can -> Divide(2);          
-      P.PlotHists({GxTrk1, GxTrk2}, {trk1_L, trk2_L}, can);
-      can -> Print(Title_Params);
+      trk1_L -> Add(GxTrk1 -> at(1), -del);
+      trk1_L -> Add(GxTrk1 -> at(2), -del);
+      trk1_L -> Add(GxTrk1 -> at(3), -del);
+         
+      trk3_L -> Add(GxTrk3 -> at(0), -del);
+      trk3_L -> Add(GxTrk3 -> at(1), -del);
+      trk3_L -> Add(GxTrk3 -> at(3), -del);
 
-
-      if( v < 4)
-      {
-        for (int y(0); y < GxTrk1.size(); y++)
-        {
-          delete GxTrk1[y];
-          delete GxTrk2[y]; 
-          delete PDFs[y];
-        }
-      }
+      trk4_L -> Add(GxTrk4 -> at(0), -del);
+      trk4_L -> Add(GxTrk4 -> at(1), -del);
+      trk4_L -> Add(GxTrk4 -> at(2), -del);
     }
+    
+    if ( x > 5 )
+    {
+      trk1_L -> Reset(); 
+      trk3_L -> Reset(); 
+      trk4_L -> Reset(); 
 
-    if (x == 1){B.ResidualRemove(trk2_L);} 
-          
-    std::map<TString, float> trk3_Params = FitGaussian(trk3_L, PDFs, Params, offset, iter);
-    std::map<TString, float> trk4_Params = FitGaussian(trk4_L, PDFs, Params, offset, iter);   
-
-    GxTrk3 = MakeGaussianConvoluted("GxT3", PDFs, trk3_Params, trk3_L, Gamma);     
-    GxTrk4 = MakeGaussianConvoluted("GxT4", PDFs, trk4_Params, trk4_L, Gamma);         
-     
-    if (trk3_Params["Status"] == 0 && Check(trk3_Params) == true) 
-    {      
-      trk3_L -> Add(GxTrk3[0], -1);
-      trk3_L -> Add(GxTrk3[1], -1);
-      trk3_L -> Add(GxTrk3[3], -1);
+      trk1_L -> Add(trk1_L_C);
+      trk4_L -> Add(trk4_L_C);
+      trk3_L -> Add(trk3_L_C);
     }
-       
-    if (trk4_Params["Status"] == 0 && Check(trk4_Params) == true) 
-    {      
-      trk4_L -> Add(GxTrk4[0], -1);
-      trk4_L -> Add(GxTrk4[1], -1);
-      trk4_L -> Add(GxTrk4[2], -1);
-    } 
-                
-    //if (x == 1)
-    //{
-    //  B.ResidualRemove(trk2_L);
-    //  B.ResidualRemove(trk3_L);
-    //  B.ResidualRemove(trk4_L);
-    //} 
- 
-    iter = iter + 25;  
+                             
+    iter = iter + 10;  
     std::cout << "################### " << x << std::endl;
+   
+    // ==== Trk1 
+    std::vector<TString> Names1 = {"trk1_F1", "trk2_F1", "trk3_F1", "trk4_F1"}; 
+    std::vector<TH1F*> Trk1_PDFs = B.MakeTH1F(Names1, ntrk[0]); 
+    B.ShiftExpandTH1F(*GxTrk1, Trk1_PDFs);
+
+    // ==== Trk2
+    std::vector<TString> Names2 = {"trk1_F2", "trk2_F2", "trk3_F2", "trk4_F2"}; 
+    std::vector<TH1F*> Trk2_PDFs = B.MakeTH1F(Names2, ntrk[1]); 
+    B.ShiftExpandTH1F(*GxTrk2, Trk2_PDFs);
+
+    // ==== Trk3 
+    std::vector<TString> Names3 = {"trk1_F3", "trk2_F3", "trk3_F3", "trk4_F3"}; 
+    std::vector<TH1F*> Trk3_PDFs = B.MakeTH1F(Names3, ntrk[2]); 
+    B.ShiftExpandTH1F(*GxTrk3, Trk3_PDFs);
+
+    // ==== Trk4 
+    std::vector<TString> Names4 = {"trk1_F4", "trk2_F4", "trk3_F4", "trk4_F4"}; 
+    std::vector<TH1F*> Trk4_PDFs = B.MakeTH1F(Names4, ntrk[3]); 
+    B.ShiftExpandTH1F(*GxTrk4, Trk4_PDFs);
 
     can -> Clear();
     can -> Divide(2, 2);
-    P.PlotHists({GxTrk1, GxTrk2, GxTrk3, GxTrk4}, {trk1_L, trk2_L, trk3_L, trk4_L}, can);   
+    P.PlotHists({Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs}, Closure, ntrk, can);   
+    can -> Print(Title_Params);
+
+    can -> Clear();
+    can -> Divide(2,2);
+    P.PlotHists({*GxTrk1, *GxTrk2, *GxTrk3, *GxTrk4}, {trk1_L, trk2_L, trk3_L, trk4_L}, can);
     can -> Print(Title_Params);
 
     // Output
-    Output[0] = std::make_pair(trk1_L, GxTrk1);
-    Output[1] = std::make_pair(trk2_L, GxTrk2);
-    Output[2] = std::make_pair(trk3_L, GxTrk3); 
-    Output[3] = std::make_pair(trk4_L, GxTrk4);
+    Output[0] = std::make_pair(trk1_L, *GxTrk1);
+    Output[1] = std::make_pair(trk2_L, *GxTrk2);
+    Output[2] = std::make_pair(trk3_L, *GxTrk3); 
+    Output[3] = std::make_pair(trk4_L, *GxTrk4);
 
     if (x == cor_loop -1){break;}     
     
     // Clean up memory  
-    for (int i(0); i < GxTrk1.size(); i++)
+    for (int i(0); i < GxTrk2 -> size(); i++)
     {
-      delete GxTrk1[i];
-      delete GxTrk2[i];
-      delete GxTrk3[i];
-      delete GxTrk4[i];
+      delete GxTrk2 -> at(i);      
+      delete Trk2_PDFs[i];
       delete PDFs[i];
+     
+      if ( x > 3 )
+      {
+        delete GxTrk1 -> at(i);
+        delete GxTrk3 -> at(i);
+        delete GxTrk4 -> at(i);
+        delete Trk1_PDFs[i];
+        delete Trk3_PDFs[i];
+        delete Trk4_PDFs[i];   
+      } 
     }
+    delete GxTrk1;
+    delete GxTrk2;
+    delete GxTrk3;
+    delete GxTrk4;
   }
-
-  // ==== Trk1 
-  std::vector<TString> Names1 = {"trk1_F1", "trk2_F1", "trk3_F1", "trk4_F1"}; 
-  std::vector<TH1F*> Trk1_PDFs = B.MakeTH1F(Names1, ntrk[0]); 
-  B.ShiftExpandTH1F(GxTrk1, Trk1_PDFs);
-  B.Normalize(Trk1_PDFs);
-  std::vector<RooRealVar*> vars1 = FitToData(Trk1_PDFs, ntrk[0], 0, 20); 
-  B.Scale(Trk1_PDFs, vars1);  
-
-  // ==== Trk1 
-  std::vector<TString> Names2 = {"trk1_F2", "trk2_F2", "trk3_F2", "trk4_F2"}; 
-  std::vector<TH1F*> Trk2_PDFs = B.MakeTH1F(Names2, ntrk[1]); 
-  B.ShiftExpandTH1F(GxTrk2, Trk2_PDFs);
-  B.Normalize(Trk2_PDFs);
-  std::vector<RooRealVar*> vars2 = FitToData(Trk2_PDFs, ntrk[1], 0, 20); 
-  B.Scale(Trk2_PDFs, vars2); 
-
-  // ==== Trk1 
-  std::vector<TString> Names3 = {"trk1_F3", "trk2_F3", "trk3_F3", "trk4_F3"}; 
-  std::vector<TH1F*> Trk3_PDFs = B.MakeTH1F(Names3, ntrk[2]); 
-  B.ShiftExpandTH1F(GxTrk3, Trk3_PDFs);
-  B.Normalize(Trk3_PDFs);
-  std::vector<RooRealVar*> vars3 = FitToData(Trk3_PDFs, ntrk[2], 0, 20); 
-  B.Scale(Trk3_PDFs, vars3); 
-
-  // ==== Trk1 
-  std::vector<TString> Names4 = {"trk1_F4", "trk2_F4", "trk3_F4", "trk4_F4"}; 
-  std::vector<TH1F*> Trk4_PDFs = B.MakeTH1F(Names4, ntrk[3]); 
-  B.ShiftExpandTH1F(GxTrk4, Trk4_PDFs);
-  B.Normalize(Trk4_PDFs);
-  std::vector<RooRealVar*> vars4 = FitToData(Trk4_PDFs, ntrk[3], 0, 20); 
-  B.Scale(Trk4_PDFs, vars4); 
-
-  can -> Clear();
-  can -> Divide(2,2);
-  P.PlotHists({Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs}, ntrk, can);
-  can -> Print(Title_Params);
-
-
-  // ==================== Delete all of this below the line. It is used for closure ====================== //
-  std::vector<TH1F*> truth;
-  std::vector<std::vector<TH1F*>> result;
-  std::vector<TString> Names = {"trk1_pure", "trk2_pure", "trk3_pure", "trk4_pure"};
-  std::vector<TString> PDF_Names = {"trk1_pdf", "trk2_pdf", "trk3_pdf", "trk4_pdf"};
-   
-  for (int i(0); i < Closure.size(); i++)
-  {
-    std::vector<TH1F*> Cl_Hists = Closure[i];  
-    TH1F* H2 = Cl_Hists[i]; 
-
-    std::pair<TH1F*, std::vector<TH1F*>> m = Output[i]; 
-    TH1F* trkN = m.first; 
-    std::vector<TH1F*> PDF_H = m.second;
-    
-    TH1F* H1 = (TH1F*)H2 -> Clone(Names[i]);
-    H1 -> Reset();
-    H1 -> SetTitle(Names[i]);
-    
-    TH1F* H3 = (TH1F*)H2 -> Clone(PDF_Names[i]);
-    H3 -> Reset();
-    H3 -> SetTitle(PDF_Names[i]);   
-    
-    B.ShiftExpandTH1F(trkN, H1);
-    B.ShiftExpandTH1F(PDF_H[i], H3);
-    
-    std::vector<TH1F*> out;
-    out.push_back(H1); 
-    out.push_back(H3);
-    result.push_back(out);
-    truth.push_back(H2); 
-  }
-
-  can -> Clear();
-  can -> Divide(2,2);
-  P.PlotHists(result, truth, can);
-  can -> Print(Title_Params);
-
   can -> Print(Title_Params + ")");
 
 
   // Clear up some memory
   delete can; 
-  for (int i(0); i < result.size(); i++)
-  {
-    delete result[i][0]; 
-    delete result[i][1]; 
-    delete truth[i];
-    for (int x(0); x < Output[i].second.size(); x++)
-    { 
-      delete Output[i].second.at(x);
-    }
-    delete Trk1_PDFs[i];
-    delete Trk2_PDFs[i];
-    delete Trk3_PDFs[i];
-    delete Trk4_PDFs[i];
-  }
+  //for (int i(0); i < Output.size(); i++)
+  //{
+  //  for (int x(0); x < Output[i].second.size(); x++)
+  //  { 
+  //    delete Output[i].second.at(x);
+  //  }
+  //}
   return Output;
 }
 

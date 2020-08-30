@@ -89,7 +89,7 @@ TCanvas* Plotting::PlotHists(TH1F* Hists, TH1F* Data)
 TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data)
 {
   TCanvas* can = new TCanvas();
-  can -> SetWindowSize(2400, 1200); 
+  //can -> SetWindowSize(2400, 1200); 
   can -> SetLogy(); 
   gStyle -> SetOptStat(0);
   can -> Divide(Data.size()); 
@@ -105,6 +105,23 @@ TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<
     can -> Update();
   }
   return can;
+}
+
+void Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<std::vector<TH1F*>> Closure, std::vector<TH1F*> Data, TCanvas* can)
+{
+  can -> SetWindowSize(2400, 1200); 
+  for (int i(0); i < Hists.size(); i++)
+  {
+    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+    can -> cd(i+1) -> SetLogy(); 
+    can -> cd(i+1);
+    Data[i] -> SetLineColor(kBlack);
+    Data[i] -> Draw("SAMEHIST"); 
+    Populate(Hists[i], can, len);
+    Populate(Closure[i], can, len); 
+    len -> AddEntry(Data[i], Data[i] -> GetTitle()); 
+    can -> Update();
+  }
 }
 
 void Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data, TCanvas* can)
@@ -174,6 +191,23 @@ TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<Ro
   return can;
 }
 
+TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data)
+{
+  RooPlot* xframe = Domain -> frame(RooFit::Title("Figure"));
+  Data -> plotOn(xframe, RooFit::Name("Data"));
+  for (int i(0); i < PDFs.size(); i++)
+  {
+    TString name = "trk-"; name+=(i+1);
+    model.plotOn(xframe, RooFit::Name(name), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Constants::Colors[i]));  
+  }
+  TCanvas* can = new TCanvas();
+  gPad -> SetLogy();
+  xframe -> SetMinimum(1); 
+  xframe -> Draw();
+  can -> Update();
+  return can;
+}
+
 TCanvas* Plotting::PlotHists(RooHistPdf model, RooRealVar Domain, RooDataHist Data)
 {
   RooPlot* xframe = Domain.frame(RooFit::Title("Figure"));
@@ -207,9 +241,7 @@ void DistributionGenerators::Landau(std::vector<TH1F*> Hists, std::vector<float>
 
 void DistributionGenerators::Gaussian(float mean, float stdev, int Number, TH1F* Hist)
 {
-  gRandom = new TRandom(); 
-  for (int i(0); i < Number; i++){ Hist -> Fill(gRandom -> Gaus(mean, stdev)); }
-  delete gRandom; 
+  for (int i(0); i < Number; i++){ Hist -> Fill(TRandom().Gaus(mean, stdev)); }
 }
 
 std::vector<TH1F*> DistributionGenerators::FillTH1F(std::vector<TString> Names, TString dir)

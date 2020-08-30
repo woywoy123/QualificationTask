@@ -174,44 +174,44 @@ void DerivedFunctionTest::MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TStrin
   DerivedFunctions DF; 
   BaseFunctions B;
    
-  //std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> PDFs = DF.MainAlgorithm(ntrk, Params, offset, Gamma, iter, cor_loop);
+  std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> PDFs = DF.MainAlgorithm(ntrk, Params, offset, Gamma, iter, cor_loop, Closure);
 
-  //std::vector<TH1F*> truth;
-  //std::vector<std::vector<TH1F*>> result;
+  std::vector<TH1F*> truth;
+  std::vector<std::vector<TH1F*>> result;
 
-  //std::vector<TString> Names = {"trk1_pure", "trk2_pure", "trk3_pure", "trk4_pure"};
-  //std::vector<TString> PDF_Names = {"trk1_pdf", "trk2_pdf", "trk3_pdf", "trk4_pdf"};
-  //
-  // 
-  //for (int i(0); i < Closure.size(); i++)
-  //{
-  //  std::vector<TH1F*> Cl_Hists = Closure[i];  
-  //  TH1F* H2 = Cl_Hists[i]; 
+  std::vector<TString> Names = {"trk1_pure", "trk2_pure", "trk3_pure", "trk4_pure"};
+  std::vector<TString> PDF_Names = {"trk1_pdf", "trk2_pdf", "trk3_pdf", "trk4_pdf"};
+  
+   
+  for (int i(0); i < Closure.size(); i++)
+  {
+    std::vector<TH1F*> Cl_Hists = Closure[i];  
+    TH1F* H2 = Cl_Hists[i]; 
 
-  //  std::pair<TH1F*, std::vector<TH1F*>> m = PDFs[i]; 
-  //  TH1F* trkN = m.first; 
-  //  std::vector<TH1F*> PDF_H = m.second;
-  //  
-  //  TH1F* H1 = (TH1F*)H2 -> Clone(Names[i]);
-  //  H1 -> Reset();
-  //  H1 -> SetTitle(Names[i]);
-  //  
-  //  TH1F* H3 = (TH1F*)H2 -> Clone(PDF_Names[i]);
-  //  H3 -> Reset();
-  //  H3 -> SetTitle(PDF_Names[i]);   
-  //  
-  //  B.ShiftExpandTH1F(trkN, H1);
-  //  B.ShiftExpandTH1F(PDF_H[i], H3);
-  //  
-  //  std::vector<TH1F*> out;
-  //  out.push_back(H1); 
-  //  out.push_back(H3);
-  //  result.push_back(out);
-  //  truth.push_back(H2); 
-  //}
+    std::pair<TH1F*, std::vector<TH1F*>> m = PDFs[i]; 
+    TH1F* trkN = m.first; 
+    std::vector<TH1F*> PDF_H = m.second;
+    
+    TH1F* H1 = (TH1F*)H2 -> Clone(Names[i]);
+    H1 -> Reset();
+    H1 -> SetTitle(Names[i]);
+    
+    TH1F* H3 = (TH1F*)H2 -> Clone(PDF_Names[i]);
+    H3 -> Reset();
+    H3 -> SetTitle(PDF_Names[i]);   
+    
+    B.ShiftExpandTH1F(trkN, H1);
+    B.ShiftExpandTH1F(PDF_H[i], H3);
+    
+    std::vector<TH1F*> out;
+    out.push_back(H1); 
+    out.push_back(H3);
+    result.push_back(out);
+    truth.push_back(H2); 
+  }
 
-  //Plotting P;
-  //TCanvas* can = P.PlotHists(result, truth);
+  Plotting P;
+  TCanvas* can = P.PlotHists(result, truth);
 }
 
 

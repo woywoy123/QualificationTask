@@ -1,6 +1,9 @@
 #include<PostAnalysis/BaseFunctions.h>
 #include<PostAnalysis/Constants.h>
 #include<PostAnalysis/Plotting.h>
+#include<thread>
+#include<unistd.h>
+#include<Math/MinimizerOptions.h>
 
 #ifndef DERIVEDFUNCTIONS_H
 #define DERIVEDFUNCTIONS_H
