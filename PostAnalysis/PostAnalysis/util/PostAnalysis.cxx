@@ -38,10 +38,10 @@ void PostAnalysis()
   float s_e = 5;
 
   // Other parameters
-  float offset = 1;
+  float offset = 0.5;
   float Gamma = 1;
   int iter = 100;
-  int cor_loop = 15; // Correction loop number 
+  int cor_loop = 30; // Correction loop number 
   std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
   // ==== Forward declaration for Histograms ==== //
@@ -178,10 +178,10 @@ void PostAnalysis()
 
     std::map<TString, std::vector<float>> Params;
     Params["Gaussian"] = {0, 0.1};
-    Params["m_s"] = {-5, -15, -20, -40};
-    Params["m_e"] = {5, 15, 20, 100};
+    Params["m_s"] = {-5, 0, -5, -20};
+    Params["m_e"] = {5, 5, 5, 400};
     Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {2, 8, 10, 20};
+    Params["s_e"] = {1, 5, 25, 100};
 
     DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets);   
   }

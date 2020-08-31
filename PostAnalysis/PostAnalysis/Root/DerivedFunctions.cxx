@@ -113,7 +113,7 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset
   B.ToTH1F(Target_V, Target_E);
 
   // Define the tail to be replaced and move away from peak 
-  int max_bin = Target -> GetMaximumBin() + bin_s*0.01;
+  int max_bin = Target -> GetMaximumBin() + bin_s*0.05;
   int max_bin_s = Source -> GetMaximumBin();
   TH1F* Temp = (TH1F*)Source -> Clone("Temp"); 
   
@@ -165,7 +165,7 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   // === TRK1
   ReplaceShiftTail(trk1, PDFs[0], offset); 
   B.Normalize(PDFs);
-  B.ResidualRemove(PDFs[0]);
+  //B.ResidualRemove(PDFs[0]);
 
   // === TRK2
   B.ConvolveHists(PDFs[0], PDFs[0], PDFs[1]); 
@@ -480,18 +480,15 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
  
     float sc = cor_loop; 
     float it = x; 
-    float del = (1/sc)*it;     
-    trk2_L -> Add(GxTrk2 -> at(0), -del);
+    float del = 0.1; 
+    sc = (1/sc)*it;     
+    trk2_L -> Add(GxTrk2 -> at(0), -sc);
     trk2_L -> Add(GxTrk2 -> at(2), -del);
     trk2_L -> Add(GxTrk2 -> at(3), -del);
 
     if ( x > 3)
     { 
 
-      trk1_L -> Add(GxTrk1 -> at(1), -del);
-      trk1_L -> Add(GxTrk1 -> at(2), -del);
-      trk1_L -> Add(GxTrk1 -> at(3), -del);
-         
       trk3_L -> Add(GxTrk3 -> at(0), -del);
       trk3_L -> Add(GxTrk3 -> at(1), -del);
       trk3_L -> Add(GxTrk3 -> at(3), -del);
@@ -501,18 +498,18 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       trk4_L -> Add(GxTrk4 -> at(2), -del);
     }
     
-    if ( x == 5 )
-    {
-      trk1_L -> Reset(); 
-      trk3_L -> Reset(); 
-      trk4_L -> Reset(); 
+    //if ( x == 5 )
+    //{
+    //  trk1_L -> Reset(); 
+    //  trk3_L -> Reset(); 
+    //  trk4_L -> Reset(); 
 
-      trk1_L -> Add(trk1_L_C);
-      trk4_L -> Add(trk4_L_C);
-      trk3_L -> Add(trk3_L_C);
-    }
+    //  trk1_L -> Add(trk1_L_C);
+    //  trk4_L -> Add(trk4_L_C);
+    //  trk3_L -> Add(trk3_L_C);
+    //}
                              
-    iter = iter + 2;  
+    iter = iter + 1;  
     std::cout << "################### " << x << std::endl;
    
     // ==== Trk1 
@@ -560,15 +557,13 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       delete Trk2_PDFs[i];
       delete PDFs[i];
      
-      if ( x > 3 )
-      {
-        delete GxTrk1 -> at(i);
-        delete GxTrk3 -> at(i);
-        delete GxTrk4 -> at(i);
-        delete Trk1_PDFs[i];
-        delete Trk3_PDFs[i];
-        delete Trk4_PDFs[i];   
-      } 
+      delete GxTrk1 -> at(i);
+      delete GxTrk3 -> at(i);
+      delete GxTrk4 -> at(i);
+      delete Trk1_PDFs[i];
+      delete Trk3_PDFs[i];
+      delete Trk4_PDFs[i];   
+      
     }
     delete GxTrk1;
     delete GxTrk2;
