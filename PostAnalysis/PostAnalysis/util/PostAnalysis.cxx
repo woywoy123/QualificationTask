@@ -38,7 +38,7 @@ void PostAnalysis()
   float s_e = 5;
 
   // Other parameters
-  float offset = 0.25;
+  float offset = 1;
   float Gamma = 1;
   int iter = 100;
   int cor_loop = 15; // Correction loop number 
@@ -178,10 +178,10 @@ void PostAnalysis()
 
     std::map<TString, std::vector<float>> Params;
     Params["Gaussian"] = {0, 0.1};
-    Params["m_s"] = {-5, -5, -10, -20};
-    Params["m_e"] = {5, 5, 10, 500};
+    Params["m_s"] = {-5, -15, -20, -40};
+    Params["m_e"] = {5, 15, 20, 100};
     Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {1, 2, 10, 10};
+    Params["s_e"] = {2, 8, 10, 20};
 
     DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets);   
   }

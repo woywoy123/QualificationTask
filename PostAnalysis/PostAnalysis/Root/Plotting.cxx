@@ -241,7 +241,9 @@ void DistributionGenerators::Landau(std::vector<TH1F*> Hists, std::vector<float>
 
 void DistributionGenerators::Gaussian(float mean, float stdev, int Number, TH1F* Hist)
 {
-  for (int i(0); i < Number; i++){ Hist -> Fill(TRandom().Gaus(mean, stdev)); }
+  gRandom = new TRandom();
+  for (int i(0); i < Number; i++){ Hist -> Fill(gRandom -> Gaus(mean, stdev)); }
+  delete gRandom;
 }
 
 std::vector<TH1F*> DistributionGenerators::FillTH1F(std::vector<TString> Names, TString dir)
