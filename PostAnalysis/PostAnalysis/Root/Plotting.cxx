@@ -16,13 +16,14 @@ TCanvas* Plotting::SimplePlot(TH1F* Hist)
   return can; 
 }
 
-void Plotting::Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len)
+void Plotting::Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style)
 {
   for (int i(0); i < Hists.size(); i++)
   {
     TH1F* H = Hists[i];
     H -> SetLineColor(Constants::Colors[i]);
-    H -> SetLineStyle(kDashed);
+    H -> SetLineStyle(Style);
+    H -> SetLineWidth(1);
     H -> Draw("SAMEHIST");
     len -> AddEntry(H, H -> GetTitle());
     len -> Draw("SAME");
@@ -124,6 +125,18 @@ void Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<std:
   }
 }
 
+void Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, TH1F* Data, TCanvas* can)
+{
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+  can -> cd(1) -> SetLogy(); 
+  Data -> SetLineColor(kBlack);
+  Data -> Draw("SAMEHIST"); 
+  Populate(Hists, can, len, kDashed);
+  Populate(Closure, can, len, kSolid); 
+  len -> AddEntry(Data, Data -> GetTitle()); 
+  can -> Update();
+}
+
 void Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data, TCanvas* can)
 {
   for (int i(0); i < Hists.size(); i++)
@@ -157,7 +170,6 @@ TCanvas* Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data)
   return can; 
 }
 
-
 TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists)
 {
   TCanvas* can = new TCanvas();  
@@ -172,6 +184,32 @@ TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists)
     Populate(Hists[i], can, len);
   }
   return can; 
+}
+
+void Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Subtract, std::vector<TH1F*> Closure, TCanvas* can)
+{
+  auto Fill =[](TH1F* H, Color_t col, TCanvas* can, TLegend* len)
+  {
+    H -> SetLineColor(col); 
+    H -> SetLineWidth(1); 
+    H -> SetAxisRange(1, H -> Integral(), "Y");
+    H -> Draw("SAMEHIST");
+  
+    len -> AddEntry(H, H -> GetTitle());
+    len -> Draw("SAME");
+    can -> Update(); 
+  }; 
+
+  gStyle -> SetOptStat(0);
+  for (int i(0); i < Hists.size(); i++)
+  {
+    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+    can -> cd(i+1) -> SetLogy(); 
+    can -> cd(i+1);
+    Fill(Hists[i], kRed, can, len);
+    Fill(Subtract[i], kOrange, can, len);
+    Fill(Closure[i], kViolet, can, len);
+  }
 }
 
 TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data)
@@ -264,12 +302,12 @@ std::vector<TH1F*> DistributionGenerators::FillTH1F(std::vector<TString> Names, 
   return Hists; 
 }
 
-TH1F* DistributionGenerators::FillTH1F(TString name, std::vector<TString> SubDir, TString dir)
+TH1F* DistributionGenerators::FillTH1F(TString name, std::vector<TString> SubDir, TString dir, std::vector<TString> Detector)
 {
   TFile* File = new TFile(dir); 
   TH1F* Hist; 
   int i=0;
-  for (TString Layer : Constants::Detector)
+  for (TString Layer : Detector)
   {
     for (TString sub : SubDir)
     {
@@ -282,9 +320,6 @@ TH1F* DistributionGenerators::FillTH1F(TString name, std::vector<TString> SubDir
 
   return Hist; 
 }
-
-
-
 
 // === Private 
 TH1F* DistributionGenerators::TH1FFromFile(TString Name, TString Layer, TFile* file)

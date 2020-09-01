@@ -214,7 +214,164 @@ void DerivedFunctionTest::MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TStrin
   TCanvas* can = P.PlotHists(result, truth);
 }
 
+void Presentation::ThresholdEffects()
+{
+  auto MakeHist = [](TString name, int bins, float min, float max, TString Detector, Color_t col)
+  {
+    TH1F* trk = new TH1F(name, name, bins, min, max); 
+    trk -> SetTitle(name + Detector); 
+    trk -> SetLineColor(col);
+    trk -> GetXaxis() -> SetTitle("dEdx (MeV g^{-1} cm^{2})");
+    return trk;
+  };
 
+  auto Fill =[](std::vector<std::vector<TString>> Batch, std::vector<TString> Data, std::vector<TString> Detector_Layer, TString Sample)
+  {
+    DistributionGenerators DG; 
+    std::vector<std::vector<TH1F*>> trk; 
+    for (TString Dat : Data)
+    { 
+      std::vector<TH1F*> temp;
+      for (std::vector<TString> H : Batch)
+      {
+        temp.push_back(DG.FillTH1F(Sample, H, Dat, Detector_Layer)); 
+      }
+      trk.push_back(temp); 
+    }  
+    return trk; 
+  };
+
+  auto Combine =[](std::vector<std::vector<TH1F*>> trk, TH1F* All, std::vector<TH1F*> Sets)
+  {
+    for (int i(0); i < trk.size(); i++)
+    {
+       std::vector<TH1F*> En = trk[i];  
+       for (int j(0); j < En.size(); j++)
+       {
+         All -> Add(En[j]); 
+         Sets[i] -> Add(En[j]);
+       }
+    }
+  };
+
+  auto CompositionPlot = [](std::vector<TH1F*> Composition, TH1F* Data, TString Name)
+  {
+    Plotting P;
+    std::vector<TString> Titles = { "<200", "200-600", "600-1200", "1200+"};
+    for (int i(0); i < Titles.size(); i++)
+    {
+      Composition[i] -> SetTitle(Titles[i]);  
+      
+    }
+   
+    TCanvas* Comp = new TCanvas();
+    Comp -> SetWindowSize(2400, 1200);  
+    P.PlotHists(Composition, Data, Comp);
+    Comp -> Print(Name);
+    delete Comp;
+  };
+
+  auto Convolve = [](std::vector<TH1F*> trk1_Comps, std::vector<TH1F*> trk2_Comps, TString FileName, std::vector<TString> Custom = {})
+  {
+    BaseFunctions BF; 
+    Plotting P;
+    std::vector<TString> Titles = { "<200", "200-600", "600-1200", "1200+"};
+    
+    if(Custom.size() != 0){Titles = Custom;}
+    std::vector<TH1F*> Convol;  
+    for (int i(0); i < trk1_Comps.size(); i++)
+    {
+      TH1F* Conv = (TH1F*)trk2_Comps[i] -> Clone(Titles[i] + "-Convoluted");
+      Conv -> SetTitle(Titles[i] + "-Convoluted");
+      Conv -> Reset(); 
+      BF.ConvolveHists(trk1_Comps[i], trk1_Comps[i], Conv); 
+      BF.Normalize(Conv); 
+      BF.ResidualRemove(Conv);  
+      Conv -> SetAxisRange(1e-5, 0.4, "Y");
+      Convol.push_back(Conv);
+    }
+  
+    BF.Normalize(trk2_Comps);  
+    TCanvas* can = new TCanvas();
+    can -> SetWindowSize(2400, 1200); 
+    can -> SetLogy(); 
+    gStyle -> SetOptStat(0);
+    
+    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+    P.Populate(Convol, can, len);
+    P.Populate(trk2_Comps, can, len, kSolid); 
+     
+    can -> Print(FileName);
+    delete can;
+  };
+
+
+  // Import the relevant classes
+  Plotting P; 
+  DerivedFunctions DF; 
+
+  // Constants
+  int bins = 300; 
+  float min = -0.5; 
+  float max = 14.5; 
+ 
+  std::vector<TString> Data = {Constants::Data2016, Constants::Data2017, Constants::Data2018}; 
+  std::vector<TString> Detector_Layer = {"IBL"};
+  std::vector<TString> E = Constants::energies;
+  std::vector<std::vector<TString>> Batch = {{E[0]}, 
+                                             {E[1], E[2]}, 
+                                             {E[3], E[4], E[5]}, 
+                                             {E[6], E[7], E[8], E[9], E[10], E[11], E[12], E[13], E[14], E[15]}};
+ 
+  TH1F* trk1_2018 = MakeHist("Track1-2018 ",  bins, min, max, Detector_Layer[0], kRed);
+  TH1F* trk1_2017 = MakeHist("Track1-2017 ",  bins, min, max, Detector_Layer[0], kBlue);
+  TH1F* trk1_2016 = MakeHist("Track1-2016 ",  bins, min, max, Detector_Layer[0], kOrange);
+  TH1F* trk1_All = MakeHist("Track1 ", bins, min, max, Detector_Layer[0], kBlack); 
+
+  TH1F* trk2_2018 = MakeHist("Track2-2018 ",  bins, min, max, Detector_Layer[0], kRed);
+  TH1F* trk2_2017 = MakeHist("Track2-2017 ",  bins, min, max, Detector_Layer[0], kBlue);
+  TH1F* trk2_2016 = MakeHist("Track2-2016 ",  bins, min, max, Detector_Layer[0], kOrange);
+  TH1F* trk2_All = MakeHist("Track2 ", bins, min, max, Detector_Layer[0], kBlack); 
+ 
+  std::vector<TH1F*> Sets_1 = {trk1_2016, trk1_2017, trk1_2018};  
+  std::vector<TH1F*> Sets_2 = {trk2_2016, trk2_2017, trk2_2018}; 
+
+  std::vector<std::vector<TH1F*>> trk1 = Fill(Batch, Data, Detector_Layer, "dEdx_out_ntrk1_calib"); 
+  std::vector<std::vector<TH1F*>> trk2 = Fill(Batch, Data, Detector_Layer, "dEdx_in_ntrk2_calib"); 
+
+  Combine(trk1, trk1_All, Sets_1); 
+  Combine(trk2, trk2_All, Sets_2); 
+
+
+  // Declare the different TCanvas 
+  TCanvas* Data_All1 = new TCanvas();  
+  Data_All1 -> SetWindowSize(2400, 1200);  
+  P.PlotHists(Sets_1, trk1_All, Data_All1);
+  Data_All1 -> Print("Data_All_Trk1.pdf"); 
+
+  TCanvas* Data_All2 = new TCanvas(); 
+  Data_All2 -> SetWindowSize(2400, 1200);  
+  P.PlotHists(Sets_2, trk2_All, Data_All2);
+  Data_All2 -> Print("Data_All_Trk2.pdf"); 
+ 
+  CompositionPlot(trk1[0], trk1_2016, "trk1_Composition_2016.pdf");  
+  CompositionPlot(trk1[1], trk1_2017, "trk1_Composition_2017.pdf");  
+  CompositionPlot(trk1[2], trk1_2018, "trk1_Composition_2018.pdf");  
+  
+  CompositionPlot(trk2[0], trk2_2016, "trk2_Composition_2016.pdf");  
+  CompositionPlot(trk2[1], trk2_2017, "trk2_Composition_2017.pdf");  
+  CompositionPlot(trk2[2], trk2_2018, "trk2_Composition_2018.pdf");  
+ 
+  // Now we want to compare the the convolution of 1 track with the 2 track for different energies.
+  Convolve(trk1[0], trk2[0], "Convolved_trk_2016.pdf"); 
+  Convolve(trk1[1], trk2[1], "Convolved_trk_2017.pdf"); 
+  Convolve(trk1[2], trk2[2], "Convolved_trk_2018.pdf");
+
+  Convolve({trk1_All}, {trk2_All}, "Convolved_trk_All.pdf", {"Convolved 1 track Data"});
+
+  // Note to self: Fix the titles of the canvas it says <200-convoluted 
+
+}
 
 
 

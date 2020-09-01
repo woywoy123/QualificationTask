@@ -60,7 +60,9 @@ namespace Constants
   const int GaussianToys = 500000;
 
   const TString MC_dir = "/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/MonteCarlo/Merged.root";
-
+  const TString Data2016 = "/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/Data/2016.root";
+  const TString Data2017 = "/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/Data/2017.root";
+  const TString Data2018 = "/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/Data/2018.root";
 }
 
 #endif

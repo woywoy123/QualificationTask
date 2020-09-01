@@ -19,7 +19,7 @@ void PostAnalysis()
 
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
-  int Mode = 2;  // Change to 0 - MC, 1 - Toy, 2 - RealData
+  int Mode = 3;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
   bool Test = true; // Test Components 
   int Shift = 0;
 
@@ -31,7 +31,7 @@ void PostAnalysis()
   // Gaussian Parameter
   float npts = 500000; 
   float mean = 0;
-  float stdev = 0.1; 
+  float stdev = 0.01; 
   float m_s = -4;
   float m_e = 4;
   float s_s = 0.0001;
@@ -41,7 +41,7 @@ void PostAnalysis()
   float offset = 0.5;
   float Gamma = 1;
   int iter = 100;
-  int cor_loop = 30; // Correction loop number 
+  int cor_loop = 50; // Correction loop number 
   std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
   // ==== Forward declaration for Histograms ==== //
@@ -112,18 +112,21 @@ void PostAnalysis()
     {
       ntrk_Data.push_back(H);
     } 
- 
-    /// Delete below    
+    
+    // They are only there for not causing a Segfault 
     trk1_N = D.FillTH1F(trk_1, MC_dir); 
     trk2_N = D.FillTH1F(trk_2, MC_dir); 
     trk3_N = D.FillTH1F(trk_3, MC_dir); 
     trk4_N = D.FillTH1F(trk_4, MC_dir);
     Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N}; 
-    // ==================  
-     
-    //DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets); // << Replace this later  
-    
-    //Test = false;
+  }
+
+  // Presentation Stuff
+  if ( Mode == 3 )
+  {
+    Presentation P; 
+    P.ThresholdEffects();  
+    Test = false;
   }
 
   // Component testing 
@@ -141,63 +144,28 @@ void PostAnalysis()
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
   
     //P.PlotHists(Truth_Sets, ntrk_Data);
-    
-    //for (int i(0); i < 10; i++)
-    //{
-    //  std::map<TString, std::vector<float>> Params;
-    //  Params["m_s"] = {-1, -3, -i, -i};
-    //  Params["m_e"] = {1, 3, i+1, i+1}; 
-    //  Params["Gaussian"] = {0, 0.01};
 
-    //  std::vector<float> X1 = {1, 0.1, 1};
-    //  std::vector<float> X2 = {1, 2, 4};
-    //  std::vector<float> X3 = {2, 4, 8};
-    //  std::vector<float> X4 = {4, 8};
-
-    //  for (int x1(0); x1 < X1.size(); x1++)
-    //  {
-    //    float e = X1[x1]; 
-    //    for (int x2(0); x2 < X2.size(); x2++)
-    //    {
-    //      float f = X2[x2]; 
-    //      for (int x3(0); x3 < X3.size(); x3++)
-    //      {
-    //        float g = X3[x3]; 
-    //        for (int x4(0); x4 < X4.size(); x4++)
-    //        {
-    //          float z = X4[x4];  
-    //          Params["s_s"] = {0.001, 0.001, 0.001, 0.001};
-    //          Params["s_e"] = {e, f, g, z}; 
-    //          DF.MainAlgorithm(ntrk_Data, Params, offset, Gamma, iter, cor_loop, Truth_Sets);  
-    //        }
-    //      }
-    //    } 
-    //  }
-    //}      
-
-
+    // Monte Carlo Parameters 
     std::map<TString, std::vector<float>> Params;
-    Params["Gaussian"] = {0, 0.1};
-    Params["m_s"] = {-5, 0, -5, -20};
-    Params["m_e"] = {5, 5, 5, 400};
+    Params["Gaussian"] = {0, 0.5};
+    Params["m_s"] = {-5, -3, -10, -20};
+    Params["m_e"] = {5, 10, 50, 200};
     Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {1, 5, 25, 100};
+    Params["s_e"] = {1, 5, 25, 50};
 
+    // Toy Parameters
+    //std::map<TString, std::vector<float>> Params;
+    //Params["Gaussian"] = {0, 0.01};
+    //Params["m_s"] = {-1, -1, -1, -1};
+    //Params["m_e"] = {1, 1, 1, 1};
+    //Params["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
+    //Params["s_e"] = {1, 1, 1, 1};
+    
     DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets);   
   }
  
  
   std::cout << "Fin" << std::endl;
- 
-  // To do:
-  // - Write the threshold function and do a fit to remove 1 trk  
- 
- 
- 
- 
- 
- 
- 
  
  
  

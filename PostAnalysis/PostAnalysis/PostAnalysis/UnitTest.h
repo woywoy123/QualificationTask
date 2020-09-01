@@ -22,7 +22,12 @@ class DerivedFunctionTest
     void DeconvolveReconvolve(std::vector<TH1F*> trk1, float offset, int iter);
     void DeconvolveGaussianFit(TH1F* trk1, TH1F* trk2, float mean, float stdev, float offset, int iter);
     void MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, float Gamma, std::vector<std::vector<TH1F*>> Closure);
+};
 
+class Presentation
+{
+  public:
+    void ThresholdEffects(); 
 };
 
 #endif

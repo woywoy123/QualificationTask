@@ -113,7 +113,7 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset
   B.ToTH1F(Target_V, Target_E);
 
   // Define the tail to be replaced and move away from peak 
-  int max_bin = Target -> GetMaximumBin() + bin_s*0.05;
+  int max_bin = Target -> GetMaximumBin() + bin_s*0.01;
   int max_bin_s = Source -> GetMaximumBin();
   TH1F* Temp = (TH1F*)Source -> Clone("Temp"); 
   
@@ -400,21 +400,25 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       delete trkn_H;
 
       float lumi = trkn_L -> Integral();
+      
+      // Check for nan
+      if (trkn_Params[Names[i]] < 0){Gamma = 0;}
       trknXg -> Scale(Gamma*trkn_Params[Names[i]]*lumi);
       GxTrkN[i] = trknXg;
     }
     return GxTrkN;
   };
 
-  auto Parallel = [&MakeGaussianConvoluted](TH1F* trk, std::vector<TH1F*> PDFs, std::map<TString, std::vector<float>> Params, float offset, int iter, std::vector<TH1F*>* GxTrk, TString name)
+  auto Parallel = [&MakeGaussianConvoluted](TH1F* trk, std::vector<TH1F*> PDFs, std::map<TString, std::vector<float>> Params, float offset, int iter, std::vector<TH1F*> GxTrk, TString name)
   {
     DerivedFunctions DF; 
     std::map<TString, float> trk_Param = DF.FitGaussian(trk, PDFs, Params, offset, iter);
     std::vector<TH1F*> Out = MakeGaussianConvoluted(name, PDFs, trk_Param, trk, 1);
     for (int i(0); i < Out.size(); i++)
     {
-      GxTrk -> push_back(Out[i]);     
+      GxTrk.push_back(Out[i]);     
     }
+    return GxTrk;
   };
 
   BaseFunctions B;
@@ -463,112 +467,132 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
 
   for (int x(0); x < cor_loop; x++)
   { 
-    std::vector<TH1F*>* GxTrk1 = new std::vector<TH1F*>();   
-    std::vector<TH1F*>* GxTrk2 = new std::vector<TH1F*>();
-    std::vector<TH1F*>* GxTrk3 = new std::vector<TH1F*>();
-    std::vector<TH1F*>* GxTrk4 = new std::vector<TH1F*>(); 
+    std::vector<TH1F*> GxTrk1;   
+    std::vector<TH1F*> GxTrk2;
+    std::vector<TH1F*> GxTrk3;
+    std::vector<TH1F*> GxTrk4; 
     std::vector<TH1F*> PDFs;  
 
     // Generate the minimal version of the PDFs
     PDFs = nTRKGenerator(trk1_L, trk2_L, offset, iter);
 
     // Generate the Gaussian Parameters for the convolution from a fit 
-    Parallel(trk1_L, PDFs, Params, offset, iter, GxTrk1, "GxTrk1");  
-    Parallel(trk2_L, PDFs, Params, offset, iter, GxTrk2, "GxTrk2"); 
-    Parallel(trk3_L, PDFs, Params, offset, iter, GxTrk3, "GxTrk3");
-    Parallel(trk4_L, PDFs, Params, offset, iter, GxTrk4, "GxTrk4"); 
+    GxTrk1 = Parallel(trk1_L, PDFs, Params, offset, iter, GxTrk1, "GxTrk1");  
+    GxTrk2 = Parallel(trk2_L, PDFs, Params, offset, iter, GxTrk2, "GxTrk2"); 
+    GxTrk3 = Parallel(trk3_L, PDFs, Params, offset, iter, GxTrk3, "GxTrk3");
+    GxTrk4 = Parallel(trk4_L, PDFs, Params, offset, iter, GxTrk4, "GxTrk4"); 
  
     float sc = cor_loop; 
     float it = x; 
     float del = 0.1; 
     sc = (1/sc)*it;     
-    trk2_L -> Add(GxTrk2 -> at(0), -sc);
-    trk2_L -> Add(GxTrk2 -> at(2), -del);
-    trk2_L -> Add(GxTrk2 -> at(3), -del);
+    trk2_L -> Add(GxTrk2[0], -sc);
+    trk2_L -> Add(GxTrk2[2], -del);
+    trk2_L -> Add(GxTrk2[3], -del);
 
-    if ( x > 3)
-    { 
+    trk3_L -> Add(GxTrk3[0], -del);
+    trk3_L -> Add(GxTrk3[1], -del);
+    trk3_L -> Add(GxTrk3[3], -del);
 
-      trk3_L -> Add(GxTrk3 -> at(0), -del);
-      trk3_L -> Add(GxTrk3 -> at(1), -del);
-      trk3_L -> Add(GxTrk3 -> at(3), -del);
-
-      trk4_L -> Add(GxTrk4 -> at(0), -del);
-      trk4_L -> Add(GxTrk4 -> at(1), -del);
-      trk4_L -> Add(GxTrk4 -> at(2), -del);
-    }
+    trk4_L -> Add(GxTrk4[0], -del);
+    trk4_L -> Add(GxTrk4[1], -del);
+    trk4_L -> Add(GxTrk4[2], -del);
     
-    //if ( x == 5 )
-    //{
-    //  trk1_L -> Reset(); 
-    //  trk3_L -> Reset(); 
-    //  trk4_L -> Reset(); 
-
-    //  trk1_L -> Add(trk1_L_C);
-    //  trk4_L -> Add(trk4_L_C);
-    //  trk3_L -> Add(trk3_L_C);
-    //}
+    if ( x == int(float(cor_loop)*0.5) ||  x == int(float(cor_loop)*0.9))
+    {
+      B.ResidualRemove(trk2_L);
+      B.ResidualRemove(trk3_L);
+      B.ResidualRemove(trk4_L);
+    }
                              
-    iter = iter + 1;  
+    iter = iter + 2;  
     std::cout << "################### " << x << std::endl;
    
     // ==== Trk1 
     std::vector<TString> Names1 = {"trk1_F1", "trk2_F1", "trk3_F1", "trk4_F1"}; 
     std::vector<TH1F*> Trk1_PDFs = B.MakeTH1F(Names1, ntrk[0]); 
-    B.ShiftExpandTH1F(*GxTrk1, Trk1_PDFs);
-
+    B.ShiftExpandTH1F(GxTrk1, Trk1_PDFs);
+    
     // ==== Trk2
     std::vector<TString> Names2 = {"trk1_F2", "trk2_F2", "trk3_F2", "trk4_F2"}; 
     std::vector<TH1F*> Trk2_PDFs = B.MakeTH1F(Names2, ntrk[1]); 
-    B.ShiftExpandTH1F(*GxTrk2, Trk2_PDFs);
+    B.ShiftExpandTH1F(GxTrk2, Trk2_PDFs);
 
     // ==== Trk3 
     std::vector<TString> Names3 = {"trk1_F3", "trk2_F3", "trk3_F3", "trk4_F3"}; 
     std::vector<TH1F*> Trk3_PDFs = B.MakeTH1F(Names3, ntrk[2]); 
-    B.ShiftExpandTH1F(*GxTrk3, Trk3_PDFs);
+    B.ShiftExpandTH1F(GxTrk3, Trk3_PDFs);
 
     // ==== Trk4 
     std::vector<TString> Names4 = {"trk1_F4", "trk2_F4", "trk3_F4", "trk4_F4"}; 
     std::vector<TH1F*> Trk4_PDFs = B.MakeTH1F(Names4, ntrk[3]); 
-    B.ShiftExpandTH1F(*GxTrk4, Trk4_PDFs);
+    B.ShiftExpandTH1F(GxTrk4, Trk4_PDFs);
 
+    //// ==== Plotting output 
+    //// Trk1 
+    //can -> Clear();
+    //can -> Divide(1); 
+    //P.PlotHists({Trk1_PDFs}, Closure[0], ntrk[0], can); 
+    //can -> Print(Title_Params);
+
+    //// Trk2 
+    //can -> Clear();
+    //can -> Divide(1);
+    //P.PlotHists({Trk2_PDFs}, Closure[1], ntrk[1], can); 
+    //can -> Print(Title_Params);
+
+    //// Trk3 
+    //can -> Clear();
+    //can -> Divide(1);
+    //P.PlotHists({Trk3_PDFs}, Closure[2], ntrk[2], can); 
+    //can -> Print(Title_Params);
+
+    //// Trk4 
+    //can -> Clear();
+    //can -> Divide(1);
+    //P.PlotHists({Trk4_PDFs}, Closure[3], ntrk[3], can); 
+    //can -> Print(Title_Params);
+    
+    // All combined
     can -> Clear();
     can -> Divide(2, 2);
     P.PlotHists({Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs}, Closure, ntrk, can);   
     can -> Print(Title_Params);
 
+    // Final Plot where we compare subtracted with the predicted PDF and the real distribution 
+    std::vector<TString> Names_Sub = {"trk1_Sub", "trk2_Sub", "trk3_Sub", "trk4_Sub"}; 
+    std::vector<TH1F*> Tracks = B.MakeTH1F(Names_Sub, ntrk[2]); 
+    B.ShiftExpandTH1F({trk1_L, trk2_L, trk3_L, trk4_L}, Tracks);
+    std::vector<TH1F*> Truth = {Closure[0][0], Closure[1][1], Closure[2][2], Closure[3][3]};
+     
     can -> Clear();
     can -> Divide(2,2);
-    P.PlotHists({*GxTrk1, *GxTrk2, *GxTrk3, *GxTrk4}, {trk1_L, trk2_L, trk3_L, trk4_L}, can);
+    P.PlotHists({Trk1_PDFs[0], Trk2_PDFs[1], Trk3_PDFs[2], Trk4_PDFs[3]}, Tracks, Truth, can);
     can -> Print(Title_Params);
 
     // Output
-    Output[0] = std::make_pair(trk1_L, *GxTrk1);
-    Output[1] = std::make_pair(trk2_L, *GxTrk2);
-    Output[2] = std::make_pair(trk3_L, *GxTrk3); 
-    Output[3] = std::make_pair(trk4_L, *GxTrk4);
+    Output[0] = std::make_pair(trk1_L, GxTrk1);
+    Output[1] = std::make_pair(trk2_L, GxTrk2);
+    Output[2] = std::make_pair(trk3_L, GxTrk3); 
+    Output[3] = std::make_pair(trk4_L, GxTrk4);
 
     if (x == cor_loop -1){break;}     
     
     // Clean up memory  
-    for (int i(0); i < GxTrk2 -> size(); i++)
+    for (int i(0); i < GxTrk2.size(); i++)
     {
-      delete GxTrk2 -> at(i);      
+      delete GxTrk2[i];      
       delete Trk2_PDFs[i];
       delete PDFs[i];
      
-      delete GxTrk1 -> at(i);
-      delete GxTrk3 -> at(i);
-      delete GxTrk4 -> at(i);
+      delete GxTrk1[i];
+      delete GxTrk3[i];
+      delete GxTrk4[i];
       delete Trk1_PDFs[i];
       delete Trk3_PDFs[i];
       delete Trk4_PDFs[i];   
       
     }
-    delete GxTrk1;
-    delete GxTrk2;
-    delete GxTrk3;
-    delete GxTrk4;
   }
   can -> Print(Title_Params + ")");
 

@@ -374,7 +374,7 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
   }
   for (int i(0); i < iter; i++)
   {
-    Hist -> SetBinContent(i+1, 0);
+    Hist -> SetBinContent(i+1, 1e-20);
   }
 }
 
