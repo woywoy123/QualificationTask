@@ -271,13 +271,12 @@ void Presentation::ThresholdEffects()
     delete Comp;
   };
 
-  auto Convolve = [](std::vector<TH1F*> trk1_Comps, std::vector<TH1F*> trk2_Comps, TString FileName, std::vector<TString> Custom = {})
+  auto Convolve = [](std::vector<TH1F*> trk1_Comps, std::vector<TH1F*> trk2_Comps, TString FileName, TString Name = "")
   {
     BaseFunctions BF; 
     Plotting P;
     std::vector<TString> Titles = { "<200", "200-600", "600-1200", "1200+"};
     
-    if(Custom.size() != 0){Titles = Custom;}
     std::vector<TH1F*> Convol;  
     for (int i(0); i < trk1_Comps.size(); i++)
     {
@@ -292,10 +291,16 @@ void Presentation::ThresholdEffects()
     }
   
     BF.Normalize(trk2_Comps);  
+    TH1F* Temp = (TH1F*)trk2_Comps[0] -> Clone("Temp"); 
+    Temp -> Reset(); 
+    Temp -> SetTitle(Name);
+    Temp -> SetAxisRange(1e-5, 0.4, "Y");
     TCanvas* can = new TCanvas();
     can -> SetWindowSize(2400, 1200); 
     can -> SetLogy(); 
     gStyle -> SetOptStat(0);
+    Temp -> Draw("SAMEHIST"); 
+    can -> Update();
     
     TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
     P.Populate(Convol, can, len);
@@ -363,9 +368,9 @@ void Presentation::ThresholdEffects()
   CompositionPlot(trk2[2], trk2_2018, "trk2_Composition_2018.pdf");  
  
   // Now we want to compare the the convolution of 1 track with the 2 track for different energies.
-  Convolve(trk1[0], trk2[0], "Convolved_trk_2016.pdf"); 
-  Convolve(trk1[1], trk2[1], "Convolved_trk_2017.pdf"); 
-  Convolve(trk1[2], trk2[2], "Convolved_trk_2018.pdf");
+  Convolve(trk1[0], trk2[0], "Convolved_trk_2016.pdf", "Convolved 2016"); 
+  Convolve(trk1[1], trk2[1], "Convolved_trk_2017.pdf", "Convolved 2017"); 
+  Convolve(trk1[2], trk2[2], "Convolved_trk_2018.pdf", "Convolved 2018");
 
   Convolve({trk1_All}, {trk2_All}, "Convolved_trk_All.pdf", {"Convolved 1 track Data"});
 

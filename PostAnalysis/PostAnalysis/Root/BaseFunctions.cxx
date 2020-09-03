@@ -133,6 +133,19 @@ std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names
   return Gaussian;
 }
 
+std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<Double_t> Const1, std::vector<Double_t> Const2, std::vector<RooRealVar*> Var)
+{
+  std::vector<RooGaussian*> Gaussian(Names.size()); 
+  for (int i(0); i < Gaussian.size(); i++)
+  {
+    RooRealVar z(Names[i]+"z", Names[i]+"z", Const1[i]); 
+    RooRealVar c(Names[i]+"c", Names[i]+"c", Const2[i]); 
+    Gaussian[i] = new RooGaussian(Names[i], Names[i], *Var[i], z, c); 
+  }
+  return Gaussian;
+}
+
+
 std::vector<RooFFTConvPdf*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* Domain)
 {
   std::vector<RooFFTConvPdf*> FFT(Names.size());
@@ -374,7 +387,7 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
   }
   for (int i(0); i < iter; i++)
   {
-    Hist -> SetBinContent(i+1, 1e-20);
+    Hist -> SetBinContent(i+1, 1e-8);
   }
 }
 
