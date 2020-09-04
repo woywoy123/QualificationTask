@@ -19,7 +19,7 @@ void PostAnalysis()
 
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
-  int Mode = 2;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
+  int Mode = 0;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
   bool Test = true; // Test Components 
   int Shift = 0;
 
@@ -40,7 +40,7 @@ void PostAnalysis()
   // Other parameters
   float offset = 0.5;
   float Gamma = 1;
-  int iter = 100;
+  int iter = 50;
   int cor_loop = 10; // Correction loop number 
   std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
@@ -151,24 +151,25 @@ void PostAnalysis()
     //DFT.ReplaceShiftTail(trk1_N[0], trk1_N[1], Shift);
     //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
+    //BFT.Constraint(); 
   
     //P.PlotHists(Truth_Sets, ntrk_Data);
 
     // Monte Carlo Parameters 
     std::map<TString, std::vector<float>> Params;
     Params["Gaussian"] = {0, 0.1};
-    Params["m_s"] = {-5, -10, -25, -100, -100};
-    Params["m_e"] = {5, 10, 25, 100, 100};
+    Params["m_s"] = {-10, -10, -25, -50, -150};
+    Params["m_e"] = {10, 10, 25, 50, 150};
     Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {2, 4, 20, 45, 80};
+    Params["s_e"] = {2, 4, 16, 16, 50};
 
     // Toy Parameters
     //std::map<TString, std::vector<float>> Params;
     //Params["Gaussian"] = {0, 0.01};
-    //Params["m_s"] = {-1, -1, -1, -1};
-    //Params["m_e"] = {1, 1, 1, 1};
-    //Params["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
-    //Params["s_e"] = {1, 1, 1, 1};
+    //Params["m_s"] = {-3, -1, -1, -1, -1};
+    //Params["m_e"] = {3, 1, 1, 1, 1};
+    //Params["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001, 0.0001};
+    //Params["s_e"] = {1, 1, 1, 1, 1};
     
     DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets);   
   }

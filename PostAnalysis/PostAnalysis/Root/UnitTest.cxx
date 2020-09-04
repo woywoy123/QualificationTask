@@ -85,6 +85,38 @@ void BaseFunctionTest::Deconvolve(TH1F* Trk2, TH1F* Trk1, float offset, int iter
   P.PlotHists(Hist, Trk1); 
 }
 
+void BaseFunctionTest::Constraint()
+{
+  BaseFunctions B; 
+
+  std::vector<TString> Names = {"m", "s", "f"}; 
+  std::vector<float> V1 = {0, 2, 0.5};
+  std::vector<float> V2 = {-10, 0.1, 0.};
+  std::vector<float> V3 = {10, 10, 1.};
+  std::vector<RooRealVar*> Var = B.RooVariables(Names, V1, V2, V3); 
+  RooRealVar* x = new RooRealVar("x", "x", -10, 10); 
+  RooGaussian* Gaus = new RooGaussian("gaus", "gaus", *x, *Var[0], *Var[1]); 
+
+  RooPolynomial poly("poly", "poly", *x); 
+ 
+  RooAddPdf model("model", "model", RooArgSet(*Gaus, poly), *Var[2]);  
+  
+  RooDataSet *d = model.generate(*x, 50); 
+
+  std::vector<Double_t> v1 = {0.8};
+  std::vector<Double_t> v2 = {0.2}; 
+  
+  std::vector<RooGaussian*> G = B.RooVariables({"fconst"}, {Var[2]}, v1, v2); 
+
+  RooProdPdf modelc("modelc", "modelc", RooArgSet(model, *G[0])); 
+
+  RooFitResult *r2 = modelc.fitTo(*d, RooFit::Constrain(*Var[2]), RooFit::Save()); 
+
+
+ 
+
+}
+
 void DerivedFunctionTest::NormalFit(std::vector<TH1F*> Hists, TH1F* Data, std::vector<float> CL, float min, float max)
 {
   DerivedFunctions DF; 
@@ -95,7 +127,6 @@ void DerivedFunctionTest::NormalFit(std::vector<TH1F*> Hists, TH1F* Data, std::v
   std::cout << distance << std::endl;
   B.PredictionTruthPrint(CL, pred); 
 }
-
 
 void DerivedFunctionTest::ShiftTest(TH1F* H1, int Shift)
 {

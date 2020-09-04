@@ -113,7 +113,7 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset
   B.ToTH1F(Target_V, Target_E);
 
   // Define the tail to be replaced and move away from peak 
-  int max_bin = Target -> GetMaximumBin() + bin_s*0.01;
+  int max_bin = Target -> GetMaximumBin() + bin_s * 0.01;
   int max_bin_s = Source -> GetMaximumBin();
   TH1F* Temp = (TH1F*)Source -> Clone("Temp"); 
   
@@ -170,7 +170,7 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   // === TRK2
   B.ConvolveHists(PDFs[0], PDFs[0], PDFs[1]); 
   B.Normalize(PDFs[1]);
-  //B.ResidualRemove(PDFs[1]); 
+  B.ResidualRemove(PDFs[1]); 
   
   // === TRK3
   B.ConvolveHists(PDFs[1], PDFs[0], PDFs[2]);  
@@ -178,12 +178,12 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   B.ResidualRemove(PDFs[2]); 
 
   // === TRK4 
-  B.ConvolveHists(PDFs[1], PDFs[1], PDFs[3]);  
+  B.ConvolveHists(PDFs[2], PDFs[0], PDFs[3]);  
   B.Normalize(PDFs[3]);
   B.ResidualRemove(PDFs[3]); 
 
   // === TRK5
-  B.ConvolveHists(PDFs[3], PDFs[1], PDFs[4]);  
+  B.ConvolveHists(PDFs[3], PDFs[0], PDFs[4]);  
   B.Normalize(PDFs[4]);
   B.ResidualRemove(PDFs[4]); 
  
@@ -321,18 +321,6 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   std::vector<TString> Gaus_String = { "g1", "g2", "g3", "g4", "g5"};
   std::vector<RooGaussian*> G_Vars = B.RooVariables(Gaus_String, Means, Stdev, x);
 
-  //// Define the Gassian constraints 
-  //std::vector<Double_t> C1(5, 1); 
-  //std::vector<Double_t> C2(5, 0.1); 
-  //std::vector<TString> Means_Con = { "m1_C", "m2_C", "m3_C", "m4_C", "m5_C"};
-  //std::vector<TString> sGaus_String = { "sg1_C", "sg2_C", "sg3_C", "sg4_C", "sg5_C"}; 
-  //std::vector<RooRealVar*> Copy_Stdev = Stdev; 
-  //std::vector<RooRealVar*> Copy_Means = Means; 
-  //   
-  //std::vector<RooGaussian*> sGaus_Stdev = B.RooVariables(sGaus_String, C1, C2, Copy_Stdev);  
-  //std::vector<TString> mGaus_String = { "mg1_C", "mg2_C", "mg3_C", "mg4_C", "mg5_C"}; 
-  //std::vector<RooGaussian*> mGaus_Means = B.RooVariables(mGaus_String, C1, C2, Copy_Means);  
- 
   // Import the PDFs as a RooDataHist
   B.Normalize(DeconvPDFs);
   std::vector<RooHistPdf*> PDF_Vars = B.RooPDF(DeconvPDFs, x);
@@ -354,17 +342,6 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   // Import the trk 2 data as a RooDataHist
   RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, Data_G); 
 
-  //model.fitTo(*trk2_D, RooFit::ExternalConstraints(*sGaus_Stdev[0]), 
-  //                     RooFit::ExternalConstraints(*sGaus_Stdev[1]),                                                
-  //                     RooFit::ExternalConstraints(*sGaus_Stdev[2]),
-  //                     RooFit::ExternalConstraints(*sGaus_Stdev[3]),
-  //                     RooFit::ExternalConstraints(*mGaus_Means[0]), 
-  //                     RooFit::ExternalConstraints(*mGaus_Means[1]),                                                
-  //                     RooFit::ExternalConstraints(*mGaus_Means[2]),
-  //                     RooFit::ExternalConstraints(*mGaus_Means[3]));
-
-  //RooFitResult* stat = model.fitTo(*trk2_D, RooFit::Save(), RooFit::SumW2Error(true), RooFit::Constrain(*sGaus_Stdev[4]), RooFit::Constrain(*mGaus_Means[4]));
-
   model.fitTo(*trk2_D, RooFit::Constrain(*Means[0]), 
                        RooFit::Constrain(*Means[1]), 
                        RooFit::Constrain(*Means[2]), 
@@ -374,7 +351,7 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
                        RooFit::Constrain(*Stdev[2]), 
                        RooFit::Constrain(*Stdev[3]));
   
-  RooFitResult* stat = model.fitTo(*trk2_D, RooFit::Save(), RooFit::SumW2Error(true), RooFit::Constrain(*Means[4]), RooFit::Constrain(*Stdev[4]));
+  RooFitResult* stat = model.fitTo(*trk2_D, RooFit::Save(), RooFit::NumCPU(6), RooFit::SumW2Error(true), RooFit::Constrain(*Means[4]), RooFit::Constrain(*Stdev[4]));
    
    //TCanvas* can = P.PlotHists(model, x, Conv_Vars, trk2_D);
    //can -> Print("out.pdf"); 
@@ -511,16 +488,50 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
 
     // Generate the Gaussian Parameters for the convolution from a fit 
     GxTrk1 = Parallel(trk1_L, PDFs, Params, offset, iter, GxTrk1, "GxTrk1");  
-    GxTrk2 = Parallel(trk2_L, PDFs, Params, offset, iter, GxTrk2, "GxTrk2"); 
+    //GxTrk2 = Parallel(trk2_L, PDFs, Params, offset, iter, GxTrk2, "GxTrk2"); 
     GxTrk3 = Parallel(trk3_L, PDFs, Params, offset, iter, GxTrk3, "GxTrk3");
     GxTrk4 = Parallel(trk4_L, PDFs, Params, offset, iter, GxTrk4, "GxTrk4"); 
     GxTrk5 = Parallel(trk5_L, PDFs, Params, offset, iter, GxTrk5, "GxTrk5"); 
 
     float sc = cor_loop; 
     float it = x; 
-    float del = 0.1; 
-    sc = (1/sc)*it;     
+    sc = (1/sc)*it;    
+    
+    
+    trk2_L -> Reset(); 
+    trk2_L -> Add(trk2_L_C);  
+    const float del = 0.1; 
+   
+    for (int v(0); v < cor_loop; v++)
+    {
+      std::vector<TH1F*> PDFx = nTRKGenerator(trk1_L, trk2_L, offset, iter);
+      std::vector<TH1F*> Temp; 
+      Temp = Parallel(trk2_L, PDFs, Params, offset, iter, Temp, "GxTrk2");
 
+      trk2_L -> Add(Temp[0], -1);  
+      trk2_L -> Add(Temp[2], -del);     
+      trk2_L -> Add(Temp[3], -del);   
+      trk2_L -> Add(Temp[4], -del);   
+      iter++;
+     
+      if ( v < cor_loop -1)
+      { 
+        for (int z(0); z < Temp.size(); z++)
+        {
+          delete Temp[z];
+          delete PDFx[z];   
+        } 
+      }
+      else 
+      {
+        for (int z(0); z < Temp.size(); z++)
+        {
+          GxTrk2.push_back(Temp[z]);
+          delete PDFx[z];
+        }
+      }
+    }
+     
     trk2_L -> Reset();
     trk2_L -> Add(trk2_L_C); 
     trk3_L -> Reset();
@@ -550,7 +561,6 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     trk5_L -> Add(GxTrk5[2], -sc);                            
     trk5_L -> Add(GxTrk5[3], -sc);
 
-    iter = iter + 10;  
     std::cout << "################### " << x << std::endl;
    
     // ==== Trk1 

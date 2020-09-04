@@ -9,6 +9,12 @@
 #include<RooGaussian.h>
 #include<RooFFTConvPdf.h>
 #include<RooFitResult.h>
+#include<RooConstVar.h>
+
+// Functions used for testing.
+#include<RooPolynomial.h>
+#include<RooDataSet.h>
+#include<RooProdPdf.h>
 
 #ifndef BASEFUNCTIONS_H
 #define BASEFUNCTIONS_H
@@ -39,6 +45,7 @@ class BaseFunctions
     // ==== RooFit functions 
     // Simple Scale Fits
     std::vector<RooRealVar*> RooVariables(std::vector<TString> Names, std::vector<float> Begin, std::vector<float> End);
+    std::vector<RooRealVar*> RooVariables(std::vector<TString> Names, std::vector<float> Var1, std::vector<float> Var2, std::vector<float> Var3); 
     std::vector<RooDataHist*> RooData(std::vector<TH1F*> Hist, RooRealVar* Domain); 
     RooDataHist* RooData(TH1F* Hist, RooRealVar* Domain);
     std::vector<RooHistPdf*> RooPDF(std::vector<TH1F*> Hist, RooRealVar* Domain); 
@@ -47,7 +54,7 @@ class BaseFunctions
     
     // Gaussian Convolution Fit
     std::vector<RooGaussian*> RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain); 
-    std::vector<RooGaussian*> RooVariables(std::vector<TString> Names, std::vector<Double_t> Const1, std::vector<Double_t> Const2, std::vector<RooRealVar*> Var); 
+    std::vector<RooGaussian*> RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> V1, std::vector<Double_t> V2, std::vector<Double_t> V3); 
     std::vector<RooFFTConvPdf*> RooVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* Domain);
    
     // ==== Benchmarks  
@@ -59,9 +66,6 @@ class BaseFunctions
     void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv);
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
     void ResidualRemove(TH1F* Hist);
-    
-
-
 };
 
 #endif

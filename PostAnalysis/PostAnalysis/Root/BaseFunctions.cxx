@@ -123,6 +123,16 @@ std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names,
   return Variables;
 }
 
+std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<float> Var1, std::vector<float> Var2, std::vector<float> Var3)
+{
+  std::vector<RooRealVar*> Variables(Names.size());
+  for (int i(0); i < Names.size(); i++)
+  {
+    Variables[i] = new RooRealVar(Names[i], Names[i], Var1[i], Var2[i], Var3[i]); 
+  }
+  return Variables; 
+}
+
 std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain)
 {
   std::vector<RooGaussian*> Gaussian(Names.size());
@@ -133,18 +143,16 @@ std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names
   return Gaussian;
 }
 
-std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<Double_t> Const1, std::vector<Double_t> Const2, std::vector<RooRealVar*> Var)
+std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> V1, std::vector<Double_t> V2, std::vector<Double_t> V3)
 {
-  std::vector<RooGaussian*> Gaussian(Names.size()); 
-  for (int i(0); i < Gaussian.size(); i++)
+  std::vector<RooGaussian*> Gaussian(Names.size());
+  for (int i(0); i < Names.size(); i++)
   {
-    RooRealVar z(Names[i]+"z", Names[i]+"z", Const1[i]); 
-    RooRealVar c(Names[i]+"c", Names[i]+"c", Const2[i]); 
-    Gaussian[i] = new RooGaussian(Names[i], Names[i], *Var[i], z, c); 
+    Gaussian[i] = new RooGaussian(Names[i], Names[i], *V1[i], RooFit::RooConst(V2[i]), RooFit::RooConst(V3[i])); 
   }
   return Gaussian;
+  
 }
-
 
 std::vector<RooFFTConvPdf*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* Domain)
 {
@@ -366,28 +374,53 @@ void BaseFunctions::ShiftExpandTH1F(std::vector<TH1F*> In, std::vector<TH1F*> Ou
   }
 }
 
+//void BaseFunctions::ResidualRemove(TH1F* Hist)
+//{
+//  int max = Hist -> GetMaximumBin();
+// 
+//  float T = 1e10; 
+//  int iter = 0; 
+//  int breaker = 0; 
+//  for (int i(1); i < max; i++)
+//  {
+//    float e = Hist -> GetBinContent(max - i - 1);
+//    if (e < T)
+//    {
+//      T = e;
+//      iter = max - i;
+//      breaker=0;
+//    }
+//    if ( e > T ){breaker++;}
+//    if (breaker == 2){break;} 
+//  }
+//  for (int i(0); i < iter; i++)
+//  {
+//    Hist -> SetBinContent(i+1, 1e-9);
+//  }
+//}
+
 void BaseFunctions::ResidualRemove(TH1F* Hist)
 {
-  int max = Hist -> GetMaximumBin();
+  float bin_m = Hist -> GetMaximumBin();
+  float sum = Hist -> Integral(1, bin_m);
+  float Average = sum/bin_m;
  
-  float T = 1e10; 
-  int iter = 0; 
-  int breaker = 0; 
-  for (int i(1); i < max; i++)
+  float T = sum;  
+  int iter(0); 
+  for (int i(0); i < bin_m; i++)
   {
-    float e = Hist -> GetBinContent(max - i - 1);
-    if (e < T)
+    float e = Hist -> GetBinContent(bin_m-i-1);
+    if (e < T && e <= Average)
     {
       T = e;
-      iter = max - i;
-      breaker=0;
+      iter = bin_m - i;
     }
-    if ( e > T ){breaker++;}
-    if (breaker == 2){break;} 
   }
+ 
   for (int i(0); i < iter; i++)
   {
-    Hist -> SetBinContent(i+1, 1e-8);
+    Hist -> SetBinContent(i+1, 1e-9);
   }
+
 }
 
