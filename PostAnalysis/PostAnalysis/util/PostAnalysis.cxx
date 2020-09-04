@@ -19,7 +19,7 @@ void PostAnalysis()
 
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
-  int Mode = 0;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
+  int Mode = 2;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
   bool Test = true; // Test Components 
   int Shift = 0;
 
@@ -40,7 +40,7 @@ void PostAnalysis()
   // Other parameters
   float offset = 0.5;
   float Gamma = 1;
-  int iter = 50;
+  int iter = 100;
   int cor_loop = 10; // Correction loop number 
   std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
@@ -158,10 +158,10 @@ void PostAnalysis()
     // Monte Carlo Parameters 
     std::map<TString, std::vector<float>> Params;
     Params["Gaussian"] = {0, 0.1};
-    Params["m_s"] = {-10, -10, -25, -50, -150};
-    Params["m_e"] = {10, 10, 25, 50, 150};
+    Params["m_s"] = {-15, -10, -20, -50, -100};
+    Params["m_e"] = {15, 10, 20, 50, 100};
     Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {2, 4, 16, 16, 50};
+    Params["s_e"] = {4, 10, 10, 10, 10};
 
     // Toy Parameters
     //std::map<TString, std::vector<float>> Params;

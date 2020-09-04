@@ -54,7 +54,7 @@ class BaseFunctions
     
     // Gaussian Convolution Fit
     std::vector<RooGaussian*> RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain); 
-    std::vector<RooGaussian*> RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> V1, std::vector<Double_t> V2, std::vector<Double_t> V3); 
+    std::vector<RooGaussian*> RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> V1, std::vector<float> V2, std::vector<float> V3); 
     std::vector<RooFFTConvPdf*> RooVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* Domain);
    
     // ==== Benchmarks  

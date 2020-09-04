@@ -300,8 +300,6 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   Data_G -> SetBinContent(bins_pdf, Data_G -> GetBinContent(bins_pdf-1));
   B.Normalize(Data_G);
 
-  //TCanvas* c = P.PlotHists(DeconvPDFs);
-  //c -> Print("out1.pdf"); 
   // Define the range of the dEdx
   RooRealVar* x = new RooRealVar("x", "x", 0, bins_pdf); 
 
@@ -336,13 +334,23 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   std::vector<TString> Conv_String = { "P1xG1", "P2xG2", "P3xG3", "P4xG4", "P5xG5"};
   std::vector<RooFFTConvPdf*> Conv_Vars = B.RooVariables(Conv_String, PDF_Vars, G_Vars, x);
   
-  // Define the model we are using for the fit:
-  RooAddPdf model("model", "model", RooArgList(*Conv_Vars[0], *Conv_Vars[1], *Conv_Vars[2], *Conv_Vars[3], *Conv_Vars[4]), RooArgList(*C_Vars[0], *C_Vars[1], *C_Vars[2], *C_Vars[3], *C_Vars[4]));   
+  // Constraint variables
+  std::vector<TString> sGaus_Constrain_String = {"sg1", "sg2", "sg3", "sg4", "sg5"};
+  std::vector<RooGaussian*> sGaus_Constrain = B.RooVariables(sGaus_Constrain_String, Stdev, Stdev_Begin, Stdev_End);
+  std::vector<TString> mGaus_Constrain_String = {"mg1", "mg2", "mg3", "mg4", "mg5"};
+  std::vector<RooGaussian*> mGaus_Constrain = B.RooVariables(mGaus_Constrain_String, Means, Means_Begin, Means_End);
+  RooArgSet sSet = RooArgSet(*sGaus_Constrain[0], *sGaus_Constrain[1], *sGaus_Constrain[2], *sGaus_Constrain[3], *sGaus_Constrain[4]); 
+  RooArgSet mSet = RooArgSet(*mGaus_Constrain[0], *mGaus_Constrain[1], *mGaus_Constrain[2], *mGaus_Constrain[3], *mGaus_Constrain[4]); 
+  RooArgSet Set = RooArgSet(mSet, sSet);
 
   // Import the trk 2 data as a RooDataHist
   RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, Data_G); 
-
-  model.fitTo(*trk2_D, RooFit::Constrain(*Means[0]), 
+  
+  // Define the model we are using for the fit:
+  RooAddPdf model("model", "model", RooArgList(*Conv_Vars[0], *Conv_Vars[1], *Conv_Vars[2], *Conv_Vars[3], *Conv_Vars[4]), RooArgList(*C_Vars[0], *C_Vars[1], *C_Vars[2], *C_Vars[3], *C_Vars[4]));   
+  RooProdPdf modelc("modelc", "modelc", RooArgSet(model, Set)); 
+  
+  modelc.fitTo(*trk2_D, RooFit::Constrain(*Means[0]), 
                        RooFit::Constrain(*Means[1]), 
                        RooFit::Constrain(*Means[2]), 
                        RooFit::Constrain(*Means[3]), 
@@ -350,8 +358,8 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
                        RooFit::Constrain(*Stdev[1]), 
                        RooFit::Constrain(*Stdev[2]), 
                        RooFit::Constrain(*Stdev[3]));
-  
-  RooFitResult* stat = model.fitTo(*trk2_D, RooFit::Save(), RooFit::NumCPU(6), RooFit::SumW2Error(true), RooFit::Constrain(*Means[4]), RooFit::Constrain(*Stdev[4]));
+   
+  RooFitResult* stat = modelc.fitTo(*trk2_D, RooFit::Save(), RooFit::Constrain(*Means[4]), RooFit::Constrain(*Stdev[4])); 
    
    //TCanvas* can = P.PlotHists(model, x, Conv_Vars, trk2_D);
    //can -> Print("out.pdf"); 
@@ -488,7 +496,7 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
 
     // Generate the Gaussian Parameters for the convolution from a fit 
     GxTrk1 = Parallel(trk1_L, PDFs, Params, offset, iter, GxTrk1, "GxTrk1");  
-    //GxTrk2 = Parallel(trk2_L, PDFs, Params, offset, iter, GxTrk2, "GxTrk2"); 
+    GxTrk2 = Parallel(trk2_L, PDFs, Params, offset, iter, GxTrk2, "GxTrk2"); 
     GxTrk3 = Parallel(trk3_L, PDFs, Params, offset, iter, GxTrk3, "GxTrk3");
     GxTrk4 = Parallel(trk4_L, PDFs, Params, offset, iter, GxTrk4, "GxTrk4"); 
     GxTrk5 = Parallel(trk5_L, PDFs, Params, offset, iter, GxTrk5, "GxTrk5"); 
@@ -498,39 +506,39 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     sc = (1/sc)*it;    
     
     
-    trk2_L -> Reset(); 
-    trk2_L -> Add(trk2_L_C);  
-    const float del = 0.1; 
+    //trk2_L -> Reset(); 
+    //trk2_L -> Add(trk2_L_C);  
+    //const float del = 0.1; 
    
-    for (int v(0); v < cor_loop; v++)
-    {
-      std::vector<TH1F*> PDFx = nTRKGenerator(trk1_L, trk2_L, offset, iter);
-      std::vector<TH1F*> Temp; 
-      Temp = Parallel(trk2_L, PDFs, Params, offset, iter, Temp, "GxTrk2");
+    //for (int v(0); v < cor_loop; v++)
+    //{
+    //  std::vector<TH1F*> PDFx = nTRKGenerator(trk1_L, trk2_L, offset, iter);
+    //  std::vector<TH1F*> Temp; 
+    //  Temp = Parallel(trk2_L, PDFs, Params, offset, iter, Temp, "GxTrk2");
 
-      trk2_L -> Add(Temp[0], -1);  
-      trk2_L -> Add(Temp[2], -del);     
-      trk2_L -> Add(Temp[3], -del);   
-      trk2_L -> Add(Temp[4], -del);   
-      iter++;
-     
-      if ( v < cor_loop -1)
-      { 
-        for (int z(0); z < Temp.size(); z++)
-        {
-          delete Temp[z];
-          delete PDFx[z];   
-        } 
-      }
-      else 
-      {
-        for (int z(0); z < Temp.size(); z++)
-        {
-          GxTrk2.push_back(Temp[z]);
-          delete PDFx[z];
-        }
-      }
-    }
+    //  trk2_L -> Add(Temp[0], -1);  
+    //  trk2_L -> Add(Temp[2], -del);     
+    //  trk2_L -> Add(Temp[3], -del);   
+    //  trk2_L -> Add(Temp[4], -del);   
+    //  iter++;
+    // 
+    //  if ( v < cor_loop -1)
+    //  { 
+    //    for (int z(0); z < Temp.size(); z++)
+    //    {
+    //      delete Temp[z];
+    //      delete PDFx[z];   
+    //    } 
+    //  }
+    //  else 
+    //  {
+    //    for (int z(0); z < Temp.size(); z++)
+    //    {
+    //      GxTrk2.push_back(Temp[z]);
+    //      delete PDFx[z];
+    //    }
+    //  }
+    //}
      
     trk2_L -> Reset();
     trk2_L -> Add(trk2_L_C); 

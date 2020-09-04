@@ -143,7 +143,7 @@ std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names
   return Gaussian;
 }
 
-std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> V1, std::vector<Double_t> V2, std::vector<Double_t> V3)
+std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> V1, std::vector<float> V2, std::vector<float> V3)
 {
   std::vector<RooGaussian*> Gaussian(Names.size());
   for (int i(0); i < Names.size(); i++)

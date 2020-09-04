@@ -103,8 +103,8 @@ void BaseFunctionTest::Constraint()
   
   RooDataSet *d = model.generate(*x, 50); 
 
-  std::vector<Double_t> v1 = {0.8};
-  std::vector<Double_t> v2 = {0.2}; 
+  std::vector<float> v1 = {0.8};
+  std::vector<float> v2 = {0.2}; 
   
   std::vector<RooGaussian*> G = B.RooVariables({"fconst"}, {Var[2]}, v1, v2); 
 
