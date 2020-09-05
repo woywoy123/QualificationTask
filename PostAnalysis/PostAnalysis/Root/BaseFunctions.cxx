@@ -407,6 +407,7 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
  
   float T = sum;  
   int iter(0); 
+  int breaker = 0; 
   for (int i(0); i < bin_m; i++)
   {
     float e = Hist -> GetBinContent(bin_m-i-1);
@@ -414,12 +415,15 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
     {
       T = e;
       iter = bin_m - i;
+      breaker = 0;  
     }
+    else{breaker++;}
+    if (breaker == 2) {break;}
   }
  
   for (int i(0); i < iter; i++)
   {
-    Hist -> SetBinContent(i+1, 1e-9);
+    Hist -> SetBinContent(i+1, 1e-20);
   }
 
 }

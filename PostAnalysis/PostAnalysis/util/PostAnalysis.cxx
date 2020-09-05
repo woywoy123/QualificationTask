@@ -19,7 +19,7 @@ void PostAnalysis()
 
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
-  int Mode = 2;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
+  int Mode = 1;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
   bool Test = true; // Test Components 
   int Shift = 0;
 
@@ -40,12 +40,11 @@ void PostAnalysis()
   // Other parameters
   float offset = 0.5;
   float Gamma = 1;
-  int iter = 100;
+  int iter = 50;
   int cor_loop = 10; // Correction loop number 
   std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
   // ==== Forward declaration for Histograms ==== //
-  std::vector<TH1F*> Pure; 
   std::vector<TH1F*> trk1_N;
   std::vector<TH1F*> trk2_N;
   std::vector<TH1F*> trk3_N;
@@ -155,13 +154,23 @@ void PostAnalysis()
   
     //P.PlotHists(Truth_Sets, ntrk_Data);
 
-    // Monte Carlo Parameters 
+    //==== Monte Carlo Parameters 
     std::map<TString, std::vector<float>> Params;
-    Params["Gaussian"] = {0, 0.1};
-    Params["m_s"] = {-15, -10, -20, -50, -100};
-    Params["m_e"] = {15, 10, 20, 50, 100};
-    Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {4, 10, 10, 10, 10};
+    
+    //Gaussian Parameter used for deconvolution
+    Params["Gaussian"] = {0, 0.01};
+    Params["m_s"] = {-50, -50, -50, -50, -50}; // Start of Parameter Mean Scan 
+    Params["m_e"] = {250, 250, 250, 250, 250}; // End of Parameter Mean Scan 
+    Params["m_i"] = {50, 50, 50, 50, 50}; // Initial Guess of Mean 
+    Params["m_c_v1"] = {25, 25, 25, 25, 25};  // Constraint of Gaussian Mean 
+    Params["m_c_v2"] = {10., 10., 10., 10., 10.};  // Constraint of Gaussian Mean resolution (?) 
+       
+    Params["s_s"] = {0.1, 0.1, 0.1, 0.1, 0.1};
+    Params["s_e"] = {5, 5, 5, 5, 5};
+    Params["s_i"] = {0.1, 0.1, 0.1, 0.1, 0.1};   
+    Params["s_c_v1"] = {0.2, 0.2, 0.2, 0.2, 0.2};  // Constraint of Gaussian Mean 
+    Params["s_c_v2"] = {0.1, 0.1, 0.1, 0.1, 0.1};  // Constraint of Gaussian Mean resolution (?) 
+ 
 
     // Toy Parameters
     //std::map<TString, std::vector<float>> Params;
@@ -172,6 +181,7 @@ void PostAnalysis()
     //Params["s_e"] = {1, 1, 1, 1, 1};
     
     DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets);   
+    //DFT.FLost(ntrk_Data, Truth_Sets); 
   }
  
  

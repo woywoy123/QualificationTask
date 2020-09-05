@@ -65,11 +65,11 @@ namespace Constants
 
   const std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kTeal, kBlack, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora, kMagenta, kViolet};
  
-  const std::vector<float> COMP1 = {1.0 , 0.0001, 0.0001, 0.0001, 0.0001};
-  const std::vector<float> COMP2 = {0.1 , 0.89  , 0.05  , 0.05  , 0.025 };
-  const std::vector<float> COMP3 = {0.01, 0.2   , 0.59  , 0.2   , 0.025 };
-  const std::vector<float> COMP4 = {0.02, 0.2   , 0.2   , 0.58  , 0.45  };
-  const std::vector<float> COMP5 = {0.01, 0.01  , 0.1   , 0.4   , 0.5   };
+  const std::vector<float> COMP1 = {0.997, 0.001, 0.001, 0.001, 0.001};
+  const std::vector<float> COMP2 = {0.25 , 0.60 , 0.05 , 0.05 , 0.05 };
+  const std::vector<float> COMP3 = {0.05 , 0.15 , 0.6  , 0.15 , 0.05 };
+  const std::vector<float> COMP4 = {0.05 , 0.05 , 0.2  , 0.5  , 0.2  };
+  const std::vector<float> COMP5 = {0.005, 0.005, 0.19 , 0.2  , 0.6  };
 
   const std::vector<float> LandauParameters = {1, 0.9, 0.1};
   const int GaussianToys = 500000;

@@ -8,15 +8,12 @@ std::vector<RooRealVar*> DerivedFunctions::FitToData(std::vector<TH1F*> Hists,
                                                      std::vector<TString> Names)
 {
   BaseFunctions B;
-  //B.Normalize(Hists);
   std::vector<RooRealVar*> Var = B.RooVariables(Names, Begin, End);
   std::vector<RooHistPdf*> Hist = B.RooPDF(Hists, Domain);
   RooDataHist* data = B.RooData(Data, Domain);
 
   RooAddPdf model("Model", "Model", B.RooList(Hist), B.RooList(Var));
   RooFitResult* stat = model.fitTo(*data, RooFit::Save());
-  std::cout << "#########" << stat -> status() << std::endl; 
-  
    
   for (int i(0); i < Var.size(); i++)
   {
@@ -307,13 +304,15 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   std::vector<TString> Means_String = { "m1", "m2", "m3", "m4", "m5"};
   std::vector<float> Means_Begin = Params["m_s"];
   std::vector<float> Means_End = Params["m_e"];
-  std::vector<RooRealVar*> Means = B.RooVariables(Means_String, Means_Begin, Means_End);
+  std::vector<float> Means_Initial = Params["m_i"];
+  std::vector<RooRealVar*> Means = B.RooVariables(Means_String, Means_Initial, Means_Begin, Means_End);
 
   // Define the Gaussian Parameter: Standard Deviation
   std::vector<TString> Stdev_String = { "s1", "s2", "s3", "s4", "s5"};
   std::vector<float> Stdev_Begin = Params["s_s"];
-  std::vector<float> Stdev_End = Params["s_e"];
-  std::vector<RooRealVar*> Stdev = B.RooVariables(Stdev_String, Stdev_Begin, Stdev_End);
+  std::vector<float> Stdev_End = Params["s_e"]; 
+  std::vector<float> Stdev_Initial = Params["s_i"];
+  std::vector<RooRealVar*> Stdev = B.RooVariables(Stdev_String, Stdev_Initial, Stdev_Begin, Stdev_End);
 
   // Define the Gaussian Variables
   std::vector<TString> Gaus_String = { "g1", "g2", "g3", "g4", "g5"};
@@ -334,30 +333,38 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   std::vector<TString> Conv_String = { "P1xG1", "P2xG2", "P3xG3", "P4xG4", "P5xG5"};
   std::vector<RooFFTConvPdf*> Conv_Vars = B.RooVariables(Conv_String, PDF_Vars, G_Vars, x);
   
-  // Constraint variables
+  //=== Constraint variables: Standard Deviation 
   std::vector<TString> sGaus_Constrain_String = {"sg1", "sg2", "sg3", "sg4", "sg5"};
-  std::vector<RooGaussian*> sGaus_Constrain = B.RooVariables(sGaus_Constrain_String, Stdev, Stdev_Begin, Stdev_End);
-  std::vector<TString> mGaus_Constrain_String = {"mg1", "mg2", "mg3", "mg4", "mg5"};
-  std::vector<RooGaussian*> mGaus_Constrain = B.RooVariables(mGaus_Constrain_String, Means, Means_Begin, Means_End);
+  std::vector<float> Stdev_Constant_V1 = Params["s_c_v1"];
+  std::vector<float> Stdev_Constant_V2 = Params["s_c_v2"];
+  std::vector<RooGaussian*> sGaus_Constrain = B.RooVariables(sGaus_Constrain_String, Stdev, Stdev_Constant_V1, Stdev_Constant_V2);
   RooArgSet sSet = RooArgSet(*sGaus_Constrain[0], *sGaus_Constrain[1], *sGaus_Constrain[2], *sGaus_Constrain[3], *sGaus_Constrain[4]); 
+
+  //=== Constraint variables: Mean 
+  std::vector<TString> mGaus_Constrain_String = {"mg1", "mg2", "mg3", "mg4", "mg5"};
+  std::vector<float> Mean_Constant_V1 = Params["m_c_v1"];
+  std::vector<float> Mean_Constant_V2 = Params["m_c_v2"];
+  std::vector<RooGaussian*> mGaus_Constrain = B.RooVariables(mGaus_Constrain_String, Means, Mean_Constant_V1, Mean_Constant_V2);
   RooArgSet mSet = RooArgSet(*mGaus_Constrain[0], *mGaus_Constrain[1], *mGaus_Constrain[2], *mGaus_Constrain[3], *mGaus_Constrain[4]); 
-  RooArgSet Set = RooArgSet(mSet, sSet);
 
   // Import the trk 2 data as a RooDataHist
   RooDataHist* trk2_D = new RooDataHist("trk2_D", "trk2_D", *x, Data_G); 
   
   // Define the model we are using for the fit:
-  RooAddPdf model("model", "model", RooArgList(*Conv_Vars[0], *Conv_Vars[1], *Conv_Vars[2], *Conv_Vars[3], *Conv_Vars[4]), RooArgList(*C_Vars[0], *C_Vars[1], *C_Vars[2], *C_Vars[3], *C_Vars[4]));   
+  RooAddPdf model("model", "model", RooArgList(*Conv_Vars[0], *Conv_Vars[1], *Conv_Vars[2], *Conv_Vars[3], *Conv_Vars[4]), 
+                                    RooArgList(*C_Vars[0], *C_Vars[1], *C_Vars[2], *C_Vars[3], *C_Vars[4])); 
+
+  RooArgSet Set = RooArgSet(mSet, sSet);
   RooProdPdf modelc("modelc", "modelc", RooArgSet(model, Set)); 
   
-  modelc.fitTo(*trk2_D, RooFit::Constrain(*Means[0]), 
-                       RooFit::Constrain(*Means[1]), 
-                       RooFit::Constrain(*Means[2]), 
-                       RooFit::Constrain(*Means[3]), 
-                       RooFit::Constrain(*Stdev[0]), 
-                       RooFit::Constrain(*Stdev[1]), 
-                       RooFit::Constrain(*Stdev[2]), 
-                       RooFit::Constrain(*Stdev[3]));
+  modelc.fitTo(*trk2_D);//, RooFit::Constrain(*Means[0]), 
+                        //RooFit::Constrain(*Means[1]), 
+                        //RooFit::Constrain(*Means[2]), 
+                        //RooFit::Constrain(*Means[3]), 
+                        //RooFit::Constrain(*Stdev[0]), 
+                        //RooFit::Constrain(*Stdev[1]), 
+                        //RooFit::Constrain(*Stdev[2]), 
+                        //RooFit::Constrain(*Stdev[3]));
    
   RooFitResult* stat = modelc.fitTo(*trk2_D, RooFit::Save(), RooFit::Constrain(*Means[4]), RooFit::Constrain(*Stdev[4])); 
    
@@ -383,6 +390,8 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
     delete Hists[i];
     delete PDF_Vars[i];
     delete DeconvPDFs[i];
+    delete sGaus_Constrain[i];
+    delete mGaus_Constrain[i];
   }
   delete trk2_D; 
   delete x;
