@@ -21,6 +21,7 @@ class DerivedFunctions
     TH1F* GaussianConvolve(TH1F* Hist, float mean, float stdev, int Toys = Constants::GaussianToys);
     std::map<TString, float> FitGaussian(TH1F* GxTrk, std::vector<TH1F*> PDFs, std::map<TString, std::vector<float>> Params, float offset, int iter);
     std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, float Gamma, int iter, int cor_loop, std::vector<std::vector<TH1F*>> Closure); 
+    void SafeScale(std::vector<TH1F*> PDFs, TH1F* Data); 
 
 };
 

@@ -38,10 +38,10 @@ void PostAnalysis()
   float s_e = 5;
 
   // Other parameters
-  float offset = 0.5;
+  float offset = 0.1;
   float Gamma = 1;
-  int iter = 50;
-  int cor_loop = 10; // Correction loop number 
+  int iter = 100;
+  int cor_loop = 20; // Correction loop number 
   std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
 
   // ==== Forward declaration for Histograms ==== //
@@ -159,17 +159,17 @@ void PostAnalysis()
     
     //Gaussian Parameter used for deconvolution
     Params["Gaussian"] = {0, 0.01};
-    Params["m_s"] = {-50, -50, -50, -50, -50}; // Start of Parameter Mean Scan 
-    Params["m_e"] = {250, 250, 250, 250, 250}; // End of Parameter Mean Scan 
-    Params["m_i"] = {50, 50, 50, 50, 50}; // Initial Guess of Mean 
-    Params["m_c_v1"] = {25, 25, 25, 25, 25};  // Constraint of Gaussian Mean 
-    Params["m_c_v2"] = {10., 10., 10., 10., 10.};  // Constraint of Gaussian Mean resolution (?) 
+    Params["m_s"] = {-30, -20, -1, -1, -1}; // Start of Parameter Mean Scan 
+    Params["m_e"] = {30, 20, 1, 1, 1}; // End of Parameter Mean Scan 
+    Params["m_i"] = {0., 0., 0, 0, 0}; // Initial Guess of Mean 
+    Params["m_c_v1"] = {0.0, 0.0, 0.0, 0.0, 0.0};  // Constraint of Gaussian Mean 
+    Params["m_c_v2"] = {1, 1, 1, 1, 1};  // Constraint of Gaussian Mean resolution (?) 
        
-    Params["s_s"] = {0.1, 0.1, 0.1, 0.1, 0.1};
-    Params["s_e"] = {5, 5, 5, 5, 5};
+    Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
+    Params["s_e"] = {1, 1, 1, 1, 1};
     Params["s_i"] = {0.1, 0.1, 0.1, 0.1, 0.1};   
-    Params["s_c_v1"] = {0.2, 0.2, 0.2, 0.2, 0.2};  // Constraint of Gaussian Mean 
-    Params["s_c_v2"] = {0.1, 0.1, 0.1, 0.1, 0.1};  // Constraint of Gaussian Mean resolution (?) 
+    Params["s_c_v1"] = {1., 1., 1., 1., 1.};  // Constraint of Gaussian Stdev 
+    Params["s_c_v2"] = {1, 1, 1, 1, 1};  // Constraint of Gaussian Stdev resolution (?) 
  
 
     // Toy Parameters

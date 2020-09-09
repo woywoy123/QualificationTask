@@ -63,13 +63,13 @@ namespace Constants
                                          "/2400_2600_GeV/", "/2600_2800_GeV/", 
                                          "/2800_3000_GeV/", "/higher_GeV/"}; 
 
-  const std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kTeal, kBlack, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora, kMagenta, kViolet};
+  const std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kBlack, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora, kMagenta, kViolet};
  
   const std::vector<float> COMP1 = {0.997, 0.001, 0.001, 0.001, 0.001};
   const std::vector<float> COMP2 = {0.25 , 0.60 , 0.05 , 0.05 , 0.05 };
   const std::vector<float> COMP3 = {0.05 , 0.15 , 0.6  , 0.15 , 0.05 };
   const std::vector<float> COMP4 = {0.05 , 0.05 , 0.2  , 0.5  , 0.2  };
-  const std::vector<float> COMP5 = {0.005, 0.005, 0.19 , 0.2  , 0.6  };
+  const std::vector<float> COMP5 = {0.005 , 0.005, 0.19 , 0.2  , 0.6  };
 
   const std::vector<float> LandauParameters = {1, 0.9, 0.1};
   const int GaussianToys = 500000;

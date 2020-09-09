@@ -87,21 +87,21 @@ void BaseFunctions::Normalize(std::vector<TH1F*> Hist)
   {
     Normalize(H); 
   }
-
 }
 
-void BaseFunctions::Subtraction(std::vector<TH1F*> ntrk, TH1F* Data, int Exclude, std::vector<float> Ratios)
+void BaseFunctions::Subtraction(std::vector<TH1F*> ntrk, TH1F* Data, int Exclude, std::vector<float> Ratios, float scale)
 {
   float lumi = Data -> Integral(); 
   for (int i(0); i < ntrk.size(); i++)
   {
     Normalize(ntrk[i]);
     ntrk[i] -> Scale(Ratios[i]*lumi);
-    if ( i != Exclude -1 )
+    if ( i != Exclude -1 && i > 0)
     {  
-      Data -> Add(ntrk[i], -1); 
+      Data -> Add(ntrk[i], -scale); 
     } 
   }
+  Data -> Add(ntrk[0], -1); 
 }
 
 void BaseFunctions::Scale(std::vector<TH1F*> PDFs, std::vector<RooRealVar*> Vars)
@@ -374,44 +374,16 @@ void BaseFunctions::ShiftExpandTH1F(std::vector<TH1F*> In, std::vector<TH1F*> Ou
   }
 }
 
-//void BaseFunctions::ResidualRemove(TH1F* Hist)
-//{
-//  int max = Hist -> GetMaximumBin();
-// 
-//  float T = 1e10; 
-//  int iter = 0; 
-//  int breaker = 0; 
-//  for (int i(1); i < max; i++)
-//  {
-//    float e = Hist -> GetBinContent(max - i - 1);
-//    if (e < T)
-//    {
-//      T = e;
-//      iter = max - i;
-//      breaker=0;
-//    }
-//    if ( e > T ){breaker++;}
-//    if (breaker == 2){break;} 
-//  }
-//  for (int i(0); i < iter; i++)
-//  {
-//    Hist -> SetBinContent(i+1, 1e-9);
-//  }
-//}
-
 void BaseFunctions::ResidualRemove(TH1F* Hist)
 {
   float bin_m = Hist -> GetMaximumBin();
-  float sum = Hist -> Integral(1, bin_m);
-  float Average = sum/bin_m;
- 
-  float T = sum;  
+  float T = Hist -> GetBinContent(bin_m);  
   int iter(0); 
   int breaker = 0; 
   for (int i(0); i < bin_m; i++)
   {
     float e = Hist -> GetBinContent(bin_m-i-1);
-    if (e < T && e <= Average)
+    if (e < T)
     {
       T = e;
       iter = bin_m - i;

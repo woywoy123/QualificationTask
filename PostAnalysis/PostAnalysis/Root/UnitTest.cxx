@@ -139,6 +139,7 @@ void DerivedFunctionTest::ShiftTest(TH1F* H1, int Shift)
   //D.RooShift(Hist, H1);
   int shift = D.NumericalShift(H1, Hist);
   std::cout << " The histograms are shifted by: " << shift << std::endl;
+  P.SimplePlot(Hist); 
 }
 
 void DerivedFunctionTest::ReplaceShiftTail(TH1F* Source, TH1F* Target, int Shift)
@@ -179,22 +180,30 @@ void DerivedFunctionTest::DeconvolveGaussianFit(TH1F* trk1, TH1F* trk2,  float m
   Plotting P; 
  
   std::vector<TH1F*> PDFs = DF.nTRKGenerator(trk1, trk2, offset, iter);
-  //std::map<TString, float> Parameters = DF.FitGaussian(trk2, PDFs, mean, stdev, -1, 1, 0.01, 1, offset, iter);  
+
+  std::map<TString, std::vector<float>> Params; 
+  Params["Gaussian"] = {0, 0.01};
+  Params["m_s"] = {-3, -1, -1, -1, -1}; 
+  Params["m_e"] = {3, 1, 1, 1, 1}; 
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {1, 1, 1, 1, 1};
+  std::map<TString, float> Parameters = DF.FitGaussian(trk2, PDFs, Params, offset, iter);  
   std::vector<TString> Names = {"n_trk1", "n_trk2", "n_trk3", "n_trk4"};
   std::vector<TString> Stdev = {"s1", "s2", "s3", "s4"};
   std::vector<TString> Mean = {"m1", "m2", "m3", "m4"};
 
-  //for (int i(0); i < Names.size(); i++)
-  //{
-  //  TH1F* H = DF.GaussianConvolve(PDFs[i], Parameters[Mean[i]], Parameters[Stdev[i]]);
-  //  PDFs[i] -> Reset();
-  //  B.ShiftExpandTH1F(H, PDFs[i]);
-  // 
-  //  float e = Parameters[Names[i]];  
-  //  PDFs[i] -> Scale(e);   
-  //}
- 
-  //P.PlotHists(PDFs, trk2);   
+  for (int i(0); i < Names.size(); i++)
+  {
+    TH1F* H = DF.GaussianConvolve(PDFs[i], Params["Gaussian"][0], Params["Gaussian"][1]);  //Parameters[Mean[i]], Parameters[Stdev[i]]);
+    PDFs[i] -> Reset();
+    B.ShiftExpandTH1F(H, PDFs[i]);
+   
+    float e = Parameters[Names[i]];  
+    PDFs[i] -> Scale(e);   
+    delete H;
+  }
+  B.Normalize(trk2); 
+  P.PlotHists(PDFs, trk2);   
 }
 
 void DerivedFunctionTest::MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, float Gamma, std::vector<std::vector<TH1F*>> Closure)
