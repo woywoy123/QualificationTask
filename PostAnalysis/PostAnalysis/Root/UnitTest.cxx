@@ -194,7 +194,7 @@ void DerivedFunctionTest::DeconvolveGaussianFit(TH1F* trk1, TH1F* trk2,  float m
 
   for (int i(0); i < Names.size(); i++)
   {
-    TH1F* H = DF.GaussianConvolve(PDFs[i], Params["Gaussian"][0], Params["Gaussian"][1]);  //Parameters[Mean[i]], Parameters[Stdev[i]]);
+    TH1F* H = DF.GaussianConvolve(PDFs[i], Params["Gaussian"][0], Params["Gaussian"][1]); 
     PDFs[i] -> Reset();
     B.ShiftExpandTH1F(H, PDFs[i]);
    
@@ -206,135 +206,14 @@ void DerivedFunctionTest::DeconvolveGaussianFit(TH1F* trk1, TH1F* trk2,  float m
   P.PlotHists(PDFs, trk2);   
 }
 
-void DerivedFunctionTest::MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, float Gamma, std::vector<std::vector<TH1F*>> Closure)
+void Presentation::MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, std::vector<std::vector<TH1F*>> Closure)
 {
   DerivedFunctions DF; 
   BaseFunctions B;
    
-  std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> PDFs = DF.MainAlgorithm(ntrk, Params, offset, Gamma, iter, cor_loop, Closure);
+  std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> PDFs = DF.MainAlgorithm(ntrk, Params, offset, iter, cor_loop, Closure);
 
-  //std::vector<TH1F*> truth;
-  //std::vector<std::vector<TH1F*>> result;
-
-  //std::vector<TString> Names = {"trk1_pure", "trk2_pure", "trk3_pure", "trk4_pure"};
-  //std::vector<TString> PDF_Names = {"trk1_pdf", "trk2_pdf", "trk3_pdf", "trk4_pdf"};
-  //
-  // 
-  //for (int i(0); i < Closure.size(); i++)
-  //{
-  //  std::vector<TH1F*> Cl_Hists = Closure[i];  
-  //  TH1F* H2 = Cl_Hists[i]; 
-
-  //  std::pair<TH1F*, std::vector<TH1F*>> m = PDFs[i]; 
-  //  TH1F* trkN = m.first; 
-  //  std::vector<TH1F*> PDF_H = m.second;
-  //  
-  //  TH1F* H1 = (TH1F*)H2 -> Clone(Names[i]);
-  //  H1 -> Reset();
-  //  H1 -> SetTitle(Names[i]);
-  //  
-  //  TH1F* H3 = (TH1F*)H2 -> Clone(PDF_Names[i]);
-  //  H3 -> Reset();
-  //  H3 -> SetTitle(PDF_Names[i]);   
-  //  
-  //  B.ShiftExpandTH1F(trkN, H1);
-  //  B.ShiftExpandTH1F(PDF_H[i], H3);
-  //  
-  //  std::vector<TH1F*> out;
-  //  out.push_back(H1); 
-  //  out.push_back(H3);
-  //  result.push_back(out);
-  //  truth.push_back(H2); 
-  //}
-
-  //Plotting P;
-  //TCanvas* can = P.PlotHists(result, truth);
 }
-
-void DerivedFunctionTest::FLost(std::vector<TH1F*> ntrk_Data, std::vector<std::vector<TH1F*>> Truth_Sets)
-{
-  DerivedFunctions DF; 
-  BaseFunctions B; 
-
-  TH1F* trk1_D = ntrk_Data[0]; 
-  TH1F* trk2_D = ntrk_Data[1];
-  TH1F* trk3_D = ntrk_Data[2];
-  TH1F* trk4_D = ntrk_Data[3];
-  TH1F* trk5_D = ntrk_Data[4];
-
-  std::vector<TH1F*> trk1_PDF = Truth_Sets[0];
-  std::vector<TH1F*> trk2_PDF = Truth_Sets[1]; 
-  std::vector<TH1F*> trk3_PDF = Truth_Sets[2]; 
-  std::vector<TH1F*> trk4_PDF = Truth_Sets[3]; 
-  std::vector<TH1F*> trk5_PDF = Truth_Sets[4]; 
-
-  std::vector<TString> Names = {"ntrk1", "ntrk2", "ntrk3", "ntrk4", "ntrk5"};
- 
-  std::vector<RooRealVar*> v1 = DF.FitToData(trk1_PDF, trk1_D, 0, 20);
-  std::vector<RooRealVar*> v2 = DF.FitToData(trk2_PDF, trk2_D, 0, 20);
-  std::vector<RooRealVar*> v3 = DF.FitToData(trk3_PDF, trk3_D, 0, 20);
-  std::vector<RooRealVar*> v4 = DF.FitToData(trk4_PDF, trk4_D, 0, 20);
-  std::vector<RooRealVar*> v5 = DF.FitToData(trk5_PDF, trk5_D, 0, 20);  
- 
-  std::vector<float> frac1 = B.Ratio(v1, trk1_D);
-  std::vector<float> frac2 = B.Ratio(v2, trk2_D);
-  std::vector<float> frac3 = B.Ratio(v3, trk3_D);
-  std::vector<float> frac4 = B.Ratio(v4, trk4_D);
-  std::vector<float> frac5 = B.Ratio(v5, trk5_D);
-
-  // Lost Tracks in 1-Track 
-  // === Sum up the total number of tracks 
-  float Lumi_D1 = trk1_D -> Integral(); 
-  float e1_D1 = frac1[0]*Lumi_D1;
-  float e2_D1 = frac1[1]*Lumi_D1;
-  float e3_D1 = frac1[2]*Lumi_D1;
-  float e4_D1 = frac1[3]*Lumi_D1;
-  float e5_D1 = frac1[4]*Lumi_D1;
-  
-  // === Sum up the total number of tracks 
-  float Lumi_D2 = trk2_D -> Integral(); 
-  float e1_D2 = frac2[0]*Lumi_D2;
-  float e2_D2 = frac2[1]*Lumi_D2;
-  float e3_D2 = frac2[2]*Lumi_D2;
-  float e4_D2 = frac2[3]*Lumi_D2;
-  float e5_D2 = frac2[4]*Lumi_D2;
- 
-  // === Sum up the total number of tracks 
-  float Lumi_D3 = trk3_D -> Integral(); 
-  float e1_D3 = frac3[0]*Lumi_D3;
-  float e2_D3 = frac3[1]*Lumi_D3;
-  float e3_D3 = frac3[2]*Lumi_D3;
-  float e4_D3 = frac3[3]*Lumi_D3;
-  float e5_D3 = frac3[4]*Lumi_D3; 
-   
-  // === Sum up the total number of tracks 
-  float Lumi_D4 = trk4_D -> Integral(); 
-  float e1_D4 = frac4[0]*Lumi_D4;
-  float e2_D4 = frac4[1]*Lumi_D4;
-  float e3_D4 = frac4[2]*Lumi_D4;
-  float e4_D4 = frac4[3]*Lumi_D4;
-  float e5_D4 = frac4[4]*Lumi_D4; 
-   
-  // FLost 1: The number of tracks lost in the 1-track measurement 
-  float Nom_1 = 1*e2_D1 + 2*e3_D1 + 3*e4_D1 + 4*e5_D1;
-  float Den_1 = e1_D1 + 2*e2_D1 + 3*e3_D1 + 4*e4_D1 + 5*e5_D1;  
- 
-  // FLost 2: The number of tracks lost in the 1-track measurement 
-  float Nom_2 = 1*e3_D2 + 2*e4_D2 + 3*e5_D2;
-  float Den_2 = 2*e2_D2 + 3*e3_D2 + 4*e4_D2 + 5*e5_D2; 
- 
-  // FLost 3: The number of tracks lost in the 1-track measurement 
-  float Nom_3 = 1*e4_D3 + 2*e5_D3;
-  float Den_3 = 3*e3_D3 + 4*e4_D3 + 5*e5_D3; 
- 
-  // FLost 4: The number of tracks lost in the 1-track measurement 
-  float Nom_4 = 1*e5_D4;
-  float Den_4 = 4*e4_D4 + 5*e5_D4; 
-
-  float FLost = (Nom_1 + Nom_2 + Nom_3 + Nom_4) / (Den_1 + Den_2 + Den_3 + Den_4);
-  std::cout << "FLost " << FLost << std::endl; 
-}
-
 
 void Presentation::ThresholdEffects()
 {

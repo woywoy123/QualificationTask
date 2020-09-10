@@ -395,8 +395,82 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
  
   for (int i(0); i < iter; i++)
   {
-    Hist -> SetBinContent(i+1, 1e-20);
+    Hist -> SetBinContent(i+1, 1e-6);
   }
 
 }
+
+float BaseFunctions::FLost(std::vector<TH1F*> ntrk_Data, std::vector<std::vector<TH1F*>> Truth_Sets)
+{
+
+  TH1F* trk1_D = ntrk_Data[0]; 
+  TH1F* trk2_D = ntrk_Data[1];
+  TH1F* trk3_D = ntrk_Data[2];
+  TH1F* trk4_D = ntrk_Data[3];
+  TH1F* trk5_D = ntrk_Data[4];
+
+  std::vector<TH1F*> trk1_PDF = Truth_Sets[0];
+  std::vector<TH1F*> trk2_PDF = Truth_Sets[1]; 
+  std::vector<TH1F*> trk3_PDF = Truth_Sets[2]; 
+  std::vector<TH1F*> trk4_PDF = Truth_Sets[3]; 
+  std::vector<TH1F*> trk5_PDF = Truth_Sets[4]; 
+
+  std::vector<TString> Names = {"ntrk1", "ntrk2", "ntrk3", "ntrk4", "ntrk5"};
+
+  // Lost Tracks in 1-Track 
+  // === Sum up the total number of tracks 
+  float Lumi_D1 = trk1_D -> Integral(); 
+  float e1_D1 = trk1_PDF[0] -> Integral();
+  float e2_D1 = trk1_PDF[1] -> Integral();
+  float e3_D1 = trk1_PDF[2] -> Integral();
+  float e4_D1 = trk1_PDF[3] -> Integral();
+  float e5_D1 = trk1_PDF[4] -> Integral();
+  
+  // === Sum up the total number of tracks 
+  float Lumi_D2 = trk2_D -> Integral(); 
+  float e1_D2 = trk2_PDF[0] -> Integral();
+  float e2_D2 = trk2_PDF[1] -> Integral();
+  float e3_D2 = trk2_PDF[2] -> Integral();
+  float e4_D2 = trk2_PDF[3] -> Integral();
+  float e5_D2 = trk2_PDF[4] -> Integral();
+ 
+  // === Sum up the total number of tracks 
+  float Lumi_D3 = trk3_D -> Integral(); 
+  float e1_D3 = trk3_PDF[0] -> Integral();
+  float e2_D3 = trk3_PDF[1] -> Integral();
+  float e3_D3 = trk3_PDF[2] -> Integral();
+  float e4_D3 = trk3_PDF[3] -> Integral();
+  float e5_D3 = trk3_PDF[4] -> Integral();
+   
+  // === Sum up the total number of tracks 
+  float Lumi_D4 = trk4_D -> Integral(); 
+  float e1_D4 = trk4_PDF[0] -> Integral();
+  float e2_D4 = trk4_PDF[1] -> Integral();
+  float e3_D4 = trk4_PDF[2] -> Integral();
+  float e4_D4 = trk4_PDF[3] -> Integral();
+  float e5_D4 = trk4_PDF[4] -> Integral();
+   
+  // FLost 1: The number of tracks lost in the 1-track measurement 
+  float Nom_1 = 1*e2_D1 + 2*e3_D1 + 3*e4_D1 + 4*e5_D1;
+  float Den_1 = e1_D1 + 2*e2_D1 + 3*e3_D1 + 4*e4_D1 + 5*e5_D1;  
+ 
+  // FLost 2: The number of tracks lost in the 1-track measurement 
+  float Nom_2 = 1*e3_D2 + 2*e4_D2 + 3*e5_D2;
+  float Den_2 = 2*e2_D2 + 3*e3_D2 + 4*e4_D2 + 5*e5_D2; 
+ 
+  // FLost 3: The number of tracks lost in the 1-track measurement 
+  float Nom_3 = 1*e4_D3 + 2*e5_D3;
+  float Den_3 = 3*e3_D3 + 4*e4_D3 + 5*e5_D3; 
+ 
+  // FLost 4: The number of tracks lost in the 1-track measurement 
+  float Nom_4 = 1*e5_D4;
+  float Den_4 = 4*e4_D4 + 5*e5_D4; 
+
+  float FLost = (Nom_1 + Nom_2 + Nom_3 + Nom_4) / (Den_1 + Den_2 + Den_3 + Den_4);
+  
+  return FLost;
+}
+
+
+
 

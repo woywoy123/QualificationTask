@@ -12,15 +12,15 @@ void PostAnalysis()
   // ==== Classes being imported ==== //
   BaseFunctions B;
   DistributionGenerators D; 
-  Plotting P; 
+  Presentation P; 
   BaseFunctionTest BFT; 
   DerivedFunctionTest DFT;
   DerivedFunctions DF;
 
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
-  int Mode = 1;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
-  bool Test = true; // Test Components 
+  int Mode = 2;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
+  bool Test = false; // Test Components 
   int Shift = 0;
 
   // Histogram parameters  
@@ -32,17 +32,11 @@ void PostAnalysis()
   float npts = 500000; 
   float mean = 0;
   float stdev = 0.01; 
-  float m_s = -4;
-  float m_e = 4;
-  float s_s = 0.0001;
-  float s_e = 5;
 
   // Other parameters
-  float offset = 0.1;
-  float Gamma = 1;
-  int iter = 100;
-  int cor_loop = 20; // Correction loop number 
-  std::vector<float> Params = {mean, stdev, m_s, m_e, s_s, s_e}; 
+  float offset = 0.01;
+  int iter = 50;
+  int cor_loop = 100; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> trk1_N;
@@ -60,6 +54,9 @@ void PostAnalysis()
   std::vector<float> CLS5; 
   std::vector<std::vector<float>> Closure; 
 
+  //==== Monte Carlo Parameters 
+  std::map<TString, std::vector<float>> Params;
+ 
   // Monte Carlo Reading 
   if( Mode == 0 )
   {
@@ -113,12 +110,8 @@ void PostAnalysis()
   if ( Mode == 2 )
   {
     TH1F* trk1 = D.FillTH1F("dEdx_out1_ntrk1_calib", energies, MC_dir); 
-    ntrk_Data.push_back(trk1);
-    
-    for (TH1F* H : D.FillTH1F({"dEdx_ntrk_2", "dEdx_ntrk_3", "dEdx_ntrk_4", "dEdx_ntrk_5"} , MC_dir))
-    {
-      ntrk_Data.push_back(H);
-    } 
+    ntrk_Data.push_back(trk1); 
+    for (TH1F* H : D.FillTH1F({"dEdx_ntrk_2", "dEdx_ntrk_3", "dEdx_ntrk_4", "dEdx_ntrk_5"} , MC_dir)){ntrk_Data.push_back(H);} 
     
     // They are only there for not causing a Segfault 
     trk1_N = D.FillTH1F(trk_1, MC_dir); 
@@ -134,7 +127,7 @@ void PostAnalysis()
   {
     Presentation P; 
     P.ThresholdEffects();  
-    Test = false;
+    Test = false; 
   }
 
   // Component testing 
@@ -151,39 +144,27 @@ void PostAnalysis()
     //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
     //BFT.Constraint(); 
-  
-    //P.PlotHists(Truth_Sets, ntrk_Data);
-
-    //==== Monte Carlo Parameters 
-    std::map<TString, std::vector<float>> Params;
-    
+ 
     //Gaussian Parameter used for deconvolution
-    Params["Gaussian"] = {0, 0.01};
-    Params["m_s"] = {-30, -20, -1, -1, -1}; // Start of Parameter Mean Scan 
-    Params["m_e"] = {30, 20, 1, 1, 1}; // End of Parameter Mean Scan 
-    Params["m_i"] = {0., 0., 0, 0, 0}; // Initial Guess of Mean 
-    Params["m_c_v1"] = {0.0, 0.0, 0.0, 0.0, 0.0};  // Constraint of Gaussian Mean 
-    Params["m_c_v2"] = {1, 1, 1, 1, 1};  // Constraint of Gaussian Mean resolution (?) 
-       
+    Params["Gaussian"] = {0, 0.1};
+    Params["m_s"] = {-3, -10, -15, -15, -15};
+    Params["m_e"] = {3, 20, 15, 15, 15};        
     Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {1, 1, 1, 1, 1};
-    Params["s_i"] = {0.1, 0.1, 0.1, 0.1, 0.1};   
-    Params["s_c_v1"] = {1., 1., 1., 1., 1.};  // Constraint of Gaussian Stdev 
-    Params["s_c_v2"] = {1, 1, 1, 1, 1};  // Constraint of Gaussian Stdev resolution (?) 
+    Params["s_e"] = {5, 20, 40, 40, 60};
  
-
-    // Toy Parameters
-    //std::map<TString, std::vector<float>> Params;
-    //Params["Gaussian"] = {0, 0.01};
-    //Params["m_s"] = {-3, -1, -1, -1, -1};
-    //Params["m_e"] = {3, 1, 1, 1, 1};
-    //Params["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001, 0.0001};
-    //Params["s_e"] = {1, 1, 1, 1, 1};
-    
-    DFT.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Gamma, Truth_Sets);   
-    //DFT.FLost(ntrk_Data, Truth_Sets); 
+    P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);     
   }
- 
+  else
+  {
+    //Gaussian Parameter used for deconvolution
+    Params["Gaussian"] = {0, 0.1};
+    Params["m_s"] = {-3, -10, -15, -15, -15};
+    Params["m_e"] = {3, 20, 15, 15, 15};        
+    Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
+    Params["s_e"] = {5, 20, 40, 40, 60};
+
+    P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
+  }
  
   std::cout << "Fin" << std::endl;
  

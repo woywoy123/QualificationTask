@@ -60,6 +60,7 @@ class BaseFunctions
     // ==== Benchmarks  
     float ChiSquare(std::vector<float> V1, std::vector<float> V2);
     void PredictionTruthPrint(std::vector<float> Truth, std::vector<float> Prediction);
+    float FLost(std::vector<TH1F*> ntrk_Data, std::vector<std::vector<TH1F*>> Truth); 
 
     // ==== Core Algorithm Functions 
     std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y = 0.75); 
