@@ -19,7 +19,7 @@ void PostAnalysis()
 
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
-  int Mode = 2;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
+  int Mode = 10;  // Change to 0 - MC, 1 - Toy, 2 - RealData, 3 - Presentation
   bool Test = false; // Test Components 
   int Shift = 0;
 
@@ -35,8 +35,8 @@ void PostAnalysis()
 
   // Other parameters
   float offset = 0.01;
-  int iter = 50;
-  int cor_loop = 100; // Correction loop number 
+  int iter = 5;
+  int cor_loop = 10; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> trk1_N;
@@ -158,12 +158,13 @@ void PostAnalysis()
   {
     //Gaussian Parameter used for deconvolution
     Params["Gaussian"] = {0, 0.1};
-    Params["m_s"] = {-3, -10, -15, -15, -15};
-    Params["m_e"] = {3, 20, 15, 15, 15};        
+    Params["m_s"] = {-5, -10, -20, -20, -20};
+    Params["m_e"] = {5, 30, 40, 40, 40};        
     Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {5, 20, 40, 40, 60};
+    Params["s_e"] = {5, 20, 40, 80, 120};
 
-    P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
+    //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
+    P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);  
   }
  
   std::cout << "Fin" << std::endl;

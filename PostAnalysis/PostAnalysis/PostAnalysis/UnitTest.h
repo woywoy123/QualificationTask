@@ -30,8 +30,7 @@ class Presentation
   public:
     void ThresholdEffects(); 
     void MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, std::vector<std::vector<TH1F*>> Closure);
-
-
+    void DataAnalysis(std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, int bins, float min, float max);
 };
 
 #endif

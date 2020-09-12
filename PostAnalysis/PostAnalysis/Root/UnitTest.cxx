@@ -208,12 +208,221 @@ void DerivedFunctionTest::DeconvolveGaussianFit(TH1F* trk1, TH1F* trk2,  float m
 
 void Presentation::MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, std::vector<std::vector<TH1F*>> Closure)
 {
-  DerivedFunctions DF; 
-  BaseFunctions B;
-   
+  DerivedFunctions DF;  
   std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> PDFs = DF.MainAlgorithm(ntrk, Params, offset, iter, cor_loop, Closure);
-
 }
+
+void Presentation::DataAnalysis(std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, int bins, float min, float max)
+{ 
+  auto Generate =[](std::map<TString, TH1F*> &Dic, std::vector<TString> Detector, std::vector<std::vector<TString>> Batch, std::vector<TString> Names, TString Dir, std::vector<TString> ntrk, int bins, float min, float max)
+  {
+    std::map<TString, int> Test; 
+    TFile* File = new TFile(Dir); 
+    for (int i(0); i < ntrk.size(); i++)
+    {
+      TString trk = ntrk[i] + "_All";
+      Dic[trk] = new TH1F(trk, trk, bins, min, max); 
+      Test[trk] = 0; 
+      for (TString v : Names)
+      {
+        TString trk_all = trk + "_" + v;
+        Dic[trk_all] = new TH1F(trk_all, trk_all, bins, min, max); 
+        Test[trk_all] = 0; 
+      }
+
+      for (int v(0); v < Detector.size(); v++)
+      {
+        TString Lay = Detector[v]; 
+        TString trk_L = ntrk[i] + "_" + Lay; 
+        Dic[trk_L] = new TH1F(trk_L, trk_L, bins, min, max);
+        Test[trk_L] = 0;  
+        for (int x(0); x < Batch.size(); x++)
+        {
+          std::vector<TString> Bat = Batch[x];
+          TString BN = Names[x]; 
+          TString trk_bn = trk_L + "_" + BN;
+          TString trk_all = trk + "_" + BN;
+          Dic[trk_bn] = new TH1F(trk_bn, trk_bn, bins, min, max);  
+          Test[trk_bn] = 0; 
+          for (int b(0); b < Bat.size(); b++)
+          {
+            TString dir = Lay + Bat[b]; 
+            File -> cd(dir);  
+            TH1F* H = (TH1F*)gDirectory -> Get(ntrk[i]);
+            Dic[trk_all] -> Add(H); 
+            Dic[trk] -> Add(H); 
+            Dic[trk_L] -> Add(H); 
+            Dic[trk_bn] -> Add(H); 
+
+            Test[trk_all]++;
+            Test[trk]++;
+            Test[trk_L]++;
+            Test[trk_bn]++;
+
+            File -> cd(); 
+          }
+        }
+      }
+    }
+
+    // Making sure that the counting makes sense for the histogram addition 
+    //std::map<TString, int>::iterator it; 
+    //for (it = Test.begin(); it != Test.end(); it++)
+    //{
+    //  std::cout << it -> first << " :: " << it -> second << std::endl; 
+    //}
+  };
+ 
+  DerivedFunctions DF;  
+  
+
+  std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2"};
+  std::vector<TString> E = Constants::energies;
+  std::vector<std::vector<TString>> Batch = {{E[0]}, 
+                                             {E[1], E[2]}, 
+                                             {E[3], E[4], E[5]}, 
+                                             {E[6], E[7], E[8], E[9], E[10], E[11], E[12], E[13], E[14], E[15]}};
+  std::vector<TString> Batch_Names = {"200", "200-600", "600-1200", "1200+"};
+
+  // Create the histograms for both the MC and the Data. The Data wont have truth but an empty set of histograms 
+  std::map<TString, TH1F*> Data_MC;
+  for (int i(0); i < Constants::All_MC.size(); i++)
+  {
+    std::vector<TString> ntrk = Constants::All_MC[i]; 
+    Generate(Data_MC, Detector_Layer, Batch, Batch_Names, Constants::MC_dir, ntrk, bins, min, max);     
+  }
+  Generate(Data_MC, Detector_Layer, Batch, Batch_Names, Constants::MC_dir, Constants::Data_Names, bins, min, max);    
+
+  Detector_Layer.push_back("All");
+   
+  // Iterate through the dictionary and build the data and truth sets used for the iteration 
+  std::map<TString, std::vector<std::vector<TH1F*>>> Closure_Dic;
+  std::map<TString, std::vector<TH1F*>> Data_Dic; 
+
+
+  
+  for (TString L : Detector_Layer)
+  { 
+    for (TString BN : Batch_Names)
+    {
+      for (std::vector<TString> tru : Constants::All_MC)
+      {
+        std::vector<TH1F*> truth;
+        for (TString t : tru)
+        { 
+          TString condition = t + "_" + L + "_" + BN;
+          std::map<TString, TH1F*>::iterator it;
+          for (it = Data_MC.begin(); it != Data_MC.end(); it++)
+          {
+            TString name = it -> second -> GetName();
+            if (name == condition)
+            {
+              truth.push_back(it -> second);
+            }
+          }
+        }
+        Closure_Dic[L + "_" + BN].push_back(truth); 
+      }
+
+      for (TString d : Constants::Data_Names)
+      {
+        TString condition = d + "_" + L + "_" + BN;
+        std::map<TString, TH1F*>::iterator it;
+        for (it = Data_MC.begin(); it != Data_MC.end(); it++)
+        {
+          TString name = it -> second -> GetName();
+          if (name == condition)
+          {
+            Data_Dic[L + "_" + BN].push_back(it -> second);
+          }
+        }
+      }
+    }
+
+    for (TString d : Constants::Data_Names)
+    {
+      TString condition = d + "_" + L;
+      std::map<TString, TH1F*>::iterator it;
+      for (it = Data_MC.begin(); it != Data_MC.end(); it++)
+      {
+        TString name = it -> second -> GetName();
+        if (name == condition)
+        {
+          Data_Dic[L].push_back(it -> second); 
+        }
+      } 
+    }
+
+    for (std::vector<TString> d : Constants::All_MC)
+    {
+      std::vector<TH1F*> truth; 
+      for (TString x : d)
+      {
+        TString condition = x + "_" + L;
+        std::map<TString, TH1F*>::iterator it;
+        for (it = Data_MC.begin(); it != Data_MC.end(); it++)
+        {
+          TString name = it -> second -> GetName();
+          if (name == condition)
+          {
+            truth.push_back(it -> second); 
+          }
+        } 
+      }
+      Closure_Dic[L].push_back(truth); 
+    }
+  }
+
+  
+  std::map<TString, std::vector<TH1F*>>::iterator it; 
+  int z = 1; 
+  for (it = Data_Dic.begin(); it != Data_Dic.end(); it++)
+  {
+    TString Test = it -> first; 
+    std::cout << "Current Test Being Conducted: " << Test << " :: " << z++ << "/" << Data_Dic.size() << std::endl; 
+    std::vector<TH1F*> ntrk_Data = it -> second; 
+    std::vector<std::vector<TH1F*>> Truth_Sets = Closure_Dic[Test];
+
+    // Here we check if the data histograms actually have enough events 
+    bool run = true;  
+    for (TH1F* H : ntrk_Data)
+    {
+      int e = H -> GetEntries();
+      if (e == 0){run = false;}
+    } 
+    if (run == true)
+    { 
+      TFile Output("out.root", "UPDATE"); 
+      std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> res =  DF.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets); 
+      
+      Output.mkdir(Test);
+      for (int p(0); p < res.size(); p++)
+      {
+        Output.cd(Test);   
+        TString n = "Iteration_"; n+=(p); 
+        gDirectory -> mkdir(n); 
+        gDirectory -> cd(n); 
+        TH1F* FLost = res[p].first;
+        FLost -> Write(); 
+        std::vector<TH1F*> Others = res[p].second; 
+        for (TH1F* H_R : Others)
+        {
+          H_R -> Write(); 
+        }
+        gDirectory -> cd(); 
+      }
+      Output.Close(); 
+    }
+   
+    else
+    {
+      std::cout << "skipped " << Test << std::endl;
+    }
+  }
+
+ 
+}
+
 
 void Presentation::ThresholdEffects()
 {

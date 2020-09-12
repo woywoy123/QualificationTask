@@ -462,7 +462,6 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
   BaseFunctions B;
   Plotting P; 
   TH1::AddDirectory(false);
-  std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> Output; 
   
   // Create histograms for the ntrack data
   TH1F* trk1_L = new TH1F("trk1_L", "trk1_L", ntrk[0] -> GetNbinsX(), 0, ntrk[0] -> GetNbinsX());
@@ -485,33 +484,33 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
   TH1F* trk4_L_C = (TH1F*)trk4_L -> Clone("trk4_L_C");
   TH1F* trk5_L_C = (TH1F*)trk5_L -> Clone("trk5_L_C");
     
-  // =========================== Plotting variables 
-  TString Title_Params = "GlobalSettings"; Title_Params += ("-iter-"); Title_Params += (iter); Title_Params += ("-cor_loop-"); Title_Params += (cor_loop); 
-   
-  std::vector<TString> Name = {"m_s", "m_e", "s_s", "s_e"}; 
-  for ( TString n : Name )
-  {
-    std::vector<float> t = Params[n]; 
-    Title_Params += (n + ":");
-    for (float x : t)
-    {
-      double h = (int)(10000*x);
-      h = h/10000;
-      Title_Params += (h); Title_Params += (",");
-    }
-    Title_Params += (":");
-  }
-  TString Title_HD = Title_Params + "_HD.pdf"; 
-  Title_Params += (".pdf");
+  //// =========================== Plotting variables 
+  //TString Title_Params = "GlobalSettings"; Title_Params += ("-iter-"); Title_Params += (iter); Title_Params += ("-cor_loop-"); Title_Params += (cor_loop); 
+  // 
+  //std::vector<TString> Name = {"m_s", "m_e", "s_s", "s_e"}; 
+  //for ( TString n : Name )
+  //{
+  //  std::vector<float> t = Params[n]; 
+  //  Title_Params += (n + ":");
+  //  for (float x : t)
+  //  {
+  //    double h = (int)(10000*x);
+  //    h = h/10000;
+  //    Title_Params += (h); Title_Params += (",");
+  //  }
+  //  Title_Params += (":");
+  //}
+  //TString Title_HD = Title_Params + "_HD.pdf"; 
+  //Title_Params += (".pdf");
 
-  TCanvas* can = new TCanvas();
-  can -> Print(Title_Params + "[");
+  //TCanvas* can = new TCanvas();
+  //can -> Print(Title_Params + "[");
 
-  TCanvas* can_HD = new TCanvas();
-  can_HD -> Print(Title_HD + "[");
+  //TCanvas* can_HD = new TCanvas();
+  //can_HD -> Print(Title_HD + "[");
 
-  gStyle -> SetOptStat(0);
-  // ======================================================= 
+  //gStyle -> SetOptStat(0);
+  //// ======================================================= 
 
   // Forward declaration 
   std::map<TString, std::vector<float>> Params1;
@@ -519,9 +518,11 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
   std::map<TString, std::vector<float>> Params3;
   std::map<TString, std::vector<float>> Params4;
   std::map<TString, std::vector<float>> Params5;
-  Double_t FLost_Vec[cor_loop]; 
-  Double_t FLost_Vec_MC[cor_loop]; 
-  Double_t iteration[cor_loop]; 
+
+  // ============= Output Variables ============= //
+  std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> Output; 
+  TH1F* FLOST_Prediction = new TH1F("FLost_Pred", "FLost_Pred", cor_loop, 0, cor_loop); 
+  TH1F* FLOST_Truth = new TH1F("FLost_Truth", "FLost_Truth", cor_loop, 0, cor_loop); 
 
   for (int x(0); x < cor_loop; x++)
   { 
@@ -635,58 +636,82 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     std::vector<TH1F*> Truth = {Closure[0][0], Closure[1][1], Closure[2][2], Closure[3][3]};
 
  
-    // Final Plot where we compare subtracted with the predicted PDF and the real distribution 
-    can_HD -> Clear(); 
-    can_HD -> Divide(2,2);
-    P.PlotHists({Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs}, Closure, ntrk, can_HD); 
-    can_HD -> Print(Title_HD);
+    //// Final Plot where we compare subtracted with the predicted PDF and the real distribution 
+    //can_HD -> Clear(); 
+    //can_HD -> Divide(2,2);
+    //P.PlotHists({Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs}, Closure, ntrk, can_HD); 
+    //can_HD -> Print(Title_HD);
 
-    // ==== Plotting output 
-    // Trk1 
-    can_HD -> Clear();
-    can_HD -> Divide(1); 
-    P.PlotHists({Trk1_PDFs}, Closure[0], ntrk[0], can_HD); 
-    can_HD -> Print(Title_HD);
+    //// ==== Plotting output 
+    //// Trk1 
+    //can_HD -> Clear();
+    //can_HD -> Divide(1); 
+    //P.PlotHists({Trk1_PDFs}, Closure[0], ntrk[0], can_HD); 
+    //can_HD -> Print(Title_HD);
 
-    // Trk2 
-    can_HD -> Clear();
-    can_HD -> Divide(1);
-    P.PlotHists({Trk2_PDFs}, Closure[1], ntrk[1], can_HD); 
-    can_HD -> Print(Title_HD);
+    //// Trk2 
+    //can_HD -> Clear();
+    //can_HD -> Divide(1);
+    //P.PlotHists({Trk2_PDFs}, Closure[1], ntrk[1], can_HD); 
+    //can_HD -> Print(Title_HD);
 
-    // Trk3 
-    can_HD -> Clear();
-    can_HD -> Divide(1);
-    P.PlotHists({Trk3_PDFs}, Closure[2], ntrk[2], can_HD); 
-    can_HD -> Print(Title_HD);
+    //// Trk3 
+    //can_HD -> Clear();
+    //can_HD -> Divide(1);
+    //P.PlotHists({Trk3_PDFs}, Closure[2], ntrk[2], can_HD); 
+    //can_HD -> Print(Title_HD);
 
-    // Trk4 
-    can_HD -> Clear();
-    can_HD -> Divide(1);
-    P.PlotHists({Trk4_PDFs}, Closure[3], ntrk[3], can_HD); 
-    can_HD -> Print(Title_HD);
+    //// Trk4 
+    //can_HD -> Clear();
+    //can_HD -> Divide(1);
+    //P.PlotHists({Trk4_PDFs}, Closure[3], ntrk[3], can_HD); 
+    //can_HD -> Print(Title_HD);
 
-    // This is the plot showing all other distributions within the plot  
-    can -> Clear();
-    can -> SetWindowSize(2400,1200); 
-    can -> Divide(2,2);
-    P.PlotHists({Trk1_PDFs[0], Trk2_PDFs[1], Trk3_PDFs[2], Trk4_PDFs[3]}, Tracks, Truth, can);
-    can -> Print(Title_Params);
+    //// This is the plot showing all other distributions within the plot  
+    //can -> Clear();
+    //can -> SetWindowSize(2400,1200); 
+    //can -> Divide(2,2);
+    //P.PlotHists({Trk1_PDFs[0], Trk2_PDFs[1], Trk3_PDFs[2], Trk4_PDFs[3]}, Tracks, Truth, can);
+    //can -> Print(Title_Params);
 
-    // Output PDFs
-    Output[0] = std::make_pair(trk1_L, GxTrk1);
-    Output[1] = std::make_pair(trk2_L, GxTrk2);
-    Output[2] = std::make_pair(trk3_L, GxTrk3); 
-    Output[3] = std::make_pair(trk4_L, GxTrk4);
-    Output[4] = std::make_pair(trk4_L, GxTrk5);
+    // ======== Section for the output ========== //
+    // === Save the PDFs and the subtracted Hists
 
-    FLost_Vec[x] = B.FLost(ntrk, {Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs, Trk5_PDFs}); 
-    FLost_Vec_MC[x] = B.FLost(ntrk, Closure);
-    iteration[x] = x+1; 
+    // === Save the subtracted Hists
+    std::vector<TString> Names_Pure = {"trk1_Pure", "trk2_Pure", "trk3_Pure", "trk4_Pure", "trk5_Pure"};    
+    std::vector<TH1F*> Track_Out = B.MakeTH1F(Names_Pure, ntrk[2]); 
+    B.ShiftExpandTH1F({trk1_L, trk2_L, trk3_L, trk4_L, trk5_L}, Track_Out);
 
-    // Prematurely break loop to now loose the PDFs
-    if (x == cor_loop -1){break;}     
+
+    std::vector<TH1F*> Pred_PDF;
+    std::vector<std::vector<TH1F*>> Set = {Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs, Trk5_PDFs, Track_Out}; 
+    for (std::vector<TH1F*> PDF_S : Set)
+    {
+      for (int g(0); g < PDF_S.size(); g++)
+      {
+        TString name_pdf = PDF_S[g] -> GetName(); name_pdf += (x); 
+        Pred_PDF.push_back((TH1F*)PDF_S[g] -> Clone(name_pdf));
+      }
+    }
+
+    // === Save the FLost progress
+    float FLost_Pred = B.FLost(ntrk, {Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs, Trk5_PDFs}); 
+    float FLost_MC = B.FLost(ntrk, Closure);   
+    FLOST_Prediction -> SetBinContent(x+1, FLost_Pred); 
+    FLOST_Truth -> SetBinContent(x+1, FLost_MC);   
     
+    TString name_out =  "FLost_P.at."; name_out += (x); 
+    TH1F* FL_P_Copy = (TH1F*)FLOST_Prediction -> Clone(name_out);
+
+    name_out =  "FLost_T.at."; name_out += (x); 
+    TH1F* FL_T_Copy = (TH1F*)FLOST_Truth -> Clone(name_out);
+    Pred_PDF.push_back(FL_T_Copy); 
+
+    Output[x] = std::make_pair(FL_P_Copy, Pred_PDF);
+ 
+    //gr.SetPoint(x, x+1, FLost_Pred); 
+    //gr.SetPoint(x, x+1, FLost_MC);
+  
     // Clean up memory  
     for (int i(0); i < GxTrk2.size(); i++)
     {
@@ -705,29 +730,12 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       delete Trk5_PDFs[i];
     }
   }
-  can -> Print(Title_Params + ")");
-  can_HD -> Print(Title_HD + ")"); 
-  
-  Int_t n = (Int_t)cor_loop;
  
-  TCanvas* c1 = new TCanvas("Evolving FLost"); 
-  c1 -> SetLogy(); 
-  gStyle -> SetOptStat(0); 
-  TGraph* gr = new TGraph(n, iteration, FLost_Vec_MC);  
-  gr -> Draw("SAMEAC-"); 
-  c1 -> Update(); 
-
-  TGraph* gr_mc = new TGraph(n, iteration, FLost_Vec);  
-  gr_mc -> Draw("SAMEAC*"); 
-  c1 -> Update();  
-  
-  c1 -> Print("FLost.pdf"); 
-  
-  delete can; 
-  delete can_HD; 
-  delete gr_mc;
-  delete gr; 
-  delete c1;
+  //can -> Print(Title_Params + ")");
+  //can_HD -> Print(Title_HD + ")"); 
+ 
+  //delete can; 
+  //delete can_HD; 
   return Output;
 }
 
