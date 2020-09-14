@@ -373,7 +373,24 @@ void Presentation::DataAnalysis(std::map<TString, std::vector<float>> Params, fl
     }
   }
 
-  
+
+  TString Title_Params = "GlobalSettings"; Title_Params += ("-iter-"); Title_Params += (iter); Title_Params += ("-cor_loop-"); Title_Params += (cor_loop); 
+   
+  std::vector<TString> Name = {"m_s", "m_e", "s_s", "s_e"}; 
+  for ( TString n : Name )
+  {
+    std::vector<float> t = Params[n]; 
+    Title_Params += (n + ":");
+    for (float x : t)
+    {
+      double h = (int)(10000*x);
+      h = h/10000;
+      Title_Params += (h); Title_Params += (",");
+    }
+    Title_Params += (":");
+  }
+  Title_Params += (".root");
+
   std::map<TString, std::vector<TH1F*>>::iterator it; 
   int z = 1; 
   for (it = Data_Dic.begin(); it != Data_Dic.end(); it++)
@@ -392,7 +409,7 @@ void Presentation::DataAnalysis(std::map<TString, std::vector<float>> Params, fl
     } 
     if (run == true)
     { 
-      TFile Output("out.root", "UPDATE"); 
+      TFile Output(Title_Params, "UPDATE"); 
       std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> res =  DF.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets); 
       
       Output.mkdir(Test);
@@ -418,10 +435,150 @@ void Presentation::DataAnalysis(std::map<TString, std::vector<float>> Params, fl
     {
       std::cout << "skipped " << Test << std::endl;
     }
+  } 
+}
+
+void Presentation::AlgorithmPlots(TString dir, int iter)
+{
+  Plotting P; 
+  
+  std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2", "All"};
+  std::vector<TString> Batch_Names = {"_200", "_200-600", "_600-1200", "_1200+", ""};
+  std::vector<TString> BaseName = {"trk1", "trk2", "trk3", "trk4", "trk5"}; 
+  std::vector<TString> BaseName2 = {"F1", "F2", "F3", "F4", "F5", "Pure"}; 
+  
+  std::set<TString> Names; 
+  Names.insert("FLost_T.at."); 
+  Names.insert("FLost_P.at."); 
+  for (TString T : BaseName)
+  {
+    for (TString B : BaseName2)
+    {
+      TString n = T + "_" + B; 
+      Names.insert(n);  
+    }
   }
 
- 
+  std::set<TString> DirNames; 
+  for (TString Layer : Detector_Layer)
+  {
+    for (TString Ba : Batch_Names)
+    {
+      TString n = Layer + Ba; 
+      DirNames.insert(n); 
+    }
+  }
+
+  TFile* f = new TFile(dir);
+  std::vector<TString> Dirs; 
+  for (TString D : DirNames)
+  {
+    if (f -> cd(D))
+    {
+      std::cout << D << std::endl;
+      for (int i(0); i < iter; i++)
+      {
+        TString it = "Iteration_"; it += (i); 
+        f -> cd(D + "/" + it);
+        Dirs.push_back(D + "/" + it);
+      }
+    }  
+  }
+
+  std::map<TString, std::vector<std::vector<TH1F*>>> Container;
+  for (TString n : Dirs)
+  {
+    std::cout << n << std::endl;
+    int chop = n.Last(*"_");
+    TString r = n(chop+1, n.Length());
+    std::vector<TH1F*> Hist_Iteration;  
+    for (TString x : Names)
+    {
+      f -> cd(n);
+      TString n_h = x+r;
+      TH1F* H = (TH1F*)gDirectory -> Get(n_h); 
+      std::cout << H -> GetName() << std::endl;
+      Hist_Iteration.push_back(H); 
+    }
+    chop = n.Last(*"/"); 
+    r = n(0, chop); 
+    std::cout << r << std::endl;
+    Container[r].push_back(Hist_Iteration);
+  }
+
+  for (TString N : DirNames)
+  {
+    TCanvas* can = new TCanvas(); 
+    TString FileName = N + ".pdf";
+    can -> Print(FileName + "["); 
+    std::vector<std::vector<TH1F*>> Iterations = Container[N]; 
+    std::cout << Iterations.size() << std::endl;
+    for (int i(0); i < Iterations.size(); i++)
+    {
+      std::vector<TH1F*> Hists = Iterations[i]; 
+      std::vector<TH1F*> trk1_PDF; 
+      std::vector<TH1F*> trk2_PDF; 
+      std::vector<TH1F*> trk3_PDF; 
+      std::vector<TH1F*> trk4_PDF; 
+      std::vector<TH1F*> ntrk;  
+      std::vector<TH1F*> FLost;      
+      
+      for (TH1F* H : Hists)
+      {
+        TString title = H -> GetName(); 
+        if (title.Contains("trk1_F")){ trk1_PDF.push_back(H); }
+        if (title.Contains("trk2_F")){ trk2_PDF.push_back(H); }
+        if (title.Contains("trk3_F")){ trk3_PDF.push_back(H); }
+        if (title.Contains("trk4_F")){ trk4_PDF.push_back(H); }
+        if (title.Contains("trk1_Pure")){ ntrk.push_back(H); }
+        if (title.Contains("trk2_Pure")){ ntrk.push_back(H); }
+        if (title.Contains("trk3_Pure")){ ntrk.push_back(H); }
+        if (title.Contains("trk4_Pure")){ ntrk.push_back(H); }
+        if (title.Contains("FLost")){ FLost.push_back(H); }
+      }
+
+      can -> Clear(); 
+      can -> Divide(2,2); 
+      gStyle -> SetOptStat(0); 
+      P.PlotHists({trk1_PDF, trk2_PDF, trk3_PDF, trk4_PDF}, ntrk, can); 
+      can -> Draw(); 
+      can -> Print(FileName); 
+      
+    }
+    can -> Print(FileName + ")"); 
+    delete can;
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void Presentation::ThresholdEffects()

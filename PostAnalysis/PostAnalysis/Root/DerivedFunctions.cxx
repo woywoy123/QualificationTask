@@ -484,34 +484,6 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
   TH1F* trk4_L_C = (TH1F*)trk4_L -> Clone("trk4_L_C");
   TH1F* trk5_L_C = (TH1F*)trk5_L -> Clone("trk5_L_C");
     
-  //// =========================== Plotting variables 
-  //TString Title_Params = "GlobalSettings"; Title_Params += ("-iter-"); Title_Params += (iter); Title_Params += ("-cor_loop-"); Title_Params += (cor_loop); 
-  // 
-  //std::vector<TString> Name = {"m_s", "m_e", "s_s", "s_e"}; 
-  //for ( TString n : Name )
-  //{
-  //  std::vector<float> t = Params[n]; 
-  //  Title_Params += (n + ":");
-  //  for (float x : t)
-  //  {
-  //    double h = (int)(10000*x);
-  //    h = h/10000;
-  //    Title_Params += (h); Title_Params += (",");
-  //  }
-  //  Title_Params += (":");
-  //}
-  //TString Title_HD = Title_Params + "_HD.pdf"; 
-  //Title_Params += (".pdf");
-
-  //TCanvas* can = new TCanvas();
-  //can -> Print(Title_Params + "[");
-
-  //TCanvas* can_HD = new TCanvas();
-  //can_HD -> Print(Title_HD + "[");
-
-  //gStyle -> SetOptStat(0);
-  //// ======================================================= 
-
   // Forward declaration 
   std::map<TString, std::vector<float>> Params1;
   std::map<TString, std::vector<float>> Params2;
@@ -524,6 +496,8 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
   TH1F* FLOST_Prediction = new TH1F("FLost_Pred", "FLost_Pred", cor_loop, 0, cor_loop); 
   TH1F* FLOST_Truth = new TH1F("FLost_Truth", "FLost_Truth", cor_loop, 0, cor_loop); 
 
+  TCanvas* can_HD = new TCanvas();
+  TString Title_HD = "out.pdf";
   for (int x(0); x < cor_loop; x++)
   { 
     // Forward declaration 
@@ -577,10 +551,10 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     SafeScale(GxTrk5, trk5_L); 
 
     // Do the subtraction  
-    trk1_L -> Add(GxTrk1[1], -1); 
-    trk1_L -> Add(GxTrk1[2], -1); 
-    trk1_L -> Add(GxTrk1[3], -1); 
-    trk1_L -> Add(GxTrk1[4], -1); 
+    //trk1_L -> Add(GxTrk1[1], -1); 
+    //trk1_L -> Add(GxTrk1[2], -1); 
+    //trk1_L -> Add(GxTrk1[3], -1); 
+    //trk1_L -> Add(GxTrk1[4], -1); 
  
     trk2_L -> Add(GxTrk2[0], -1);
     trk2_L -> Add(GxTrk2[2], -1);
@@ -636,7 +610,7 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     std::vector<TH1F*> Truth = {Closure[0][0], Closure[1][1], Closure[2][2], Closure[3][3]};
 
  
-    //// Final Plot where we compare subtracted with the predicted PDF and the real distribution 
+    // Final Plot where we compare subtracted with the predicted PDF and the real distribution 
     //can_HD -> Clear(); 
     //can_HD -> Divide(2,2);
     //P.PlotHists({Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs}, Closure, ntrk, can_HD); 
@@ -667,12 +641,12 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     //P.PlotHists({Trk4_PDFs}, Closure[3], ntrk[3], can_HD); 
     //can_HD -> Print(Title_HD);
 
-    //// This is the plot showing all other distributions within the plot  
-    //can -> Clear();
-    //can -> SetWindowSize(2400,1200); 
-    //can -> Divide(2,2);
-    //P.PlotHists({Trk1_PDFs[0], Trk2_PDFs[1], Trk3_PDFs[2], Trk4_PDFs[3]}, Tracks, Truth, can);
-    //can -> Print(Title_Params);
+    // This is the plot showing all other distributions within the plot  
+    can_HD -> Clear();
+    can_HD -> SetWindowSize(2400,1200); 
+    can_HD -> Divide(2,2);
+    P.PlotHists({Trk1_PDFs[0], Trk2_PDFs[1], Trk3_PDFs[2], Trk4_PDFs[3]}, Tracks, Truth, can_HD);
+    can_HD -> Print(Title_HD);
 
     // ======== Section for the output ========== //
     // === Save the PDFs and the subtracted Hists
@@ -682,9 +656,9 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     std::vector<TH1F*> Track_Out = B.MakeTH1F(Names_Pure, ntrk[2]); 
     B.ShiftExpandTH1F({trk1_L, trk2_L, trk3_L, trk4_L, trk5_L}, Track_Out);
 
-
     std::vector<TH1F*> Pred_PDF;
-    std::vector<std::vector<TH1F*>> Set = {Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs, Trk5_PDFs, Track_Out}; 
+    std::vector<std::vector<TH1F*>> Set = {Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs, Trk5_PDFs, Track_Out, ntrk, Closure[0], Closure[1], Closure[2], Closure[3], Closure[4]}; 
+
     for (std::vector<TH1F*> PDF_S : Set)
     {
       for (int g(0); g < PDF_S.size(); g++)
@@ -709,9 +683,6 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
 
     Output[x] = std::make_pair(FL_P_Copy, Pred_PDF);
  
-    //gr.SetPoint(x, x+1, FLost_Pred); 
-    //gr.SetPoint(x, x+1, FLost_MC);
-  
     // Clean up memory  
     for (int i(0); i < GxTrk2.size(); i++)
     {
@@ -730,7 +701,6 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       delete Trk5_PDFs[i];
     }
   }
- 
   //can -> Print(Title_Params + ")");
   //can_HD -> Print(Title_HD + ")"); 
  
