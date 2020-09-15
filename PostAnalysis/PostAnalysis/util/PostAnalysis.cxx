@@ -20,7 +20,7 @@ void PostAnalysis()
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
   int Mode = 10;  // Change to 0 - MC, 1 - Toy, 2 - Data, 3 - Presentation
-  bool Test = false; // Test Components 
+  bool Test = true; // Test Components 
   int Shift = 0;
 
   // Histogram parameters  
@@ -35,8 +35,8 @@ void PostAnalysis()
 
   // Other parameters
   float offset = 0.001;
-  int iter = 50;
-  int cor_loop = 50; // Correction loop number 
+  int iter = 10;
+  int cor_loop = 10; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> trk1_N;
@@ -106,22 +106,6 @@ void PostAnalysis()
     Closure = {CLS1, CLS2, CLS3, CLS4, CLS5}; 
   }
 
-  // Data:: Need to change the TH1F fill
-  if ( Mode == 2 )
-  {
-    TH1F* trk1 = D.FillTH1F("dEdx_out1_ntrk1_calib", energies, MC_dir); 
-    ntrk_Data.push_back(trk1); 
-    for (TH1F* H : D.FillTH1F({"dEdx_ntrk_2", "dEdx_ntrk_3", "dEdx_ntrk_4", "dEdx_ntrk_5"} , MC_dir)){ntrk_Data.push_back(H);} 
-    
-    // They are only there for not causing a Segfault 
-    trk1_N = D.FillTH1F(trk_1, MC_dir); 
-    trk2_N = D.FillTH1F(trk_2, MC_dir); 
-    trk3_N = D.FillTH1F(trk_3, MC_dir); 
-    trk4_N = D.FillTH1F(trk_4, MC_dir);
-    trk5_N = D.FillTH1F(trk_5, MC_dir);
-    Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N, trk5_N}; 
-  }
-
   // Presentation Stuff
   if ( Mode == 3 )
   {
@@ -146,14 +130,18 @@ void PostAnalysis()
     //BFT.Constraint(); 
  
     //Gaussian Parameter used for deconvolution
-    Params["Gaussian"] = {0, 0.1};
-    Params["m_s"] = {-3, -10, -10, -10, -1};
-    Params["m_e"] = {3, 20, 20, 20, 15};        
-    Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {5, 20, 30, 40, 60};
+//    Params["Gaussian"] = {0, 0.1};
+//    Params["m_s"] = {-3, -10, -10, -10, -1};
+//    Params["m_e"] = {3, 20, 20, 20, 15};        
+//    Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
+//    Params["s_e"] = {5, 20, 30, 40, 60};
+
+    //P.ReconstructNTrack(); <--- Continue tomorrow  
+
+
  
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets); 
-    //P.AlgorithmPlots("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/AnalysisOutput/out.root", iter); 
+    P.AlgorithmPlots("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/AnalysisOutput/out.root", iter); 
   }
   else
   {
@@ -164,8 +152,6 @@ void PostAnalysis()
     //Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
     //Params["s_e"] = {5, 20, 40, 120, 120};
 
-
-
     // ===== Good parameters that have been tested (out.root)
     //Gaussian Parameter used for deconvolution
     Params["Gaussian"] = {0, 1};
@@ -175,14 +161,10 @@ void PostAnalysis()
     Params["s_e"] = {5, 5, 5, 5, 5};
 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
-    P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
+    //P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
   }
  
-  std::cout << "Fin" << std::endl;
- 
- 
- 
- 
+  std::cout << "Fin" << std::endl; 
   
 }
 

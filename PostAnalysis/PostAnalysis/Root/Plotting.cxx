@@ -90,7 +90,6 @@ TCanvas* Plotting::PlotHists(TH1F* Hists, TH1F* Data)
 TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data)
 {
   TCanvas* can = new TCanvas();
-  //can -> SetWindowSize(2400, 1200); 
   can -> SetLogy(); 
   gStyle -> SetOptStat(0);
   can -> Divide(Data.size()); 
@@ -118,8 +117,8 @@ void Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<std:
     can -> cd(i+1);
     Data[i] -> SetLineColor(kBlack);
     Data[i] -> Draw("SAMEHIST"); 
-    Populate(Hists[i], can, len);
-    Populate(Closure[i], can, len); 
+    Populate(Hists[i], can, len, kSolid);
+    Populate(Closure[i], can, len, kDashed); 
     len -> AddEntry(Data[i], Data[i] -> GetTitle()); 
     can -> Update();
   }
@@ -131,8 +130,8 @@ void Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, T
   can -> cd(1) -> SetLogy(); 
   Data -> SetLineColor(kBlack);
   Data -> Draw("SAMEHIST"); 
-  Populate(Hists, can, len, kDashed);
-  Populate(Closure, can, len, kSolid); 
+  Populate(Hists, can, len, kSolid);
+  Populate(Closure, can, len, kDotted); 
   len -> AddEntry(Data, Data -> GetTitle()); 
   can -> Update();
 }

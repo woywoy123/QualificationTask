@@ -496,8 +496,8 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
   TH1F* FLOST_Prediction = new TH1F("FLost_Pred", "FLost_Pred", cor_loop, 0, cor_loop); 
   TH1F* FLOST_Truth = new TH1F("FLost_Truth", "FLost_Truth", cor_loop, 0, cor_loop); 
 
-  TCanvas* can_HD = new TCanvas();
-  TString Title_HD = "out.pdf";
+  //TCanvas* can_HD = new TCanvas();
+  //TString Title_HD = "out.pdf";
   for (int x(0); x < cor_loop; x++)
   { 
     // Forward declaration 
@@ -551,10 +551,10 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     SafeScale(GxTrk5, trk5_L); 
 
     // Do the subtraction  
-    //trk1_L -> Add(GxTrk1[1], -1); 
-    //trk1_L -> Add(GxTrk1[2], -1); 
-    //trk1_L -> Add(GxTrk1[3], -1); 
-    //trk1_L -> Add(GxTrk1[4], -1); 
+    trk1_L -> Add(GxTrk1[1], -1); 
+    trk1_L -> Add(GxTrk1[2], -1); 
+    trk1_L -> Add(GxTrk1[3], -1); 
+    trk1_L -> Add(GxTrk1[4], -1); 
  
     trk2_L -> Add(GxTrk2[0], -1);
     trk2_L -> Add(GxTrk2[2], -1);
@@ -608,46 +608,6 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     std::vector<TH1F*> Tracks = B.MakeTH1F(Names_Sub, ntrk[2]); 
     B.ShiftExpandTH1F({trk1_L, trk2_L, trk3_L, trk4_L}, Tracks);
     std::vector<TH1F*> Truth = {Closure[0][0], Closure[1][1], Closure[2][2], Closure[3][3]};
-
- 
-    // Final Plot where we compare subtracted with the predicted PDF and the real distribution 
-    //can_HD -> Clear(); 
-    //can_HD -> Divide(2,2);
-    //P.PlotHists({Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs}, Closure, ntrk, can_HD); 
-    //can_HD -> Print(Title_HD);
-
-    //// ==== Plotting output 
-    //// Trk1 
-    //can_HD -> Clear();
-    //can_HD -> Divide(1); 
-    //P.PlotHists({Trk1_PDFs}, Closure[0], ntrk[0], can_HD); 
-    //can_HD -> Print(Title_HD);
-
-    //// Trk2 
-    //can_HD -> Clear();
-    //can_HD -> Divide(1);
-    //P.PlotHists({Trk2_PDFs}, Closure[1], ntrk[1], can_HD); 
-    //can_HD -> Print(Title_HD);
-
-    //// Trk3 
-    //can_HD -> Clear();
-    //can_HD -> Divide(1);
-    //P.PlotHists({Trk3_PDFs}, Closure[2], ntrk[2], can_HD); 
-    //can_HD -> Print(Title_HD);
-
-    //// Trk4 
-    //can_HD -> Clear();
-    //can_HD -> Divide(1);
-    //P.PlotHists({Trk4_PDFs}, Closure[3], ntrk[3], can_HD); 
-    //can_HD -> Print(Title_HD);
-
-    // This is the plot showing all other distributions within the plot  
-    can_HD -> Clear();
-    can_HD -> SetWindowSize(2400,1200); 
-    can_HD -> Divide(2,2);
-    P.PlotHists({Trk1_PDFs[0], Trk2_PDFs[1], Trk3_PDFs[2], Trk4_PDFs[3]}, Tracks, Truth, can_HD);
-    can_HD -> Print(Title_HD);
-
     // ======== Section for the output ========== //
     // === Save the PDFs and the subtracted Hists
 

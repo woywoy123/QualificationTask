@@ -33,6 +33,7 @@ class Presentation
     void MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, std::vector<std::vector<TH1F*>> Closure);
     void DataAnalysis(std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, int bins, float min, float max);
     void AlgorithmPlots(TString dir, int iter); 
+    void ReconstructNTrack(); 
 };
 
 #endif

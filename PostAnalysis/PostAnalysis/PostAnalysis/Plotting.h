@@ -13,6 +13,7 @@
 #include<RooFFTConvPdf.h>
 #include<TStyle.h>
 #include<PostAnalysis/Constants.h>
+#include<TRatioPlot.h>
 
 #ifndef PLOTTING_H
 #define PLOTTING_H
@@ -21,7 +22,7 @@ class Plotting
 {
   public:
     TCanvas* SimplePlot(TH1F* Hist);
-    void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style = kDashed);
+    void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style = kSolid);
     TCanvas* PlotHists(std::vector<TH1F*> Hists);
     void PlotHists(std::vector<TH1F*> Hists, TCanvas* can);
     TCanvas* PlotHists(std::vector<TH1F*> Hists, TH1F* Data);
