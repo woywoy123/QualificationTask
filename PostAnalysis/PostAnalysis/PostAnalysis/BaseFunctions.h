@@ -67,6 +67,7 @@ class BaseFunctions
     void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv);
     std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2);
     void ResidualRemove(TH1F* Hist);
+    void SetBinError(TH1F* Hist, double Error);
 };
 
 #endif

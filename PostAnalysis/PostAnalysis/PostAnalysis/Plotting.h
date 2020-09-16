@@ -33,6 +33,8 @@ class Plotting
     void PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, TH1F* Data, TCanvas* can);
     void PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<std::vector<TH1F*>> Closure, std::vector<TH1F*> Data, TCanvas* can);
     void PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, std::vector<TH1F*> Data, TCanvas* can);
+    void PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data, TCanvas* can);
+
 
     TCanvas* PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data);
     TCanvas* PlotHists(std::vector<std::vector<TH1F*>> Hists);

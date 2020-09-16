@@ -20,7 +20,7 @@ void PostAnalysis()
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
   int Mode = 10;  // Change to 0 - MC, 1 - Toy, 2 - Data, 3 - Presentation
-  bool Test = true; // Test Components 
+  bool Test = false; // Test Components 
   int Shift = 0;
 
   // Histogram parameters  
@@ -34,9 +34,9 @@ void PostAnalysis()
   float stdev = 0.01; 
 
   // Other parameters
-  float offset = 0.001;
-  int iter = 10;
-  int cor_loop = 10; // Correction loop number 
+  float offset = 0.2;
+  int iter = 300;
+  int cor_loop = 50; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> trk1_N;
@@ -125,7 +125,7 @@ void PostAnalysis()
     //BFT.Deconvolve(trk2_N[1], trk1_N[0], offset, 25);
     //DFT.ShiftTest(trk1_N[0], Shift);
     //DFT.ReplaceShiftTail(trk1_N[0], trk1_N[1], Shift);
-    //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
+    DFT.DeconvolveReconvolve(trk1_N, offset, iter);
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
     //BFT.Constraint(); 
  
@@ -136,12 +136,11 @@ void PostAnalysis()
 //    Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
 //    Params["s_e"] = {5, 20, 30, 40, 60};
 
-    //P.ReconstructNTrack(); <--- Continue tomorrow  
 
 
  
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets); 
-    P.AlgorithmPlots("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/AnalysisOutput/out.root", iter); 
+    //P.AlgorithmPlots("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/AnalysisOutput/out.root", cor_loop); 
   }
   else
   {
@@ -154,14 +153,16 @@ void PostAnalysis()
 
     // ===== Good parameters that have been tested (out.root)
     //Gaussian Parameter used for deconvolution
-    Params["Gaussian"] = {0, 1};
-    Params["m_s"] = {-10, -10, -10, -10, -10};
-    Params["m_e"] = {10, 10, 10, 10, 10};        
+    Params["Gaussian"] = {0, 10};
+    Params["m_s"] = {-10, -50, -50, -50, -50};
+    Params["m_e"] = {10, 50, 50, 50, 50};        
     Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {5, 5, 5, 5, 5};
+    Params["s_e"] = {10, 10, 10, 10, 10};
 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
-    //P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
+    P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
+    //P.ReconstructNTrack(); //<--- Continue tomorrow  
+
   }
  
   std::cout << "Fin" << std::endl; 

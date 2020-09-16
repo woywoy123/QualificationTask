@@ -187,30 +187,30 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   {
     deconv = B.LucyRichardson(trk2_V, deconv, deconv); 
   }
-  
-  // Replace the tail of the deconv vector 
   B.ToTH1F(deconv, PDFs[0]);
 
   // === TRK1
+  B.Normalize(PDFs); 
+  TH1F* temp = (TH1F*)PDFs[0] -> Clone("temp"); 
   ReplaceShiftTail(trk1, PDFs[0], offset); 
-  B.Normalize(PDFs);
 
   // === TRK2
-  B.ConvolveHists(PDFs[0], PDFs[0], PDFs[1]); 
+  B.ConvolveHists(PDFs[0], temp, PDFs[1]); 
   B.Normalize(PDFs[1]);
 
   // === TRK3
-  B.ConvolveHists(PDFs[1], PDFs[0], PDFs[2]);  
+  B.ConvolveHists(PDFs[1], temp, PDFs[2]);  
   B.Normalize(PDFs[2]);
 
   // === TRK4 
-  B.ConvolveHists(PDFs[2], PDFs[0], PDFs[3]);  
+  B.ConvolveHists(PDFs[2], temp, PDFs[3]);  
   B.Normalize(PDFs[3]);
 
-  // === TRK5
-  B.ConvolveHists(PDFs[3], PDFs[0], PDFs[4]);  
+  // === TRK5 
+  B.ConvolveHists(PDFs[3], temp, PDFs[4]);  
   B.Normalize(PDFs[4]);
- 
+
+  delete temp;
   return PDFs;
 }
 
@@ -315,15 +315,18 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
     H -> Reset();
     B.ToTH1F(Data, H);
     B.ResidualRemove(H);
+    B.Normalize(H);
+    B.SetBinError(H, 1e-32); 
     DeconvPDFs.push_back(H); 
+    
   }
 
   // Transfer the Data to a new histogram to remove the need to know min max values 
   TH1F* Data_G = new TH1F("Data_Gaus_Fit", "Data_Gaus_Fit", bins_pdf, 0, bins_pdf);
   B.ShiftExpandTH1F(GxTrk, Data_G, 0);
-  Data_G -> SetBinContent(bins_pdf, Data_G -> GetBinContent(bins_pdf-1));
   B.Normalize(Data_G);
-
+  B.SetBinError(Data_G, 1e-32); 
+  
   // Define the range of the dEdx
   RooRealVar* x = new RooRealVar("x", "x", 0, bins_pdf); 
 
@@ -344,14 +347,13 @@ std::map<TString, float> DerivedFunctions::FitGaussian(TH1F* GxTrk, std::vector<
   std::vector<RooGaussian*> G_Vars = B.RooVariables(Gaus_String, Means, Stdev, x);
 
   // Import the PDFs as a RooDataHist
-  B.Normalize(DeconvPDFs);
   std::vector<RooHistPdf*> PDF_Vars = B.RooPDF(DeconvPDFs, x);
 
   // Define the ntrack coefficients:
-  float Lumi = Data_G -> Integral(); 
-  std::vector<TString> C_String = { "n_trk1", "n_trk2", "n_trk3", "n_trk4", "n_trk5" };
+  float Lumi = 1.; //Data_G -> Integral(); 
+  std::vector<TString> C_String = { "n_trk1", "n_trk2", "n_trk3", "n_trk4", "n_trk5"};
   std::vector<float> C_Begin = { 0., 0., 0., 0., 0.};
-  std::vector<float> C_End = { Lumi, Lumi, Lumi, Lumi, Lumi };
+  std::vector<float> C_End = { Lumi, Lumi, Lumi, Lumi, Lumi};
   std::vector<RooRealVar*> C_Vars = B.RooVariables(C_String, C_Begin, C_End);
 
   // Convolve the PDFs with the Gaussians
@@ -413,7 +415,7 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       TH1F* trknXg = (TH1F*)trkn_L -> Clone(Name);
       trknXg -> SetTitle(Name);
       trknXg -> Reset();
-      TH1F* trkn_H = DF.GaussianConvolve(PDFs[i], trkn_Params[Mean[i]], trkn_Params[Stdev[i]]);
+      TH1F* trkn_H = DF.GaussianConvolve(PDFs[i], 0, trkn_Params[Stdev[i]]);
       B.ShiftExpandTH1F(trkn_H, trknXg);
       delete trkn_H;
 
@@ -483,7 +485,7 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
   TH1F* trk3_L_C = (TH1F*)trk3_L -> Clone("trk3_L_C");
   TH1F* trk4_L_C = (TH1F*)trk4_L -> Clone("trk4_L_C");
   TH1F* trk5_L_C = (TH1F*)trk5_L -> Clone("trk5_L_C");
-    
+      
   // Forward declaration 
   std::map<TString, std::vector<float>> Params1;
   std::map<TString, std::vector<float>> Params2;
@@ -496,8 +498,8 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
   TH1F* FLOST_Prediction = new TH1F("FLost_Pred", "FLost_Pred", cor_loop, 0, cor_loop); 
   TH1F* FLOST_Truth = new TH1F("FLost_Truth", "FLost_Truth", cor_loop, 0, cor_loop); 
 
-  //TCanvas* can_HD = new TCanvas();
-  //TString Title_HD = "out.pdf";
+  TCanvas* can_HD = new TCanvas();
+  TString Title_HD = "out.pdf";
   for (int x(0); x < cor_loop; x++)
   { 
     // Forward declaration 
@@ -529,7 +531,7 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     GxTrk5 = Parallel(trk5_L, PDFs, &Params5, offset, iter, GxTrk5, "GxTrk5"); 
 
     // Increase the iteration after each correction loop 
-    iter = iter + 2;
+    iter = iter + 10;
 
     // Reset the state of the data histograms 
     trk1_L -> Reset();
@@ -555,7 +557,7 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     trk1_L -> Add(GxTrk1[2], -1); 
     trk1_L -> Add(GxTrk1[3], -1); 
     trk1_L -> Add(GxTrk1[4], -1); 
- 
+
     trk2_L -> Add(GxTrk2[0], -1);
     trk2_L -> Add(GxTrk2[2], -1);
     trk2_L -> Add(GxTrk2[3], -1);
@@ -570,11 +572,6 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     trk4_L -> Add(GxTrk4[1], -1);
     trk4_L -> Add(GxTrk4[2], -1);
     trk4_L -> Add(GxTrk4[4], -1);
-
-    trk5_L -> Add(GxTrk5[0], -1);
-    trk5_L -> Add(GxTrk5[1], -1);
-    trk5_L -> Add(GxTrk5[2], -1);                            
-    trk5_L -> Add(GxTrk5[3], -1);
 
     std::cout << "################### " << x << std::endl;
    
@@ -598,26 +595,31 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
     std::vector<TH1F*> Trk4_PDFs = B.MakeTH1F(Names4, ntrk[3]); 
     B.ShiftExpandTH1F(GxTrk4, Trk4_PDFs);
 
-    // ==== Trk5 
-    std::vector<TString> Names5 = {"trk1_F5", "trk2_F5", "trk3_F5", "trk4_F5", "trk5_F5"}; 
-    std::vector<TH1F*> Trk5_PDFs = B.MakeTH1F(Names5, ntrk[4]); 
-    B.ShiftExpandTH1F(GxTrk5, Trk5_PDFs);
-
     // Create the variabls needed for the Plotting below  
     std::vector<TString> Names_Sub = {"trk1_Sub", "trk2_Sub", "trk3_Sub", "trk4_Sub"}; 
     std::vector<TH1F*> Tracks = B.MakeTH1F(Names_Sub, ntrk[2]); 
     B.ShiftExpandTH1F({trk1_L, trk2_L, trk3_L, trk4_L}, Tracks);
     std::vector<TH1F*> Truth = {Closure[0][0], Closure[1][1], Closure[2][2], Closure[3][3]};
+
+
+    can_HD -> Clear();
+    TH1F* Temp = (TH1F*)Tracks[1] -> Clone("Lol"); 
+    can_HD -> SetWindowSize(1200, 1200); 
+    can_HD -> Divide(2,2);
+    P.PlotHists({Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs}, Closure, ntrk, can_HD);
+
+
     // ======== Section for the output ========== //
     // === Save the PDFs and the subtracted Hists
 
     // === Save the subtracted Hists
-    std::vector<TString> Names_Pure = {"trk1_Pure", "trk2_Pure", "trk3_Pure", "trk4_Pure", "trk5_Pure"};    
+    std::vector<TString> Names_Pure = {"trk1_Pure", "trk2_Pure", "trk3_Pure", "trk4_Pure"};    
     std::vector<TH1F*> Track_Out = B.MakeTH1F(Names_Pure, ntrk[2]); 
-    B.ShiftExpandTH1F({trk1_L, trk2_L, trk3_L, trk4_L, trk5_L}, Track_Out);
+    B.ShiftExpandTH1F({trk1_L, trk2_L, trk3_L, trk4_L}, Track_Out);
 
     std::vector<TH1F*> Pred_PDF;
-    std::vector<std::vector<TH1F*>> Set = {Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs, Trk5_PDFs, Track_Out, ntrk, Closure[0], Closure[1], Closure[2], Closure[3], Closure[4]}; 
+    std::vector<std::vector<TH1F*>> Set = {Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs, Track_Out, ntrk, Closure[0], Closure[1], Closure[2], Closure[3]}; 
+
 
     for (std::vector<TH1F*> PDF_S : Set)
     {
@@ -628,9 +630,10 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       }
     }
 
+    
     // === Save the FLost progress
-    float FLost_Pred = B.FLost(ntrk, {Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs, Trk5_PDFs}); 
-    float FLost_MC = B.FLost(ntrk, Closure);   
+    float FLost_Pred = B.FLost(ntrk, {Trk1_PDFs, Trk2_PDFs, Trk3_PDFs, Trk4_PDFs}); 
+    float FLost_MC = B.FLost({ntrk[0], ntrk[1], ntrk[2], ntrk[3]}, Closure);   
     FLOST_Prediction -> SetBinContent(x+1, FLost_Pred); 
     FLOST_Truth -> SetBinContent(x+1, FLost_MC);   
     
@@ -652,20 +655,15 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       delete GxTrk2[i];      
       delete GxTrk3[i];
       delete GxTrk4[i];
-      delete GxTrk5[i];
 
       delete Trk1_PDFs[i];
       delete Trk2_PDFs[i];
       delete Trk3_PDFs[i];
       delete Trk4_PDFs[i];   
-      delete Trk5_PDFs[i];
     }
+
+    delete Temp; 
   }
-  //can -> Print(Title_Params + ")");
-  //can_HD -> Print(Title_HD + ")"); 
- 
-  //delete can; 
-  //delete can_HD; 
   return Output;
 }
 

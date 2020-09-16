@@ -211,6 +211,31 @@ void Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Subtract, 
   }
 }
 
+void Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Subtract, TCanvas* can)
+{
+  auto Fill =[](TH1F* H, Color_t col, TCanvas* can, TLegend* len)
+  {
+    H -> SetLineColor(col); 
+    H -> SetLineWidth(1); 
+    H -> SetAxisRange(1e-9, 1, "Y");
+    H -> Draw("SAMEHIST");
+  
+    len -> AddEntry(H, H -> GetTitle());
+    len -> Draw("SAME");
+    can -> Update(); 
+  }; 
+
+  gStyle -> SetOptStat(0);
+  for (int i(0); i < Hists.size(); i++)
+  {
+    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+    can -> cd(i+1) -> SetLogy(); 
+    can -> cd(i+1);
+    Fill(Hists[i], kRed, can, len);
+    Fill(Subtract[i], kBlack, can, len);
+  }
+}
+
 TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data)
 {
   RooPlot* xframe = Domain -> frame(RooFit::Title("Figure"));

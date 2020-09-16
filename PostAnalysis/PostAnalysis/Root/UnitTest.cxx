@@ -211,6 +211,7 @@ void Presentation::ReconstructNTrack()
   auto GausConvolute = [](TH1F* PDF, float offset, int iter, TH1F* Hist, TH1F* Gaus)
   {
     BaseFunctions B;
+    B.ResidualRemove(PDF);
     int bins = PDF -> GetNbinsX();
     std::vector<float> PDF_V = B.TH1FDataVector(PDF, offset);
     TString v = PDF -> GetTitle(); v += ("_Temp");
@@ -245,26 +246,23 @@ void Presentation::ReconstructNTrack()
     DerivedFunctions DF; 
 
     GausConvolute(PDF, 0.2, iter, Hist, Gaus); 
-    B.Normalize(Hist); 
-    B.ResidualRemove(Hist);
     
     TH1F* Data = (TH1F*)Gaus -> Clone("trk_D"); 
-    Data -> Reset(); 
     B.ShiftExpandTH1F(FitTo, Data); 
     B.Normalize(Data); 
+    B.Normalize(Hist); 
+   
+    for (int i(0); i < Data -> GetNbinsX(); i++)
+    {
+      Data -> SetBinError(i+1, 1e-32); 
+      Hist -> SetBinError(i+1, 1e-32); 
+    }
  
     RooRealVar x("x", "x", 0, 500); 
-    RooRealVar m("m", "m", -10, 10); 
-    RooRealVar s("s", "s", -1, 1); 
-    RooRealVar n("n", "n", 0, Data -> Integral()); 
+    RooRealVar m("m", "m", 0., -10, 10); 
+    RooRealVar s("s", "s", 0.1, 25); 
+    RooRealVar n("n", "n", 0., 0., 1); 
  
-    for (int i(0); i < Hist -> GetNbinsX(); i++)
-    {
-      std::cout << Hist -> GetBinContent(i+1) << std::endl;   
-      
-    }
-  
-    Hist -> Draw("SAMEHIST"); 
     RooDataHist pdf_H("pdf_H", "pdf_H", x, Hist); 
     RooDataHist data("data", "data", x, Data); 
   
@@ -276,23 +274,38 @@ void Presentation::ReconstructNTrack()
     RooAddPdf model("model", "model", RooArgSet(*Conv_Vars[0]), RooArgSet(n)); 
     model.fitTo(data, RooFit::SumW2Error(true)); 
 
-    RooPlot* xframe = x.frame(); 
-    model.plotOn(xframe, RooFit::LineStyle(kDotted)); 
+    //RooPlot* xframe = x.frame(); 
+    //model.plotOn(xframe, RooFit::LineStyle(kDotted)); 
     //gPad -> SetLogy(); 
-    xframe -> SetMinimum(1e-9); 
-    xframe -> Draw(); 
+    //data.plotOn(xframe);
+    //xframe -> SetMinimum(1e-9); 
+    //xframe -> Draw(); 
 
     float m_out = m.getVal(); 
     float s_out = s.getVal(); 
     float n_out = n.getVal(); 
   
-    TH1F* Out_G = DF.GaussianConvolve(PDF, m_out, n_out); 
+    TH1F* Out_G = DF.GaussianConvolve(PDF, 0, s_out); 
     TString name = "gX_"; name += (PDF -> GetTitle()); 
     TH1F* Out = (TH1F*)PDF -> Clone(name); 
     Out -> Reset(); 
     B.ShiftExpandTH1F(Out_G, Out); 
     Out -> Scale(n_out); 
     return Out;  
+  };
+
+  auto DeltaPlot =[](TH1F* H1, TH1F* H2)
+  {
+    TH1F* R = (TH1F*)H1 -> Clone(); 
+    R -> Reset(); 
+    for (int i(0); i < H1 -> GetNbinsX(); i++)
+    {
+      float e1 = H1 -> GetBinContent(i+1); 
+      float e2 = H2 -> GetBinContent(i+1); 
+      float delta = e1 - e2;
+      R -> SetBinContent(i+1, delta); 
+    }
+    return R; 
   };
 
   std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2"};
@@ -347,10 +360,13 @@ void Presentation::ReconstructNTrack()
   B.Normalize(tru3_trk3); 
   B.Normalize(tru4_trk4); 
 
-  int iter = 50;
+  int iter = 500;
   std::vector<TH1F*> PDFs = DF.nTRKGenerator(tru1_trk1, tru2_trk2, 0.2, iter);    
-   
-  //P.PlotHists({PDFs[0], PDFs[1], PDFs[2], PDFs[3]} , {tru1_trk1, tru2_trk2, tru3_trk3, tru4_trk4}); 
+  
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+  can -> Divide(2,2);  
+  P.PlotHists({PDFs[0], PDFs[1], PDFs[2], PDFs[3]} , {tru1_trk1, tru2_trk2, tru3_trk3, tru4_trk4}, can); 
 
   // ====== Doing the deconvolution and fit.
   std::vector<TString> names;  
@@ -362,15 +378,16 @@ void Presentation::ReconstructNTrack()
   std::vector<TH1F*> Hists = B.MakeTH1F(names, 500, 0, 500); 
   TH1F* Gaus = (TH1F*)Hists[0] -> Clone("Gaussian"); 
   Gaus -> Reset(); 
-  DG.Gaussian(10, 1, Constants::GaussianToys, Gaus);  
+  DG.Gaussian(0, 10, Constants::GaussianToys, Gaus);  
   B.Normalize(Gaus); 
 
 
-  TH1F* g1 = Fitting(Gaus, PDFs[1], Hists[1], tru2_trk2, iter); 
-  
-  P.PlotHists({g1}, {tru2_trk2});
-
-
+  //TH1F* g1 = Fitting(Gaus, PDFs[2], Hists[2], tru3_trk3, iter); 
+ 
+  //TH1F* gx = (TH1F*)g1 -> Clone("h");  
+//  P.PlotHists({gx}, {tru3_trk3});
+  //TH1F* R = DeltaPlot(gx, tru3_trk3);  
+  //R -> Draw("HIST"); 
 
 
 
@@ -615,7 +632,7 @@ void Presentation::AlgorithmPlots(TString dir, int iter)
   auto Make =[](TCanvas* can, std::vector<TH1F*> trk_D, std::vector<std::vector<TH1F*>> trk_P, std::vector<std::vector<TH1F*>> trk_T, TString Name)
   {
     Plotting P; 
-    can -> SetWindowSize(600, 1200); 
+    can -> SetWindowSize(600, 600); 
     gStyle -> SetOptStat(0); 
     P.PlotHists(trk_T, trk_P, trk_D, can); 
     can -> Draw();
@@ -781,46 +798,46 @@ void Presentation::AlgorithmPlots(TString dir, int iter)
       TString Name4 = N + "trk4"; Name4 += (i); 
 
       can_1 -> Clear(); 
-      can_1 -> Divide(1,2); 
+      can_1 -> Divide(1); 
       can_1 -> cd(1); 
       Make(can_1, {ntrk_data[0]}, {{trk1_PDF[0]}}, {{trk1_tru[0]}}, FileName_1); 
-      can_1 -> cd(2); 
-      TH1F* R_1 = RatioPlot(trk1_PDF[0], trk1_tru[0], Name1); 
-      R_1 -> Draw(); 
+      //can_1 -> cd(2); 
+    //  TH1F* R_1 = RatioPlot(trk1_PDF[0], trk1_tru[0], Name1); 
+    //  R_1 -> Draw(); 
       can_1 -> Update(); 
 
       can_2 -> Clear(); 
-      can_2 -> Divide(1,2); 
+      can_2 -> Divide(1); 
       can_2 -> cd(1); 
       Make(can_2, {ntrk_data[1]}, {{trk2_PDF[1]}}, {{trk2_tru[1]}}, FileName_2); 
-      can_2 -> cd(2); 
-      TH1F* R_2 = RatioPlot(trk2_PDF[0], trk2_tru[0], Name2); 
-      R_2 -> Draw(); 
+      //can_2 -> cd(2); 
+    //  TH1F* R_2 = RatioPlot(trk2_PDF[0], trk2_tru[0], Name2); 
+    //  R_2 -> Draw(); 
       can_2 -> Update(); 
 
       can_3 -> Clear(); 
-      can_3 -> Divide(1,2); 
+      can_3 -> Divide(1); 
       can_3 -> cd(1); 
       Make(can_3, {ntrk_data[2]}, {{trk3_PDF[2]}}, {{trk3_tru[2]}}, FileName_3); 
-      can_3 -> cd(2); 
-      TH1F* R_3 = RatioPlot(trk3_PDF[0], trk3_tru[0], Name3); 
-      R_3 -> Draw(); 
+      //can_3 -> cd(2); 
+    //  TH1F* R_3 = RatioPlot(trk3_PDF[0], trk3_tru[0], Name3); 
+    //  R_3 -> Draw(); 
       can_3 -> Update(); 
 
       can_4 -> Clear(); 
-      can_4 -> Divide(1,2); 
+      can_4 -> Divide(1); 
       can_4 -> cd(1); 
       Make(can_4, {ntrk_data[3]}, {{trk4_PDF[3]}}, {{trk4_tru[3]}}, FileName_4); 
-      can_4 -> cd(2); 
-      TH1F* R_4 = RatioPlot(trk4_PDF[0], trk4_tru[0], Name4); 
-      R_4 -> Draw(); 
+     // can_4 -> cd(2); 
+    //  TH1F* R_4 = RatioPlot(trk4_PDF[0], trk4_tru[0], Name4); 
+    //  R_4 -> Draw(); 
       can_4 -> Update(); 
 
      
-      delete R_1; 
-      delete R_2; 
-      delete R_3; 
-      delete R_4; 
+    //  delete R_1; 
+    //  delete R_2; 
+    //  delete R_3; 
+    //  delete R_4; 
        
     }
     can -> Print(FileName + ")"); 
@@ -917,7 +934,7 @@ void Presentation::ThresholdEffects()
     BF.Normalize(trk2_Comps);  
     TH1F* Temp = (TH1F*)trk2_Comps[0] -> Clone("Temp"); 
     Temp -> Reset(); 
-    Temp -> SetTitle(Name);
+    Temp -> SetTitle(Name + " Layer-1");
     Temp -> SetAxisRange(1e-5, 0.4, "Y");
     TCanvas* can = new TCanvas();
     can -> SetWindowSize(2400, 1200); 
@@ -945,16 +962,16 @@ void Presentation::ThresholdEffects()
   float max = 14.5; 
  
   std::vector<TString> Data = {Constants::Data2016, Constants::Data2017, Constants::Data2018}; 
-  std::vector<TString> Detector_Layer = {"IBL"};
+  std::vector<TString> Detector_Layer = {"layer1"};
   std::vector<TString> E = Constants::energies;
   std::vector<std::vector<TString>> Batch = {{E[0]}, 
                                              {E[1], E[2]}, 
                                              {E[3], E[4], E[5]}, 
                                              {E[6], E[7], E[8], E[9], E[10], E[11], E[12], E[13], E[14], E[15]}};
  
-  TH1F* trk1_2018 = MakeHist("Track1-2018 ",  bins, min, max, Detector_Layer[0], kRed);
-  TH1F* trk1_2017 = MakeHist("Track1-2017 ",  bins, min, max, Detector_Layer[0], kBlue);
-  TH1F* trk1_2016 = MakeHist("Track1-2016 ",  bins, min, max, Detector_Layer[0], kOrange);
+  TH1F* trk1_2018 = MakeHist("Track1-2018 B-layer",  bins, min, max, Detector_Layer[0], kRed);
+  TH1F* trk1_2017 = MakeHist("Track1-2017 B-layer",  bins, min, max, Detector_Layer[0], kBlue);
+  TH1F* trk1_2016 = MakeHist("Track1-2016 B-layer",  bins, min, max, Detector_Layer[0], kOrange);
   TH1F* trk1_All = MakeHist("Track1 ", bins, min, max, Detector_Layer[0], kBlack); 
 
   TH1F* trk2_2018 = MakeHist("Track2-2018 ",  bins, min, max, Detector_Layer[0], kRed);
