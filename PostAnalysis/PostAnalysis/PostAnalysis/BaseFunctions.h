@@ -37,7 +37,6 @@ class BaseFunctions
     // ==== Operational Functions  
     void Normalize(TH1F* Hist);
     void Normalize(std::vector<TH1F*> Hist);
-    void Subtraction(std::vector<TH1F*> ntrk, TH1F* Data, int Exclude, std::vector<float> Ratios, float scale = 1);  
     void ShiftExpandTH1F(TH1F* In, TH1F* Out, int start = 0);
     void ShiftExpandTH1F(std::vector<TH1F*> In, std::vector<TH1F*> Out, int start = 0); 
     void Scale(std::vector<TH1F*> PDFs, std::vector<RooRealVar*> Vars);

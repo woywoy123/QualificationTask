@@ -34,8 +34,8 @@ void PostAnalysis()
   float stdev = 0.01; 
 
   // Other parameters
-  float offset = 0.2;
-  int iter = 300;
+  float offset = 0.1;
+  int iter = 500;
   int cor_loop = 50; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
@@ -117,8 +117,6 @@ void PostAnalysis()
   // Component testing 
   if( Test == true)
   {
-    // Test the subtraction 
-    //BFT.Subtraction();  
     //BFT.NormalFit(trk2_N, ntrk_Data[1], CLS2, 0.04, 20); 
     //DFT.NormalFit(trk1_N, ntrk_Data[0], CLS2, 0, 20); 
     //BFT.Convolve(trk1_N[1], trk1_N[1], trk1_N[3]); 
@@ -140,7 +138,6 @@ void PostAnalysis()
 
  
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets); 
-    //P.AlgorithmPlots("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/AnalysisOutput/out.root", cor_loop); 
   }
   else
   {
@@ -153,16 +150,17 @@ void PostAnalysis()
 
     // ===== Good parameters that have been tested (out.root)
     //Gaussian Parameter used for deconvolution
-    Params["Gaussian"] = {0, 10};
-    Params["m_s"] = {-10, -50, -50, -50, -50};
-    Params["m_e"] = {10, 50, 50, 50, 50};        
-    Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-    Params["s_e"] = {10, 10, 10, 10, 10};
+    Params["Gaussian"] = {0, 1};
+    Params["m_s"] = {-10, -10, -10, -10, -10};
+    Params["m_e"] = {10, 10, 10, 10, 10};        
+    Params["s_s"] = {0.001, 0.001, 0.001, 0.001, 0.001};
+    Params["s_e"] = {2, 2, 2, 2, 2};
 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
     P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
-    //P.ReconstructNTrack(); //<--- Continue tomorrow  
+    //P.ReconstructNTrack();
 
+    //P.AlgorithmPlots("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/AnalysisOutput/out.root", cor_loop); 
   }
  
   std::cout << "Fin" << std::endl; 

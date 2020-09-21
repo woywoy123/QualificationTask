@@ -23,25 +23,25 @@ class Plotting
   public:
     TCanvas* SimplePlot(TH1F* Hist);
     void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style = kSolid);
-    TCanvas* PlotHists(std::vector<TH1F*> Hists);
     void PlotHists(std::vector<TH1F*> Hists, TCanvas* can);
-    TCanvas* PlotHists(std::vector<TH1F*> Hists, TH1F* Data);
     void PlotHists(std::vector<TH1F*> Hists, TH1F* Data, TCanvas* can);
-    TCanvas* PlotHists(TH1F* Hists, TH1F* Data);
-    TCanvas* PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data);
     void PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data, TCanvas* can); 
     void PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, TH1F* Data, TCanvas* can);
     void PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<std::vector<TH1F*>> Closure, std::vector<TH1F*> Data, TCanvas* can);
     void PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, std::vector<TH1F*> Data, TCanvas* can);
     void PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data, TCanvas* can);
 
-
+    TCanvas* PlotHists(std::vector<TH1F*> Hists);
+    TCanvas* PlotHists(std::vector<TH1F*> Hists, TH1F* Data);
+    TCanvas* PlotHists(TH1F* Hists, TH1F* Data);
+    TCanvas* PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data);
     TCanvas* PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data);
     TCanvas* PlotHists(std::vector<std::vector<TH1F*>> Hists);
     TCanvas* PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data);
     TCanvas* PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data);
     TCanvas* PlotHists(RooHistPdf model, RooRealVar Domain, RooDataHist Data);
 
+    void DifferencePlot(TH1F* H1, TH1F* H2, TCanvas* can); 
 };
 
 class DistributionGenerators

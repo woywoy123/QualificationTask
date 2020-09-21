@@ -68,7 +68,7 @@ void Plotting::PlotHists(std::vector<TH1F*> Hists, TH1F* Data, TCanvas* can)
   can -> SetLogy(); 
   gStyle -> SetOptStat(0); 
   Data -> SetLineColor(kBlack);
-  Data -> SetMinimum(1);
+  Data -> SetMinimum(1e-8);
   Data -> Draw("SAMEHIST");
   Populate(Hists, can, len);
   len -> AddEntry(Data, Data -> GetTitle()); 
@@ -247,7 +247,7 @@ TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<Ro
   }
   TCanvas* can = new TCanvas();
   gPad -> SetLogy();
-  xframe -> SetMinimum(1); 
+  xframe -> SetMinimum(1e-9); 
   xframe -> Draw();
   can -> Update();
   return can;
@@ -281,6 +281,37 @@ TCanvas* Plotting::PlotHists(RooHistPdf model, RooRealVar Domain, RooDataHist Da
   xframe -> Draw();
   can -> Update();
   return can;
+}
+
+void Plotting::DifferencePlot(TH1F* H1, TH1F* H2, TCanvas* can)
+{
+
+  TH1F* Ratio = (TH1F*)H1 -> Clone("Difference");
+  Ratio -> Clear();  
+  for (int i(0); i < H1 -> GetNbinsX(); i++)
+  {
+    float e1 = H1 -> GetBinContent(i+1); 
+    float e2 = H2 -> GetBinContent(i+1); 
+    float diff = e1 - e2; 
+    Ratio -> SetBinContent(i+1, diff); 
+  }
+
+  TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
+  P1 -> Draw(); 
+  P1 -> cd(); 
+  P1 -> SetLogy(); 
+  H1 -> Draw("SAMEHIST"); 
+  H1 -> SetStats(0);  
+  H2 -> SetLineColor(kRed);
+  H2 -> Draw("SAMEHIST"); 
+  
+  can -> cd();
+
+  TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3); 
+  P2 -> Draw();
+  P2 -> cd(); 
+  Ratio -> SetStats(0); 
+  Ratio -> Draw("SAMEHIST"); 
 }
 
 void DistributionGenerators::Landau(std::vector<TH1F*> Hists, std::vector<float> COMP, std::vector<float> Parameters, int Number, float min, float max)
@@ -344,6 +375,7 @@ TH1F* DistributionGenerators::FillTH1F(TString name, std::vector<TString> SubDir
 
   return Hist; 
 }
+
 
 // === Private 
 TH1F* DistributionGenerators::TH1FFromFile(TString Name, TString Layer, TFile* file)

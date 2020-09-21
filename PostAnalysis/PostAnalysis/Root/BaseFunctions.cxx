@@ -55,7 +55,7 @@ std::vector<float> BaseFunctions::Ratio(std::vector<TH1F*> Hists, TH1F* Data)
 
 std::vector<float> BaseFunctions::Ratio(std::vector<RooRealVar*> Vars, TH1F* Data)
 {
-  float Lumi = Data -> Integral(); 
+  float Lumi = 1;//Data -> Integral(); 
   std::vector<float> Output; 
   for (RooRealVar* v : Vars)
   {
@@ -89,21 +89,6 @@ void BaseFunctions::Normalize(std::vector<TH1F*> Hist)
   }
 }
 
-void BaseFunctions::Subtraction(std::vector<TH1F*> ntrk, TH1F* Data, int Exclude, std::vector<float> Ratios, float scale)
-{
-  float lumi = Data -> Integral(); 
-  for (int i(0); i < ntrk.size(); i++)
-  {
-    Normalize(ntrk[i]);
-    ntrk[i] -> Scale(Ratios[i]*lumi);
-    if ( i != Exclude -1 && i > 0)
-    {  
-      Data -> Add(ntrk[i], -scale); 
-    } 
-  }
-  Data -> Add(ntrk[0], -1); 
-}
-
 void BaseFunctions::Scale(std::vector<TH1F*> PDFs, std::vector<RooRealVar*> Vars)
 {
   for (int i(0); i < PDFs.size(); i++)
@@ -116,7 +101,7 @@ void BaseFunctions::Scale(std::vector<TH1F*> PDFs, std::vector<RooRealVar*> Vars
 std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<float> Begin, std::vector<float> End)
 {
   std::vector<RooRealVar*> Variables(Names.size()); 
-  for (int i(0); i < Names.size(); i++)
+  for (int i(0); i < Begin.size(); i++)
   {
     Variables[i] = new RooRealVar(Names[i]+"_Fit", Names[i], Begin[i], End[i]);  
   }
@@ -126,7 +111,7 @@ std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names,
 std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<float> Var1, std::vector<float> Var2, std::vector<float> Var3)
 {
   std::vector<RooRealVar*> Variables(Names.size());
-  for (int i(0); i < Names.size(); i++)
+  for (int i(0); i < Var1.size(); i++)
   {
     Variables[i] = new RooRealVar(Names[i], Names[i], Var1[i], Var2[i], Var3[i]); 
   }
@@ -136,7 +121,7 @@ std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names,
 std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain)
 {
   std::vector<RooGaussian*> Gaussian(Names.size());
-  for (int i(0); i < Names.size(); i++)
+  for (int i(0); i < Mean.size(); i++)
   {
     Gaussian[i] = new RooGaussian(Names[i], Names[i], *Domain, *Mean[i], *Stdev[i]); 
   }
@@ -146,7 +131,7 @@ std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names
 std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> V1, std::vector<float> V2, std::vector<float> V3)
 {
   std::vector<RooGaussian*> Gaussian(Names.size());
-  for (int i(0); i < Names.size(); i++)
+  for (int i(0); i < V1.size(); i++)
   {
     Gaussian[i] = new RooGaussian(Names[i], Names[i], *V1[i], RooFit::RooConst(V2[i]), RooFit::RooConst(V3[i])); 
   }
@@ -156,8 +141,8 @@ std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names
 
 std::vector<RooFFTConvPdf*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooHistPdf*> PDFs, std::vector<RooGaussian*> Gaus, RooRealVar* Domain)
 {
-  std::vector<RooFFTConvPdf*> FFT(Names.size());
-  for (int i(0); i < Names.size(); i++)
+  std::vector<RooFFTConvPdf*> FFT(PDFs.size());
+  for (int i(0); i < PDFs.size(); i++)
   {
     FFT[i] = new RooFFTConvPdf(Names[i], Names[i], *Domain, *PDFs[i], *Gaus[i]);
   }
@@ -271,7 +256,7 @@ void BaseFunctions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
 
   // Convert TH1 to vector 
   std::vector<float> H1, H2;
-  for ( unsigned int i(0); i < nBins_2; i++ )
+  for ( int i(0); i < nBins_2; i++ )
   {
     H1.push_back(Hist1 -> GetBinContent(i+1));
     H2.push_back(Hist2 -> GetBinContent(i+1));
@@ -279,7 +264,7 @@ void BaseFunctions::ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
 
   // Set bin content of conv histogram 
   std::vector<float> Conv = ConvolveHists(H1, H2);
-  for ( unsigned int i(0); i < nBins_2; i++ )
+  for ( int i(0); i < nBins_2; i++ )
   {
     conv -> SetBinContent(i+1, Conv.at(i));
   }
@@ -358,10 +343,10 @@ void BaseFunctions::ShiftExpandTH1F(TH1F* In, TH1F* Out, int start)
   int binI = In -> GetNbinsX();
   int binO = Out -> GetNbinsX();
   int Padding = (binO - binI)/2;
-
-  for (int i(0); i < binI; i++)
+  
+	for (int i(0); i < binI; i++)
   {
-    float e = In -> GetBinContent(i+1);
+    float e = In -> GetBinContent(i +1);
     Out -> SetBinContent(Padding + start + i + 1, e);
   }
 }
@@ -395,7 +380,7 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
  
   for (int i(0); i < iter; i++)
   {
-    Hist -> SetBinContent(i+1, 1e-9);
+    Hist -> SetBinContent(i+1, 0);
   }
 
 }
