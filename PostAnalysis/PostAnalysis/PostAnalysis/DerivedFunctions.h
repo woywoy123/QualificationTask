@@ -29,7 +29,7 @@ class DerivedFunctions
     
     // === Gaussian Fitting stuff  
     TH1F* GaussianConvolve(TH1F* Hist, float mean, float stdev, int Toys = Constants::GaussianToys);
-    std::map<TString, float> ConvolveFit(TH1F* GxTrk, std::vector<TH1F*> PDFs, std::map<TString, std::vector<float>> Params, float offset, int iter);  
+    std::vector<TH1F*> ConvolveFit(TH1F* GxTrk, std::vector<TH1F*> PDFs, std::map<TString, std::vector<float>> Params, float offset, int iter);  
    
     
     // === Main Algorithm  

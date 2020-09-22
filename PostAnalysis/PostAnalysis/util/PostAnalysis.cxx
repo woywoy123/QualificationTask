@@ -35,7 +35,7 @@ void PostAnalysis()
 
   // Other parameters
   float offset = 0.1;
-  int iter = 500;
+  int iter = 50;
   int cor_loop = 50; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
@@ -150,11 +150,11 @@ void PostAnalysis()
 
     // ===== Good parameters that have been tested (out.root)
     //Gaussian Parameter used for deconvolution
-    Params["Gaussian"] = {0, 1};
-    Params["m_s"] = {-10, -10, -10, -10, -10};
-    Params["m_e"] = {10, 10, 10, 10, 10};        
+    Params["Gaussian"] = {0, 0.1};
+    Params["m_s"] = {-1, -1, -1, -1, -1};
+    Params["m_e"] = {1, 1, 1, 1, 1};        
     Params["s_s"] = {0.001, 0.001, 0.001, 0.001, 0.001};
-    Params["s_e"] = {2, 2, 2, 2, 2};
+    Params["s_e"] = {4, 4, 4, 4, 4};
 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
     P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   

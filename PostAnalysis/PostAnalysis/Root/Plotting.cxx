@@ -247,7 +247,7 @@ TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<Ro
   }
   TCanvas* can = new TCanvas();
   gPad -> SetLogy();
-  xframe -> SetMinimum(1e-9); 
+  xframe -> SetMinimum(1); 
   xframe -> Draw();
   can -> Update();
   return can;

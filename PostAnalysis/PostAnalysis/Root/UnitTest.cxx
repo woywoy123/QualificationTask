@@ -229,94 +229,41 @@ void Presentation::ReconstructNTrack()
   for (TH1F* H : Truth){DataSample -> Add(H);}
 
   // Create the PDFs without gaussian smearing 
-  //std::vector<TH1F*> PDFs = DF.nTRKGenerator(DataSample, tru2_trk2, 0.2, 50); 
-	
-  
+  std::vector<TH1F*> PDFs = DF.nTRKGenerator(DataSample, tru2_trk2, 0.2, 100);  
+	//std::vector<TH1F*> PDFs = B.CopyTH1F(Truth, "_C");  
+
   std::map<TString, std::vector<float>> Params; 
   Params["Gaussian"] = {0, 1}; 
-  Params["m_s"] = {-10, -10, -10, -10, -10}; 
-  Params["m_e"] = {10, 10, 10, 10, 10}; 
-  Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {5, 5, 5, 5, 5};
+  Params["m_s"] = {-1, -1, -1, -1, -1}; 
+  Params["m_e"] = {1, 1, 1, 1, 1}; 
+  Params["s_s"] = {0.1, 0.1, 0.1, 0.1, 0.1};
+  Params["s_e"] = {3, 3, 3, 3, 3};
+	int iter = 20; 
 
-	float lumi = DataSample -> Integral(); 
 	TH1F* Data_Clone = (TH1F*)DataSample -> Clone("DATA_CLONE");  
 
-	int iter = 50; 
-
   Plotting P;
-
-	std::vector<TH1F*> PDFs = B.CopyTH1F(Truth, "_C");  
- 	TH1F* GxTrk1; 	
-	TH1F* GxTrk2; 
-	TH1F* GxTrk3; 
-	TH1F* GxTrk4; 
-	TH1F* GxTrk5; 
-
 	TCanvas* can = new TCanvas(); 	
 	for (int i(0); i < iter; i++)
   {
-		float lumi = DataSample -> Integral(); 
+		float lumi = DataSample -> Integral(); 		
+
+		PDFs = DF.ConvolveFit(Data_Clone, PDFs, Params, 0.2, 150); 
 		
-		B.Normalize(PDFs); 
 		Data_Clone -> Reset(); 
-		Data_Clone -> Add(DataSample);  
-		B.Normalize(Data_Clone); 
-		std::map<TString, float> par = DF.ConvolveFit(Data_Clone, PDFs, Params, 0., 50); 
+		Data_Clone -> Add(DataSample, 1); 
+			
+		Data_Clone -> Add(PDFs[1], -float(i)/float(iter));
+		Data_Clone -> Add(PDFs[2], -float(i)/float(iter));
+		Data_Clone -> Add(PDFs[3], -float(i)/float(iter));
+		Data_Clone -> Add(PDFs[4], -float(i)/float(iter));
 
-  	GxTrk1 = DF.GaussianConvolve(PDFs[0], 0, par["s1"]);
-  	GxTrk2 = DF.GaussianConvolve(PDFs[1], 0, par["s2"]);
-  	GxTrk3 = DF.GaussianConvolve(PDFs[2], 0, par["s3"]);
-  	GxTrk4 = DF.GaussianConvolve(PDFs[3], 0, par["s4"]);
-  	GxTrk5 = DF.GaussianConvolve(PDFs[4], 0, par["s5"]);
-
-  	std::vector<RooRealVar*> scales = DF.FitToData(PDFs, Data_Clone, 0, 20); 
- 		float n1 = scales[0] -> getVal();  
-	 	float n2 = scales[1] -> getVal(); 
-	 	float n3 = scales[2] -> getVal(); 
-	 	float n4 = scales[3] -> getVal(); 
-	 	float n5 = scales[4] -> getVal(); 
-
- 		//float n1 = par["n_trk1"];  
-	 	//float n2 = par["n_trk2"]; 
-	 	//float n3 = par["n_trk3"]; 
-	 	//float n4 = par["n_trk4"]; 
-	 	//float n5 = par["n_trk5"]; 
-	
-  	GxTrk1 -> Scale(n1*lumi); 
-  	GxTrk2 -> Scale(n2*lumi); 
-  	GxTrk3 -> Scale(n3*lumi); 
-  	GxTrk4 -> Scale(n4*lumi); 
-  	GxTrk5 -> Scale(n5*lumi); 
-
-
-  	//SafeScaleNew(PDFs, DataSample); 
-
-  	Data_Clone -> Add(GxTrk2, -1); 
-  	Data_Clone -> Add(GxTrk3, -1); 
-  	Data_Clone -> Add(GxTrk4, -1); 	
-  	Data_Clone -> Add(GxTrk5, -1); 
-		
-		for (int i(0); i < PDFs.size(); i++)
-		{
-			delete PDFs[i];
-		}
-		PDFs[0] = GxTrk1;
-		PDFs[1] = GxTrk2;
-		PDFs[2] = GxTrk3;
-		PDFs[3] = GxTrk4;
-		PDFs[4] = GxTrk5;
-
-  	can -> Clear(); 
   	can -> SetWindowSize(1200, 600); 
-  	P.PlotHists(PDFs, Truth, DataSample, can);      	
+  	P.PlotHists(PDFs, Truth, Data_Clone, can);      	
   	can -> Update();	
 		can -> Print("Out.pdf");
 
-  	//for (int x(0); x < scales.size(); x++) 
-  	//{
-  	//	delete scales[x];
-  	//}
+
  	}
  
  
