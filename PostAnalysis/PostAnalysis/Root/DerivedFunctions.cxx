@@ -413,7 +413,7 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
     delete Stdev[i]; 
     delete N_Vars[i]; 
 		delete PDFs_L[i];
-    delete GxT_G; 
+    delete GxT; 
 	}
  
   std::vector<RooRealVar*> v = FitToData(Out, Data_L, 0, bins); 
