@@ -147,50 +147,11 @@ void DerivedFunctionTest::DeconvolveReconvolve(std::vector<TH1F*> ntrk, float of
 // ===== ReconstructNTrack
 void Presentation::ReconstructNTrack()
 {
-  auto SafeScaleNew =[](std::vector<TH1F*> PDFs, TH1F* Data)
-  {
-    int bins = Data -> GetNbinsX();
-    for (int i(0); i < bins; i++)
-    {
-      float e = Data -> GetBinContent(i+1);
-
-      float sum = 0;
-      for (TH1F* H : PDFs)
-      {
-        float f = H -> GetBinContent(i+1);
-        sum = sum +f;
-      }
-      if (sum == 0) { sum = 1; } 
-      if ( sum > e )
-      {
-        float ratio = e/sum;
-        
-        for (TH1F* H : PDFs)
-        {
-          float f = H -> GetBinContent(i+1);
-          H -> SetBinContent(i+1, f*ratio);  
-        }
-      }
-			else if ( sum < e ) 
-			{
-        float ratio = e/sum;
-        
-        for (TH1F* H : PDFs)
-        {
-          float f = H -> GetBinContent(i+1);
-          H -> SetBinContent(i+1, f*ratio);  
-        }
-			}
-    }
-  };
-
-
-
-
 
   DistributionGenerators DG; 
   BaseFunctions B;
   DerivedFunctions DF; 
+	Plotting P; 
 
   std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2"};
   std::vector<TString> E = Constants::energies;
@@ -205,7 +166,9 @@ void Presentation::ReconstructNTrack()
   TH1F* tru1_trk4 = new TH1F("tru1_trk4", "tru1_trk4", 500, 0, 20); 
   TH1F* tru1_trk5 = new TH1F("tru1_trk5", "tru1_trk5", 500, 0, 20);
   TH1F* tru2_trk2 = new TH1F("tru2_trk2", "tru2_trk2", 500, 0, 20);  
-  
+  TH1F* tru3_trk3 = new TH1F("tru3_trk3", "tru3_trk3", 500, 0, 20);  
+	TH1F* tru4_trk4 = new TH1F("tru4_trk4", "tru4_trk4", 500, 0, 20);   
+	  
   TFile* f = new TFile(Constants::MC_dir); 
   for (TString Lay : Detector_Layer)
   {
@@ -220,6 +183,8 @@ void Presentation::ReconstructNTrack()
         tru1_trk4 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_1_ntru_4"));
         tru1_trk5 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_1_ntru_5"));
         tru2_trk2 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_2_ntru_2")); 
+        tru3_trk3 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_3_ntru_3")); 
+        tru4_trk4 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_4_ntru_4")); 
       } 
     }
   }  
@@ -229,40 +194,70 @@ void Presentation::ReconstructNTrack()
   for (TH1F* H : Truth){DataSample -> Add(H);}
 
   // Create the PDFs without gaussian smearing 
-  std::vector<TH1F*> PDFs = DF.nTRKGenerator(DataSample, tru2_trk2, 0.2, 100);  
+  std::vector<TH1F*> PDFs = DF.nTRKGenerator(DataSample, tru2_trk2, 0., 75);  
 	//std::vector<TH1F*> PDFs = B.CopyTH1F(Truth, "_C");  
+
+	//TCanvas* can = new TCanvas(); 
+	//can -> Print("Shape.pdf[");
+	//B.Normalize(PDFs[0]); 
+	//B.Normalize(tru1_trk1);
+	//P.DifferencePlot(PDFs[0], tru1_trk1, can); 
+	//can -> Print("Shape.pdf"); 
+
+	//can -> Clear();
+	//B.Normalize(PDFs[1]); 
+	//B.Normalize(tru2_trk2);
+	//P.DifferencePlot(PDFs[1], tru2_trk2, can); 
+	//can -> Print("Shape.pdf"); 
+
+	//can -> Clear();
+	//B.Normalize(PDFs[2]); 
+	//B.Normalize(tru3_trk3);
+	//P.DifferencePlot(PDFs[2], tru3_trk3, can); 
+	//can -> Print("Shape.pdf"); 
+
+	//can -> Clear();
+	//B.Normalize(PDFs[3]); 
+	//B.Normalize(tru4_trk4);
+	//P.DifferencePlot(PDFs[3], tru4_trk4, can); 
+	//can -> Print("Shape.pdf"); 
+
+
+	//can -> Print("Shape.pdf)");
+
 
   std::map<TString, std::vector<float>> Params; 
   Params["Gaussian"] = {0, 1}; 
-  Params["m_s"] = {-1, -1, -1, -1, -1}; 
   Params["m_e"] = {1, 1, 1, 1, 1}; 
-  Params["s_s"] = {0.1, 0.1, 0.1, 0.1, 0.1};
-  Params["s_e"] = {3, 3, 3, 3, 3};
-	int iter = 20; 
+  Params["m_s"] = {0, 0, 0, 0, 0}; 
+  Params["s_s"] = {0.6, 0.6, 0.6, 0.6, 0.6};
+  Params["s_e"] = {1.5, 1.5, 1.5, 1.5, 1.5};
+	int iter = 100; 
 
 	TH1F* Data_Clone = (TH1F*)DataSample -> Clone("DATA_CLONE");  
 
-  Plotting P;
 	TCanvas* can = new TCanvas(); 	
+
+  P.PlotHists(PDFs, Truth, Data_Clone, can);      	
 	for (int i(0); i < iter; i++)
   {
-		float lumi = DataSample -> Integral(); 		
 
-		PDFs = DF.ConvolveFit(Data_Clone, PDFs, Params, 0.2, 150); 
+		float lumi = DataSample -> Integral(); 		
+		PDFs = DF.ConvolveFit(Data_Clone, PDFs, Params, 0.1, 50); 
 		
 		Data_Clone -> Reset(); 
 		Data_Clone -> Add(DataSample, 1); 
 			
-		Data_Clone -> Add(PDFs[1], -float(i)/float(iter));
-		Data_Clone -> Add(PDFs[2], -float(i)/float(iter));
-		Data_Clone -> Add(PDFs[3], -float(i)/float(iter));
-		Data_Clone -> Add(PDFs[4], -float(i)/float(iter));
+		Data_Clone -> Add(PDFs[1], -1);
+		Data_Clone -> Add(PDFs[2], -1);
+		Data_Clone -> Add(PDFs[3], -1);
+		Data_Clone -> Add(PDFs[4], -1);
+		
 
   	can -> SetWindowSize(1200, 600); 
-  	P.PlotHists(PDFs, Truth, Data_Clone, can);      	
   	can -> Update();	
 		can -> Print("Out.pdf");
-
+		
 
  	}
  

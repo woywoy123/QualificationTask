@@ -17,7 +17,6 @@ std::vector<RooRealVar*> DerivedFunctions::FitToData(std::vector<TH1F*> Hists,
   RooAddPdf model("Model", "Model", B.RooList(Hist), B.RooList(Var));
   RooFitResult* stat = model.fitTo(*data, RooFit::SumW2Error(true), RooFit::Save());
  	
-	std::cout << stat -> status() << std::endl;
   for (int i(0); i < Var.size(); i++)
   {
     delete Hist[i];
@@ -184,7 +183,7 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset
   B.ToTH1F(Target_V, Target_E);
 
   // Define the tail to be replaced and move away from peak 
-  int max_bin = Target -> GetMaximumBin() + bin_s*0.01;
+  int max_bin = Target -> GetMaximumBin() + bin_s*0.1;
   int max_bin_s = Source -> GetMaximumBin();
   TH1F* Temp = (TH1F*)Source -> Clone("Temp"); 
   
@@ -234,23 +233,28 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   // === TRK1
   B.Normalize(PDFs); 
   TH1F* temp = (TH1F*)PDFs[0] -> Clone("temp"); 
-  //ReplaceShiftTail(trk1, PDFs[0], offset); 
+  ReplaceShiftTail(trk1, PDFs[0], offset); 
+	//B.ResidualRemove(PDFs[0]); 
 
   // === TRK2
-  B.ConvolveHists(PDFs[0], temp, PDFs[1]); 
+  B.ConvolveHists(PDFs[0], PDFs[0], PDFs[1]); 
   B.Normalize(PDFs[1]);
+	//B.ResidualRemove(PDFs[1]); 
 
   // === TRK3
-  B.ConvolveHists(PDFs[1], temp, PDFs[2]);  
+  B.ConvolveHists(PDFs[1], PDFs[0], PDFs[2]);  
   B.Normalize(PDFs[2]);
+	//B.ResidualRemove(PDFs[2]); 
 
   // === TRK4 
-  B.ConvolveHists(PDFs[2], temp, PDFs[3]);  
+  B.ConvolveHists(PDFs[2], PDFs[0], PDFs[3]);  
   B.Normalize(PDFs[3]);
+	//B.ResidualRemove(PDFs[3]); 
 
   // === TRK5 
-  B.ConvolveHists(PDFs[3], temp, PDFs[4]);  
+  B.ConvolveHists(PDFs[3], PDFs[0], PDFs[4]);  
   B.Normalize(PDFs[4]);
+	B.ResidualRemove(PDFs[4]); 
 
   delete temp;
   return PDFs;
@@ -263,11 +267,11 @@ TH1F* DerivedFunctions::GaussianConvolve(TH1F* Hist, float mean, float stdev, in
 
 	int bins = Hist -> GetNbinsX(); 
 	
-	TH1F* H1 = new TH1F("H1", "H1", 2*bins+1, -bins-1, bins); 
+	TH1F* H1 = new TH1F("H1", "H1", 2*bins, -bins, bins); 
 
 	B.ShiftExpandTH1F(Hist, H1, 0.5*bins); 
 
-	TH1F* Gaus = new TH1F("Gaus", "Gaus", 2*bins+1, -bins-0.5, bins+0.5); 
+	TH1F* Gaus = new TH1F("Gaus", "Gaus", 2*bins, -bins, bins); 
 	DG.Gaussian(mean, stdev, Toys, Gaus); 
 	B.Normalize(Gaus); 
 
@@ -298,17 +302,16 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
     int bins = PDF -> GetNbinsX();  
    
     // Import the PDFs into the Temp Hist 
-    B.ShiftExpandTH1F(PDF, Hist, 0.5*bins); 
+    B.ShiftExpandTH1F(PDF, Hist, 0.5*bins -1); 
 		B.Normalize(Hist); 
-		B.Normalize(Gaussian);
 
     // Variables for the LR deconvolution part
     std::vector<float> PDF_V = B.TH1FDataVector(Hist, offset); 
     std::vector<float> PSF_V = B.TH1FDataVector(Gaussian, offset); 
-    std::vector<float> deconv(PSF_V.size(), 0.5); 
+    std::vector<float> deconv(PSF_V.size(), 1); 
     
     // Lucy Richardson deconvolution of a gaussian with the PDF
-    for (int i(0); i < iter; i++){deconv = B.LucyRichardson(PDF_V, PSF_V, deconv);}
+    for (int i(0); i < iter; i++){deconv = B.LucyRichardson(PDF_V, PSF_V, deconv, 0.5);}
     B.ToTH1F(deconv, Output); 
 		B.Normalize(Output);
   }; 
@@ -317,11 +320,6 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
   DistributionGenerators DG; 
   
 	// Capture the integrals of the PDFs and the data inserted 
-	std::vector<float> PDF_Lumi; 
-	for (TH1F* H : PDFs)
-	{
-		PDF_Lumi.push_back(H -> Integral()); 
-	}
 	float Data_Lumi = GxTrk -> Integral(); 
 	 
   // Get the number of bins in the hists. This will be our bin domain 
@@ -341,23 +339,22 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
   B.ShiftExpandTH1F(Hists, PDFs_L, bins); 
 
   // Generate the Gaussian Distribution
-  TH1F* Gaussian = (TH1F*)Hists[0] -> Clone("Gaussian");
-  DG.Gaussian(Params["Gaussian"][0], Params["Gaussian"][1], 500000, Gaussian);
+  TH1F* Gaus = (TH1F*)Hists[0] -> Clone("Gaussian");
+  DG.Gaussian(Params["Gaussian"][0], Params["Gaussian"][1], 0, Gaus);
+	B.Normalize(Gaus);
 
   // Deconvolve the above Gaussian with the track PDF using a multithreaded approach 
   std::vector<std::thread> th; 
-  for (int i(0); i < PDFs.size(); i++){th.push_back(std::thread(Deconvolve, Hists[i], PDFs[i], Gaussian, PDFs_L[i], offset, iter));}
+  for (int i(0); i < PDFs.size(); i++){th.push_back(std::thread(Deconvolve, Hists[i], PDFs[i], Gaus, PDFs_L[i], offset, iter));}
   for (std::thread &t : th){ t.join(); } 
-	
+  	
   // Convert the data TH1F to a common length as the new PDFs
   TH1F* Data_L = new TH1F("Data_L", "Data_L", bins, 0, bins); 
   B.ShiftExpandTH1F(GxTrk, Data_L); 
 
-	for (int i(0); i < PDFs_L.size(); i++)
-	{
-		PDFs_L[i] -> Scale(PDF_Lumi[i]);
-	}
 
+  B.Normalize(Data_L);
+  B.Normalize(PDFs_L); 
   // Define all the names of the variables we will be needing 
   std::vector<TString> Means_String = { "m1", "m2", "m3", "m4", "m5"};
   std::vector<TString> Stdev_String = { "s1", "s2", "s3", "s4", "s5"};
@@ -366,8 +363,8 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
   std::vector<TString> GxT_String = { "P1xG1", "P2xG2", "P3xG3", "P4xG4", "P5xG5"};
 
   // Free defined variables
-  std::vector<float> N_Begin(PDFs.size(), 0);
-  std::vector<float> N_End(PDFs.size(), Data_Lumi); 
+  std::vector<float> N_Begin(PDFs.size(), 0.);
+  std::vector<float> N_End(PDFs.size(), 0.5); 
 
   // ====== Define the RooRealVars we will need for the fit  
   // Define the range of the fit 
@@ -377,7 +374,7 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
   std::vector<RooRealVar*> N_Vars = B.RooVariables(N_String, N_Begin, N_End); 
   std::vector<RooGaussian*> G_Vars = B.RooVariables(Gaus_String, Means, Stdev, x); 
   std::vector<RooHistPdf*> PDF_Vars = B.RooPDF(PDFs_L, x);
-  std::vector<RooFFTConvPdf*> Conv_Vars = B.RooVariables(GxT_String, PDF_Vars, G_Vars, x); 
+  std::vector<RooFFTConvPdf*> Conv_Vars = B.RooVariables(GxT_String, G_Vars, PDF_Vars, x); 
  
   // Import the data 
   RooDataHist* trk = new RooDataHist("trk", "trk", *x, Data_L);
@@ -392,18 +389,21 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
   }
   
   RooAddPdf model("model", "model", Conv, N);
-  model.fitTo(*trk, RooFit::Extended(), RooFit::SumW2Error(true)); 	
-		 
+  model.fitTo(*trk, RooFit::SumW2Error(true)); 	
+  
+  //Plotting P;
+  //P.PlotHists(model, x, PDF_Vars, trk); 
+	
+  std::vector<TH1F*> Out;	 
   for (int i(0); i < PDFs_L.size(); i++)
   {
     float M = Means[i] -> getVal();
     float S = Stdev[i] -> getVal();
-		float N = N_Vars[i] -> getVal();
 
 		PDFs[i] -> Reset(); 
-		TH1F* GxT = GaussianConvolve(PDFs_L[i], M, S);	
-		GxT -> Scale(N);
-		B.ShiftExpandTH1F(GxT, PDFs[i]); 
+		TH1F* GxT = GaussianConvolve(PDFs_L[i], 0, S);	
+    TH1F* GxT_G = GaussianConvolve(GxT, 0, 0.1); 
+    Out.push_back(GxT_G);
 
     delete Conv_Vars[i]; 
     delete Hists[i];
@@ -412,31 +412,40 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
     delete G_Vars[i]; 
     delete Stdev[i]; 
     delete N_Vars[i]; 
-		delete GxT;
 		delete PDFs_L[i];
+    delete GxT_G; 
 	}
+ 
+  std::vector<RooRealVar*> v = FitToData(Out, Data_L, 0, bins); 
+  
+  for (int i(0); i < v.size(); i++)
+  {
+    Out[i] -> Scale(v[i] -> getVal() * Data_Lumi); 
+    delete v[i]; 
+  }
 
+	B.ShiftExpandTH1F(Out, PDFs, 0); 
+	//&for (TH1F* H : PDFs)
+	//&{
+	//&	float rescale = 1; 
+	//&	for (int i(0); i < Data_L -> GetNbinsX(); i++)
+	//&	{
+	//&		float e = Data_L -> GetBinContent(i+1); 
+	//&		float x = H -> GetBinContent(i+1); 
+	//&		float r = x/e; 
+	//&		if ( r > rescale ) { rescale = r; }
+	//&	}
+	//&	H -> Scale(1/rescale); 
+	//&}
 
-	for (TH1F* H : PDFs)
-	{
-		float rescale = 1; 
-		for (int i(0); i < Data_L -> GetNbinsX(); i++)
-		{
-			float e = Data_L -> GetBinContent(i+1); 
-			float x = H -> GetBinContent(i+1); 
-			float r = x/e; 
-			if ( r > rescale ) { rescale = r; }
-		}
-		H -> Scale(1/rescale); 
-	}
-
+	SafeScaleNew(PDFs, GxTrk); 
 	
   delete trk; 
   delete x;
 	delete Data_L;
+  delete Gaus;
 
 	return PDFs;    
-
 }
 
 std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, std::vector<std::vector<TH1F*>> Closure)
@@ -627,6 +636,8 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       delete Trk3_PDFs[v];
       delete Trk4_PDFs[v];   
     }
+
+
 
     delete Temp; 
 

@@ -36,7 +36,7 @@ void PostAnalysis()
   // Other parameters
   float offset = 0.1;
   int iter = 50;
-  int cor_loop = 50; // Correction loop number 
+  int cor_loop = 100; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> trk1_N;
@@ -123,7 +123,7 @@ void PostAnalysis()
     //BFT.Deconvolve(trk2_N[1], trk1_N[0], offset, 25);
     //DFT.ShiftTest(trk1_N[0], Shift);
     //DFT.ReplaceShiftTail(trk1_N[0], trk1_N[1], Shift);
-    DFT.DeconvolveReconvolve(trk1_N, offset, iter);
+    //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
     //BFT.Constraint(); 
  
@@ -150,11 +150,11 @@ void PostAnalysis()
 
     // ===== Good parameters that have been tested (out.root)
     //Gaussian Parameter used for deconvolution
-    Params["Gaussian"] = {0, 0.1};
-    Params["m_s"] = {-1, -1, -1, -1, -1};
-    Params["m_e"] = {1, 1, 1, 1, 1};        
-    Params["s_s"] = {0.001, 0.001, 0.001, 0.001, 0.001};
-    Params["s_e"] = {4, 4, 4, 4, 4};
+    Params["Gaussian"] = {0, 1};
+    Params["m_e"] = {1, 1, 1, 1, 1};
+    Params["m_s"] = {0, 0, 0, 0, 0};        
+    Params["s_s"] = {0.6, 0.6, 0.6, 0.6, 0.6};
+    Params["s_e"] = {1.5, 1.5, 1.5, 1.5, 1.5};
 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
     P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   

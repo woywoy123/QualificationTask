@@ -247,7 +247,7 @@ TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<Ro
   }
   TCanvas* can = new TCanvas();
   gPad -> SetLogy();
-  xframe -> SetMinimum(1); 
+  xframe -> SetMinimum(1e-9); 
   xframe -> Draw();
   can -> Update();
   return can;
@@ -264,7 +264,7 @@ TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<Ro
   }
   TCanvas* can = new TCanvas();
   gPad -> SetLogy();
-  xframe -> SetMinimum(1); 
+  xframe -> SetMinimum(1e-9); 
   xframe -> Draw();
   can -> Update();
   return can;
@@ -277,7 +277,7 @@ TCanvas* Plotting::PlotHists(RooHistPdf model, RooRealVar Domain, RooDataHist Da
   model.plotOn(xframe);  
   TCanvas* can = new TCanvas();
   gPad -> SetLogy();
-  xframe -> SetMinimum(1); 
+  xframe -> SetMinimum(1e-9); 
   xframe -> Draw();
   can -> Update();
   return can;
@@ -334,9 +334,10 @@ void DistributionGenerators::Landau(std::vector<TH1F*> Hists, std::vector<float>
 
 void DistributionGenerators::Gaussian(float mean, float stdev, int Number, TH1F* Hist)
 {
-  gRandom = new TRandom();
-  for (int i(0); i < Number; i++){ Hist -> Fill(gRandom -> Gaus(mean, stdev)); }
-  delete gRandom;
+  int bins = Hist -> GetNbinsX(); 
+  TF1* g = new TF1("gaus", "gaus", -bins, bins); 
+  g -> SetParameters(1, mean, stdev);
+  Hist -> Add(g); 
 }
 
 std::vector<TH1F*> DistributionGenerators::FillTH1F(std::vector<TString> Names, TString dir)
