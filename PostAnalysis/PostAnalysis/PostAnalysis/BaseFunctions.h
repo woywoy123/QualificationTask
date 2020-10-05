@@ -58,6 +58,7 @@ class BaseFunctions
    
     // ==== Benchmarks  
     float ChiSquare(std::vector<float> V1, std::vector<float> V2);
+		float ChiSquare(TH1F* H1, TH1F* H2); 
     void PredictionTruthPrint(std::vector<float> Truth, std::vector<float> Prediction);
     float FLost(std::vector<TH1F*> ntrk_Data, std::vector<std::vector<TH1F*>> Truth); 
 

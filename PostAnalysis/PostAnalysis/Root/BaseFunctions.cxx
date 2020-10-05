@@ -100,7 +100,7 @@ void BaseFunctions::Scale(std::vector<TH1F*> PDFs, std::vector<RooRealVar*> Vars
 
 std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<float> Begin, std::vector<float> End)
 {
-  std::vector<RooRealVar*> Variables(Names.size()); 
+  std::vector<RooRealVar*> Variables(Begin.size()); 
   for (int i(0); i < Begin.size(); i++)
   {
     Variables[i] = new RooRealVar(Names[i]+"_Fit", Names[i], Begin[i], End[i]);  
@@ -110,7 +110,7 @@ std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names,
 
 std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<float> Var1, std::vector<float> Var2, std::vector<float> Var3)
 {
-  std::vector<RooRealVar*> Variables(Names.size());
+  std::vector<RooRealVar*> Variables(Var1.size());
   for (int i(0); i < Var1.size(); i++)
   {
     Variables[i] = new RooRealVar(Names[i], Names[i], Var1[i], Var2[i], Var3[i]); 
@@ -120,7 +120,7 @@ std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names,
 
 std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> Mean, std::vector<RooRealVar*> Stdev, RooRealVar* Domain)
 {
-  std::vector<RooGaussian*> Gaussian(Names.size());
+  std::vector<RooGaussian*> Gaussian(Mean.size());
   for (int i(0); i < Mean.size(); i++)
   {
     Gaussian[i] = new RooGaussian(Names[i], Names[i], *Domain, *Mean[i], *Stdev[i]); 
@@ -130,7 +130,7 @@ std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names
 
 std::vector<RooGaussian*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<RooRealVar*> V1, std::vector<float> V2, std::vector<float> V3)
 {
-  std::vector<RooGaussian*> Gaussian(Names.size());
+  std::vector<RooGaussian*> Gaussian(V1.size());
   for (int i(0); i < V1.size(); i++)
   {
     Gaussian[i] = new RooGaussian(Names[i], Names[i], *V1[i], RooFit::RooConst(V2[i]), RooFit::RooConst(V3[i])); 
@@ -173,7 +173,7 @@ std::vector<RooHistPdf*> BaseFunctions::RooPDF(std::vector<TH1F*> Hist, RooRealV
   std::vector<RooHistPdf*> HistPdf(Hist.size());
   for (int i(0); i < Data.size(); i++)
   {
-    TString name = Hist[i] -> GetTitle(); 
+    TString name = Hist[i] -> GetTitle(); name += ("_Fit"); 
     HistPdf[i] = new RooHistPdf(name, name, *Domain, *Data[i]);
   }
   return HistPdf; 
@@ -196,12 +196,40 @@ RooArgList BaseFunctions::RooList(std::vector<RooHistPdf*> Vector)
 float BaseFunctions::ChiSquare(std::vector<float> V1, std::vector<float> V2)
 {
   float di(0);
+	float sum_V1(0); 
+	float sum_V2(0); 
+	for (int i(0); i < V1.size(); i++)
+	{
+		sum_V1 += V1[i]; 
+		sum_V2 += V2[i]; 
+	}
+
   for (int i(0); i < V1.size(); i++)
   {
-    di += pow(V1[i] - V2[i], 2);
+    di += pow(V1[i]*1/sum_V1 - V2[i]*1/sum_V2, 2);
   }
   return di;
 }
+
+float BaseFunctions::ChiSquare(TH1F* H1, TH1F* H2)
+{
+	auto vector =[](TH1F* H1)
+	{
+		std::vector<float> V1;
+		for (int i(0); i < H1 -> GetNbinsX(); i++)
+		{
+			V1.push_back(H1 -> GetBinContent(i+1)); 
+		}
+		return V1; 
+	};
+	
+	std::vector<float> v1 = vector(H1);
+	std::vector<float> v2 = vector(H2); 
+	return ChiSquare(v1, v2); 		
+
+}
+
+
 
 void BaseFunctions::PredictionTruthPrint(std::vector<float> Truth, std::vector<float> Prediction)
 {
@@ -375,7 +403,7 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
       breaker = 0;  
     }
     else{breaker++;}
-    if (breaker == 2) {break;}
+    if (breaker == 4) {break;}
   }
  
   for (int i(0); i < iter; i++)

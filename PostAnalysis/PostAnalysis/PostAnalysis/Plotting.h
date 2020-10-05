@@ -14,6 +14,7 @@
 #include<TStyle.h>
 #include<PostAnalysis/Constants.h>
 #include<TRatioPlot.h>
+#include<TMultiGraph.h>
 
 #ifndef PLOTTING_H
 #define PLOTTING_H

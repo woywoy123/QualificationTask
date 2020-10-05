@@ -116,6 +116,7 @@ void Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<std:
     can -> cd(i+1) -> SetLogy(); 
     can -> cd(i+1);
     Data[i] -> SetLineColor(kBlack);
+		Data[i] -> GetYaxis() -> SetRangeUser(1, Data[i] -> Integral()); 
     Data[i] -> Draw("SAMEHIST"); 
     Populate(Hists[i], can, len, kSolid);
     Populate(Closure[i], can, len, kDashed); 
@@ -295,6 +296,7 @@ void Plotting::DifferencePlot(TH1F* H1, TH1F* H2, TCanvas* can)
     float diff = e1 - e2; 
     Ratio -> SetBinContent(i+1, diff); 
   }
+	H1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^2]");
 
   TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
   P1 -> Draw(); 
@@ -310,7 +312,7 @@ void Plotting::DifferencePlot(TH1F* H1, TH1F* H2, TCanvas* can)
   TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3); 
   P2 -> Draw();
   P2 -> cd(); 
-  Ratio -> SetStats(0); 
+	Ratio -> SetStats(0); 
   Ratio -> Draw("SAMEHIST"); 
 }
 
@@ -335,7 +337,7 @@ void DistributionGenerators::Landau(std::vector<TH1F*> Hists, std::vector<float>
 void DistributionGenerators::Gaussian(float mean, float stdev, int Number, TH1F* Hist)
 {
   int bins = Hist -> GetNbinsX(); 
-  TF1* g = new TF1("gaus", "gaus", -bins, bins); 
+  TF1* g = new TF1("gaus", "gaus", -bins/2, bins/2); 
   g -> SetParameters(1, mean, stdev);
   Hist -> Add(g); 
 }

@@ -3,11 +3,11 @@
 #include<PostAnalysis/Constants.h>
 #include<PostAnalysis/Plotting.h>
 #include<PostAnalysis/UnitTest.h>
-#include<TApplication.h>
+//#include<TApplication.h>
 
 using namespace Constants;
 
-void PostAnalysis()
+int main(int argc, char** argv)
 {
   // ==== Classes being imported ==== //
   BaseFunctions B;
@@ -20,7 +20,7 @@ void PostAnalysis()
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
   int Mode = 10;  // Change to 0 - MC, 1 - Toy, 2 - Data, 3 - Presentation
-  bool Test = false; // Test Components 
+  bool Test = true; // Test Components 
   int Shift = 0;
 
   // Histogram parameters  
@@ -36,7 +36,7 @@ void PostAnalysis()
   // Other parameters
   float offset = 0.1;
   int iter = 50;
-  int cor_loop = 100; // Correction loop number 
+  int cor_loop = 200; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> trk1_N;
@@ -125,29 +125,13 @@ void PostAnalysis()
     //DFT.ReplaceShiftTail(trk1_N[0], trk1_N[1], Shift);
     //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
-    //BFT.Constraint(); 
- 
-    //Gaussian Parameter used for deconvolution
-//    Params["Gaussian"] = {0, 0.1};
-//    Params["m_s"] = {-3, -10, -10, -10, -1};
-//    Params["m_e"] = {3, 20, 20, 20, 15};        
-//    Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-//    Params["s_e"] = {5, 20, 30, 40, 60};
-
-
-
- 
+    //BFT.Constraint();  
+    P.ReconstructNTrack();
+			 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets); 
   }
   else
   {
-    ////Gaussian Parameter used for deconvolution
-    //Params["Gaussian"] = {0, 0.1};
-    //Params["m_s"] = {-5, -10, -20, -20, -20};
-    //Params["m_e"] = {5, 30, 40, 40, 40};        
-    //Params["s_s"] = {0.01, 0.01, 0.01, 0.01, 0.01};
-    //Params["s_e"] = {5, 20, 40, 120, 120};
-
     // ===== Good parameters that have been tested (out.root)
     //Gaussian Parameter used for deconvolution
     Params["Gaussian"] = {0, 1};
@@ -157,50 +141,23 @@ void PostAnalysis()
     Params["s_e"] = {1.5, 1.5, 1.5, 1.5, 1.5};
 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
-    P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
-    //P.ReconstructNTrack();
+    //P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
 
     //P.AlgorithmPlots("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/AnalysisOutput/out.root", cor_loop); 
   }
  
   std::cout << "Fin" << std::endl; 
-  
+	return 0;   
 }
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void StandaloneApplications(int argc, char** argv){PostAnalysis();}
-int main(int argc, char** argv)
-{
-  TApplication app("ROOT Application", &argc, argv);
-  StandaloneApplications(app.Argc(), app.Argv());
-  app.Run();
-  return 0; 
-}
+//void StandaloneApplications(int argc, char** argv){PostAnalysis();}
+//int main(int argc, char** argv)
+//{
+//  TApplication app("ROOT Application", &argc, argv);
+//  StandaloneApplications(app.Argc(), app.Argv());
+//  app.Run();
+//  return 0; 
+//}

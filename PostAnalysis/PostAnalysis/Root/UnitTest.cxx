@@ -144,14 +144,35 @@ void DerivedFunctionTest::DeconvolveReconvolve(std::vector<TH1F*> ntrk, float of
   P.PlotHists(PDFs, ntrk); 
 }
 
+std::vector<TH1F*> GetMCHists(std::vector<TString> Layer, std::vector<std::vector<TString>> PT, std::vector<TString> Names, int bins, float min, float max)
+{
+	BaseFunctions B; 
+	std::vector<TH1F*> EmptyHists = B.MakeTH1F(Names, bins, min, max);
+	
+	TFile* f = new TFile(Constants::MC_dir); 
+	for (TString L : Layer)
+	{
+		for (std::vector<TString> Batch : PT)
+		{
+			for (TString B : Batch)
+			{
+				f -> cd (L + B);
+				for (TH1F* Hist : EmptyHists)
+				{
+					Hist -> Add((TH1F*)gDirectory -> Get(Hist -> GetTitle())); 
+				}
+			}
+		}
+	}
+	return EmptyHists; 
+}
+
 // ===== ReconstructNTrack
 void Presentation::ReconstructNTrack()
 {
-
-  DistributionGenerators DG; 
-  BaseFunctions B;
   DerivedFunctions DF; 
 	Plotting P; 
+	BaseFunctions B; 
 
   std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2"};
   std::vector<TString> E = Constants::energies;
@@ -159,110 +180,245 @@ void Presentation::ReconstructNTrack()
                                              {E[1], E[2]}, 
                                              {E[3], E[4], E[5]}, 
                                              {E[6], E[7], E[8], E[9], E[10], E[11], E[12], E[13], E[14], E[15]}};
-  
-  TH1F* tru1_trk1 = new TH1F("tru1_trk1", "tru1_trk1", 500, 0, 20); 
-  TH1F* tru1_trk2 = new TH1F("tru1_trk2", "tru1_trk2", 500, 0, 20); 
-  TH1F* tru1_trk3 = new TH1F("tru1_trk3", "tru1_trk3", 500, 0, 20); 
-  TH1F* tru1_trk4 = new TH1F("tru1_trk4", "tru1_trk4", 500, 0, 20); 
-  TH1F* tru1_trk5 = new TH1F("tru1_trk5", "tru1_trk5", 500, 0, 20);
-  TH1F* tru2_trk2 = new TH1F("tru2_trk2", "tru2_trk2", 500, 0, 20);  
-  TH1F* tru3_trk3 = new TH1F("tru3_trk3", "tru3_trk3", 500, 0, 20);  
-	TH1F* tru4_trk4 = new TH1F("tru4_trk4", "tru4_trk4", 500, 0, 20);   
-	  
-  TFile* f = new TFile(Constants::MC_dir); 
-  for (TString Lay : Detector_Layer)
-  {
-    for (std::vector<TString> Ba : Batch)
-    {
-      for ( TString B : Ba )
-      {
-        f -> cd(Lay+B); 
-        tru1_trk1 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_1_ntru_1")); 
-        tru1_trk2 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_1_ntru_2"));
-        tru1_trk3 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_1_ntru_3"));
-        tru1_trk4 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_1_ntru_4"));
-        tru1_trk5 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_1_ntru_5"));
-        tru2_trk2 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_2_ntru_2")); 
-        tru3_trk3 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_3_ntru_3")); 
-        tru4_trk4 -> Add((TH1F*)gDirectory -> Get("dEdx_ntrk_4_ntru_4")); 
-      } 
-    }
-  }  
 
-  TH1F* DataSample = new TH1F("Data", "Data", 500, 0, 20); 
-  std::vector<TH1F*> Truth = {tru1_trk1, tru1_trk2, tru1_trk3, tru1_trk4, tru1_trk5}; 
-  for (TH1F* H : Truth){DataSample -> Add(H);}
-
-  // Create the PDFs without gaussian smearing 
-  std::vector<TH1F*> PDFs = DF.nTRKGenerator(DataSample, tru2_trk2, 0., 75);  
-	//std::vector<TH1F*> PDFs = B.CopyTH1F(Truth, "_C");  
-
-	//TCanvas* can = new TCanvas(); 
-	//can -> Print("Shape.pdf[");
-	//B.Normalize(PDFs[0]); 
-	//B.Normalize(tru1_trk1);
-	//P.DifferencePlot(PDFs[0], tru1_trk1, can); 
-	//can -> Print("Shape.pdf"); 
-
-	//can -> Clear();
-	//B.Normalize(PDFs[1]); 
-	//B.Normalize(tru2_trk2);
-	//P.DifferencePlot(PDFs[1], tru2_trk2, can); 
-	//can -> Print("Shape.pdf"); 
-
-	//can -> Clear();
-	//B.Normalize(PDFs[2]); 
-	//B.Normalize(tru3_trk3);
-	//P.DifferencePlot(PDFs[2], tru3_trk3, can); 
-	//can -> Print("Shape.pdf"); 
-
-	//can -> Clear();
-	//B.Normalize(PDFs[3]); 
-	//B.Normalize(tru4_trk4);
-	//P.DifferencePlot(PDFs[3], tru4_trk4, can); 
-	//can -> Print("Shape.pdf"); 
+	std::vector<TString> Names = {"dEdx_ntrk_1_ntru_1", "dEdx_ntrk_2_ntru_2", "dEdx_ntrk_3_ntru_3", "dEdx_ntrk_4_ntru_4"};
 
 
-	//can -> Print("Shape.pdf)");
 
+	std::vector<TH1F*> Hists = GetMCHists(Detector_Layer, Batch, Names, 500, 0, 20); 
+	TH1F* trk1 = Hists[0]; 
+	TH1F* trk2 = Hists[1]; 
+	TH1F* trk3 = Hists[2]; 
+	TH1F* trk4 = Hists[3]; 
 
-  std::map<TString, std::vector<float>> Params; 
-  Params["Gaussian"] = {0, 1}; 
-  Params["m_e"] = {1, 1, 1, 1, 1}; 
-  Params["m_s"] = {0, 0, 0, 0, 0}; 
-  Params["s_s"] = {0.6, 0.6, 0.6, 0.6, 0.6};
-  Params["s_e"] = {1.5, 1.5, 1.5, 1.5, 1.5};
-	int iter = 100; 
+	std::vector<TH1F*> ntrks_t = DF.nTRKGenerator(trk1, trk2, 0.01, 150); 
 
-	TH1F* Data_Clone = (TH1F*)DataSample -> Clone("DATA_CLONE");  
+	B.Normalize(Hists);
+	B.Normalize(ntrks_t); 
+	
+	TCanvas* can = new TCanvas(); 
+	P.DifferencePlot(trk1, ntrks_t[0], can); 
+  can -> Print("trk1.pdf"); 		
+	can -> Clear(); 
+	std::cout << "Chi-Square of pure 1-track and generated 1-track: " << B.ChiSquare(trk1, ntrks_t[0]) << std::endl;
 
-	TCanvas* can = new TCanvas(); 	
+	P.DifferencePlot(trk2, ntrks_t[1], can); 
+  can -> Print("trk2.pdf"); 		
+	can -> Clear(); 
+	std::cout << "Chi-Square of pure 2-track and generated 2-track: " << B.ChiSquare(trk2, ntrks_t[1]) << std::endl;
 
-  P.PlotHists(PDFs, Truth, Data_Clone, can);      	
-	for (int i(0); i < iter; i++)
-  {
+	P.DifferencePlot(trk3, ntrks_t[2], can); 
+  can -> Print("trk3.pdf"); 		
+	can -> Clear(); 
+	std::cout << "Chi-Square of pure 3-track and generated 3-track: " << B.ChiSquare(trk3, ntrks_t[2]) << std::endl;
 
-		float lumi = DataSample -> Integral(); 		
-		PDFs = DF.ConvolveFit(Data_Clone, PDFs, Params, 0.1, 50); 
+	P.DifferencePlot(trk4, ntrks_t[3], can); 
+  can -> Print("trk4.pdf"); 		
+	can -> Clear(); 
+	std::cout << "Chi-Square of pure 4-track and generated 4-track: " << B.ChiSquare(trk4, ntrks_t[3]) << std::endl;
+
+	std::map<TString, std::vector<float>> Params_1;
+	Params_1["Gaussian"] = {0, 2}; 	
+	Params_1["m_e"] = {1.5};
+	Params_1["m_s"] = {0};
+	Params_1["s_s"] = {0.5};
+	Params_1["s_e"] = {3};
+
+	TMultiGraph *mg = new TMultiGraph();
+	TGraph *gr1 = new TGraph();
+	TGraph *gr2 = new TGraph();
+	TGraph *gr3 = new TGraph();
+	TGraph *gr4 = new TGraph();
+	TGraph *gr5 = new TGraph();
+	TGraph *gr6 = new TGraph();
+	TGraph *gr7 = new TGraph();
+	TGraph *gr8 = new TGraph();
+
+	gr1 -> SetLineColor(kBlue);
+	gr2 -> SetLineColor(kRed);
+	gr3 -> SetLineColor(kOrange);
+	gr4 -> SetLineColor(kGreen);
+	gr5 -> SetLineColor(kBlue); gr5 -> SetLineStyle(kDashed); 
+	gr6 -> SetLineColor(kRed); gr6 -> SetLineStyle(kDashed); 
+	gr7 -> SetLineColor(kOrange); gr7 -> SetLineStyle(kDashed); 
+  gr8 -> SetLineColor(kGreen); gr8 -> SetLineStyle(kDashed); 
+
+	std::vector<TH1F*> trk1_G;
+	std::vector<TH1F*> trk2_G;
+	std::vector<TH1F*> trk3_G;
+	std::vector<TH1F*> trk4_G;
+	for (int i(0); i < 100; i++)
+	{
+		std::vector<TH1F*> ntrks;
+		if (i==0)
+		{
+			ntrks = DF.nTRKGenerator(trk1, trk2, 0.01, 50); 
+		}
+		else
+		{
+			ntrks = DF.nTRKGenerator(trk1, trk2_G[0], 0.01, 50); 
+		}
+
+		trk1_G = DF.ConvolveFit(trk1, {ntrks[0]}, Params_1, 0.01, 75);  
+		trk2_G = DF.ConvolveFit(trk2, {ntrks[1]}, Params_1, 0.01, 75); 
+		trk3_G = DF.ConvolveFit(trk3, {ntrks[2]}, Params_1, 0.01, 75); 
+		trk4_G = DF.ConvolveFit(trk4, {ntrks[3]}, Params_1, 0.01, 75); 
+	
+		can -> Clear(); 	
+		P.DifferencePlot(trk1, ntrks[0], can); 
+	  can -> Print("trk1_G.pdf"); 		
+		can -> Clear(); 
+	
+		P.DifferencePlot(trk2, ntrks[1], can); 
+	  can -> Print("trk2_G.pdf"); 		
+		can -> Clear(); 
+	
+		P.DifferencePlot(trk3, ntrks[2], can); 
+	  can -> Print("trk3_G.pdf"); 		
+		can -> Clear(); 
+	
+		P.DifferencePlot(trk4, ntrks[3], can); 
+	  can -> Print("trk4_G.pdf"); 		
+		can -> Clear(); 
+
+		std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+		std::cout << "Chi-Square of pure 1-track and generated 1-track without Gaus: " << B.ChiSquare(trk1, ntrks_t[0]) << std::endl;
+		std::cout << "Chi-Square of pure 2-track and generated 2-track without Gaus: " << B.ChiSquare(trk2, ntrks_t[1]) << std::endl;
+		std::cout << "Chi-Square of pure 3-track and generated 3-track without Gaus: " << B.ChiSquare(trk3, ntrks_t[2]) << std::endl;
+		std::cout << "Chi-Square of pure 4-track and generated 4-track without Gaus: " << B.ChiSquare(trk4, ntrks_t[3]) << std::endl;
+		std::cout << "###############################################################" << std::endl;	
+		std::cout << "Chi-Square of pure 1-track and generated 1-track: " << B.ChiSquare(trk1, trk1_G[0]) << std::endl;
+		std::cout << "Chi-Square of pure 2-track and generated 2-track: " << B.ChiSquare(trk2, trk2_G[0]) << std::endl;
+		std::cout << "Chi-Square of pure 3-track and generated 3-track: " << B.ChiSquare(trk3, trk3_G[0]) << std::endl;
+		std::cout << "Chi-Square of pure 4-track and generated 4-track: " << B.ChiSquare(trk4, trk4_G[0]) << std::endl;
+	
+		gr1 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk1, ntrks_t[0])); 
+		gr2 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk2, ntrks_t[1])); 
+		gr3 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk3, ntrks_t[2])); 
+		gr4 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk4, ntrks_t[3])); 
+		gr5 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk1, trk1_G[0])); 
+		gr6 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk2, trk2_G[0])); 
+		gr7 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk3, trk3_G[0])); 
+		gr8 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk4, trk4_G[0])); 
+
+		if ( i == 0 )
+		{
+			mg -> Add(gr1); 
+			mg -> Add(gr2); 
+			mg -> Add(gr3); 
+			mg -> Add(gr4); 
+			mg -> Add(gr5); 
+			mg -> Add(gr6); 
+			mg -> Add(gr7); 
+			mg -> Add(gr8); 
+		}
 		
-		Data_Clone -> Reset(); 
-		Data_Clone -> Add(DataSample, 1); 
-			
-		Data_Clone -> Add(PDFs[1], -1);
-		Data_Clone -> Add(PDFs[2], -1);
-		Data_Clone -> Add(PDFs[3], -1);
-		Data_Clone -> Add(PDFs[4], -1);
-		
+		mg -> Draw("apl"); 
+		can -> Update();
+		can -> Print("out.pdf"); 	 
+	
+		delete trk1_G[0];
+    delete trk3_G[0]; 
+    delete trk4_G[0]; 
+	}
 
-  	can -> SetWindowSize(1200, 600); 
-  	can -> Update();	
-		can -> Print("Out.pdf");
-		
 
- 	}
- 
- 
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  //std::map<TString, std::vector<float>> Params; 
+	//float s_e = 4;
+  //Params["Gaussian"] = {0, 2}; 
+  //Params["m_e"] = {1, 1, 1, 1, 1}; 
+  //Params["m_s"] = {0, 0, 0, 0, 0}; 
+  //Params["s_s"] = {0.4, 0.4, 0.4, 0.4, 0.4};
+  //Params["s_e"] = {s_e, s_e, s_e, s_e, s_e};
+	//int iter = 50; 
+
+	//TH1F* trk1_C = (TH1F*)trk1 -> Clone("trk1_C");  
+	//TH1F* trk2_C = (TH1F*)trk2 -> Clone("trk2_C");  
+	//TCanvas* can = new TCanvas(); 	
+	//can -> Divide(2,1); 
+	//	
+ 	//can -> SetWindowSize(1200, 600); 
+
+	//auto ShapeDifference =[](TH1F* T1, TH1F* H2)
+	//{
+	//	float diff = 0; 
+	//	for (int i(0); i < T1 -> GetNbinsX(); i++)
+	//	{
+	//		float e1 = T1 -> GetBinContent(i+1); 
+	//		float e2 = H2 -> GetBinContent(i+1); 
+	//		diff = diff + std::abs(e1 -e2);
+	//	}
+	//	
+	//	float lumi = T1 -> Integral(); 
+	//	float impact = (diff/lumi) * 100; 
+	//	return impact; 	
+	//};
+
+  //std::vector<TH1F*> PDFs_1 = DF.nTRKGenerator(trk1, trk2, 0., 250);  
+	//std::vector<TH1F*> PDFs_2 = B.CopyTH1F(PDFs_1, "_C"); 
+	//for (int i(0); i < iter; i++)
+  //{
+
+	//	if ( i < 9)
+	//	{
+	//		for (int u(0); u < PDFs_1.size(); u++)
+	//		{
+	//			delete PDFs_1[u];
+	//			delete PDFs_2[u]; 
+	//		}
+	//	}
+	//
+	//	if ( i < 10 )
+	//	{	
+	//  	PDFs_1 = DF.nTRKGenerator(trk1, trk2, 0., 250);  
+	//		PDFs_2 = B.CopyTH1F(PDFs_1, "_C"); 
+	//	}
+
+	//
+	//	float heat = 1; // float(i)/float(iter); 
+	//	PDFs_1 = DF.ConvolveFit(trk1, PDFs_1, Params, 0, 150); 
+	//	PDFs_2 = DF.ConvolveFit(trk2, PDFs_2, Params, 0, 150); 
+
+	//	trk1 -> Reset(); 
+	//	trk2 -> Reset();
+	//	trk1 -> Add(trk1_C); 
+	//	trk2 -> Add(trk2_C); 
+	//
+////		DF.SafeScale(PDFs_1, trk1);
+////		DF.SafeScale(PDFs_2, trk2);
+
+	//	trk1 -> Add(PDFs_1[1], -heat); 	
+	//	trk1 -> Add(PDFs_1[2], -heat); 	
+	//	trk1 -> Add(PDFs_1[3], -heat); 
+	//	trk1 -> Add(PDFs_1[4], -heat); 		
+	//		
+	//	trk2 -> Add(PDFs_2[0], -heat); 	
+	//	trk2 -> Add(PDFs_2[2], -heat); 	
+	//	trk2 -> Add(PDFs_2[3], -heat); 
+	//	trk2 -> Add(PDFs_2[4], -heat); 		
+
+	//	can -> Print("Out.pdf");
+  //	can -> Update();	
+	//			
+ 	//	P.PlotHists({PDFs_1, PDFs_2}, {Truth_trk1, Truth_trk2}, {trk1, trk2}, can);    
+
+	//}
  
 }
 
@@ -503,27 +659,15 @@ void Presentation::AlgorithmPlots(TString dir, int iter)
   auto Make =[](TCanvas* can, std::vector<TH1F*> trk_D, std::vector<std::vector<TH1F*>> trk_P, std::vector<std::vector<TH1F*>> trk_T, TString Name)
   {
     Plotting P; 
-    can -> SetWindowSize(600, 600); 
+    can -> SetWindowSize(1200, 1200); 
     gStyle -> SetOptStat(0); 
     P.PlotHists(trk_T, trk_P, trk_D, can); 
     can -> Draw();
     can -> Print(Name);
   };
 
-  auto RatioPlot =[] (TH1F* H1, TH1F* H2, TString name)
-  {
-    
-    
-    auto rp1 = new TRatioPlot(H1); 
-
-    TH1F* R = (TH1F*)H1 -> Clone(name); 
-    R -> Add(H1, -1);  
-    return R;
-  };
-
-
-
   Plotting P; 
+	BaseFunctions B; 
   
   std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2", "All"};
   std::vector<TString> Batch_Names = {"_200", "_200-600", "_600-1200", "_1200+", ""};
@@ -620,6 +764,26 @@ void Presentation::AlgorithmPlots(TString dir, int iter)
     TString FileName_4 = N + "_4.pdf";  
     can_4 -> Print(FileName_4 + "["); 
 
+    TCanvas* can_1_D = new TCanvas(); 
+    TString FileName_1_D = N + "_D_1.pdf";  
+    can_1_D -> Print(FileName_1_D + "["); 
+
+    TCanvas* can_2_D = new TCanvas(); 
+    TString FileName_2_D = N + "_D_2.pdf";  
+    can_2_D -> Print(FileName_2_D + "["); 
+
+    TCanvas* can_3_D = new TCanvas(); 
+    TString FileName_3_D = N + "_D_3.pdf";  
+    can_3_D -> Print(FileName_3_D + "["); 
+
+    TCanvas* can_4_D = new TCanvas(); 
+    TString FileName_4_D = N + "_D_4.pdf";  
+    can_4_D -> Print(FileName_4_D + "["); 
+
+		TCanvas* can_FLost = new TCanvas(); 
+		TString FileName_FLost = N + "FLost.pdf"; 
+		can_FLost -> Print(FileName_FLost + "["); 
+
     std::vector<std::vector<TH1F*>> Iterations = Container[N]; 
     for (int i(0); i < Iterations.size(); i++)
     {
@@ -635,7 +799,15 @@ void Presentation::AlgorithmPlots(TString dir, int iter)
       std::vector<TH1F*> trk2_tru; 
       std::vector<TH1F*> trk3_tru;          
       std::vector<TH1F*> trk4_tru; 
-      
+     	std::vector<TH1F*> trk1_Norm; 
+	   	std::vector<TH1F*> trk2_Norm; 
+	   	std::vector<TH1F*> trk3_Norm; 
+	  	std::vector<TH1F*> trk4_Norm; 
+			std::vector<TH1F*> tru1_Norm;
+			std::vector<TH1F*> tru2_Norm;
+			std::vector<TH1F*> tru3_Norm;
+			std::vector<TH1F*> tru4_Norm;
+			 
       for (TH1F* H : Hists)
       {
         TString title = H -> GetName(); 
@@ -672,57 +844,88 @@ void Presentation::AlgorithmPlots(TString dir, int iter)
       can_1 -> Divide(1); 
       can_1 -> cd(1); 
       Make(can_1, {ntrk_data[0]}, {{trk1_PDF[0]}}, {{trk1_tru[0]}}, FileName_1); 
-      //can_1 -> cd(2); 
-    //  TH1F* R_1 = RatioPlot(trk1_PDF[0], trk1_tru[0], Name1); 
-    //  R_1 -> Draw(); 
       can_1 -> Update(); 
 
       can_2 -> Clear(); 
       can_2 -> Divide(1); 
       can_2 -> cd(1); 
       Make(can_2, {ntrk_data[1]}, {{trk2_PDF[1]}}, {{trk2_tru[1]}}, FileName_2); 
-      //can_2 -> cd(2); 
-    //  TH1F* R_2 = RatioPlot(trk2_PDF[0], trk2_tru[0], Name2); 
-    //  R_2 -> Draw(); 
       can_2 -> Update(); 
 
       can_3 -> Clear(); 
       can_3 -> Divide(1); 
       can_3 -> cd(1); 
       Make(can_3, {ntrk_data[2]}, {{trk3_PDF[2]}}, {{trk3_tru[2]}}, FileName_3); 
-      //can_3 -> cd(2); 
-    //  TH1F* R_3 = RatioPlot(trk3_PDF[0], trk3_tru[0], Name3); 
-    //  R_3 -> Draw(); 
       can_3 -> Update(); 
 
       can_4 -> Clear(); 
       can_4 -> Divide(1); 
       can_4 -> cd(1); 
       Make(can_4, {ntrk_data[3]}, {{trk4_PDF[3]}}, {{trk4_tru[3]}}, FileName_4); 
-     // can_4 -> cd(2); 
-    //  TH1F* R_4 = RatioPlot(trk4_PDF[0], trk4_tru[0], Name4); 
-    //  R_4 -> Draw(); 
       can_4 -> Update(); 
 
-     
-    //  delete R_1; 
-    //  delete R_2; 
-    //  delete R_3; 
-    //  delete R_4; 
-       
+			// Create the difference plots for the shape of the histograms 
+			trk1_Norm = B.CopyTH1F(trk1_PDF, "_Norm"); 
+			trk2_Norm = B.CopyTH1F(trk2_PDF, "_Norm"); 
+			trk3_Norm = B.CopyTH1F(trk3_PDF, "_Norm"); 
+			trk4_Norm = B.CopyTH1F(trk4_PDF, "_Norm"); 
+			B.Normalize(trk1_Norm); 	
+			B.Normalize(trk2_Norm); 	
+			B.Normalize(trk3_Norm); 	
+			B.Normalize(trk4_Norm); 	
+
+			tru1_Norm = B.CopyTH1F(trk1_tru, "_Norm"); 
+			tru2_Norm = B.CopyTH1F(trk2_tru, "_Norm"); 
+			tru3_Norm = B.CopyTH1F(trk3_tru, "_Norm"); 
+			tru4_Norm = B.CopyTH1F(trk4_tru, "_Norm"); 
+			B.Normalize(tru1_Norm); 	
+			B.Normalize(tru2_Norm); 	
+			B.Normalize(tru3_Norm); 	
+			B.Normalize(tru4_Norm); 	
+
+			can_1_D -> Clear(); 
+			P.DifferencePlot(trk1_Norm[0], tru1_Norm[0], can_1_D);
+			can_1_D -> Print(FileName_1_D); 
+
+			can_2_D -> Clear(); 
+			P.DifferencePlot(trk2_Norm[1], tru2_Norm[1], can_2_D);
+			can_2_D -> Print(FileName_2_D); 
+
+			can_3_D -> Clear(); 
+			P.DifferencePlot(trk3_Norm[2], tru3_Norm[2], can_3_D);
+			can_3_D -> Print(FileName_3_D); 
+
+			can_4_D -> Clear(); 
+			P.DifferencePlot(trk4_Norm[3], tru4_Norm[3], can_4_D);
+			can_4_D -> Print(FileName_4_D); 
+			
+			can_FLost -> Clear(); 
+			P.DifferencePlot(FLost[0], FLost[1], can_FLost);
+			can_FLost -> Print(FileName_FLost); 
+
+
     }
     can -> Print(FileName + ")"); 
     can_1 -> Print(FileName_1 + ")"); 
     can_2 -> Print(FileName_2 + ")"); 
     can_3 -> Print(FileName_3 + ")"); 
     can_4 -> Print(FileName_4 + ")"); 
+
+    can_1_D -> Print(FileName_1_D + ")"); 
+    can_2_D -> Print(FileName_2_D + ")"); 
+    can_3_D -> Print(FileName_3_D + ")"); 
+    can_4_D -> Print(FileName_4_D + ")"); 
+		can_FLost -> Print(FileName_FLost + ")"); 
+
     delete can;
     delete can_1;
     delete can_2;
     delete can_3;
     delete can_4;
-
-
+    delete can_1_D;
+    delete can_2_D;
+    delete can_3_D;
+    delete can_4_D;
   }
 }
 

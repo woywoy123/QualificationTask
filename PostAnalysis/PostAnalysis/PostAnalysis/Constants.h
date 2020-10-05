@@ -52,7 +52,8 @@ namespace Constants
                                          "ntrk_2", 
                                          "ntrk_3", 
                                          "ntrk_4",
-                                         "ntrk_5"};
+                                         "ntrk_5",
+																				 "ntrk_6"};
 
   const std::vector<TString> energies = {"/200_up_GeV/", "/200_400_GeV/", 
                                          "/400_600_GeV/", "/600_800_GeV/", 
@@ -65,7 +66,7 @@ namespace Constants
 
   const std::vector<std::vector<TString>> All_MC = {trk_1, trk_2, trk_3, trk_4, trk_5}; 
 
-  const std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kViolet, kBlack, kSpring, kYellow, kGray, kOrange, kCoffee, kAurora, kMagenta, kViolet};
+  const std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kViolet, kOrange, kCoffee, kAurora, kMagenta, kViolet};
  
   const std::vector<float> COMP1 = {0.997, 0.001, 0.001, 0.001, 0.001};
   const std::vector<float> COMP2 = {0.25 , 0.60 , 0.05 , 0.05 , 0.05 };
