@@ -182,13 +182,13 @@ void DerivedFunctions::ReplaceShiftTail(TH1F* Source, TH1F* Target, float offset
   }
   int shift = NumericalShift(Temp, Target); 
   
-  float t_S = Source_E -> GetBinContent(max_bin + 1 - shift -1);
+  float t_S = Source_E -> GetBinContent(max_bin + 1 - shift);
   float t_T = Target_E -> GetBinContent(max_bin + 1);
   float sum_S = 0;
   float sum_T = 0;  
   for (int i(max_bin); i < bin_s; i++) 
   {
-    float S_e = Source_E -> GetBinContent(i + 1 - shift -1);
+    float S_e = Source_E -> GetBinContent(i - 2 - shift);
     float T_e = Target_E -> GetBinContent(i + 1); 
     sum_S += S_e;
     sum_T += T_e;  
@@ -215,7 +215,7 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   // Deconvolve the 2trk data into 1 trk  
   for (int i(0); i < iter; i++)
   {
-    deconv = B.LucyRichardson(trk2_V, deconv, deconv); 
+    deconv = B.LucyRichardson(trk2_V, deconv, deconv, 1); 
   }
   B.ToTH1F(deconv, PDFs[0]);
 
@@ -243,7 +243,7 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   // === TRK5 
   B.ConvolveHists(PDFs[3], PDFs[0], PDFs[4]);  
   B.Normalize(PDFs[4]);
-	//B.ResidualRemove(PDFs[4]); 
+	B.ResidualRemove(PDFs[4]); 
 
   // === TRK6 
   B.ConvolveHists(PDFs[4], PDFs[0], PDFs[5]);  

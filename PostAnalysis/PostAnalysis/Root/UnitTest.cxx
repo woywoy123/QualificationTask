@@ -191,7 +191,7 @@ void Presentation::ReconstructNTrack()
 	TH1F* trk3 = Hists[2]; 
 	TH1F* trk4 = Hists[3]; 
 
-	std::vector<TH1F*> ntrks_t = DF.nTRKGenerator(trk1, trk2, 0.01, 150); 
+	std::vector<TH1F*> ntrks_t = DF.nTRKGenerator(trk1, trk2, 0.1, 150); 
 
 	B.Normalize(Hists);
 	B.Normalize(ntrks_t); 
@@ -219,10 +219,10 @@ void Presentation::ReconstructNTrack()
 
 	std::map<TString, std::vector<float>> Params_1;
 	Params_1["Gaussian"] = {0, 2}; 	
-	Params_1["m_e"] = {1.5};
+	Params_1["m_e"] = {0.5};
 	Params_1["m_s"] = {0};
 	Params_1["s_s"] = {0.5};
-	Params_1["s_e"] = {3};
+	Params_1["s_e"] = {4};
 
 	TMultiGraph *mg = new TMultiGraph();
 	TGraph *gr1 = new TGraph();
@@ -234,50 +234,54 @@ void Presentation::ReconstructNTrack()
 	TGraph *gr7 = new TGraph();
 	TGraph *gr8 = new TGraph();
 
-	gr1 -> SetLineColor(kBlue);
-	gr2 -> SetLineColor(kRed);
-	gr3 -> SetLineColor(kOrange);
-	gr4 -> SetLineColor(kGreen);
-	gr5 -> SetLineColor(kBlue); gr5 -> SetLineStyle(kDashed); 
-	gr6 -> SetLineColor(kRed); gr6 -> SetLineStyle(kDashed); 
-	gr7 -> SetLineColor(kOrange); gr7 -> SetLineStyle(kDashed); 
-  gr8 -> SetLineColor(kGreen); gr8 -> SetLineStyle(kDashed); 
+	gr1 -> SetLineColor(kBlue); gr1 -> SetName("Trk-1, No Gaussian");
+	gr2 -> SetLineColor(kRed); gr2 -> SetName("Trk-2, No Gaussian");
+	gr3 -> SetLineColor(kOrange); gr3 -> SetName("Trk-3, No Gaussian");
+	gr4 -> SetLineColor(kGreen); gr4 -> SetName("Trk-4, No Gaussian");
+	gr5 -> SetLineColor(kBlue); gr5 -> SetLineStyle(kDashed); gr5 -> SetName("Trk-1, Gaussian");
+	gr6 -> SetLineColor(kRed); gr6 -> SetLineStyle(kDashed); gr6 -> SetName("Trk-2, Gaussian");
+	gr7 -> SetLineColor(kOrange); gr7 -> SetLineStyle(kDashed); gr7 -> SetName("Trk-3, Gaussian");
+  gr8 -> SetLineColor(kGreen); gr8 -> SetLineStyle(kDashed); gr8 -> SetName("Trk-4, Gaussian");
 
 	std::vector<TH1F*> trk1_G;
 	std::vector<TH1F*> trk2_G;
 	std::vector<TH1F*> trk3_G;
 	std::vector<TH1F*> trk4_G;
+
+  int iter = 25;
 	for (int i(0); i < 100; i++)
 	{
 		std::vector<TH1F*> ntrks;
-		if (i==0)
-		{
-			ntrks = DF.nTRKGenerator(trk1, trk2, 0.01, 50); 
-		}
-		else
-		{
-			ntrks = DF.nTRKGenerator(trk1, trk2_G[0], 0.01, 50); 
-		}
-
-		trk1_G = DF.ConvolveFit(trk1, {ntrks[0]}, Params_1, 0.01, 75);  
-		trk2_G = DF.ConvolveFit(trk2, {ntrks[1]}, Params_1, 0.01, 75); 
-		trk3_G = DF.ConvolveFit(trk3, {ntrks[2]}, Params_1, 0.01, 75); 
-		trk4_G = DF.ConvolveFit(trk4, {ntrks[3]}, Params_1, 0.01, 75); 
 	
+    if ( i == 0)
+    {	
+      ntrks = DF.nTRKGenerator(trk1, trk2, 0., iter); 
+		  trk1_G = DF.ConvolveFit(trk1, {ntrks[0]}, Params_1, 0., iter);  
+		  trk2_G = DF.ConvolveFit(trk2, {ntrks[1]}, Params_1, 0., iter); 
+		  trk3_G = DF.ConvolveFit(trk3, {ntrks[2]}, Params_1, 0, iter); 
+		  trk4_G = DF.ConvolveFit(trk4, {ntrks[3]}, Params_1, 0, iter); 
+    }
+    else 
+    {
+  	  trk1_G = DF.ConvolveFit(trk1, {trk1_G[0]}, Params_1, 0., iter);  
+		  trk2_G = DF.ConvolveFit(trk2, {trk2_G[0]}, Params_1, 0., iter); 
+		  trk3_G = DF.ConvolveFit(trk3, {trk3_G[0]}, Params_1, 0., iter); 
+		  trk4_G = DF.ConvolveFit(trk4, {trk4_G[0]}, Params_1, 0., iter); 
+    }
 		can -> Clear(); 	
-		P.DifferencePlot(trk1, ntrks[0], can); 
+		P.DifferencePlot(trk1, trk1_G[0], can); 
 	  can -> Print("trk1_G.pdf"); 		
 		can -> Clear(); 
 	
-		P.DifferencePlot(trk2, ntrks[1], can); 
+		P.DifferencePlot(trk2, trk2_G[0], can); 
 	  can -> Print("trk2_G.pdf"); 		
 		can -> Clear(); 
 	
-		P.DifferencePlot(trk3, ntrks[2], can); 
+		P.DifferencePlot(trk3, trk3_G[0], can); 
 	  can -> Print("trk3_G.pdf"); 		
 		can -> Clear(); 
 	
-		P.DifferencePlot(trk4, ntrks[3], can); 
+		P.DifferencePlot(trk4, trk4_G[0], can); 
 	  can -> Print("trk4_G.pdf"); 		
 		can -> Clear(); 
 
@@ -312,14 +316,17 @@ void Presentation::ReconstructNTrack()
 			mg -> Add(gr7); 
 			mg -> Add(gr8); 
 		}
-		
+    mg -> SetTitle("Evolution of n-Track Chi-Squared with unfolding iteration;Iteration;Chi-Squared");
 		mg -> Draw("apl"); 
-		can -> Update();
+		
+    can -> BuildLegend();
+    can -> Update();
 		can -> Print("out.pdf"); 	 
-	
-		delete trk1_G[0];
-    delete trk3_G[0]; 
-    delete trk4_G[0]; 
+
+    //delete trk2_G[0];	
+		//delete trk1_G[0];
+    //delete trk3_G[0]; 
+    //delete trk4_G[0]; 
 	}
 
 
