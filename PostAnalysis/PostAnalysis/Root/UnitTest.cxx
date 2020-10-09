@@ -173,6 +173,7 @@ void Presentation::ReconstructNTrack()
   DerivedFunctions DF; 
 	Plotting P; 
 	BaseFunctions B; 
+  DistributionGenerators DG;
 
   std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2"};
   std::vector<TString> E = Constants::energies;
@@ -183,249 +184,126 @@ void Presentation::ReconstructNTrack()
 
 	std::vector<TString> Names = {"dEdx_ntrk_1_ntru_1", "dEdx_ntrk_2_ntru_2", "dEdx_ntrk_3_ntru_3", "dEdx_ntrk_4_ntru_4"};
 
-
-
 	std::vector<TH1F*> Hists = GetMCHists(Detector_Layer, Batch, Names, 500, 0, 20); 
-	TH1F* trk1 = Hists[0]; 
-	TH1F* trk2 = Hists[1]; 
-	TH1F* trk3 = Hists[2]; 
-	TH1F* trk4 = Hists[3]; 
+  B.Normalize(Hists);
 
-	std::vector<TH1F*> ntrks_t = DF.nTRKGenerator(trk1, trk2, 0.1, 150); 
+  // Generate the n-Track templates from the 1-track measurement 
+  std::vector<TH1F*> PDFs = DF.nTRKFrom1Trk(Hists[0]); 
+  std::vector<Double_t> Kolmogorov_Stats_NG; 
+  std::vector<Double_t> ChiSquared_Stats_NG; 
+  std::vector<Double_t> Kolmogorov_Stats_G; 
+  std::vector<Double_t> ChiSqaured_Stats_G;   
 
-	B.Normalize(Hists);
-	B.Normalize(ntrks_t); 
+  // Plot the hists and the ratio plots 
+  TCanvas* can = new TCanvas();   
+  P.RatioPlot(Hists[0], PDFs[0], can);   
+  can -> Print("trk1_NG.pdf"); 
+  can -> Clear();
+
+  P.RatioPlot(Hists[1], PDFs[1], can);
+  can -> Print("trk2_NG.pdf");  
+  can -> Clear();
+   
+  P.RatioPlot(Hists[2], PDFs[2], can);
+  can -> Print("trk3_NG.pdf");  
+  can -> Clear();
+   
+  P.RatioPlot(Hists[3], PDFs[3], can);
+  can -> Print("trk4_NG.pdf");  
+  can -> Clear();
+
+  // Test the shape with the Chi-Square and Kolmogorov test statistics. 
+  for (int i(0); i < Names.size(); i++)
+  {
+    Kolmogorov_Stats_NG.push_back(Hists[i] -> KolmogorovTest(PDFs[i]));   
+    ChiSquared_Stats_NG.push_back(Hists[i] -> Chi2Test(PDFs[i]));   
+  }
+
+  //Gaussian Parameter used for deconvolution
+  std::map<TString, std::vector<float>> Params;
+  Params["Gaussian"] = {0, 1};
+  Params["m_e"] = {1};
+  Params["m_s"] = {0};        
+  Params["s_s"] = {0.6};
+  Params["s_e"] = {1.5};
+ 
+  // Now we do the same but for deconvolving the PDF with a gaussian and reconvolving it
+  // Code validation step: Deconvolve the trk1 with a Gaussian and see what RooFit predicts  
+  // 1: Run the Function
+  std::vector<TH1F*> trk1_C = {(TH1F*)Hists[0] -> Clone("trk1_C")}; 
+  trk1_C = DF.ConvolveFit(Hists[0], trk1_C, Params, 0, 100); 
+
+  can -> SetLogy(); 
+  Hists[0] -> Draw("SAMEHIST"); 
+  trk1_C[0] -> Draw("SAMEHIST");
+  can -> Print("out.pdf");
+  
+  // 2: Perform a test static to see how well RooFit reverted the convolution 
+  float KS_Test = trk1_C[0] -> KolmogorovTest(Hists[0]); 
+  float Chi2_Test = trk1_C[0] -> Chi2Test(Hists[1], "UU"); 
+  
+  std::cout << "Chi2 Test Statistic: " << Chi2_Test << " :: Kolmogorov Test Statistic: " << KS_Test << std::endl; 
+  
+  // Note to self: Getting 0 for both KS and Chi test. Error in Chi need to check this.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+//  // Here we perform the deconvolution of the PDFs with a Gaussian
+//  // Create the Gaussian Hist
+//  int bins = Hists[0] -> GetNbinsX();
+//  TH1F* Gaussian = new TH1F("Gaus", "Gaus", 2*bins, -bins-1, bins);
+//  DG.Gaussian(0, 2, 0, Gaussian);
+//  B.Normalize(Gaussian);
+//
+//  // Create the hist that contains the PDF 
+//  TH1F* Hist = new TH1F("PDF", "PDF", 2*bins, -bins, bins);
+//  B.ShiftExpandTH1F(PDFs[0], Hist, 0.5*bins);
+//  
+//  // Convert the TH1Fs into vectors
+//  std::vector<float> PDF_V = B.TH1FDataVector(Hist, 0);
+//  std::vector<float> PSF_V = B.TH1FDataVector(Gaussian, 0);
+//  std::vector<float> deconv(PSF_V.size(), 0.5);
+//  std::vector<float> distances; 
+//  
+//   
+//  // Create the deconvolution parameters and the loop 
+//  for (int i(0); i < 500; i++)
+//  {
+//    std::vector<float> deconv_old = deconv;
+//    deconv = B.LucyRichardson(PDF_V, PSF_V, deconv, 1);
+//
+//    // calculate the difference between deconv old and new 
+//    float diff = 0; 
+//    for (int x(0); x < deconv.size(); x++)
+//    {
+//      float e = deconv[x];
+//      float f = deconv_old[x];
+//      diff = diff + f-e;
+//    }
+//    if (diff < 10^-9){break;}
+//  }
+  
+   
+
+
+
+
+
 	
-	TCanvas* can = new TCanvas(); 
-	P.DifferencePlot(trk1, ntrks_t[0], can); 
-  can -> Print("trk1.pdf"); 		
-	can -> Clear(); 
-	std::cout << "Chi-Square of pure 1-track and generated 1-track: " << B.ChiSquare(trk1, ntrks_t[0]) << std::endl;
-
-	P.DifferencePlot(trk2, ntrks_t[1], can); 
-  can -> Print("trk2.pdf"); 		
-	can -> Clear(); 
-	std::cout << "Chi-Square of pure 2-track and generated 2-track: " << B.ChiSquare(trk2, ntrks_t[1]) << std::endl;
-
-	P.DifferencePlot(trk3, ntrks_t[2], can); 
-  can -> Print("trk3.pdf"); 		
-	can -> Clear(); 
-	std::cout << "Chi-Square of pure 3-track and generated 3-track: " << B.ChiSquare(trk3, ntrks_t[2]) << std::endl;
-
-	P.DifferencePlot(trk4, ntrks_t[3], can); 
-  can -> Print("trk4.pdf"); 		
-	can -> Clear(); 
-	std::cout << "Chi-Square of pure 4-track and generated 4-track: " << B.ChiSquare(trk4, ntrks_t[3]) << std::endl;
-
-	std::map<TString, std::vector<float>> Params_1;
-	Params_1["Gaussian"] = {0, 2}; 	
-	Params_1["m_e"] = {0.5};
-	Params_1["m_s"] = {0};
-	Params_1["s_s"] = {0.5};
-	Params_1["s_e"] = {4};
-
-	TMultiGraph *mg = new TMultiGraph();
-	TGraph *gr1 = new TGraph();
-	TGraph *gr2 = new TGraph();
-	TGraph *gr3 = new TGraph();
-	TGraph *gr4 = new TGraph();
-	TGraph *gr5 = new TGraph();
-	TGraph *gr6 = new TGraph();
-	TGraph *gr7 = new TGraph();
-	TGraph *gr8 = new TGraph();
-
-	gr1 -> SetLineColor(kBlue); gr1 -> SetName("Trk-1, No Gaussian");
-	gr2 -> SetLineColor(kRed); gr2 -> SetName("Trk-2, No Gaussian");
-	gr3 -> SetLineColor(kOrange); gr3 -> SetName("Trk-3, No Gaussian");
-	gr4 -> SetLineColor(kGreen); gr4 -> SetName("Trk-4, No Gaussian");
-	gr5 -> SetLineColor(kBlue); gr5 -> SetLineStyle(kDashed); gr5 -> SetName("Trk-1, Gaussian");
-	gr6 -> SetLineColor(kRed); gr6 -> SetLineStyle(kDashed); gr6 -> SetName("Trk-2, Gaussian");
-	gr7 -> SetLineColor(kOrange); gr7 -> SetLineStyle(kDashed); gr7 -> SetName("Trk-3, Gaussian");
-  gr8 -> SetLineColor(kGreen); gr8 -> SetLineStyle(kDashed); gr8 -> SetName("Trk-4, Gaussian");
-
-	std::vector<TH1F*> trk1_G;
-	std::vector<TH1F*> trk2_G;
-	std::vector<TH1F*> trk3_G;
-	std::vector<TH1F*> trk4_G;
-
-  int iter = 25;
-	for (int i(0); i < 100; i++)
-	{
-		std::vector<TH1F*> ntrks;
-	
-    if ( i == 0)
-    {	
-      ntrks = DF.nTRKGenerator(trk1, trk2, 0., iter); 
-		  trk1_G = DF.ConvolveFit(trk1, {ntrks[0]}, Params_1, 0., iter);  
-		  trk2_G = DF.ConvolveFit(trk2, {ntrks[1]}, Params_1, 0., iter); 
-		  trk3_G = DF.ConvolveFit(trk3, {ntrks[2]}, Params_1, 0, iter); 
-		  trk4_G = DF.ConvolveFit(trk4, {ntrks[3]}, Params_1, 0, iter); 
-    }
-    else 
-    {
-  	  trk1_G = DF.ConvolveFit(trk1, {trk1_G[0]}, Params_1, 0., iter);  
-		  trk2_G = DF.ConvolveFit(trk2, {trk2_G[0]}, Params_1, 0., iter); 
-		  trk3_G = DF.ConvolveFit(trk3, {trk3_G[0]}, Params_1, 0., iter); 
-		  trk4_G = DF.ConvolveFit(trk4, {trk4_G[0]}, Params_1, 0., iter); 
-    }
-		can -> Clear(); 	
-		P.DifferencePlot(trk1, trk1_G[0], can); 
-	  can -> Print("trk1_G.pdf"); 		
-		can -> Clear(); 
-	
-		P.DifferencePlot(trk2, trk2_G[0], can); 
-	  can -> Print("trk2_G.pdf"); 		
-		can -> Clear(); 
-	
-		P.DifferencePlot(trk3, trk3_G[0], can); 
-	  can -> Print("trk3_G.pdf"); 		
-		can -> Clear(); 
-	
-		P.DifferencePlot(trk4, trk4_G[0], can); 
-	  can -> Print("trk4_G.pdf"); 		
-		can -> Clear(); 
-
-		std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-		std::cout << "Chi-Square of pure 1-track and generated 1-track without Gaus: " << B.ChiSquare(trk1, ntrks_t[0]) << std::endl;
-		std::cout << "Chi-Square of pure 2-track and generated 2-track without Gaus: " << B.ChiSquare(trk2, ntrks_t[1]) << std::endl;
-		std::cout << "Chi-Square of pure 3-track and generated 3-track without Gaus: " << B.ChiSquare(trk3, ntrks_t[2]) << std::endl;
-		std::cout << "Chi-Square of pure 4-track and generated 4-track without Gaus: " << B.ChiSquare(trk4, ntrks_t[3]) << std::endl;
-		std::cout << "###############################################################" << std::endl;	
-		std::cout << "Chi-Square of pure 1-track and generated 1-track: " << B.ChiSquare(trk1, trk1_G[0]) << std::endl;
-		std::cout << "Chi-Square of pure 2-track and generated 2-track: " << B.ChiSquare(trk2, trk2_G[0]) << std::endl;
-		std::cout << "Chi-Square of pure 3-track and generated 3-track: " << B.ChiSquare(trk3, trk3_G[0]) << std::endl;
-		std::cout << "Chi-Square of pure 4-track and generated 4-track: " << B.ChiSquare(trk4, trk4_G[0]) << std::endl;
-	
-		gr1 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk1, ntrks_t[0])); 
-		gr2 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk2, ntrks_t[1])); 
-		gr3 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk3, ntrks_t[2])); 
-		gr4 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk4, ntrks_t[3])); 
-		gr5 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk1, trk1_G[0])); 
-		gr6 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk2, trk2_G[0])); 
-		gr7 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk3, trk3_G[0])); 
-		gr8 -> SetPoint((Double_t)i, (Double_t)i, (Double_t)B.ChiSquare(trk4, trk4_G[0])); 
-
-		if ( i == 0 )
-		{
-			mg -> Add(gr1); 
-			mg -> Add(gr2); 
-			mg -> Add(gr3); 
-			mg -> Add(gr4); 
-			mg -> Add(gr5); 
-			mg -> Add(gr6); 
-			mg -> Add(gr7); 
-			mg -> Add(gr8); 
-		}
-    mg -> SetTitle("Evolution of n-Track Chi-Squared with unfolding iteration;Iteration;Chi-Squared");
-		mg -> Draw("apl"); 
-		
-    can -> BuildLegend();
-    can -> Update();
-		can -> Print("out.pdf"); 	 
-
-    //delete trk2_G[0];	
-		//delete trk1_G[0];
-    //delete trk3_G[0]; 
-    //delete trk4_G[0]; 
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  //std::map<TString, std::vector<float>> Params; 
-	//float s_e = 4;
-  //Params["Gaussian"] = {0, 2}; 
-  //Params["m_e"] = {1, 1, 1, 1, 1}; 
-  //Params["m_s"] = {0, 0, 0, 0, 0}; 
-  //Params["s_s"] = {0.4, 0.4, 0.4, 0.4, 0.4};
-  //Params["s_e"] = {s_e, s_e, s_e, s_e, s_e};
-	//int iter = 50; 
-
-	//TH1F* trk1_C = (TH1F*)trk1 -> Clone("trk1_C");  
-	//TH1F* trk2_C = (TH1F*)trk2 -> Clone("trk2_C");  
-	//TCanvas* can = new TCanvas(); 	
-	//can -> Divide(2,1); 
-	//	
- 	//can -> SetWindowSize(1200, 600); 
-
-	//auto ShapeDifference =[](TH1F* T1, TH1F* H2)
-	//{
-	//	float diff = 0; 
-	//	for (int i(0); i < T1 -> GetNbinsX(); i++)
-	//	{
-	//		float e1 = T1 -> GetBinContent(i+1); 
-	//		float e2 = H2 -> GetBinContent(i+1); 
-	//		diff = diff + std::abs(e1 -e2);
-	//	}
-	//	
-	//	float lumi = T1 -> Integral(); 
-	//	float impact = (diff/lumi) * 100; 
-	//	return impact; 	
-	//};
-
-  //std::vector<TH1F*> PDFs_1 = DF.nTRKGenerator(trk1, trk2, 0., 250);  
-	//std::vector<TH1F*> PDFs_2 = B.CopyTH1F(PDFs_1, "_C"); 
-	//for (int i(0); i < iter; i++)
-  //{
-
-	//	if ( i < 9)
-	//	{
-	//		for (int u(0); u < PDFs_1.size(); u++)
-	//		{
-	//			delete PDFs_1[u];
-	//			delete PDFs_2[u]; 
-	//		}
-	//	}
-	//
-	//	if ( i < 10 )
-	//	{	
-	//  	PDFs_1 = DF.nTRKGenerator(trk1, trk2, 0., 250);  
-	//		PDFs_2 = B.CopyTH1F(PDFs_1, "_C"); 
-	//	}
-
-	//
-	//	float heat = 1; // float(i)/float(iter); 
-	//	PDFs_1 = DF.ConvolveFit(trk1, PDFs_1, Params, 0, 150); 
-	//	PDFs_2 = DF.ConvolveFit(trk2, PDFs_2, Params, 0, 150); 
-
-	//	trk1 -> Reset(); 
-	//	trk2 -> Reset();
-	//	trk1 -> Add(trk1_C); 
-	//	trk2 -> Add(trk2_C); 
-	//
-////		DF.SafeScale(PDFs_1, trk1);
-////		DF.SafeScale(PDFs_2, trk2);
-
-	//	trk1 -> Add(PDFs_1[1], -heat); 	
-	//	trk1 -> Add(PDFs_1[2], -heat); 	
-	//	trk1 -> Add(PDFs_1[3], -heat); 
-	//	trk1 -> Add(PDFs_1[4], -heat); 		
-	//		
-	//	trk2 -> Add(PDFs_2[0], -heat); 	
-	//	trk2 -> Add(PDFs_2[2], -heat); 	
-	//	trk2 -> Add(PDFs_2[3], -heat); 
-	//	trk2 -> Add(PDFs_2[4], -heat); 		
-
-	//	can -> Print("Out.pdf");
-  //	can -> Update();	
-	//			
- 	//	P.PlotHists({PDFs_1, PDFs_2}, {Truth_trk1, Truth_trk2}, {trk1, trk2}, can);    
-
-	//}
  
 }
 

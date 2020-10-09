@@ -43,6 +43,7 @@ class Plotting
     TCanvas* PlotHists(RooHistPdf model, RooRealVar Domain, RooDataHist Data);
 
     void DifferencePlot(TH1F* H1, TH1F* H2, TCanvas* can); 
+    void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can); 
 };
 
 class DistributionGenerators

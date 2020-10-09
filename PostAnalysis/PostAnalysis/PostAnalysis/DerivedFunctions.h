@@ -26,6 +26,7 @@ class DerivedFunctions
 
     // === PDF generators
     std::vector<TH1F*> nTRKGenerator(TH1F* trk1, TH1F* trk2, float offset, int iter);    
+    std::vector<TH1F*> nTRKFrom1Trk(TH1F* trk1);    
     
     // === Gaussian Fitting stuff  
     TH1F* GaussianConvolve(TH1F* Hist, float mean, float stdev, int Toys = Constants::GaussianToys);

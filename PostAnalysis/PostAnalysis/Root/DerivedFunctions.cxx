@@ -259,6 +259,24 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   return PDFs;
 }
 
+std::vector<TH1F*> DerivedFunctions::nTRKFrom1Trk(TH1F* trk1)
+{
+  BaseFunctions B; 
+
+  std::vector<TString> Names = {"TRK1", "TRK2", "TRK3", "TRK4", "TRK5", "TRK6"};  
+  std::vector<TH1F*> PDFs = B.MakeTH1F(Names, trk1);
+  PDFs[0] -> Add(trk1);  
+
+  for (int i(0); i < Names.size()-1; i++)
+  {
+    B.ConvolveHists(trk1, PDFs[i], PDFs[i+1]); 
+    B.Normalize(PDFs);
+    B.ResidualRemove(PDFs[i+1]);
+  }
+
+  return PDFs; 
+}
+
 TH1F* DerivedFunctions::GaussianConvolve(TH1F* Hist, float mean, float stdev, int Toys)
 {
   DistributionGenerators DG; 
@@ -310,7 +328,22 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
     std::vector<float> deconv(PSF_V.size(), 0.5); 
     
     // Lucy Richardson deconvolution of a gaussian with the PDF
-    for (int i(0); i < iter; i++){deconv = B.LucyRichardson(PDF_V, PSF_V, deconv, 1);}
+     
+    for (int i(0); i < iter; i++)
+    {
+      std::vector<float> deconv_old = deconv; 
+      deconv = B.LucyRichardson(PDF_V, PSF_V, deconv, 1);
+     // calculate the difference between deconv old and new 
+     float diff = 0; 
+     for (int x(0); x < deconv.size(); x++)
+     {
+       float e = deconv[x];
+       float f = deconv_old[x];
+       diff = diff + f-e;
+     }
+     if (std::abs(diff) < 1e-9){break;}     
+    }
+   
     B.ToTH1F(deconv, Output); 
   }; 
 
@@ -343,9 +376,11 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
 	B.Normalize(Gaus);
 
   // Deconvolve the above Gaussian with the track PDF using a multithreaded approach 
-  std::vector<std::thread> th; 
-  for (int i(0); i < PDFs.size(); i++){th.push_back(std::thread(Deconvolve, Hists[i], PDFs[i], Gaus, PDFs_L[i], offset, iter));}
-  for (std::thread &t : th){ t.join(); } 
+   
+  Deconvolve(Hists[0], PDFs[0], Gaus, PDFs_L[0], offset, iter);  
+ // std::vector<std::thread> th; 
+ // for (int i(0); i < PDFs.size(); i++){th.push_back(std::thread(Deconvolve, Hists[i], PDFs[i], Gaus, PDFs_L[i], offset, iter));}
+ // for (std::thread &t : th){ t.join(); } 
   	
   // Convert the data TH1F to a common length as the new PDFs
   TH1F* Data_L = new TH1F("Data_L", "Data_L", bins, 0, bins); 
@@ -361,7 +396,7 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
   std::vector<TString> GxT_String = { "P1xG1", "P2xG2", "P3xG3", "P4xG4", "P5xG5", "P6xG6"};
 
   // Free defined variables
-  std::vector<float> N_Begin(PDFs.size(), 1e-8);
+  std::vector<float> N_Begin(PDFs.size(), 0);
   std::vector<float> N_End(PDFs.size(), GxTrk -> Integral()); 
 
   // ====== Define the RooRealVars we will need for the fit  
@@ -396,7 +431,7 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
     float S = Stdev[i] -> getVal();
 
 		PDFs[i] -> Reset(); 
-		TH1F* GxT = GaussianConvolve(PDFs_L[i], 0, S);
+		TH1F* GxT = GaussianConvolve(PDFs_L[i], M, S);
     Out.push_back(GxT);
 
     delete Conv_Vars[i]; 
