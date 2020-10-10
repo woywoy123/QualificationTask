@@ -229,8 +229,6 @@ float BaseFunctions::ChiSquare(TH1F* H1, TH1F* H2)
 
 }
 
-
-
 void BaseFunctions::PredictionTruthPrint(std::vector<float> Truth, std::vector<float> Prediction)
 {
   for (int i(0); i < Truth.size(); i++)
@@ -408,7 +406,7 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
  
   for (int i(0); i < iter; i++)
   {
-    Hist -> SetBinContent(i+1, 0);
+    Hist -> SetBinContent(i+1, 1e-8);
   }
 
 }
@@ -482,5 +480,29 @@ void BaseFunctions::SetBinError(TH1F* Hist, double Error)
   }
 }
 
+void BaseFunctions::SetBinError(std::vector<TH1F*> Hist, double Error)
+{
+  for (TH1F* H : Hist)
+  {
+    SetBinError(H, Error);  
+  }
+}
 
+void BaseFunctions::CopyBinErrors(TH1F* Source, TH1F* Target)
+{
+  int bins = Source -> GetNbinsX(); 
+  for (int i(0); i < bins; i++)
+  {
+    float es = Source -> GetBinError(i+1); 
+    if (es == 0) { es = 1e-5; }
+    Target -> SetBinError(i+1, es); 
+  }
+}
 
+void BaseFunctions::CopyBinErrors(std::vector<TH1F*> Source, std::vector<TH1F*> Target)
+{
+  for (int i(0); i < Source.size(); i++)
+  {
+    CopyBinErrors(Source[i], Target[i]); 
+  }
+}

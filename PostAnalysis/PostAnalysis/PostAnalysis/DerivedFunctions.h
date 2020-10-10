@@ -17,6 +17,7 @@ class DerivedFunctions
     // === Basic Fitting Functions
     std::vector<RooRealVar*> FitToData(std::vector<TH1F*> Hists, TH1F* Data, RooRealVar* Domain, std::vector<float> Begin, std::vector<float> End, std::vector<TString> Names);
     std::vector<RooRealVar*> FitToData(std::vector<TH1F*> Hists, TH1F* Data, float min, float max);
+    void FitToData(std::vector<TH1F*> PDFs, std::vector<TH1F*> Data, float min, float max);
 
     // === Tail Replace and scaling 
     int NumericalShift(TH1F* H1, TH1F* H2); 

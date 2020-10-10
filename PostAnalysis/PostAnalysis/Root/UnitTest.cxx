@@ -183,126 +183,131 @@ void Presentation::ReconstructNTrack()
                                              {E[6], E[7], E[8], E[9], E[10], E[11], E[12], E[13], E[14], E[15]}};
 
 	std::vector<TString> Names = {"dEdx_ntrk_1_ntru_1", "dEdx_ntrk_2_ntru_2", "dEdx_ntrk_3_ntru_3", "dEdx_ntrk_4_ntru_4"};
-
 	std::vector<TH1F*> Hists = GetMCHists(Detector_Layer, Batch, Names, 500, 0, 20); 
-  B.Normalize(Hists);
-
+  //B.Normalize(Hists); 
+   
   // Generate the n-Track templates from the 1-track measurement 
-  std::vector<TH1F*> PDFs = DF.nTRKFrom1Trk(Hists[0]); 
+  std::vector<TH1F*> PDFs = DF.nTRKFrom1Trk(Hists[0]);  
+  std::vector<TH1F*> PDFs_NG = B.CopyTH1F(PDFs, "_NG");
+  DF.FitToData(PDFs_NG, Hists, 0, 20); 
+
+  // Note to self: Getting 0 for both KS and Chi test. Error in Chi need to check this.   
+  // Declare the statics vectors
   std::vector<Double_t> Kolmogorov_Stats_NG; 
   std::vector<Double_t> ChiSquared_Stats_NG; 
-  std::vector<Double_t> Kolmogorov_Stats_G; 
-  std::vector<Double_t> ChiSqaured_Stats_G;   
 
   // Plot the hists and the ratio plots 
   TCanvas* can = new TCanvas();   
-  P.RatioPlot(Hists[0], PDFs[0], can);   
+  P.RatioPlot(Hists[0], PDFs_NG[0], can);   
   can -> Print("trk1_NG.pdf"); 
   can -> Clear();
 
-  P.RatioPlot(Hists[1], PDFs[1], can);
+  P.RatioPlot(Hists[1], PDFs_NG[1], can);
   can -> Print("trk2_NG.pdf");  
   can -> Clear();
    
-  P.RatioPlot(Hists[2], PDFs[2], can);
+  P.RatioPlot(Hists[2], PDFs_NG[2], can);
   can -> Print("trk3_NG.pdf");  
   can -> Clear();
    
-  P.RatioPlot(Hists[3], PDFs[3], can);
+  P.RatioPlot(Hists[3], PDFs_NG[3], can);
   can -> Print("trk4_NG.pdf");  
   can -> Clear();
 
   // Test the shape with the Chi-Square and Kolmogorov test statistics. 
-  for (int i(0); i < Names.size(); i++)
+  for (int i(0); i < Hists.size(); i++)
   {
-    Kolmogorov_Stats_NG.push_back(Hists[i] -> KolmogorovTest(PDFs[i]));   
-    ChiSquared_Stats_NG.push_back(Hists[i] -> Chi2Test(PDFs[i]));   
+    Kolmogorov_Stats_NG.push_back(PDFs_NG[i] -> KolmogorovTest(Hists[i]));   
+//    ChiSquared_Stats_NG.push_back(PDFs_NG[i] -> Chi2Test(Hists[i])); 
+    ChiSquared_Stats_NG.push_back(B.ChiSquare(PDFs_NG[i], Hists[i]));     
   }
 
+
+  // ======================= 1 Track Gaussian Deconvolution Closure test ======================= //
   //Gaussian Parameter used for deconvolution
   std::map<TString, std::vector<float>> Params;
-  Params["Gaussian"] = {0, 1};
+  Params["Gaussian"] = {0, 1.5};
   Params["m_e"] = {1};
-  Params["m_s"] = {0};        
-  Params["s_s"] = {0.6};
-  Params["s_e"] = {1.5};
+  Params["m_s"] = {-1};        
+  Params["s_s"] = {1};
+  Params["s_e"] = {3};
  
   // Now we do the same but for deconvolving the PDF with a gaussian and reconvolving it
   // Code validation step: Deconvolve the trk1 with a Gaussian and see what RooFit predicts  
   // 1: Run the Function
   std::vector<TH1F*> trk1_C = {(TH1F*)Hists[0] -> Clone("trk1_C")}; 
-  trk1_C = DF.ConvolveFit(Hists[0], trk1_C, Params, 0, 100); 
+  trk1_C = DF.ConvolveFit(Hists[0], trk1_C, Params, 0, 500); 
 
-  can -> SetLogy(); 
-  Hists[0] -> Draw("SAMEHIST"); 
-  trk1_C[0] -> Draw("SAMEHIST");
-  can -> Print("out.pdf");
+  // 2. Make a Ratio Plot  
+  P.RatioPlot(trk1_C[0], Hists[0], can);  
+  can -> Print("ClosureOntrk1.pdf");
+  can -> Clear();  
   
-  // 2: Perform a test static to see how well RooFit reverted the convolution 
+  // 3: Perform a test static to see how well RooFit reverted the convolution 
   float KS_Test = trk1_C[0] -> KolmogorovTest(Hists[0]); 
-  float Chi2_Test = trk1_C[0] -> Chi2Test(Hists[1], "UU"); 
-  
-  std::cout << "Chi2 Test Statistic: " << Chi2_Test << " :: Kolmogorov Test Statistic: " << KS_Test << std::endl; 
-  
-  // Note to self: Getting 0 for both KS and Chi test. Error in Chi need to check this.  
+  //float Chi2_Test = trk1_C[0] -> Chi2Test(Hists[0]); 
+  float Chi2_Test = B.ChiSquare(trk1_C[0], Hists[0]);  
+  // ===================== 1 Track Gaussian Deconvolution Closure test end ====================== //
+
+  // ===================== n Track Gaussian Deconvolution Test ================================== // 
+  // 1. Define the variables
+  std::vector<Double_t> Kolmogorov_Stats_G; 
+  std::vector<Double_t> ChiSquared_Stats_G;   
+  Params["Gaussian"] = {0, 2};
+  Params["m_e"] = {2};
+  Params["m_s"] = {-1};        
+  Params["s_s"] = {1};
+  Params["s_e"] = {5};
  
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-  
-//  // Here we perform the deconvolution of the PDFs with a Gaussian
-//  // Create the Gaussian Hist
-//  int bins = Hists[0] -> GetNbinsX();
-//  TH1F* Gaussian = new TH1F("Gaus", "Gaus", 2*bins, -bins-1, bins);
-//  DG.Gaussian(0, 2, 0, Gaussian);
-//  B.Normalize(Gaussian);
-//
-//  // Create the hist that contains the PDF 
-//  TH1F* Hist = new TH1F("PDF", "PDF", 2*bins, -bins, bins);
-//  B.ShiftExpandTH1F(PDFs[0], Hist, 0.5*bins);
-//  
-//  // Convert the TH1Fs into vectors
-//  std::vector<float> PDF_V = B.TH1FDataVector(Hist, 0);
-//  std::vector<float> PSF_V = B.TH1FDataVector(Gaussian, 0);
-//  std::vector<float> deconv(PSF_V.size(), 0.5);
-//  std::vector<float> distances; 
-//  
-//   
-//  // Create the deconvolution parameters and the loop 
-//  for (int i(0); i < 500; i++)
-//  {
-//    std::vector<float> deconv_old = deconv;
-//    deconv = B.LucyRichardson(PDF_V, PSF_V, deconv, 1);
-//
-//    // calculate the difference between deconv old and new 
-//    float diff = 0; 
-//    for (int x(0); x < deconv.size(); x++)
-//    {
-//      float e = deconv[x];
-//      float f = deconv_old[x];
-//      diff = diff + f-e;
-//    }
-//    if (diff < 10^-9){break;}
-//  }
-  
+  // 2. Run the loop over all PDFs.  
+  std::vector<TH1F*> ntrk_G; 
+  std::vector<std::vector<float>> Para;  
+  for (int i(0); i < Hists.size(); i++)
+  {
+    // Run the algorithm 
+    std::vector<TH1F*> temp = DF.ConvolveFit(Hists[i], {PDFs[i]}, Params, 0, 500);  
+    ntrk_G.push_back(temp[0]); // Collect the histograms for plotting later
+       
+    // Perform the test statistics 
+    Kolmogorov_Stats_G.push_back(temp[0] -> KolmogorovTest(Hists[i]));   
+    ChiSquared_Stats_G.push_back(B.ChiSquare(temp[0], Hists[i]));     
+
+    std::cout << "#######################################" << std::endl;
+  }
+  Para.push_back(Params["Gaussian"]); 
+
+  // 3. Plot the histograms in a ratio plot 
+  P.RatioPlot(Hists[0], ntrk_G[0], can);   
+  can -> Print("trk1_G.pdf"); 
+  can -> Clear();
+
+  P.RatioPlot(Hists[1], ntrk_G[1], can);
+  can -> Print("trk2_G.pdf");  
+  can -> Clear();
    
+  P.RatioPlot(Hists[2], ntrk_G[2], can);
+  can -> Print("trk3_G.pdf");  
+  can -> Clear();
+   
+  P.RatioPlot(Hists[3], ntrk_G[3], can);
+  can -> Print("trk4_G.pdf");  
+  can -> Clear();
+ 
+  std::cout << "Shape statistics for the non Gaussian PDFs" << std::endl; 
+  for (int i(0); i < Kolmogorov_Stats_NG.size(); i++)
+  {
+    std::cout << "Track "<< i+1 << " Kolmogorov Test: " << Kolmogorov_Stats_NG[i] << std::endl;
+    std::cout << "Track "<< i+1 << " Chi Sqaure Test: " << ChiSquared_Stats_NG[i] << std::endl;
+  }
 
-
-
-
-
+  std::cout << "Closure test:: Chi2 Test Statistic: " << Chi2_Test << " :: Kolmogorov Test Statistic: " << KS_Test << std::endl; 
+  
+  std::cout << "Shape statistics for the Gaussian PDFs" << std::endl; 
+  for (int i(0); i < Kolmogorov_Stats_NG.size(); i++)
+  {
+    std::cout << "Track "<< i+1 << " Kolmogorov Test: " << Kolmogorov_Stats_G[i] << std::endl;
+    std::cout << "Track "<< i+1 << " Chi Sqaure Test: " << ChiSquared_Stats_G[i] << std::endl;
+  }
 	
  
 }

@@ -265,9 +265,10 @@ TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<Ro
   }
   TCanvas* can = new TCanvas();
   gPad -> SetLogy();
-  xframe -> SetMinimum(1e-9); 
+  xframe -> SetMinimum(1); 
   xframe -> Draw();
   can -> Update();
+  can -> Print("PlotDebug.pdf"); 
   return can;
 }
 
@@ -336,6 +337,7 @@ void Plotting::RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   P1 -> Draw(); 
   P1 -> cd(); 
   P1 -> SetLogy(); 
+  H1 -> SetLineColor(kBlack); 
   H1 -> Draw("SAMEHIST"); 
   H1 -> SetStats(0);  
   H2 -> SetLineColor(kRed);
