@@ -144,6 +144,56 @@ void DerivedFunctionTest::DeconvolveReconvolve(std::vector<TH1F*> ntrk, float of
   P.PlotHists(PDFs, ntrk); 
 }
 
+void DerivedFunctionTest::Deconvolve(TH1F* Hist)
+{
+  DerivedFunctions DF; 
+  DistributionGenerators DG; 
+  BaseFunctions B;
+
+  B.Normalize(Hist); 
+  int bins = Hist -> GetNbinsX(); 
+  TH1F* Hist_L = new TH1F("Hist_L", "Hist_L", bins, 0, bins); 
+  B.ShiftExpandTH1F(Hist, Hist_L, 0);  
+  TH1F* Hist_LC = (TH1F*)Hist_L -> Clone("Hist_LC"); 
+  
+  TH1F* Temp = new TH1F("Temp", "Temp", 2*bins, -bins -1, bins); 
+  TH1F* Gaus = new TH1F("Gaus", "Gaus", 2*bins, -bins -1, bins); 
+  DG.Gaussian(0, 0.2, 0, Gaus); 
+  B.Normalize(Gaus); 
+  
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+  Hist_LC -> SetLineStyle(kDotted);
+  Hist_LC -> SetLineColor(kBlack);
+  Hist_LC -> Draw("SAMEHIST");  
+
+   
+  for (int i(0); i < 20; i++)
+  { 
+    TCanvas* v = new TCanvas(); 
+    std::vector<float> Converge = DF.Deconvolve(Temp, Hist_L, Gaus, Hist_L, 0, 200); 
+    
+    TGraph* g = new TGraph();  
+    for (int x(0); x < Converge.size(); x++)
+    {
+      g -> SetPoint(x, x, Converge[x]);  
+    }
+    v -> Print("debug.pdf");
+    delete g;
+    delete v;
+
+    TH1F* Hist_LG = DF.GaussianConvolve(Hist_L, 0, 0.2); 
+    delete Hist_L; 
+    Hist_L = (TH1F*)Hist_LG -> Clone("Hist_L");  
+    
+    Hist_L -> Draw("SAMEHIST");
+    can -> Print("DFT_Deconvolve.pdf"); 
+
+    delete Hist_LG;  
+  }
+
+}
+
 std::vector<TH1F*> GetMCHists(std::vector<TString> Layer, std::vector<std::vector<TString>> PT, std::vector<TString> Names, int bins, float min, float max)
 {
 	BaseFunctions B; 
@@ -168,7 +218,7 @@ std::vector<TH1F*> GetMCHists(std::vector<TString> Layer, std::vector<std::vecto
 }
 
 // ===== ReconstructNTrack
-void Presentation::ReconstructNTrack()
+void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
 {
   DerivedFunctions DF; 
 	Plotting P; 
@@ -218,25 +268,25 @@ void Presentation::ReconstructNTrack()
   for (int i(0); i < Hists.size(); i++)
   {
     Kolmogorov_Stats_NG.push_back(PDFs_NG[i] -> KolmogorovTest(Hists[i]));   
-//    ChiSquared_Stats_NG.push_back(PDFs_NG[i] -> Chi2Test(Hists[i])); 
-    ChiSquared_Stats_NG.push_back(B.ChiSquare(PDFs_NG[i], Hists[i]));     
+    ChiSquared_Stats_NG.push_back(PDFs_NG[i] -> Chi2Test(Hists[i])); 
+//    ChiSquared_Stats_NG.push_back(B.ChiSquare(PDFs_NG[i], Hists[i]));     
   }
 
 
   // ======================= 1 Track Gaussian Deconvolution Closure test ======================= //
   //Gaussian Parameter used for deconvolution
   std::map<TString, std::vector<float>> Params;
-  Params["Gaussian"] = {0, 1.5};
-  Params["m_e"] = {1};
-  Params["m_s"] = {-1};        
-  Params["s_s"] = {1};
-  Params["s_e"] = {3};
+  Params["Gaussian"] = {0, 0.5};
+  Params["m_e"] = {10};
+  Params["m_s"] = {-10};        
+  Params["s_s"] = {0.1};
+  Params["s_e"] = {2};
  
   // Now we do the same but for deconvolving the PDF with a gaussian and reconvolving it
   // Code validation step: Deconvolve the trk1 with a Gaussian and see what RooFit predicts  
   // 1: Run the Function
   std::vector<TH1F*> trk1_C = {(TH1F*)Hists[0] -> Clone("trk1_C")}; 
-  trk1_C = DF.ConvolveFit(Hists[0], trk1_C, Params, 0, 500); 
+  trk1_C = DF.ConvolveFit(Hists[0], trk1_C, Params, 0, 100); 
 
   // 2. Make a Ratio Plot  
   P.RatioPlot(trk1_C[0], Hists[0], can);  
@@ -245,19 +295,19 @@ void Presentation::ReconstructNTrack()
   
   // 3: Perform a test static to see how well RooFit reverted the convolution 
   float KS_Test = trk1_C[0] -> KolmogorovTest(Hists[0]); 
-  //float Chi2_Test = trk1_C[0] -> Chi2Test(Hists[0]); 
-  float Chi2_Test = B.ChiSquare(trk1_C[0], Hists[0]);  
+  float Chi2_Test = trk1_C[0] -> Chi2Test(Hists[0]); 
+  //float Chi2_Test = B.ChiSquare(trk1_C[0], Hists[0]);  
   // ===================== 1 Track Gaussian Deconvolution Closure test end ====================== //
 
   // ===================== n Track Gaussian Deconvolution Test ================================== // 
   // 1. Define the variables
   std::vector<Double_t> Kolmogorov_Stats_G; 
   std::vector<Double_t> ChiSquared_Stats_G;   
-  Params["Gaussian"] = {0, 2};
-  Params["m_e"] = {2};
-  Params["m_s"] = {-1};        
-  Params["s_s"] = {1};
-  Params["s_e"] = {5};
+  Params["Gaussian"] = {0, 1};
+  Params["m_e"] = {5};
+  Params["m_s"] = {-5};        
+  Params["s_s"] = {0.1};
+  Params["s_e"] = {4};
  
   // 2. Run the loop over all PDFs.  
   std::vector<TH1F*> ntrk_G; 
@@ -265,12 +315,13 @@ void Presentation::ReconstructNTrack()
   for (int i(0); i < Hists.size(); i++)
   {
     // Run the algorithm 
-    std::vector<TH1F*> temp = DF.ConvolveFit(Hists[i], {PDFs[i]}, Params, 0, 500);  
+    std::vector<TH1F*> temp = DF.ConvolveFit(Hists[i], {PDFs[i]}, Params, 0, 100);  
     ntrk_G.push_back(temp[0]); // Collect the histograms for plotting later
        
     // Perform the test statistics 
     Kolmogorov_Stats_G.push_back(temp[0] -> KolmogorovTest(Hists[i]));   
-    ChiSquared_Stats_G.push_back(B.ChiSquare(temp[0], Hists[i]));     
+    ChiSquared_Stats_G.push_back(PDFs_NG[i] -> Chi2Test(Hists[i])); 
+    //ChiSquared_Stats_G.push_back(B.ChiSquare(temp[0], Hists[i]));     
 
     std::cout << "#######################################" << std::endl;
   }

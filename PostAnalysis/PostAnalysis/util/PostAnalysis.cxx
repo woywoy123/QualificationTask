@@ -20,7 +20,7 @@ int main(int argc, char** argv)
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
   int Mode = 10;  // Change to 0 - MC, 1 - Toy, 2 - Data, 3 - Presentation
-  bool Test = true; // Test Components 
+  bool Test = false; // Test Components 
   int Shift = 0;
 
   // Histogram parameters  
@@ -34,9 +34,9 @@ int main(int argc, char** argv)
   float stdev = 0.01; 
 
   // Other parameters
-  float offset = 0.1;
+  float offset = 0.;
   int iter = 50;
-  int cor_loop = 200; // Correction loop number 
+  int cor_loop = 10; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> trk1_N;
@@ -103,7 +103,7 @@ int main(int argc, char** argv)
     CLS3 = B.ClosureAndData(trk3_N, ntrk_Data[2]); 
     CLS4 = B.ClosureAndData(trk4_N, ntrk_Data[3]);  
     CLS5 = B.ClosureAndData(trk5_N, ntrk_Data[4]); 
-    Closure = {CLS1, CLS2, CLS3, CLS4, CLS5}; 
+    Closure = {CLS1, CLS2, CLS3, CLS4}; 
   }
 
   // Presentation Stuff
@@ -125,23 +125,23 @@ int main(int argc, char** argv)
     //DFT.ReplaceShiftTail(trk1_N[0], trk1_N[1], Shift);
     //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
-    //BFT.Constraint();  
-    P.ReconstructNTrack();
-			 
+    //BFT.Constraint(); 
+    //P.ReconstructNTrack({trk1_N[0], trk2_N[1], trk3_N[2], trk4_N[3]});
+		//DFT.Deconvolve(trk1_N[0]); 	 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets); 
   }
   else
   {
     // ===== Good parameters that have been tested (out.root)
     //Gaussian Parameter used for deconvolution
-    Params["Gaussian"] = {0, 1};
+    Params["Gaussian"] = {0, 0.5};
     Params["m_e"] = {1, 1, 1, 1, 1};
     Params["m_s"] = {0, 0, 0, 0, 0};        
-    Params["s_s"] = {0.6, 0.6, 0.6, 0.6, 0.6};
+    Params["s_s"] = {0.1, 0.1, 0.1, 0.1, 0.1};
     Params["s_e"] = {1.5, 1.5, 1.5, 1.5, 1.5};
 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
-    //P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
+    P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
 
     //P.AlgorithmPlots("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/AnalysisOutput/out.root", cor_loop); 
   }

@@ -21,6 +21,7 @@ class DerivedFunctionTest
     void ShiftTest(TH1F* H1, int Shift);
     void ReplaceShiftTail(TH1F* Source, TH1F* Target, int Shift);
     void DeconvolveReconvolve(std::vector<TH1F*> trk1, float offset, int iter);
+    void Deconvolve(TH1F* Hist);
 };
 
 class Presentation
@@ -30,7 +31,7 @@ class Presentation
     void MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, std::vector<std::vector<TH1F*>> Closure);
     void DataAnalysis(std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, int bins, float min, float max);
     void AlgorithmPlots(TString dir, int iter); 
-    void ReconstructNTrack(); 
+    void ReconstructNTrack(std::vector<TH1F*> Hists);
 };
 
 #endif

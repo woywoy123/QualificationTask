@@ -345,9 +345,10 @@ void Plotting::RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   
   can -> cd();
 
-  TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3); 
+  TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3);  
   P2 -> Draw();
   P2 -> cd(); 
+  P2 -> SetLogy(); 
 	Ratio -> SetStats(0); 
   Ratio -> Draw("SAMEHIST"); 
 }
