@@ -16,32 +16,30 @@ namespace Constants
                                       "dEdx_ntrk_1_ntru_2", 
                                       "dEdx_ntrk_1_ntru_3", 
                                       "dEdx_ntrk_1_ntru_4",
-                                      "dEdx_ntrk_1_ntru_5"};
+                                      "dEdx_ntrk_1_ntru_5",
+                                      "dEdx_ntrk_1_ntru_6"};
 
   const std::vector<TString> trk_2 = {"dEdx_ntrk_2_ntru_1", 
                                       "dEdx_ntrk_2_ntru_2", 
                                       "dEdx_ntrk_2_ntru_3", 
                                       "dEdx_ntrk_2_ntru_4",
-                                      "dEdx_ntrk_2_ntru_5"};
+                                      "dEdx_ntrk_2_ntru_5",
+                                      "dEdx_ntrk_2_ntru_6"};
 
   const std::vector<TString> trk_3 = {"dEdx_ntrk_3_ntru_1", 
                                       "dEdx_ntrk_3_ntru_2", 
                                       "dEdx_ntrk_3_ntru_3", 
                                       "dEdx_ntrk_3_ntru_4",
-                                      "dEdx_ntrk_3_ntru_5"};
+                                      "dEdx_ntrk_3_ntru_5",
+                                      "dEdx_ntrk_3_ntru_6"};
 
   const std::vector<TString> trk_4 = {"dEdx_ntrk_4_ntru_1", 
                                       "dEdx_ntrk_4_ntru_2", 
                                       "dEdx_ntrk_4_ntru_3", 
                                       "dEdx_ntrk_4_ntru_4",
-                                      "dEdx_ntrk_4_ntru_5"};
+                                      "dEdx_ntrk_4_ntru_5",
+                                      "dEdx_ntrk_4_ntru_6"};
 
-  const std::vector<TString> trk_5 = {"dEdx_ntrk_5_ntru_1", 
-                                      "dEdx_ntrk_5_ntru_2", 
-                                      "dEdx_ntrk_5_ntru_3", 
-                                      "dEdx_ntrk_5_ntru_4",
-                                      "dEdx_ntrk_5_ntru_5"};
-  
   const std::vector<TString> Data_Names = {"dEdx_ntrk_1", //dEdx_out1_ntrk1_calib", 
                                            "dEdx_ntrk_2", 
                                            "dEdx_ntrk_3", 
@@ -64,7 +62,7 @@ namespace Constants
                                          "/2400_2600_GeV/", "/2600_2800_GeV/", 
                                          "/2800_3000_GeV/", "/higher_GeV/"}; 
 
-  const std::vector<std::vector<TString>> All_MC = {trk_1, trk_2, trk_3, trk_4, trk_5}; 
+  const std::vector<std::vector<TString>> All_MC = {trk_1, trk_2, trk_3, trk_4}; 
 
   const std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kViolet, kOrange, kCoffee, kAurora, kMagenta, kViolet};
  

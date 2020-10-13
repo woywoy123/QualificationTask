@@ -36,14 +36,13 @@ int main(int argc, char** argv)
   // Other parameters
   float offset = 0.;
   int iter = 50;
-  int cor_loop = 10; // Correction loop number 
+  int cor_loop = 60; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> trk1_N;
   std::vector<TH1F*> trk2_N;
   std::vector<TH1F*> trk3_N;
   std::vector<TH1F*> trk4_N;
-  std::vector<TH1F*> trk5_N;
 
   std::vector<TH1F*> ntrk_Data; 
   std::vector<std::vector<TH1F*>> Truth_Sets; 
@@ -51,7 +50,6 @@ int main(int argc, char** argv)
   std::vector<float> CLS2;
   std::vector<float> CLS3;
   std::vector<float> CLS4; 
-  std::vector<float> CLS5; 
   std::vector<std::vector<float>> Closure; 
 
   //==== Monte Carlo Parameters 
@@ -65,17 +63,15 @@ int main(int argc, char** argv)
     trk2_N = D.FillTH1F(trk_2, MC_dir); 
     trk3_N = D.FillTH1F(trk_3, MC_dir); 
     trk4_N = D.FillTH1F(trk_4, MC_dir);
-    trk5_N = D.FillTH1F(trk_5, MC_dir);
-    ntrk_Data = D.FillTH1F({"dEdx_ntrk_1", "dEdx_ntrk_2", "dEdx_ntrk_3", "dEdx_ntrk_4", "dEdx_ntrk_5"}, MC_dir);  
-    Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N, trk5_N}; 
+    ntrk_Data = D.FillTH1F({"dEdx_ntrk_1", "dEdx_ntrk_2", "dEdx_ntrk_3", "dEdx_ntrk_4"}, MC_dir);  
+    Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N}; 
    
     // Get Closure values and fill data 
     CLS1 = B.ClosureAndData(trk1_N, ntrk_Data[0]); 
     CLS2 = B.ClosureAndData(trk2_N, ntrk_Data[1]); 
     CLS3 = B.ClosureAndData(trk3_N, ntrk_Data[2]); 
     CLS4 = B.ClosureAndData(trk4_N, ntrk_Data[3]);   
-    CLS5 = B.ClosureAndData(trk4_N, ntrk_Data[4]);   
-    Closure = {CLS1, CLS2, CLS3, CLS4, CLS5};  
+    Closure = {CLS1, CLS2, CLS3, CLS4};  
   }
 
   // Toy model 
@@ -86,23 +82,20 @@ int main(int argc, char** argv)
     trk2_N = B.MakeTH1F(trk_2, bins, min, max);    
     trk3_N = B.MakeTH1F(trk_3, bins, min, max);    
     trk4_N = B.MakeTH1F(trk_4, bins, min, max); 
-    trk5_N = B.MakeTH1F(trk_5, bins, min, max); 
     ntrk_Data = B.MakeTH1F(Data_Names, bins, min, max);  
-    Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N, trk5_N};
+    Truth_Sets = {trk1_N, trk2_N, trk3_N, trk4_N};
    
     // Fill Hists 
     D.Landau(trk1_N, COMP1, LandauParameters, npts, min, max);
     D.Landau(trk2_N, COMP2, LandauParameters, npts, min, max);
     D.Landau(trk3_N, COMP3, LandauParameters, npts, min, max);
     D.Landau(trk4_N, COMP4, LandauParameters, npts, min, max); 
-    D.Landau(trk5_N, COMP5, LandauParameters, npts, min, max); 
         
     // Get Closure values and fill data 
     CLS1 = B.ClosureAndData(trk1_N, ntrk_Data[0]); 
     CLS2 = B.ClosureAndData(trk2_N, ntrk_Data[1]); 
     CLS3 = B.ClosureAndData(trk3_N, ntrk_Data[2]); 
     CLS4 = B.ClosureAndData(trk4_N, ntrk_Data[3]);  
-    CLS5 = B.ClosureAndData(trk5_N, ntrk_Data[4]); 
     Closure = {CLS1, CLS2, CLS3, CLS4}; 
   }
 
@@ -126,7 +119,7 @@ int main(int argc, char** argv)
     //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
     //BFT.Constraint(); 
-    //P.ReconstructNTrack({trk1_N[0], trk2_N[1], trk3_N[2], trk4_N[3]});
+    P.ReconstructNTrack({trk1_N[0], trk2_N[1], trk3_N[2], trk4_N[3]});
 		//DFT.Deconvolve(trk1_N[0]); 	 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets); 
   }
@@ -134,11 +127,11 @@ int main(int argc, char** argv)
   {
     // ===== Good parameters that have been tested (out.root)
     //Gaussian Parameter used for deconvolution
-    Params["Gaussian"] = {0, 0.5};
-    Params["m_e"] = {1, 1, 1, 1, 1};
-    Params["m_s"] = {0, 0, 0, 0, 0};        
-    Params["s_s"] = {0.1, 0.1, 0.1, 0.1, 0.1};
-    Params["s_e"] = {1.5, 1.5, 1.5, 1.5, 1.5};
+    Params["Gaussian"] = {0, 5};
+    Params["m_e"] = {1, 1, 1, 1, 1, 1};
+    Params["m_s"] = {0, 0, 0, 0, 0, 0};        
+    Params["s_s"] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+    Params["s_e"] = {50, 50, 50, 50, 50, 50};
 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
     P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   

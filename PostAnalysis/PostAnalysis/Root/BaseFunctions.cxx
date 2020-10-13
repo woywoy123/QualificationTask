@@ -506,3 +506,22 @@ void BaseFunctions::CopyBinErrors(std::vector<TH1F*> Source, std::vector<TH1F*> 
     CopyBinErrors(Source[i], Target[i]); 
   }
 }
+
+void BaseFunctions::SetPercentError(TH1F* Hist, float percent)
+{
+  int bins = Hist -> GetNbinsX(); 
+  for (int i(0); i < bins; i++)
+  {
+    float e = Hist -> GetBinContent(i+1); 
+    Hist -> SetBinError(i+1, e*percent);
+  }
+}
+
+void BaseFunctions::SetPercentError(std::vector<TH1F*> Hists, float percent)
+{
+  for (int i(0); i < Hists.size(); i++)
+  {
+    SetPercentError(Hists[i], percent); 
+  }
+}
+

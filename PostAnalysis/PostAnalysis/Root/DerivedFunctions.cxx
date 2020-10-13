@@ -225,49 +225,48 @@ std::vector<TH1F*> DerivedFunctions::nTRKGenerator(TH1F* trk1, TH1F* trk2, float
   std::vector<TH1F*> PDFs = B.MakeTH1F(Names, trk2);
  
   // Deconvolve the 2trk data into 1 trk  
-  for (int i(0); i < iter; i++)
-  {
-    deconv = B.LucyRichardson(trk2_V, deconv, deconv, 1); 
-  }
-  B.ToTH1F(deconv, PDFs[0]);
+  //for (int i(0); i < iter; i++)
+  //{
+  //  deconv = B.LucyRichardson(trk2_V, deconv, deconv, 1); 
+  //}
+  //B.ToTH1F(deconv, PDFs[0]);
 
   // === TRK1
   B.Normalize(PDFs); 
-  TH1F* temp = (TH1F*)PDFs[0] -> Clone("temp"); 
-  ReplaceShiftTail(trk1, PDFs[0], offset); 
+  B.ShiftExpandTH1F(trk1, PDFs[0]);  
+  //ReplaceShiftTail(trk1, PDFs[0], offset); 
 	//B.ResidualRemove(PDFs[0]); 
 
   // === TRK2
   B.ConvolveHists(PDFs[0], PDFs[0], PDFs[1]); 
   B.Normalize(PDFs[1]);
-	//B.ResidualRemove(PDFs[1]); 
+	B.ResidualRemove(PDFs[1]); 
 
   // === TRK3
   B.ConvolveHists(PDFs[1], PDFs[0], PDFs[2]);  
   B.Normalize(PDFs[2]);
-	//B.ResidualRemove(PDFs[2]); 
+	B.ResidualRemove(PDFs[2]); 
 
   // === TRK4 
   B.ConvolveHists(PDFs[2], PDFs[0], PDFs[3]);  
   B.Normalize(PDFs[3]);
-	//B.ResidualRemove(PDFs[3]); 
+	B.ResidualRemove(PDFs[3]); 
 
   // === TRK5 
   B.ConvolveHists(PDFs[3], PDFs[0], PDFs[4]);  
   B.Normalize(PDFs[4]);
-	//B.ResidualRemove(PDFs[4]); 
+	B.ResidualRemove(PDFs[4]); 
 
   // === TRK6 
   B.ConvolveHists(PDFs[4], PDFs[0], PDFs[5]);  
   B.Normalize(PDFs[5]);
-	//B.ResidualRemove(PDFs[4]); 
+	B.ResidualRemove(PDFs[5]); 
 
   // === TRK7 
   //B.ConvolveHists(PDFs[5], PDFs[0], PDFs[6]);  
   //B.Normalize(PDFs[6]);
 	//B.ResidualRemove(PDFs[4]); 
 	
-  delete temp;
   return PDFs;
 }
 
@@ -557,10 +556,10 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
       PDFs = nTRKGenerator(trk1, trk2, offset, iter);
 			
 			// Now we clone these PDFs into their own sets
-			GxTrk1 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4]}, "_trk1");
-			GxTrk2 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4]}, "_trk2");			
-			GxTrk3 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4]}, "_trk3");		
-			GxTrk4 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4]}, "_trk4");		
+			GxTrk1 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4], PDFs[5]}, "_trk1");
+			GxTrk2 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4], PDFs[5]}, "_trk2");			
+			GxTrk3 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4], PDFs[5]}, "_trk3");		
+			GxTrk4 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4], PDFs[5]}, "_trk4");		
 
 			// Now we run these through the convolution 
 			GxTrk1 = ConvolveFit(trk1, GxTrk1, Params, offset, iter); 
@@ -576,14 +575,14 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
 		}
 		else
 		{
-      //// Generate the minimal version of the PDFs without any Gaussian convolution 
-      //PDFs = nTRKGenerator(GxTrk1[0], trk2, offset, iter);
-			//
-			//// Now we clone these PDFs into their own sets
-			//GxTrk1 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4]}, "_trk1");
-			//GxTrk2 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4]}, "_trk2");			
-			//GxTrk3 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4]}, "_trk3");		
-			//GxTrk4 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4]}, "_trk4");		
+      // Generate the minimal version of the PDFs without any Gaussian convolution 
+      PDFs = nTRKGenerator(trk1, trk2, offset, iter);
+			
+			// Now we clone these PDFs into their own sets
+			GxTrk1 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4], PDFs[5]}, "_trk1");
+			GxTrk2 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4], PDFs[5]}, "_trk2");			
+			GxTrk3 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4], PDFs[5]}, "_trk3");		
+			GxTrk4 = B.CopyTH1F({PDFs[0], PDFs[1], PDFs[2], PDFs[3], PDFs[4], PDFs[5]}, "_trk4");		
 
 			// Now we run these through the convolution 
 			GxTrk1 = ConvolveFit(trk1, GxTrk1, Params, offset, iter); 
@@ -591,10 +590,10 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
 			GxTrk3 = ConvolveFit(trk3, GxTrk3, Params, offset, iter); 
 			GxTrk4 = ConvolveFit(trk4, GxTrk4, Params, offset, iter); 
 	
-			//for (int c(0); c < PDFs.size(); c++)
-			//{
-			//	delete PDFs[c];
-			//}	
+			for (int c(0); c < PDFs.size(); c++)
+			{
+				delete PDFs[c];
+			}	
 		
 		}
 
@@ -617,48 +616,52 @@ std::map<int, std::pair<TH1F*, std::vector<TH1F*>>> DerivedFunctions::MainAlgori
 		trk4 -> Add(ntrk[3], 1);
 
     // Testing if temperature helps....
-    float heat = float(i)/float(cor_loop);
+    float heat = 1; //float(i)/float(cor_loop);
     
     // Do the subtraction  
     trk1 -> Add(GxTrk1[1], -heat); 
     trk1 -> Add(GxTrk1[2], -heat); 
     trk1 -> Add(GxTrk1[3], -heat); 
     trk1 -> Add(GxTrk1[4], -heat);
+    trk1 -> Add(GxTrk1[5], -heat);
 
-    trk2 -> Add(GxTrk2[0], -heat);
-    trk2 -> Add(GxTrk2[2], -heat);
-    trk2 -> Add(GxTrk2[3], -heat);
-    trk2 -> Add(GxTrk2[4], -heat);
+    //trk2 -> Add(GxTrk2[0], -heat);
+    //trk2 -> Add(GxTrk2[2], -heat);
+    //trk2 -> Add(GxTrk2[3], -heat);
+    //trk2 -> Add(GxTrk2[4], -heat);
+    //trk2 -> Add(GxTrk2[5], -heat);
 
-    trk3 -> Add(GxTrk3[0], -heat);
-    trk3 -> Add(GxTrk3[1], -heat);
-    trk3 -> Add(GxTrk3[3], -heat);
-    trk3 -> Add(GxTrk3[4], -heat);
+    //trk3 -> Add(GxTrk3[0], -heat);
+    //trk3 -> Add(GxTrk3[1], -heat);
+    //trk3 -> Add(GxTrk3[3], -heat);
+    //trk3 -> Add(GxTrk3[4], -heat);
+    //trk3 -> Add(GxTrk3[5], -heat);
 
-    trk4 -> Add(GxTrk4[0], -heat);
-    trk4 -> Add(GxTrk4[1], -heat);
-    trk4 -> Add(GxTrk4[2], -heat);
-    trk4 -> Add(GxTrk4[4], -heat);
+    //trk4 -> Add(GxTrk4[0], -heat);
+    //trk4 -> Add(GxTrk4[1], -heat);
+    //trk4 -> Add(GxTrk4[2], -heat);
+    //trk4 -> Add(GxTrk4[4], -heat);
+    //trk4 -> Add(GxTrk4[5], -heat);
 
     std::cout << "################### " << i << std::endl;
    
     // ==== Trk1 
-    std::vector<TString> Names1 = {"trk1_F1", "trk2_F1", "trk3_F1", "trk4_F1", "trk5_F1"}; 
+    std::vector<TString> Names1 = {"trk1_F1", "trk2_F1", "trk3_F1", "trk4_F1", "trk5_F1", "trk6_F1"}; 
     std::vector<TH1F*> Trk1_PDFs = B.MakeTH1F(Names1, ntrk[0]); 
     B.ShiftExpandTH1F(GxTrk1, Trk1_PDFs);
     
     // ==== Trk2
-    std::vector<TString> Names2 = {"trk1_F2", "trk2_F2", "trk3_F2", "trk4_F2", "trk5_F2"}; 
+    std::vector<TString> Names2 = {"trk1_F2", "trk2_F2", "trk3_F2", "trk4_F2", "trk5_F2", "trk6_F2"}; 
     std::vector<TH1F*> Trk2_PDFs = B.MakeTH1F(Names2, ntrk[1]); 
     B.ShiftExpandTH1F(GxTrk2, Trk2_PDFs);
 
     // ==== Trk3 
-    std::vector<TString> Names3 = {"trk1_F3", "trk2_F3", "trk3_F3", "trk4_F3", "trk5_F3"}; 
+    std::vector<TString> Names3 = {"trk1_F3", "trk2_F3", "trk3_F3", "trk4_F3", "trk5_F3", "trk6_F3"}; 
     std::vector<TH1F*> Trk3_PDFs = B.MakeTH1F(Names3, ntrk[2]); 
     B.ShiftExpandTH1F(GxTrk3, Trk3_PDFs);
 
     // ==== Trk4 
-    std::vector<TString> Names4 = {"trk1_F4", "trk2_F4", "trk3_F4", "trk4_F4", "trk5_F4"}; 
+    std::vector<TString> Names4 = {"trk1_F4", "trk2_F4", "trk3_F4", "trk4_F4", "trk5_F4", "trk6_F4"}; 
     std::vector<TH1F*> Trk4_PDFs = B.MakeTH1F(Names4, ntrk[3]); 
     B.ShiftExpandTH1F(GxTrk4, Trk4_PDFs);
 

@@ -218,7 +218,7 @@ std::vector<TH1F*> GetMCHists(std::vector<TString> Layer, std::vector<std::vecto
 }
 
 // ===== ReconstructNTrack
-void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
+void Presentation::ReconstructNTrack(std::vector<TH1F*> Hists)
 {
   DerivedFunctions DF; 
 	Plotting P; 
@@ -233,12 +233,13 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
                                              {E[6], E[7], E[8], E[9], E[10], E[11], E[12], E[13], E[14], E[15]}};
 
 	std::vector<TString> Names = {"dEdx_ntrk_1_ntru_1", "dEdx_ntrk_2_ntru_2", "dEdx_ntrk_3_ntru_3", "dEdx_ntrk_4_ntru_4"};
-	std::vector<TH1F*> Hists = GetMCHists(Detector_Layer, Batch, Names, 500, 0, 20); 
+	//std::vector<TH1F*> Hists = GetMCHists(Detector_Layer, Batch, Names, 500, 0, 20); 
   //B.Normalize(Hists); 
    
   // Generate the n-Track templates from the 1-track measurement 
   std::vector<TH1F*> PDFs = DF.nTRKFrom1Trk(Hists[0]);  
   std::vector<TH1F*> PDFs_NG = B.CopyTH1F(PDFs, "_NG");
+  B.SetPercentError(PDFs_NG, 0.10); 
   DF.FitToData(PDFs_NG, Hists, 0, 20); 
 
   // Note to self: Getting 0 for both KS and Chi test. Error in Chi need to check this.   
@@ -272,7 +273,6 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
 //    ChiSquared_Stats_NG.push_back(B.ChiSquare(PDFs_NG[i], Hists[i]));     
   }
 
-
   // ======================= 1 Track Gaussian Deconvolution Closure test ======================= //
   //Gaussian Parameter used for deconvolution
   std::map<TString, std::vector<float>> Params;
@@ -287,6 +287,7 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
   // 1: Run the Function
   std::vector<TH1F*> trk1_C = {(TH1F*)Hists[0] -> Clone("trk1_C")}; 
   trk1_C = DF.ConvolveFit(Hists[0], trk1_C, Params, 0, 100); 
+  B.SetPercentError(trk1_C, 0.10); 
 
   // 2. Make a Ratio Plot  
   P.RatioPlot(trk1_C[0], Hists[0], can);  
@@ -316,6 +317,7 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
   {
     // Run the algorithm 
     std::vector<TH1F*> temp = DF.ConvolveFit(Hists[i], {PDFs[i]}, Params, 0, 100);  
+    B.SetPercentError(temp, 0.10); 
     ntrk_G.push_back(temp[0]); // Collect the histograms for plotting later
        
     // Perform the test statistics 
@@ -362,7 +364,6 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
 	
  
 }
-
 
 void Presentation::MainAlgorithm(std::vector<TH1F*> ntrk, std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, std::vector<std::vector<TH1F*>> Closure)
 {

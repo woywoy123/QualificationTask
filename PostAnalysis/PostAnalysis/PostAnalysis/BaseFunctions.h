@@ -71,7 +71,8 @@ class BaseFunctions
     void SetBinError(std::vector<TH1F*> Hist, double Error);
     void CopyBinErrors(TH1F* Source, TH1F* Target); 
     void CopyBinErrors(std::vector<TH1F*> Source, std::vector<TH1F*> Target); 
-
+    void SetPercentError(std::vector<TH1F*> Hists, float percent);
+    void SetPercentError(TH1F* Hists, float percent); 
 };
 
 #endif
