@@ -44,6 +44,7 @@ class BaseFunctions
     // ==== RooFit functions 
     // Simple Scale Fits
     std::vector<RooRealVar*> RooVariables(std::vector<TString> Names, std::vector<float> Begin, std::vector<float> End);
+    std::vector<RooRealVar*> RooVariables(std::vector<TString> Names, std::vector<float> Guess);
     std::vector<RooRealVar*> RooVariables(std::vector<TString> Names, std::vector<float> Var1, std::vector<float> Var2, std::vector<float> Var3); 
     std::vector<RooDataHist*> RooData(std::vector<TH1F*> Hist, RooRealVar* Domain); 
     RooDataHist* RooData(TH1F* Hist, RooRealVar* Domain);
@@ -71,6 +72,7 @@ class BaseFunctions
     void SetBinError(std::vector<TH1F*> Hist, double Error);
     void CopyBinErrors(TH1F* Source, TH1F* Target); 
     void CopyBinErrors(std::vector<TH1F*> Source, std::vector<TH1F*> Target); 
+    void CopyBinErrors(TH1F* Source, std::vector<TH1F*> Target);
     void SetPercentError(std::vector<TH1F*> Hists, float percent);
     void SetPercentError(TH1F* Hists, float percent); 
 };

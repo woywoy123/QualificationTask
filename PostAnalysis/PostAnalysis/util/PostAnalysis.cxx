@@ -35,8 +35,8 @@ int main(int argc, char** argv)
 
   // Other parameters
   float offset = 0.;
-  int iter = 50;
-  int cor_loop = 60; // Correction loop number 
+  int iter = 100;
+  int cor_loop = 30; // Correction loop number 
 
   // ==== Forward declaration for Histograms ==== //
   std::vector<TH1F*> trk1_N;
@@ -128,10 +128,11 @@ int main(int argc, char** argv)
     // ===== Good parameters that have been tested (out.root)
     //Gaussian Parameter used for deconvolution
     Params["Gaussian"] = {0, 5};
-    Params["m_e"] = {1, 1, 1, 1, 1, 1};
-    Params["m_s"] = {0, 0, 0, 0, 0, 0};        
+    int s = 5;
+    Params["m_e"] = {s, s, s, s, s, s};
+    Params["m_s"] = {-s, -s, -s, -s, -s, -s};        
     Params["s_s"] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-    Params["s_e"] = {50, 50, 50, 50, 50, 50};
+    Params["s_e"] = {10, 10, 10, 10, 10, 10};
 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
     P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   

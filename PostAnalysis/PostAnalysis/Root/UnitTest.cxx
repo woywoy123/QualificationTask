@@ -218,7 +218,7 @@ std::vector<TH1F*> GetMCHists(std::vector<TString> Layer, std::vector<std::vecto
 }
 
 // ===== ReconstructNTrack
-void Presentation::ReconstructNTrack(std::vector<TH1F*> Hists)
+void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
 {
   DerivedFunctions DF; 
 	Plotting P; 
@@ -233,7 +233,7 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> Hists)
                                              {E[6], E[7], E[8], E[9], E[10], E[11], E[12], E[13], E[14], E[15]}};
 
 	std::vector<TString> Names = {"dEdx_ntrk_1_ntru_1", "dEdx_ntrk_2_ntru_2", "dEdx_ntrk_3_ntru_3", "dEdx_ntrk_4_ntru_4"};
-	//std::vector<TH1F*> Hists = GetMCHists(Detector_Layer, Batch, Names, 500, 0, 20); 
+	std::vector<TH1F*> Hists = GetMCHists(Detector_Layer, Batch, Names, 500, 0, 20); 
   //B.Normalize(Hists); 
    
   // Generate the n-Track templates from the 1-track measurement 
@@ -276,18 +276,18 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> Hists)
   // ======================= 1 Track Gaussian Deconvolution Closure test ======================= //
   //Gaussian Parameter used for deconvolution
   std::map<TString, std::vector<float>> Params;
-  Params["Gaussian"] = {0, 0.5};
+  Params["Gaussian"] = {0, 2};
   Params["m_e"] = {10};
   Params["m_s"] = {-10};        
   Params["s_s"] = {0.1};
-  Params["s_e"] = {2};
+  Params["s_e"] = {10};
  
   // Now we do the same but for deconvolving the PDF with a gaussian and reconvolving it
   // Code validation step: Deconvolve the trk1 with a Gaussian and see what RooFit predicts  
   // 1: Run the Function
   std::vector<TH1F*> trk1_C = {(TH1F*)Hists[0] -> Clone("trk1_C")}; 
   trk1_C = DF.ConvolveFit(Hists[0], trk1_C, Params, 0, 100); 
-  B.SetPercentError(trk1_C, 0.10); 
+  B.SetPercentError(trk1_C, 0.05); 
 
   // 2. Make a Ratio Plot  
   P.RatioPlot(trk1_C[0], Hists[0], can);  
@@ -304,11 +304,6 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> Hists)
   // 1. Define the variables
   std::vector<Double_t> Kolmogorov_Stats_G; 
   std::vector<Double_t> ChiSquared_Stats_G;   
-  Params["Gaussian"] = {0, 1};
-  Params["m_e"] = {5};
-  Params["m_s"] = {-5};        
-  Params["s_s"] = {0.1};
-  Params["s_e"] = {4};
  
   // 2. Run the loop over all PDFs.  
   std::vector<TH1F*> ntrk_G; 
@@ -322,7 +317,7 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> Hists)
        
     // Perform the test statistics 
     Kolmogorov_Stats_G.push_back(temp[0] -> KolmogorovTest(Hists[i]));   
-    ChiSquared_Stats_G.push_back(PDFs_NG[i] -> Chi2Test(Hists[i])); 
+    ChiSquared_Stats_G.push_back(temp[0] -> Chi2Test(Hists[i])); 
     //ChiSquared_Stats_G.push_back(B.ChiSquare(temp[0], Hists[i]));     
 
     std::cout << "#######################################" << std::endl;

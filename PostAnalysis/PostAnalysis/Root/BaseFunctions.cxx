@@ -98,12 +98,22 @@ void BaseFunctions::Scale(std::vector<TH1F*> PDFs, std::vector<RooRealVar*> Vars
   }
 }
 
+std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<float> Guess)
+{
+  std::vector<RooRealVar*> Variables(Guess.size());
+  for (int i(0); i < Guess.size(); i++)
+  {
+    Variables[i] = new RooRealVar(Names[i], Names[i], Guess[i]); 
+  }
+  return Variables;
+}
+
 std::vector<RooRealVar*> BaseFunctions::RooVariables(std::vector<TString> Names, std::vector<float> Begin, std::vector<float> End)
 {
   std::vector<RooRealVar*> Variables(Begin.size()); 
   for (int i(0); i < Begin.size(); i++)
   {
-    Variables[i] = new RooRealVar(Names[i]+"_Fit", Names[i], Begin[i], End[i]);  
+    Variables[i] = new RooRealVar(Names[i], Names[i], Begin[i], End[i]);  
   }
   return Variables;
 }
@@ -504,6 +514,14 @@ void BaseFunctions::CopyBinErrors(std::vector<TH1F*> Source, std::vector<TH1F*> 
   for (int i(0); i < Source.size(); i++)
   {
     CopyBinErrors(Source[i], Target[i]); 
+  }
+}
+
+void BaseFunctions::CopyBinErrors(TH1F* Source, std::vector<TH1F*> Target)
+{
+  for (int i(0); i < Target.size(); i++)
+  {
+    CopyBinErrors(Source, Target[i]);     
   }
 }
 
