@@ -22,6 +22,7 @@ class DerivedFunctionTest
     void ReplaceShiftTail(TH1F* Source, TH1F* Target, int Shift);
     void DeconvolveReconvolve(std::vector<TH1F*> trk1, float offset, int iter);
     void Deconvolve(TH1F* Hist);
+    void AlgorithmTest();
 };
 
 class Presentation

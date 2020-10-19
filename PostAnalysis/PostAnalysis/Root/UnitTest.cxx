@@ -171,7 +171,7 @@ void DerivedFunctionTest::Deconvolve(TH1F* Hist)
   for (int i(0); i < 20; i++)
   { 
     TCanvas* v = new TCanvas(); 
-    std::vector<float> Converge = DF.Deconvolve(Temp, Hist_L, Gaus, Hist_L, 0, 200); 
+    std::vector<float> Converge = DF.Deconvolve(Hist_L, Gaus, 200); 
     
     TGraph* g = new TGraph();  
     for (int x(0); x < Converge.size(); x++)
@@ -216,6 +216,72 @@ std::vector<TH1F*> GetMCHists(std::vector<TString> Layer, std::vector<std::vecto
 	}
 	return EmptyHists; 
 }
+
+// ===== Algorithm Test 
+void DerivedFunctionTest::AlgorithmTest()
+{
+  std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2"};
+  std::vector<TString> E = Constants::energies;
+  std::vector<std::vector<TString>> Batch = {{E[0]}, 
+                                             {E[1], E[2]}, 
+                                             {E[3], E[4], E[5]}, 
+                                             {E[6], E[7], E[8], E[9], E[10], E[11], E[12], E[13], E[14], E[15]}};
+
+  BaseFunctions B; 
+  Plotting P;
+  DerivedFunctions DF; 
+  DistributionGenerators DG; 
+
+	std::vector<TString> Names = {"dEdx_ntrk_1_ntru_1", "dEdx_ntrk_1_ntru_2", "dEdx_ntrk_1_ntru_3", "dEdx_ntrk_1_ntru_4", "dEdx_ntrk_1_ntru_5", "dEdx_ntrk_1_ntru_6"};
+	std::vector<TH1F*> Hists = GetMCHists(Detector_Layer, Batch, Names, 500, 0, 20); 
+  std::vector<TH1F*> PDFs = B.CopyTH1F(Hists, "_C"); 
+  
+  std::vector<TH1F*> data = GetMCHists(Detector_Layer, Batch, {"dEdx_ntrk_1"}, 500, 0, 20);
+
+  TCanvas* can = new TCanvas();
+
+  std::map<TString, std::vector<float>> Params;
+  Params["Gaussian"] = {0, 2};
+  int s = 1;
+  Params["m_e"] = {s, s, s, s, s, s};
+  Params["m_s"] = {-s, -s, -s, -s, -s, -s};        
+  Params["s_s"] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
+  Params["s_e"] = {2, 2, 2, 2, 2, 2};
+  Params["s_g"] = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+
+  //int bins = 500;  
+  //TH1F* Gaus = new TH1F("Gaus", "Gaus", 2*bins, -bins-1, bins); 
+  //DG.Gaussian(Params["Gaussian"][0], Params["Gaussian"][1], 0, Gaus);
+	//B.Normalize(Gaus);
+ 
+  // Create the temp hists that will be used to do the deconvolution on 
+  //std::vector<TH1F*> PDFs_L = B.MakeTH1F(Names, 2*bins, -bins, bins, "_H");
+  
+  int iter = 100;  
+  int index = 0;
+  P.PlotHists(PDFs, Hists, data[0], can); 
+  can -> SetLogy();  
+
+  //B.Normalize(PDFs);
+  //B.Normalize(Hists);
+
+  for (int i(0); i < iter; i++)
+  {
+    //DF.Fit(Hists[index], PDFs, Params, 100); 
+ 
+    DF.ConvolveFit(data[0], PDFs, Params, 0, 100); 
+  
+    //PDFs[index] -> Draw("SAMEHIST");  
+    //Hists[index] -> SetLineColor(kRed);  
+    //Hists[index] -> SetLineStyle(kDotted);  
+    //Hists[index] -> Draw("SAMEHIST"); 
+    can -> Update();
+    can -> Print("Out.pdf");
+  }
+
+
+}
+
 
 // ===== ReconstructNTrack
 void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
@@ -276,10 +342,10 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
   // ======================= 1 Track Gaussian Deconvolution Closure test ======================= //
   //Gaussian Parameter used for deconvolution
   std::map<TString, std::vector<float>> Params;
-  Params["Gaussian"] = {0, 2};
-  Params["m_e"] = {10};
-  Params["m_s"] = {-10};        
-  Params["s_s"] = {0.1};
+  Params["Gaussian"] = {0, 0.5};
+  Params["m_e"] = {2};
+  Params["m_s"] = {-2};        
+  Params["s_s"] = {0.5};
   Params["s_e"] = {10};
  
   // Now we do the same but for deconvolving the PDF with a gaussian and reconvolving it
@@ -287,7 +353,7 @@ void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
   // 1: Run the Function
   std::vector<TH1F*> trk1_C = {(TH1F*)Hists[0] -> Clone("trk1_C")}; 
   trk1_C = DF.ConvolveFit(Hists[0], trk1_C, Params, 0, 100); 
-  B.SetPercentError(trk1_C, 0.05); 
+  B.SetPercentError(trk1_C, 0.10); 
 
   // 2. Make a Ratio Plot  
   P.RatioPlot(trk1_C[0], Hists[0], can);  

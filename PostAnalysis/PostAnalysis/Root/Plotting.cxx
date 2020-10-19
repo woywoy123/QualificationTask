@@ -99,6 +99,7 @@ TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<
     can -> cd(i+1) -> SetLogy(); 
     can -> cd(i+1);
     Data[i] -> SetLineColor(kBlack);
+    Data[i] -> GetYaxis() -> SetRangeUser(1, Data[i] -> Integral()); 
     Data[i] -> Draw("SAMEHIST"); 
     Populate(Hists[i], can, len);
     len -> AddEntry(Data[i], Data[i] -> GetTitle()); 
@@ -130,6 +131,7 @@ void Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, T
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
   can -> cd(1) -> SetLogy(); 
   Data -> SetLineColor(kBlack);
+  Data -> GetYaxis() -> SetRangeUser(1, Data -> Integral()); 
   Data -> Draw("SAMEHIST"); 
   Populate(Hists, can, len, kSolid);
   Populate(Closure, can, len, kDotted); 
@@ -348,7 +350,7 @@ void Plotting::RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3);  
   P2 -> Draw();
   P2 -> cd(); 
-  P2 -> SetLogy(); 
+  //P2 -> SetLogy(); 
 	Ratio -> SetStats(0); 
   Ratio -> Draw("SAMEHIST"); 
 }
@@ -373,8 +375,8 @@ void DistributionGenerators::Landau(std::vector<TH1F*> Hists, std::vector<float>
 
 void DistributionGenerators::Gaussian(float mean, float stdev, int Number, TH1F* Hist)
 {
-  int bins = Hist -> GetNbinsX(); 
-  TF1* g = new TF1("gaus", "gaus", -bins/2, bins/2); 
+  float bins = Hist -> GetNbinsX(); 
+  TF1* g = new TF1("gaus", "gaus", -float(bins)/2, float(bins)/2); 
   g -> SetParameters(1, mean, stdev);
   Hist -> Add(g); 
 }

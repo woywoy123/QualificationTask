@@ -155,6 +155,7 @@ std::vector<RooFFTConvPdf*> BaseFunctions::RooVariables(std::vector<TString> Nam
   for (int i(0); i < PDFs.size(); i++)
   {
     FFT[i] = new RooFFTConvPdf(Names[i], Names[i], *Domain, *PDFs[i], *Gaus[i]);
+    FFT[i] -> setBufferFraction(0.8); 
   }
   return FFT; 
 }
