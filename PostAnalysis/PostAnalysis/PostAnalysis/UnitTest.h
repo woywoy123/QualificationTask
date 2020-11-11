@@ -1,5 +1,6 @@
 #include<PostAnalysis/BaseFunctions.h>
 #include<PostAnalysis/DerivedFunctions.h>
+#include<TH2F.h>
 
 
 #ifndef UNITTEST_H
@@ -33,6 +34,8 @@ class Presentation
     void DataAnalysis(std::map<TString, std::vector<float>> Params, float offset, int iter, int cor_loop, int bins, float min, float max);
     void AlgorithmPlots(TString dir, int iter); 
     void ReconstructNTrack(std::vector<TH1F*> Hists);
+    void ShowMonteCarloDistribution(); 
+    void ShowMonteCarloClusterPosition(); 
 };
 
 #endif

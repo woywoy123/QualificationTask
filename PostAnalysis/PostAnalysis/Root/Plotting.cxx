@@ -92,7 +92,7 @@ TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<
   TCanvas* can = new TCanvas();
   can -> SetLogy(); 
   gStyle -> SetOptStat(0);
-  can -> Divide(Data.size()); 
+  can -> Divide(2,2); 
   for (int i(0); i < Hists.size(); i++)
   {
     TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);

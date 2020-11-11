@@ -581,12 +581,27 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
   B.Normalize(PDFs_L);
 
   // Define all the names of the variables we will be needing 
-  std::vector<TString> Means_String = { "m1", "m2", "m3", "m4", "m5", "m6"};
-  std::vector<TString> Stdev_String = { "s1", "s2", "s3", "s4", "s5", "s6"};
-  std::vector<TString> Gaus_String = { "g1", "g2", "g3", "g4", "g5", "g6"};
-  std::vector<TString> N_String = { "n_trk1", "n_trk2", "n_trk3", "n_trk4", "n_trk5", "n_trk6"};
-  std::vector<TString> GxT_String = { "P1xG1", "P2xG2", "P3xG3", "P4xG4", "P5xG5", "P6xG6"};
+  std::vector<TString> Means_String;
+  std::vector<TString> Stdev_String;
+  std::vector<TString> Gaus_String;
+  std::vector<TString> N_String;
+  std::vector<TString> GxT_String;
+  
+  for (int i(0); i < PDFs_L.size(); i++)
+  {
+    TString m = "m"; m += (i+1); 
+    TString s = "s"; s += (i+1); 
+    TString g = "g"; g += (i+1); 
+    TString n = "n_trk"; n += (i+1); 
+    TString gxt = "P"; gxt += (i+1); gxt += ("xG"); gxt += (i+1); 
 
+    Means_String.push_back(m); 
+    Stdev_String.push_back(s); 
+    Gaus_String.push_back(g); 
+    N_String.push_back(n); 
+    GxT_String.push_back(gxt); 
+  }
+  
   // Free defined variables
   std::vector<float> N_Begin(PDFs.size(), 0);
   std::vector<float> N_End(PDFs.size(), Data_L -> Integral()); 
@@ -631,7 +646,7 @@ std::vector<TH1F*>  DerivedFunctions::ConvolveFit(TH1F* GxTrk, std::vector<TH1F*
     float N = N_Vars[i] -> getVal(); 
 
 		PDFs[i] -> Reset(); 
-		TH1F* GxT = GaussianConvolve(PDFs_L[i], M, S); // The 1.5 factor is to counteract the noise amplification of LR
+		TH1F* GxT = GaussianConvolve(PDFs_L[i], M, S); 
 
     GxT -> Scale(N * GxTrk -> Integral()); 
     Out.push_back(GxT);

@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 
   // ==== Constants used for the algorithm ==== //
   // Execution parameter 
-  int Mode = 10;  // Change to 0 - MC, 1 - Toy, 2 - Data, 3 - Presentation
+  int Mode = 3;  // Change to 0 - MC, 1 - Toy, 2 - Data, 3 - Presentation
   bool Test = false; // Test Components 
   int Shift = 0;
 
@@ -103,8 +103,9 @@ int main(int argc, char** argv)
   if ( Mode == 3 )
   {
     Presentation P; 
-    P.ThresholdEffects();  
-    Test = false; 
+    //P.ThresholdEffects();  
+    P.ShowMonteCarloDistribution();
+    P.ShowMonteCarloClusterPosition();
   }
 
   // Component testing 
@@ -119,7 +120,7 @@ int main(int argc, char** argv)
     //DFT.DeconvolveReconvolve(trk1_N, offset, iter);
     //DFT.DeconvolveGaussianFit(ntrk_Data[0], ntrk_Data[1], mean, stdev, offset, iter);
     //BFT.Constraint(); 
-    P.ReconstructNTrack({trk1_N[0], trk2_N[1], trk3_N[2], trk4_N[3]});
+    //P.ReconstructNTrack({trk1_N[0], trk2_N[1], trk3_N[2], trk4_N[3]});
 		//DFT.Deconvolve(trk1_N[0]); 	 
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets); 
   }
@@ -137,7 +138,7 @@ int main(int argc, char** argv)
     //P.MainAlgorithm(ntrk_Data, Params, offset, iter, cor_loop, Truth_Sets);   
      
     //DFT.AlgorithmTest(); 
-    P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
+    //P.DataAnalysis(Params, offset, iter, cor_loop, bins, min, max);   
 
     //P.AlgorithmPlots("/home/tnom6927/CTIDE/QualificationTask/PostAnalysisData/AnalysisOutput/out.root", cor_loop); 
   }

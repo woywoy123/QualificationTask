@@ -282,8 +282,137 @@ void DerivedFunctionTest::AlgorithmTest()
 
 }
 
-
 // ===== ReconstructNTrack
+void Presentation::ShowMonteCarloDistribution()
+{
+  std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2"};
+  std::vector<TString> E = Constants::energies;
+  std::vector<std::vector<TString>> Batch = {{E[0]}, 
+                                             {E[1], E[2]}, 
+                                             {E[3], E[4], E[5]}, 
+                                             {E[6], E[7], E[8], E[9], E[10], E[11], E[12], E[13], E[14], E[15]}};
+
+  // These are the names of the histograms we want to get from the Monte Carlo sample 
+	std::vector<TString> trk_1_tru_n = {"dEdx_ntrk_1_ntru_1", "dEdx_ntrk_1_ntru_2", "dEdx_ntrk_1_ntru_3", "dEdx_ntrk_1_ntru_4", "dEdx_ntrk_1_ntru_5", "dEdx_ntrk_1_ntru_6"};
+	std::vector<TString> trk_2_tru_n = {"dEdx_ntrk_2_ntru_1", "dEdx_ntrk_2_ntru_2", "dEdx_ntrk_2_ntru_3", "dEdx_ntrk_2_ntru_4", "dEdx_ntrk_2_ntru_5", "dEdx_ntrk_2_ntru_6"};
+	std::vector<TString> trk_3_tru_n = {"dEdx_ntrk_3_ntru_1", "dEdx_ntrk_3_ntru_2", "dEdx_ntrk_3_ntru_3", "dEdx_ntrk_3_ntru_4", "dEdx_ntrk_3_ntru_5", "dEdx_ntrk_3_ntru_6"};
+	std::vector<TString> trk_4_tru_n = {"dEdx_ntrk_4_ntru_1", "dEdx_ntrk_4_ntru_2", "dEdx_ntrk_4_ntru_3", "dEdx_ntrk_4_ntru_4", "dEdx_ntrk_4_ntru_5", "dEdx_ntrk_4_ntru_6"};
+  
+  std::vector<TH1F*> trk1_ntru_hist = GetMCHists(Detector_Layer, Batch, trk_1_tru_n, 500, 0, 20); 
+  std::vector<TH1F*> trk2_ntru_hist = GetMCHists(Detector_Layer, Batch, trk_2_tru_n, 500, 0, 20);  
+  std::vector<TH1F*> trk3_ntru_hist = GetMCHists(Detector_Layer, Batch, trk_3_tru_n, 500, 0, 20);
+  std::vector<TH1F*> trk4_ntru_hist = GetMCHists(Detector_Layer, Batch, trk_4_tru_n, 500, 0, 20);
+
+  std::vector<TH1F*> trk1 = GetMCHists(Detector_Layer, Batch, {"dEdx_ntrk_1"}, 500, 0, 20);
+  std::vector<TH1F*> trk2 = GetMCHists(Detector_Layer, Batch, {"dEdx_ntrk_2"}, 500, 0, 20);
+  std::vector<TH1F*> trk3 = GetMCHists(Detector_Layer, Batch, {"dEdx_ntrk_3"}, 500, 0, 20);
+  std::vector<TH1F*> trk4 = GetMCHists(Detector_Layer, Batch, {"dEdx_ntrk_4"}, 500, 0, 20);
+
+  Plotting P; 
+
+  TCanvas* can = P.PlotHists({trk1_ntru_hist, trk2_ntru_hist, trk3_ntru_hist, trk4_ntru_hist}, {trk1[0], trk2[0], trk3[0], trk4[0]});
+  can -> Print("Out.pdf");
+}
+
+void Presentation::ShowMonteCarloClusterPosition()
+{
+  std::vector<TString> Detector_Layer = {"IBL", "Blayer", "layer1", "layer2"};
+
+  TString Cluster_Minimum_R_Above = "Cluster_Minimum_R_Above_19";
+  TString Cluster_Minimum_R_Below = "Cluster_Minimum_R_Below_19";
+ 
+  TString Cluster_Minimum_R_NoShared_Above = "Cluster_Minimum_R_NoSharedTruth_Above_19"; 
+  TString Cluster_Minimum_R_NoShared_Below = "Cluster_Minimum_R_NoSharedTruth_Below_19"; 
+
+  TString Cluster_Minimum_R_Shared_Above = "Cluster_Minimum_R_SharedTruth_Above_19"; 
+  TString Cluster_Minimum_R_Shared_Below = "Cluster_Minimum_R_SharedTruth_Below_19"; 
+
+  TString Cluster_Minimum_R_Shared_dEdx = "Cluster_Minimum_R_ShareTruth_dEdx"; 
+  TString Cluster_Minimum_R_NotShareTruth_dEdx = "Cluster_Minimum_R_NotShareTruth_dEdx";
+
+  TString SDO_In_Current_Cluster = "SDO_In_Current_Cluster";
+  TString SiHit_In_Current_Cluster = "SiHit_In_Current_Cluster";
+  TString SDO_SiHit_In_Current_Cluster = "SiHit_And_SDO_In_Current_Cluster";
+  TString SiHitXY_LocalXY_distance_Current_Cluster = "SiHitXY_LocalXY_distance_Current_Cluster";
+
+  TFile* F = new TFile(Constants::MC_dir);
+  std::vector<TH1F*> Hists; 
+  for (TString layer : Detector_Layer)
+  {
+    F -> cd(layer); 
+    TH1F* H1 = (TH1F*)gDirectory -> Get(Cluster_Minimum_R_Above); 
+    TH1F* H2 = (TH1F*)gDirectory -> Get(Cluster_Minimum_R_Below); 
+ 
+    H1 -> SetTitle("Nearest cluster radius with dE/dx > 1.9 Layer " + layer); 
+    H2 -> SetTitle("Nearest cluster radius with dE/dx <= 1.9 Layer " + layer); 
+
+    TH1F* H3 = (TH1F*)gDirectory -> Get(Cluster_Minimum_R_NoShared_Above); 
+    TH1F* H4 = (TH1F*)gDirectory -> Get(Cluster_Minimum_R_NoShared_Below); 
+
+    H3 -> SetTitle("Nearest cluster radius with dE/dx > 1.9, Not shared truth " + layer); 
+    H4 -> SetTitle("Nearest cluster radius with dE/dx <= 1.9, Not shared truth " + layer); 
+    
+    TH1F* H5 = (TH1F*)gDirectory -> Get(Cluster_Minimum_R_Shared_Above); 
+    TH1F* H6 = (TH1F*)gDirectory -> Get(Cluster_Minimum_R_Shared_Below);
+     
+    H5 -> SetTitle("Nearest cluster radius with dE/dx > 1.9, shared truth " + layer); 
+    H6 -> SetTitle("Nearest cluster radius with dE/dx <= 1.9, shared truth " + layer); 
+
+    // Nearest cluster truth shared/not shared dEdx
+    TH1F* H7 = (TH1F*)gDirectory -> Get(Cluster_Minimum_R_Shared_dEdx); 
+    TH1F* H8 = (TH1F*)gDirectory -> Get(Cluster_Minimum_R_NotShareTruth_dEdx);  
+    
+    H7 -> SetTitle("dE/dx of truth shared in nearest cluster " +  layer); 
+    H8 -> SetTitle("dE/dx of no truth shared in the nearest cluster " +  layer);
+    
+    // New figures with the SDO, SiHit and local vs SiHit distance 
+    TH1F* H9 = (TH1F*)gDirectory -> Get(SDO_In_Current_Cluster);
+    TH1F* H10 = (TH1F*)gDirectory -> Get(SiHit_In_Current_Cluster);  
+    
+    H9 -> SetTitle("Current Cluster has truth_barcode and matches SDO " +layer);  
+    H10 -> SetTitle("Current Cluster has truth_barcode and matches SiHit " +layer);
+
+    TH1F* H11 = (TH1F*)gDirectory -> Get(SDO_SiHit_In_Current_Cluster);  
+    H11 -> SetTitle("Current Cluster has truth_barcode and matches SiHit and SDO " +layer);
+
+    TH1F* H12 = (TH1F*)gDirectory -> Get(SiHitXY_LocalXY_distance_Current_Cluster);  
+    H12 -> SetTitle("Current Cluster, distance between the SiHitX/Y and localX/Y " +layer);
+
+    H1 -> SetAxisRange(0, 5, "X"); 
+    H2 -> SetAxisRange(0, 5, "X"); 
+    H3 -> SetAxisRange(0, 5, "X"); 
+    H4 -> SetAxisRange(0, 5, "X"); 
+    H5 -> SetAxisRange(0, 5, "X"); 
+    H6 -> SetAxisRange(0, 5, "X"); 
+
+    Hists.push_back(H1); 
+    Hists.push_back(H3); 
+    Hists.push_back(H5); 
+    Hists.push_back(H2); 
+    Hists.push_back(H4); 
+    Hists.push_back(H6); 
+    Hists.push_back(H7); 
+    Hists.push_back(H8); 
+    Hists.push_back(H9); 
+    Hists.push_back(H10); 
+    Hists.push_back(H11); 
+    Hists.push_back(H12); 
+
+    F -> cd(); 
+  }
+
+  TCanvas* can = new TCanvas();
+  can -> Print("Map.pdf[");  
+  for (TH1F* H : Hists)
+  {
+    can -> Clear();
+    H -> Draw("Hist"); 
+    can -> Print("Map.pdf");
+  }
+  can -> Print("Map.pdf]"); 
+
+}
+
 void Presentation::ReconstructNTrack(std::vector<TH1F*> N)
 {
   DerivedFunctions DF; 

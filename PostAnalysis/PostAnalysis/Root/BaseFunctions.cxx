@@ -419,7 +419,6 @@ void BaseFunctions::ResidualRemove(TH1F* Hist)
   {
     Hist -> SetBinContent(i+1, 1e-8);
   }
-
 }
 
 float BaseFunctions::FLost(std::vector<TH1F*> ntrk_Data, std::vector<std::vector<TH1F*>> Truth_Sets)
