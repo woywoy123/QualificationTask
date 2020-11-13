@@ -181,30 +181,41 @@ void ArtifactRemove(std::vector<TH1F*> Hists)
   }
 }
 
-void NumericalConvolution(TH1F* H1, TH1F* H2, TH1F* Out)
+void Convolution(TH1F* H1, TH1F* H2, TH1F* Out)
 {
-  RooRealVar x("x", "x", -5, 5); 
-  RooDataHist h1("h1", "h1", x , H1); 
-  RooDataHist h2("h2", "h2", x, H2); 
-  
-  RooHistPdf pdf1("pdf1", "pdf1", x, h1); 
-  RooHistPdf pdf2("pdf2", "pdf2", x, h2); 
+  std::vector<float> u, v; 
+  for (int i(0); i < H1 -> GetNbinsX(); i++)
+  {
+    u.push_back(H1 -> GetBinContent(i+1)); 
+    v.push_back(H2 -> GetBinContent(i+1)); 
+  }
+  int size_u = u.size(); 
+  int size_v = v.size();
+  int size = size_u + size_v; 
+  float sum = 0; 
 
-  RooNumConvPdf h1xh2("h1xh2", "h1xh2", x, pdf1, pdf2); 
+  std::vector<float> o; 
+  for (int i(0); i < size; i++)
+  {
+    int iter = i; 
+    for (int j = 0; j <= i; j++)
+    {
+      if (size_u <= j || size_v <= iter) sum;
+      else { sum += u[j]*v[iter]; }
+      iter--;
+    }
+    o.push_back(sum); 
+    sum = 0; 
+  }
 
-  TF1 tf = TF1(*h1xh2.asTF(RooArgList(x))); 
-  
-  TH1* H_new = tf.CreateHistogram(); 
-  
+  int start = o.size() / 4;
+  for (int i(0); i < Out -> GetNbinsX(); i++)
+  {
+    Out -> SetBinContent(i+1, o[i + start]); 
+  }
 
-
-
-
-
-
-
-
-
+  Normalize(Out); 
+  Normalize(H1); 
 }
 
 

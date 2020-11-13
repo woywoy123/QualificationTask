@@ -28,17 +28,17 @@ void PlotGaussian()
 
 void PlotLandauXLandauConvolved()
 {
-  int bins = 1000; 
+  int bins = 100; 
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<TH1F*> Lan = MakeTH1F({"Landau1", "Landau2", "Landau3", "Landau4"}, bins, 0, 20); 
   Landau(Lan, {1, 1, 1, 1}, LandauParams, 50000000, 0, 20); 
   Normalize(Lan); 
   
   std::vector<TH1F*> Results = MakeTH1F({"Landau Convolved One", "Landau Convolved Two", "Landau Convolved Three"}, bins, 0, 20); 
-  ConvolveHists(Lan[0], Lan[0], Results[0]); 
-  ConvolveHists(Results[0], Lan[0], Results[1]); 
-  ConvolveHists(Results[1], Lan[0], Results[2]); 
-  ArtifactRemove(Results);  
+  Convolution(Lan[0], Lan[0], Results[0]); 
+  Convolution(Results[0], Lan[0], Results[1]); 
+  Convolution(Results[1], Lan[0], Results[2]); 
+  //ArtifactRemove(Results);  
   
   TCanvas* can = new TCanvas();
   can -> Print("LandauXLandau.pdf["); 
@@ -59,33 +59,29 @@ void PlotLandauXLandauConvolved()
 
 void PlotGaussianXGaussianConvolved()
 {
-  int bins = 10000; 
-  std::vector<TH1F*> Gaus = MakeTH1F({"Gaus1"}, bins, -5, 5); 
-  std::vector<TH1F*> Results = MakeTH1F({"Gaus Convolved One", "Gaus Convolved Two", "Gaus Convolved Three"}, bins, -5, 5); 
-  Gaussian(0, 0.5, Gaus[0]); 
+  int bins = 1001; 
+  std::vector<TH1F*> Gaus = MakeTH1F({"Gaus Convolved once with Gaussian mean = 1 and stdev = 0.1", "Gaus Convolved with itself multiple times Mean = 0, Stdev = 0.1"}, bins, -10, 10); 
+  std::vector<TH1F*> Results = MakeTH1F({"Gaus1", "Gaus Convolved Two", "Gaus Convolved Three"}, bins, -10, 10); 
+  Gaussian(0, 0.1, Gaus[0]); 
+  Gaussian(1, 0.1, Gaus[1]); 
  
-  NumericalConvolution(Gaus[0], Gaus[0], Results[0]); 
- 
- 
-  
-  //ConvolveHists(Gaus[0], Gaus[0], Results[1]); 
-  //ConvolveHists(Results[0], Gaus[0], Results[1]); 
-  //ConvolveHists(Results[1], Gaus[0], Results[2]); 
+  Convolution(Gaus[0], Gaus[1], Results[0]); 
+  Convolution(Gaus[0], Gaus[0], Results[1]); 
+  Convolution(Results[1], Gaus[0], Results[2]); 
     
   TCanvas* can = new TCanvas();
   can -> Print("GaussianXGaussian.pdf["); 
-  RatioPlot(Results[0], Gaus[0], can); 
+  RatioPlot(Gaus[0], Results[0], can); 
   can -> Print("GaussianXGaussian.pdf"); 
   can -> Clear(); 
 
-  RatioPlot(Results[1], Gaus[0], can); 
+  RatioPlot(Gaus[0], Results[1], can); 
   can -> Print("GaussianXGaussian.pdf"); 
   can -> Clear(); 
 
-  RatioPlot(Results[2], Gaus[0], can); 
+  RatioPlot(Gaus[0], Results[2], can); 
   can -> Print("GaussianXGaussian.pdf"); 
   can -> Clear(); 
   
   can -> Print("GaussianXGaussian.pdf]"); 
-
 }

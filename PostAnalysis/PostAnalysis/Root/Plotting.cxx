@@ -44,7 +44,7 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
   P1 -> Draw(); 
   P1 -> cd(); 
-  P1 -> SetLogy(); 
+  //P1 -> SetLogy(); 
   H1 -> SetLineColor(kBlack); 
   H1 -> Draw("SAMEHIST"); 
   H1 -> SetStats(0);  
