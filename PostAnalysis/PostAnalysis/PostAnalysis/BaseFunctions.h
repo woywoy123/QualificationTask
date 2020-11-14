@@ -14,9 +14,11 @@ std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, flo
 // Histogram manipulation 
 void Normalize(TH1F* Hist); 
 void Normalize(std::vector<TH1F*> Hists); 
+std::vector<float> Normalize(std::vector<float> V1); 
 void Shift(TH1F* Hist, int shift); 
 
 // Convolution - Deconvolution 
+std::vector<float> ConvolutionFFT(std::vector<float> V1, std::vector<float> V2); 
 void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* H1xH2);
 void Convolution(TH1F* H1, TH1F* H2, TH1F* Out); 
 void ArtifactRemove(TH1F* Hist); 

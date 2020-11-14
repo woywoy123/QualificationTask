@@ -20,6 +20,17 @@ void Normalize(TH1F* Hist)
   Hist -> Scale(1/Lumi); 
 }
 
+std::vector<float> Normalize(std::vector<float> V1) 
+{
+  float sum = 0; 
+  for (int i(0); i < V1.size(); i++){sum = sum + V1[i];}
+  for (int i(0); i < V1.size(); i++)
+  {
+    V1[i] = V1[i]/sum;
+  }
+  return V1; 
+}
+
 void Normalize(std::vector<TH1F*> Hists)
 {
   for (TH1F* H : Hists){ Normalize(H); }
@@ -79,7 +90,7 @@ std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, st
 }
 
 // =========================== Convolution ================================= //
-std::vector<float> ConvolveHists(std::vector<float> Hist1, std::vector<float> Hist2)
+std::vector<float> ConvolutionFFT(std::vector<float> Hist1, std::vector<float> Hist2)
 {
   int n = Hist1.size();
   std::vector<float> conv(n, 0);
@@ -140,12 +151,11 @@ void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
   }
 
   // Set bin content of conv histogram 
-  std::vector<float> Conv = ConvolveHists(H1, H2);
+  std::vector<float> Conv = ConvolutionFFT(H1, H2);
   for ( int i(0); i < nBins_2; i++ )
   {
     conv -> SetBinContent(i+1, Conv.at(i));
   }
-  //Normalize(conv); 
 }
 
 void ArtifactRemove(TH1F* Hist)

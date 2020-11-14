@@ -2,12 +2,15 @@
 
 
 
-std::vector<std::pair<Double_t, Double_t>> NumericalLandau(std::vector<float> COMP, std::vector<float> Parameters, float min, float max, int points, int toys)
+std::vector<TGraph*> NumericalLandau(std::vector<float> COMP, std::vector<float> Parameters, float min, float max, int points, int toys)
 {
   TF1 Lan("Lan", "landau", min, max); 
-  for (int i(0); i < Parameters.size(); i++){Lan.SetParameters(i, Parameters.size());} 
+  for (int i(0); i < Parameters.size(); i++)
+  {
+    Lan.SetParameter(i, Parameters[i]);
+  } 
 
-  std::vector<std::vector<float>> L; 
+  std::vector<std::vector<float>> L(COMP.size()); 
   
   for (int x(0); x < toys; x++)
   {
@@ -19,7 +22,7 @@ std::vector<std::pair<Double_t, Double_t>> NumericalLandau(std::vector<float> CO
     }
   }
   
-  std::vector<std::pair<Double_t, Double_t>> Output; 
+  std::vector<TGraph*> Output; 
   float delta = (max - min)/float(points); 
   for (int i(0); i < L.size(); i++ )
   {
@@ -45,10 +48,10 @@ std::vector<std::pair<Double_t, Double_t>> NumericalLandau(std::vector<float> CO
         if (c_range < h && h <= c_range + delta)
         {
           hits++; 
-          dEdx = dEdx + h;  
+          //dEdx = dEdx + h;  
         }
       }
-      dEdx = dEdx/float(hits); 
+      //dEdx = dEdx/float(hits); 
       Landau_map[c_range] = std::pair<float, int>(dEdx, hits); 
     }
 
@@ -61,25 +64,67 @@ std::vector<std::pair<Double_t, Double_t>> NumericalLandau(std::vector<float> CO
       y[v] = p.second; 
       v++; 
     }
-    Output.emplace(std::pair<Double_t, Double_t>(x,y)); 
+    
+    TGraph* gr = new TGraph(points, x, y); 
+    Output.push_back(gr);  
   }
   return Output; 
 }
 
 void GraphicalLandau()
 {
-  std::vector<std::pair<Double_t, Double_t>> Lan = NumericalLandau({1,1}, {1, 0.9, 0.1}, 0, 20, 100, 100000); 
+  std::vector<TGraph*> Land = NumericalLandau({1, 1}, {1, 0.9, 0.1}, 0, 20, 100, 10000000); 
   
-  Double_t x = Lan[0].first; 
-  Double_t y = Lan[0].second; 
+  TCanvas* can = new TCanvas(); 
+  can -> Print("Graph.pdf["); 
+  for (TGraph* G : Land)
+  {
+    can -> SetLogy(); 
+    G -> Draw("AC"); 
+    can -> Print("Graph.pdf"); 
+    can -> Clear();
+  } 
+
+  TGraph* g = Land[0]; 
+  int points = g -> GetN(); 
+  Double_t x[points], y[points]; 
+
+  std::vector<float> x_v, y_v; 
+  for (int v(0); v < points; v++)
+  {
+    g -> GetPoint(v, x[v], y[v]); 
+    x_v.push_back(x[v]); y_v.push_back(y[v]); 
+  }
+  
+  y_v = ConvolutionFFT(y_v, y_v); 
+  y_v = Normalize(y_v); 
+  for (int v(0); v < points; v++)
+  {
+    x[v] = x_v[v]; 
+    y[v] = y_v[v]; 
+  }
+  TGraph* gr = new TGraph(points, x, y); 
+
+  for (int v(0); v < points; v++)
+  {
+    Land[1] -> GetPoint(v, x[v], y[v]); 
+    x_v[v] = x[v]; 
+    y_v[v] = y[v]; 
+  }
+  y_v = Normalize(y_v); 
+  for (int v(0); v < points; v++)
+  {
+    x[v] = x_v[v]; 
+    y[v] = y_v[v]; 
+  }
+  TGraph* g_n = new TGraph(points, x, y); 
  
-  //TCanvas* can = new TCanvas();  
-  //can -> SetLogy();
-  //TGraph* gr = new TGraph(100, x, y); 
-  //gr -> Draw("AC"); 
-  //can -> Update(); 
-  //can -> Print("Graph.pdf");   
+  TMultiGraph *mg = new TMultiGraph();
+  mg -> Add(gr, "AC"); 
+  mg -> Add(g_n, "AC");
+  mg -> Draw("AC"); 
+  can -> Print("Graph.pdf"); 
 
-
+  can -> Print("Graph.pdf]"); 
 
 }
