@@ -24,6 +24,16 @@ void PlotHists(TH1F* Hist, TCanvas* can)
   can -> Update(); 
 }
 
+void PlotHists(std::vector<TH1F*> Hists, std::vector<TString> Legend_Titles, TCanvas* can)
+{
+  gStyle -> SetOptStat(0); 
+  for (int i(0); i < Hists.size(); i++){Hists[i] -> SetTitle(Legend_Titles[i]); }
+  
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  can -> cd(1); 
+  Populate(Hists, can, len, kSolid);
+}
+
 
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 {
