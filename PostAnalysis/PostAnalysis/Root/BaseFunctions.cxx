@@ -14,6 +14,19 @@ std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, flo
   return Histograms;
 }
 
+// Clone and Reset the histograms 
+std::vector<TH1F*> CloneTH1F(TH1F* Hist, std::vector<TString> Names)
+{
+  std::vector<TH1F*> Output; 
+  for (int i(0); i < Names.size(); i++)
+  {
+    TH1F* H = (TH1F*)Hist -> Clone(Names[i]); 
+    H -> Reset(); 
+    Output.push_back(H); 
+  }
+  return Output; 
+}
+
 // Normalize Histogram
 void Normalize(TH1F* Hist)
 {
@@ -64,27 +77,41 @@ float BinToDomain(int Bin_Number, int bins, float min, float max)
   return min + Bin_Number*bin_width; 
 }
 
+float Pythagoras(std::vector<float> v1, std::vector<float> v2)
+{
+  float sum = 0; 
+  for (int i(0); i < v1.size(); i++)
+  {
+    float diff = pow(v1[i] - v2[i], 2); 
+    sum += diff;  
+  }
+  return pow(sum, 0.5); 
+}
 
+float SquareError(TH1F* Hist1, TH1F* Hist2)
+{
+  int bins = Hist1 -> GetNbinsX(); 
+  
+  std::vector<float> v1, v2; 
+  for (int i(0); i < bins; i++)
+  {
+    v1.push_back(Hist1 -> GetBinContent(i+1)); 
+    v2.push_back(Hist2 -> GetBinContent(i+1)); 
+  }
+  return Pythagoras(v1, v2); 
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2)
+{
+  std::cout << std::endl;
+  std::cout << "##################### Landau Convolution Test ###################### "<< std::endl;
+  for (int i(0); i < Hists1.size(); i++)
+  {
+    TString n1 = Hists1[i] -> GetTitle(); 
+    TString n2 = Hists2[i] -> GetTitle(); 
+    float er = SquareError(Hists1[i], Hists2[i]); 
+    float ks = Hists1[i] -> KolmogorovTest(Hists2[i]);
+    std::cout << "Histogram: " << n1 << " Matched with Histogram: " << n2 << " Square Root Error: " << er << " Kalmogorov: " << ks << std::endl;
+  }
+}
 

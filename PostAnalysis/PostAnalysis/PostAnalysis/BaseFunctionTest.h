@@ -10,6 +10,6 @@
 void PlotLandau(); 
 void PlotGaussian(); 
 void PlotGaussianXGaussian(); 
-
+void PlotLandauXLandau(); 
 
 #endif

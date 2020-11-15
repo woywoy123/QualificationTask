@@ -86,14 +86,3 @@ void GraphicalLandau()
 
 }
 
-void LandauXLandau()
-{
-  std::vector<float> LandauParams = {1, 0.9, 0.1}; 
-
-
-
-
-
-
-}
-

@@ -75,3 +75,52 @@ void PlotGaussianXGaussian()
   std::cout << "# Integral: Analytical -> "<< Gaus2 -> Integral() << " Convolved -> " << Conv_Gaus -> Integral() << std::endl;
   can -> Print("Gaussian_Convolution_Test.pdf]"); 
 }
+
+void PlotLandauXLandau()
+{
+  int bins = 1000; 
+  float min = 0; 
+  float max = 20; 
+  std::vector<float> LandauParams = {1, 0.9, 0.1}; 
+  std::vector<float> COMP = {1, 1, 1, 1}; 
+   
+  std::vector<TString> Names = {"Landau1", "Landau2", "Landau3", "Landau4"};
+  std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 500000, bins, min, max); 
+
+  TCanvas* can = new TCanvas(); 
+  can -> Print("Landau_Convolution.pdf["); 
+  can -> SetLogy();
+  PlotHists(Gen_Landau, can);  
+  can -> Print("Landau_Convolution.pdf"); 
+  can -> Clear(); 
+  Normalize(Gen_Landau); 
+
+  std::vector<TString> Names_Result = {"Result2", "Result3", "Result4"};  
+  std::vector<TH1F*> Results = CloneTH1F(Gen_Landau[0], Names_Result); 
+  Convolution(Gen_Landau[0], Gen_Landau[0], Results[0]); 
+  Convolution(Results[0], Gen_Landau[0], Results[1]); 
+  Convolution(Results[1], Gen_Landau[0], Results[2]); 
+  Normalize(Results); 
+ 
+  // Landau2  
+  can -> SetLogy(); 
+  RatioPlot(Gen_Landau[1], Results[0], can); 
+  can -> Print("Landau_Convolution.pdf"); 
+  can -> Clear(); 
+
+  // Landau3
+  RatioPlot(Gen_Landau[2], Results[1], can); 
+  can -> Print("Landau_Convolution.pdf"); 
+  can -> Clear(); 
+
+  // Landau4
+  RatioPlot(Gen_Landau[3], Results[2], can); 
+  can -> Print("Landau_Convolution.pdf"); 
+  can -> Clear(); 
+  can -> Print("Landau_Convolution.pdf]"); 
+ 
+  // Compare output with Landau2, Landau3, Landau4 - NOT Landau1!! 
+  Stats({Gen_Landau[1], Gen_Landau[2], Gen_Landau[3]}, Results); 
+
+}
+

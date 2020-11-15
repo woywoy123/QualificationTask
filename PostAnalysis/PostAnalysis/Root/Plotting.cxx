@@ -34,6 +34,12 @@ void PlotHists(std::vector<TH1F*> Hists, std::vector<TString> Legend_Titles, TCa
   Populate(Hists, can, len, kSolid);
 }
 
+void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
+{
+  gStyle -> SetOptStat(0); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  Populate(Hists, can, len, kSolid); 
+}
 
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 {
@@ -54,9 +60,9 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
   P1 -> Draw(); 
   P1 -> cd(); 
-  //P1 -> SetLogy(); 
+  P1 -> SetLogy(); 
   H1 -> SetLineColor(kBlack); 
-  H1 -> Draw("SAMEHIST"); 
+  H1 -> Draw("HIST"); 
   H1 -> SetStats(0);  
   H2 -> SetLineColor(kRed);
   H2 -> Draw("SAMEHIST"); 
