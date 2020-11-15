@@ -11,13 +11,13 @@ int main(int argc, char** argv)
   {
     PlotLandau(); 
     PlotGaussian(); 
+    PlotGaussianXGaussian();
   }
 
   // Produce Presentation Figures
   if (option == -2)
   {
-    
-
+    GaussianXGaussian(); 
   }
 
   // Run Experimental

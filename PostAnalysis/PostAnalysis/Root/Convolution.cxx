@@ -1,8 +1,8 @@
 #include<PostAnalysis/Convolution.h>
 
-// Experimental Convolutions 
-// ========================= Convolution Debugging Anthony =================================== //
-std::vector<float> ConvolutionFFT_Experimental(const std::vector<float> V1, const std::vector<float> V2, int ZeroPointBin)
+
+// =========================== Convolution ================================= //
+std::vector<float> ConvolutionFFT(const std::vector<float> V1, const std::vector<float> V2, int ZeroPointBin)
 {
   int n = V1.size(); 
   std::vector<float> conv(n, 0); 
@@ -66,7 +66,7 @@ std::vector<float> ConvolutionFFT_Experimental(const std::vector<float> V1, cons
   return conv; 
 }
 
-void Convolution_Experimental(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
+void Convolution(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
 {
   int bins = Hist2 -> GetNbinsX(); 
   int ZeroPointBin = Hist2 -> GetXaxis() -> FindBin(0.) - 1;    
@@ -79,118 +79,11 @@ void Convolution_Experimental(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
     H2[i+Padding] = Hist2 -> GetBinContent(i+1);   
   }
 
-  std::vector<float> Conv = ConvolutionFFT_Experimental(H1, H2, ZeroPointBin + Padding); 
+  std::vector<float> Conv = ConvolutionFFT(H1, H2, ZeroPointBin + Padding); 
 
   for ( int i(0); i < bins; i++)
   {
     conv -> SetBinContent(i+1, Conv.at(Padding+i)); 
-  }
-}
-
-
-// ======================= END EXPERIMENTAL ========================== //
-
-
-// =========================== Convolution ================================= //
-std::vector<float> ConvolutionFFT(std::vector<float> Hist1, std::vector<float> Hist2)
-{
-  int n = Hist1.size();
-  std::vector<float> conv(n, 0);
-
-  // Initialize the FFT method by giving it the data points  
-  TVirtualFFT* fft1 = TVirtualFFT::FFT(1, &n, "R2C K P");
-  TVirtualFFT* fft2 = TVirtualFFT::FFT(1, &n, "R2C K P");
-  
-  for ( Int_t i(0); i < n; i++ )
-  {
-    fft1 -> SetPoint(i, Hist1.at(i), 0); 
-    fft2 -> SetPoint(i, Hist2.at(i), 0); 
-  }
-  fft1 -> Transform();
-  fft2 -> Transform();
-
-  // Main part of the FFT 
-  TVirtualFFT* fft2r = TVirtualFFT::FFT(1, &n, "C2R K P");  
-  for ( Int_t i(0); i < n/2 +1; i++ )
-  {
-    Double_t r1, r2, i1, i2;
-    fft1 -> GetPointComplex(i, r1, i1);   
-    fft2 -> GetPointComplex(i, r2, i2); 
-    
-    Double_t re = r1*r2 - i1*i2;
-    Double_t im = r1*i2 + r2*i1;
-    
-    TComplex t(re, im);
-    fft2r -> SetPointComplex(i, t);  
-  }
-
-  // Reverse FFT to real space
-  fft2r -> Transform();
-  for ( Int_t i(0); i < n; i++ )
-  {
-    Double_t r1, i1;
-    fft2r -> GetPointComplex(i, r1, i1);
-    conv[i] = r1;
-  }
-  delete fft1; 
-  delete fft2;
-  delete fft2r;
-  
-  return conv;
-}
-
-void ConvolveHists(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
-{
-  int nBins_2 = Hist2 -> GetNbinsX();
-  int nBins_1 = Hist1 -> GetNbinsX();
-   
-  // Convert TH1 to vector 
-  std::vector<float> H1, H2;
-  for ( int i(0); i < nBins_2; i++ )
-  {
-    H1.push_back(Hist1 -> GetBinContent(i+1));
-    H2.push_back(Hist2 -> GetBinContent(i+1));
-  }
-
-  // Set bin content of conv histogram 
-  std::vector<float> Conv = ConvolutionFFT(H1, H2);
-  for ( int i(0); i < nBins_2; i++ )
-  {
-    conv -> SetBinContent(i+1, Conv.at(i));
-  }
-}
-
-void Convolution(TH1F* H1, TH1F* H2, TH1F* Out)
-{
-  std::vector<float> u, v; 
-  for (int i(0); i < H1 -> GetNbinsX(); i++)
-  {
-    u.push_back(H1 -> GetBinContent(i+1)); 
-    v.push_back(H2 -> GetBinContent(i+1)); 
-  }
-  int size_u = u.size(); 
-  int size_v = v.size();
-  int size = size_u + size_v; 
-  float sum = 0; 
-
-  std::vector<float> o; 
-  for (int i(0); i < size; i++)
-  {
-    int iter = i; 
-    for (int j = 0; j <= i; j++)
-    {
-      if (size_u <= j || size_v <= iter) sum;
-      else { sum += u[j]*v[iter]; }
-      iter--;
-    }
-    o.push_back(sum); 
-    sum = 0; 
-  }
-
-  int start = o.size() / 4;
-  for (int i(0); i < Out -> GetNbinsX(); i++)
-  {
-    Out -> SetBinContent(i+1, o[i + start]); 
   }
 }
 

@@ -9,14 +9,7 @@
 #include<PostAnalysis/BaseFunctions.h>
 
 void GraphicalLandau(); 
-void ConvolutionTest(); 
-
-
-
-
-
-
-
+void LandauXLandau(); 
 
 
 #endif

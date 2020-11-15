@@ -9,8 +9,7 @@
 
 void PlotLandau(); 
 void PlotGaussian(); 
-void PlotLandauXLandauConvolved(); 
-void PlotGaussianXGaussianConvolved(); 
+void PlotGaussianXGaussian(); 
 
 
 #endif
