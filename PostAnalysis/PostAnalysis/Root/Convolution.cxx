@@ -153,7 +153,7 @@ std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, st
 void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
 {
   int pdf_bins = PDF -> GetNbinsX(); 
-  int psf_bins = PDF -> GetNbinsX(); 
+  int psf_bins = PSF -> GetNbinsX(); 
 
   // Domain of PDF and PSF 
   float pdf_min = PDF -> GetXaxis() -> GetXmin(); 
@@ -164,11 +164,9 @@ void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
   // Make sure the bin widths are equal before proceeding 
   float width_pdf = (pdf_max - pdf_min) / float(pdf_bins);   
   float width_psf = (psf_max - psf_min) / float(psf_bins); 
- 
+
   // Get out of the function - Cant deconvolve 
   if (width_pdf != width_psf){return;}
-
-
 
   // Unify their domains by finding the max and mins of the two distributions 
   float domain_min; 
@@ -178,8 +176,58 @@ void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
 
   if (pdf_max > psf_max){domain_max = pdf_max;}
   else { domain_max = psf_max; }
-  
 
+  // Create the new histograms for the new domain definition 
+  int bins = (domain_max - domain_min)/width_psf; 
+
+  // Create unique names for these hists for multithreading  
+  TString unique = PDF -> GetTitle() + "_" PSF -> GetTitle() + "_"; 
+  TH1F* H1 = new TH1F(unique + "H1", unique + "H1", bins, domain_min, domain_max); 
+  TH1F* H2 = new TH1F(unique + "H2", unique + "H2", bins, domain_min, domain_max); 
+
+  // Find the zero bin position of both histograms 
+  int psf_0 = PSF -> GetXaxis() -> FindBin(0.) -1;  
+  int pdf_0 = PDF -> GetXaxis() -> FindBin(0.) -1;  
+  int bin_0 = H1 -> GetXaxis() -> FindBin(0.) - 1; 
+
+  // Create iterators 
+  int i_psf = 0; 
+  int i_pdf = 0; 
+  for (int i(0); i < bins; i++)
+  {
+    int d_bin_0 = bin_0 - i; 
+
+    // Fill histogram based on PSF
+    if (d_bin_0 <= psf_0)
+    {
+      H1 -> SetBinContent(i+1, PSF -> GetBinContent(i_psf+1)); 
+      i_psf++;
+    } 
+
+    // Fill histogram based on PDF
+    if (d_bin_0 <= pdf_0)
+    {
+      H2 -> SetBinContent(i+1, PDF -> GetBinContent(i_pdf+1)); 
+      i_pdf++;
+    } 
+  }
+  
+  // Convert histograms to vectors
+  std::vector<float> PSF_V = ToVector(H1);
+  std::vector<float> PDF_V = ToVector(H2); 
+  std::vector<float> Deconv_V(bins, 0.1); 
+  
+  std::vector<float> Converge 
+  for (int i(0); 
+
+
+
+
+  TCanvas* can = new TCanvas(); 
+  H1 -> Draw("SAMEHIST"); 
+  H2 -> Draw("SAMEHIST");
+  can -> Print("debug.pdf");
+   
 
 
 }

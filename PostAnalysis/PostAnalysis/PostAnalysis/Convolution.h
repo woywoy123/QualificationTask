@@ -5,6 +5,10 @@
 #include<TComplex.h>
 #include<TH1F.h>
 #include<iostream>
+#include<PostAnalysis/BaseFunctions.h>
+
+// Delete after
+#include<TCanvas.h>
 
 
 // Convolution 

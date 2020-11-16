@@ -83,14 +83,6 @@ void Shift(TH1F* Hist, int shift)
   }
 }
 
-// Translate bin number to x in domain range
-float BinToDomain(int Bin_Number, int bins, float min, float max)
-{
-  float bin_width = (max - min)/float(bins); 
-  min -= bin_width; 
-  return min + Bin_Number*bin_width; 
-}
-
 float Pythagoras(std::vector<float> v1, std::vector<float> v2)
 {
   float sum = 0; 
