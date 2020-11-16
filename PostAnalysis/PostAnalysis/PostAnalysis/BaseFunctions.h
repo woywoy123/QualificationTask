@@ -17,6 +17,9 @@ void Shift(TH1F* Hist, int shift);
 // vector normalization 
 std::vector<float> Normalize(std::vector<float> V1); 
 
+// Convert TH1F to vector
+std::vector<float> ToVector(TH1F* Hist); 
+
 // Translate bin to domain range
 float BinToDomain(int Bin_Number, int bins, float min, float max);
 

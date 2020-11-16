@@ -55,6 +55,8 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
     else {r = 1; }
     Ratio -> SetBinContent(i+1, r); 
   }
+  gStyle -> SetOptStat(0); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
 	H1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^2]");
 
   TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
@@ -63,15 +65,19 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   P1 -> SetLogy(); 
   H1 -> SetLineColor(kBlack); 
   H1 -> Draw("HIST"); 
+  len -> AddEntry(H1, H1 -> GetTitle() ); 
+  len -> Draw("SAME");
   H1 -> SetStats(0);  
   H2 -> SetLineColor(kRed);
   H2 -> Draw("SAMEHIST"); 
-  
+  len -> AddEntry(H2, H2 -> GetTitle() );
+  len -> Draw("SAME");  
   can -> cd();
 
   TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3);  
   P2 -> Draw();
   P2 -> cd(); 
 	Ratio -> SetStats(0); 
+  Ratio -> SetLineColor(kBlack); 
   Ratio -> Draw("SAMEHIST"); 
 }

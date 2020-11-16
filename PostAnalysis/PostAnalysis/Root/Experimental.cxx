@@ -86,3 +86,51 @@ void GraphicalLandau()
 
 }
 
+void DeconvolutionGaussian() 
+{
+  float mean = 0; 
+  float stdev = 0.5;
+  int bins = 100; 
+  float min = -10; 
+  float max = 10; 
+
+  TH1F* Gaus_Target = Gaussian(mean, stdev, bins, min, max, "Deconvolution_Target"); 
+  TH1F* Gaus_Start = Gaussian(mean+mean, stdev*sqrt(2), bins, min, max, "Source_Distribution");  
+  
+  std::cout << "###################### Analytical Gaussians #######################" << std::endl;
+  std::cout << "Source Gaussian -> Mean: " << mean+mean << " Standard Deviation: " << stdev*sqrt(2) << std::endl;
+  std::cout << "Target Gaussian -> Mean: " << mean << " Standard Deviation: " << stdev << std::endl;
+  std::cout << std::endl;   
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

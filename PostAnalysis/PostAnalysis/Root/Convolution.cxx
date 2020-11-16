@@ -66,6 +66,31 @@ std::vector<float> ConvolutionFFT(const std::vector<float> V1, const std::vector
   return conv; 
 }
 
+void ResidualRemove(TH1F* Hist)
+{
+  float bin_m = Hist -> GetMaximumBin(); 
+  float T = Hist -> GetBinContent(bin_m); 
+  int iter(0); 
+  int breaker = 0; 
+  for (int i(0); i < bin_m; i++)
+  {
+    float e = Hist -> GetBinContent(bin_m -1 -i); 
+    if (e < T) 
+    {
+      T = e; 
+      iter = bin_m -i; 
+      breaker = 0; 
+    }
+    else { breaker++; }
+    if (breaker == 4) {break;}
+  }
+  
+  for (int i(0); i < iter; i++)
+  {
+    Hist -> SetBinContent(i+1, 0); 
+  }
+}
+
 void Convolution(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
 {
   int bins = Hist2 -> GetNbinsX(); 
@@ -86,6 +111,8 @@ void Convolution(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
     conv -> SetBinContent(i+1, Conv.at(Padding+i)); 
   }
 }
+
+
 
 // ============================ Deconvolution Stuff ======================== //
 std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y)
@@ -122,4 +149,67 @@ std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, st
   }
   return PSF; 
 }
+
+void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
+{
+  int pdf_bins = PDF -> GetNbinsX(); 
+  int psf_bins = PDF -> GetNbinsX(); 
+
+  // Domain of PDF and PSF 
+  float pdf_min = PDF -> GetXaxis() -> GetXmin(); 
+  float pdf_max = PDF -> GetXaxis() -> GetXmax(); 
+  float psf_min = PSF -> GetXaxis() -> GetXmin();  
+  float psf_max = PSF -> GetXaxis() -> GetXmax(); 
+
+  // Make sure the bin widths are equal before proceeding 
+  float width_pdf = (pdf_max - pdf_min) / float(pdf_bins);   
+  float width_psf = (psf_max - psf_min) / float(psf_bins); 
+ 
+  // Get out of the function - Cant deconvolve 
+  if (width_pdf != width_psf){return;}
+
+
+
+  // Unify their domains by finding the max and mins of the two distributions 
+  float domain_min; 
+  float domain_max; 
+  if (pdf_min < psf_min){domain_min = pdf_min;}
+  else { domain_min = psf_min; }
+
+  if (pdf_max > psf_max){domain_max = pdf_max;}
+  else { domain_max = psf_max; }
+  
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

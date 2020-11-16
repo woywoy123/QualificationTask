@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv)
 {
-  int option = -1;
+  int option = -3;
 
   // Run Tests 
   if (option == -1)
@@ -19,11 +19,13 @@ int main(int argc, char** argv)
   if (option == -2)
   {
     GaussianXGaussian(); 
+    LandauXLandau(); 
   }
 
   // Run Experimental
   if (option == -3)
   {
+    DeconvolutionGaussian(); 
   }
   
   

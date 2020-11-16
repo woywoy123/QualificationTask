@@ -22,6 +22,7 @@ std::vector<TH1F*> CloneTH1F(TH1F* Hist, std::vector<TString> Names)
   {
     TH1F* H = (TH1F*)Hist -> Clone(Names[i]); 
     H -> Reset(); 
+    H -> SetTitle(Names[i]); 
     Output.push_back(H); 
   }
   return Output; 
@@ -50,6 +51,19 @@ std::vector<float> Normalize(std::vector<float> V1)
     V1[i] = V1[i]/sum;
   }
   return V1; 
+}
+
+// TH1F to vector
+std::vector<float> ToVector(TH1F* Hist)
+{
+  int bins = Hist -> GetNbinsX(); 
+  std::vector<float> Output; 
+   
+  for (int i(0); i < bins; i++)
+  {
+    Output.push_back(Hist -> GetBinContent(i+1));   
+  }
+  return Output; 
 }
 
 // Shift a histogram using bins 

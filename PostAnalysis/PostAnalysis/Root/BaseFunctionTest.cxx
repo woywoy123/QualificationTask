@@ -65,9 +65,7 @@ void PlotGaussianXGaussian()
   
   std::cout << "########## Analytical Truth Parameters #########" << std::endl;
   std::cout << "# Parameters of Gaussian 1-> Mean: " << mean << " Standard Deviation: " << stdev << std::endl; 
-  std::cout << "# Parameters of Gaussian 2-> Mean: " << mean + mean << " Standard Deviation: " << stdev*sqrt(2) << std::endl; 
-  std::cout << "# Peak position of Gaussian 1 (Mean): " << Gaus1 -> GetMean() << " Gaussian 2 (Mean): " << Gaus2 -> GetMean() << std::endl; 
-  std::cout << "# Standard Deviation of Gaussian 1 (STDEV): " << Gaus1 -> GetRMS() << " Gaussian 2 (STDEV): " << Gaus2 -> GetRMS() << std::endl; 
+  std::cout << "# Parameters of Gaussian 2 (Our Target)-> Mean: " << mean + mean << " Standard Deviation: " << stdev*sqrt(2) << std::endl; 
   std::cout << "################################################" << std::endl;
   std::cout << std::endl;
   std::cout << "######### Output Convolution Parameters ########" << std::endl;
@@ -100,6 +98,9 @@ void PlotLandauXLandau()
   Convolution(Gen_Landau[0], Gen_Landau[0], Results[0]); 
   Convolution(Results[0], Gen_Landau[0], Results[1]); 
   Convolution(Results[1], Gen_Landau[0], Results[2]); 
+  ResidualRemove(Results[0]);  
+  ResidualRemove(Results[1]); 
+  ResidualRemove(Results[2]); 
   Normalize(Results); 
  
   // Landau2  
