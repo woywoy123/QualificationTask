@@ -11,5 +11,9 @@ void PlotLandau();
 void PlotGaussian(); 
 void PlotGaussianXGaussian(); 
 void PlotLandauXLandau(); 
+void PlotLandauXGaussian();
+void PlotDeconvGausXGaus(); 
+void PlotDeconvLandauXLandau(); 
+void PlotDeconvLandauXGaussian(); 
 
 #endif

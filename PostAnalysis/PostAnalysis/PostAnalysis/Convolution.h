@@ -18,6 +18,6 @@ void ResidualRemove(TH1F* Hist);
 
 // Deconvolution 
 std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y); 
-void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter); 
+std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter); 
 
 #endif

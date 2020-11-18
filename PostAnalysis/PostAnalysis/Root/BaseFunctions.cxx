@@ -66,6 +66,18 @@ std::vector<float> ToVector(TH1F* Hist)
   return Output; 
 }
 
+// Vector to TH1F
+void ToTH1F(std::vector<float> Input, TH1F* Hist)
+{
+  for (int i(0); i < Hist -> GetNbinsX(); i++)
+  {
+    Hist -> SetBinContent(i+1, Input[i]); 
+  }
+
+}
+
+
+
 // Shift a histogram using bins 
 void Shift(TH1F* Hist, int shift)
 {
@@ -83,6 +95,7 @@ void Shift(TH1F* Hist, int shift)
   }
 }
 
+// Benchmark function 
 float Pythagoras(std::vector<float> v1, std::vector<float> v2)
 {
   float sum = 0; 
@@ -107,10 +120,10 @@ float SquareError(TH1F* Hist1, TH1F* Hist2)
   return Pythagoras(v1, v2); 
 }
 
+// Benchmark function 
 void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2)
 {
   std::cout << std::endl;
-  std::cout << "##################### Landau Convolution Test ###################### "<< std::endl;
   for (int i(0); i < Hists1.size(); i++)
   {
     TString n1 = Hists1[i] -> GetTitle(); 

@@ -19,6 +19,7 @@ std::vector<float> Normalize(std::vector<float> V1);
 
 // Convert TH1F to vector
 std::vector<float> ToVector(TH1F* Hist); 
+void ToTH1F(std::vector<float> Input, TH1F* Hist); 
 
 // Benchmarking 
 float Pythagoras(std::vector<float> v1, std::vector<float> v2); 

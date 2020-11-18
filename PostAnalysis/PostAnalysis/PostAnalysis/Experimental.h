@@ -9,6 +9,5 @@
 #include<PostAnalysis/BaseFunctions.h>
 
 void GraphicalLandau(); 
-void DeconvolutionGaussian();
 
 #endif

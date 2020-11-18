@@ -115,42 +115,34 @@ void Convolution(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
 
 
 // ============================ Deconvolution Stuff ======================== //
-std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y)
+std::vector<float> LucyRichardson(std::vector<float> data, std::vector<float> current, std::vector<float> psf, float damp)
 {
-  // G - Measured Signal
-  // F - Current estimate of PSF
-  // H - Estimate of truth signal P(G|F) = H
-  // Alg: F(j+1) = F(j)*Sum(i) [ H(ij) * G(i) / Sum(k) [H(jk) * F(k)] ]
-  // y - Dampening 
-  std::vector<float> PSF(F.size(), 0);
-
-  // Each bin is calculated separately  
-  for ( unsigned int i(0); i < H.size(); i++)
+  float offset = (data.size() - current.size())/2; 
+  std::vector<float> next(current.size(), 0); 
+  for (int i(0); i < current.size(); i++)
   {
-    float sum_i(0); 
-    for (unsigned int j(i); j < F.size(); j++)
+    float sum_j = 0; 
+    int upperLimitJ = psf.size(); 
+    for (int j(i); j < upperLimitJ; j++)
     {
-      //Sum(k) [H(jk) * F(k)]
-      float sum_k(0); 
-      for (int k(0); k <= j; k++)
+      float c_j = 0; 
+      int upperLimitK = j; 
+      for (int k(0); k <= upperLimitK; k++)
       {
-        float H_jk = H[j-k];
-        float F_k = F[k];
-        sum_k += H_jk*F_k;
+        c_j += psf[j-k]*current[k];    
       }
-      if (sum_k != 0) 
-      { 
-        sum_i += (G[j]*H[j-i]) / sum_k; 
-      } 
-
-      PSF[i] = F[i] * ( 1 + y * (sum_i -1) );
-      if (PSF[i] < 0. || std::isnan(PSF[i]) || std::isinf(PSF[i]))  {PSF[i] = 0.;}
-    }  
+      if (c_j != 0)
+      {
+        sum_j += data[j] / (c_j * psf[j-i]);
+      }
+    }
+    next[i] = current[i] + (1+damp*(sum_j-1)); 
+    if (next[i] < 0. || std::isnan(next[i]) || std::isinf(next[i]) ){next[i] = 0.;}
   }
-  return PSF; 
+  return next;
 }
 
-void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
+std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
 {
   int pdf_bins = PDF -> GetNbinsX(); 
   int psf_bins = PSF -> GetNbinsX(); 
@@ -166,7 +158,12 @@ void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
   float width_psf = (psf_max - psf_min) / float(psf_bins); 
 
   // Get out of the function - Cant deconvolve 
-  if (width_pdf != width_psf){return;}
+  std::vector<float> Converge;
+  if (width_pdf != width_psf)
+  {
+    Converge.push_back(0);
+    return Converge;
+  }
 
   // Unify their domains by finding the max and mins of the two distributions 
   float domain_min; 
@@ -181,7 +178,7 @@ void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
   int bins = (domain_max - domain_min)/width_psf; 
 
   // Create unique names for these hists for multithreading  
-  TString unique = PDF -> GetTitle() + "_" PSF -> GetTitle() + "_"; 
+  TString unique = PDF -> GetTitle(); unique += ("_"); unique += (PSF -> GetTitle()); unique += ("_"); 
   TH1F* H1 = new TH1F(unique + "H1", unique + "H1", bins, domain_min, domain_max); 
   TH1F* H2 = new TH1F(unique + "H2", unique + "H2", bins, domain_min, domain_max); 
 
@@ -215,21 +212,38 @@ void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
   // Convert histograms to vectors
   std::vector<float> PSF_V = ToVector(H1);
   std::vector<float> PDF_V = ToVector(H2); 
-  std::vector<float> Deconv_V(bins, 0.1); 
+  std::vector<float> Deconv_V(bins, 0.5);
+  float d_old = 100; 
+  float d = 100; 
+
+  for (int i(0); i < Max_Iter; i++)
+  {
+    d_old = d; 
+    std::vector<float> Deconv_Vold = Deconv_V; 
+    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 0.75); 
+
+    d = Pythagoras(Deconv_Vold, Deconv_V); 
+    Converge.push_back(d);  
+    if (d_old - d == 1e-8){break;} 
+  }
   
-  std::vector<float> Converge 
-  for (int i(0); 
-
-
-
+  TH1F* Deconv_H = new TH1F(unique + "Deconv", unique + "Deconv", bins, domain_min, domain_max);
+  ToTH1F(Deconv_V, Deconv_H); 
+  Output -> Add(Deconv_H);   
 
   TCanvas* can = new TCanvas(); 
-  H1 -> Draw("SAMEHIST"); 
-  H2 -> Draw("SAMEHIST");
-  can -> Print("debug.pdf");
-   
+  can -> SetLogy(); 
+  //Deconv_H -> Draw("HIST*"); 
+  H1 -> Draw("SAMEHIST-"); 
+  H2 -> Draw("SAMEHIST"); 
+  can -> Print("debug.pdf"); 
 
 
+  
+  delete H1; 
+  delete H2;  
+  delete Deconv_H;  
+  return Converge;
 }
 
 
