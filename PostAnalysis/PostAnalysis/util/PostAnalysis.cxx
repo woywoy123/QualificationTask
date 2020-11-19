@@ -14,8 +14,8 @@ int main(int argc, char** argv)
     //PlotGaussianXGaussian();
     //PlotLandauXLandau(); 
     //PlotLandauXGaussian(); 
-    PlotDeconvGausXGaus(); 
-    //PlotDeconvLandauXLandau(); // <--- needs fixing 
+    //PlotDeconvGausXGaus(); 
+    PlotDeconvLandauXLandau(); // <--- needs fixing 
     //PlotDeconvLandauXGaussian(); 
     
   }

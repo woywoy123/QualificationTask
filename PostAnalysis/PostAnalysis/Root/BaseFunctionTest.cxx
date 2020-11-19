@@ -154,9 +154,9 @@ void PlotLandauXGaussian()
 
 void PlotDeconvGausXGaus()
 {
-  float mean = 1; 
+  float mean = 0; 
   float stdev = 0.5;
-  int bins = 100; 
+  int bins = 250; 
   float min = -8; 
   float max = 8; 
 
@@ -188,7 +188,7 @@ void PlotDeconvGausXGaus()
   
   TCanvas* can = new TCanvas();
   Gaus_Solution -> Draw("HIST*"); 
-  Gaus_Start -> Draw("SAMEHIST"); 
+  //Gaus_Start -> Draw("SAMEHIST"); 
   Gaus_Target -> Draw("SAMEHIST"); 
   can -> Print("DeconvGausXGaus.pdf"); 
 }
@@ -198,11 +198,11 @@ void PlotDeconvLandauXLandau()
 
   std::cout << "###################### Deconvolution Landaus #######################" << std::endl;
 
-  int bins = 250; 
+  int bins = 100; 
   float min = 0; 
   float max = 20;
-  int Iters = 500; 
-  float centering = (max-min)/float(bins);
+  int Iters = 100;
+  float width = (max - min)/float(bins); 
  
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<float> COMP = {1, 1, 1, 1}; 
@@ -211,20 +211,20 @@ void PlotDeconvLandauXLandau()
   std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 5000000, bins, min, max); 
 
   std::vector<TString> Name_Results = {"Result1", "Result2", "Result3"};
-  std::vector<TH1F*> Results = MakeTH1F(Name_Results, bins, min-centering/2, max-centering/2, "_Deconvolution");
+  std::vector<TH1F*> Results = MakeTH1F(Name_Results, bins, min-width/2, max-width/2, "_Deconvolution");
   
   std::vector<TString> Name_Converge = {"Convergence1", "Convergence2", "Convergence3"};
   std::vector<TH1F*> Converge_H = MakeTH1F(Name_Converge, Iters, 0, Iters);
 
   // Start with Landau 4 and deconvolve with Landau1
-  std::vector<float> Converge3 = Deconvolution(Gen_Landau[3], Gen_Landau[2], Results[1], Iters);
-  //std::vector<float> Converge2 = Deconvolution(Gen_Landau[2], Gen_Landau[1], Results[1], Iters);
-  //std::vector<float> Converge1 = Deconvolution(Gen_Landau[1], Gen_Landau[0], Results[0], Iters);  
+  std::vector<float> Converge3 = Deconvolution(Gen_Landau[3], Gen_Landau[0], Results[2], Iters);
+  std::vector<float> Converge2 = Deconvolution(Gen_Landau[2], Gen_Landau[0], Results[1], Iters);
+  std::vector<float> Converge1 = Deconvolution(Gen_Landau[1], Gen_Landau[0], Results[0], Iters);  
  
-  ////// Convert the convergence vectors to TH1Fs
-  //ToTH1F(Converge1, Converge_H[0]);  
-  //ToTH1F(Converge2, Converge_H[1]);
-  ToTH1F(Converge3, Converge_H[1]);
+  // Convert the convergence vectors to TH1Fs
+  ToTH1F(Converge1, Converge_H[0]);  
+  ToTH1F(Converge2, Converge_H[1]);
+  ToTH1F(Converge3, Converge_H[2]);
 
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
@@ -234,21 +234,20 @@ void PlotDeconvLandauXLandau()
   can -> Print("DeconvLandauXLandau.pdf"); 
   can -> Clear(); 
 
-  //for (int i(0); i < 3; i++)
-  //{
-    Gen_Landau[2] -> SetLineStyle(kDashed);
-    RatioPlot(Gen_Landau[2], Results[1], can);  
+  for (int i(0); i < 3; i++)
+  {
+    Gen_Landau[i] -> SetLineStyle(kDashed);
+    RatioPlot(Gen_Landau[i], Results[i], can);  
     can -> Print("DeconvLandauXLandau.pdf"); 
     can -> Clear(); 
 
-    Converge_H[1] -> Draw("HIST*"); 
+    Converge_H[i] -> Draw("HIST*"); 
     can -> Print("DeconvLandauXLandau.pdf"); 
     can -> Clear(); 
-  //}
+  }
 
   can -> Print("DeconvLandauXLandau.pdf]"); 
 
-  // Note to self: Understand why the deconvolution is behaving unexpectedly. 
 }
 
 void PlotDeconvLandauXGaussian()

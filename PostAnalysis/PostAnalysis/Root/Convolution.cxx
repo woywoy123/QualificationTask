@@ -242,66 +242,23 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   float pdf_max = PDF -> GetXaxis() -> GetXmax(); 
   float psf_min = PSF -> GetXaxis() -> GetXmin();  
   float psf_max = PSF -> GetXaxis() -> GetXmax(); 
-
-  // Make sure the bin widths are equal before proceeding 
-  float width_pdf = (pdf_max - pdf_min) / float(pdf_bins);   
-  float width_psf = (psf_max - psf_min) / float(psf_bins); 
-
+  
   // Get out of the function - Cant deconvolve 
   std::vector<float> Converge;
-  if (width_pdf != width_psf)
+  if (pdf_bins != psf_bins || pdf_min != psf_min || pdf_max != psf_max)
   {
     Converge.push_back(0);
     return Converge;
   }
+  int bins = pdf_bins; 
 
-  // Unify their domains by finding the max and mins of the two distributions 
-  float domain_min; 
-  float domain_max; 
-  if (pdf_min < psf_min){domain_min = pdf_min;}
-  else { domain_min = psf_min; }
 
-  if (pdf_max > psf_max){domain_max = pdf_max;}
-  else { domain_max = psf_max; }
-
-  // Create the new histograms for the new domain definition 
-  int bins = (domain_max - domain_min)/width_psf; 
-
-  // Create unique names for these hists for multithreading  
-  TString unique = PDF -> GetTitle(); unique += ("_"); unique += (PSF -> GetTitle()); unique += ("_"); 
-  TH1F* H1 = new TH1F(unique + "H1", unique + "H1", bins, domain_min, domain_max); 
-  TH1F* H2 = new TH1F(unique + "H2", unique + "H2", bins, domain_min, domain_max); 
-
-  // Find the zero bin position of both histograms 
-  int psf_0 = PSF -> GetXaxis() -> FindBin(0.) -1;  
-  int pdf_0 = PDF -> GetXaxis() -> FindBin(0.) -1;  
-  int bin_0 = H1 -> GetXaxis() -> FindBin(0.) - 1; 
-
-  // Create iterators 
-  int i_psf = 0; 
-  int i_pdf = 0; 
-  for (int i(0); i < bins; i++)
-  {
-    int d_bin_0 = bin_0 - i; 
-
-    // Fill histogram based on PSF
-    if (d_bin_0 <= psf_0)
-    {
-      H1 -> SetBinContent(i+1, PSF -> GetBinContent(i_psf+1)); 
-      i_psf++;
-    } 
-
-    // Fill histogram based on PDF
-    if (d_bin_0 <= pdf_0)
-    {
-      H2 -> SetBinContent(i+1, PDF -> GetBinContent(i_pdf+1)); 
-      i_pdf++;
-    } 
-  }
+  // Find the zero bin of the x-axis 
+  int bin_0 = PDF -> GetXaxis() -> FindBin(0.) -1; 
   
   // Convert histograms to vectors
-  std::vector<float> Temp1 = ToVector(H1); 
-  std::vector<float> Temp2 = ToVector(H2);
+  std::vector<float> Temp1 = ToVector(PSF); 
+  std::vector<float> Temp2 = ToVector(PDF);
   std::vector<float> PSF_V;  
   std::vector<float> PDF_V; 
   
@@ -328,24 +285,17 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
     Converge.push_back(d);  
     //if (d_old - d == 1e-8){break;} 
   }
- 
-  TH1F* Deconv_H = new TH1F(unique + "Deconv", unique + "Deconv", 2*bins, domain_min*2, domain_max*2);
-  Deconv_H -> SetLineStyle(kDashed); 
-  for (int i(0); i < Deconv_V.size(); i++){Deconv_H -> SetBinContent(i + 1, Deconv_V[i]); }
   
   // Find the bin where the X axis is 0 
-  int decon_0 = Deconv_H -> GetXaxis() -> FindBin(0.)-1; 
   int out_0 = Output -> GetXaxis() -> FindBin(0.)-1;  
+  int out_bins = Output -> GetNbinsX();
   
   // Populate the output  
   for (int i(0); i < Deconv_V.size(); i++)
   {
-    Output -> SetBinContent(out_0 - decon_0 +i+1, Deconv_V[i]); 
+    Output -> SetBinContent(-bins + out_0 + i+1, Deconv_V[i]); 
   }
-  
-  delete H1; 
-  delete H2;  
-  delete Deconv_H; 
+ 
   return Converge;
 }
 

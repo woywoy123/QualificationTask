@@ -69,7 +69,7 @@ std::vector<float> ToVector(TH1F* Hist)
 // Vector to TH1F
 void ToTH1F(std::vector<float> Input, TH1F* Hist)
 {
-  for (int i(0); i < Hist -> GetNbinsX(); i++)
+  for (int i(0); i < Input.size(); i++)
   {
     Hist -> SetBinContent(i+1, Input[i]); 
   }
