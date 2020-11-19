@@ -43,8 +43,8 @@ void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
 
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 {
-
-  TH1F* Ratio = (TH1F*)H1 -> Clone("Ratio");
+  TString name = H1 -> GetTitle(); name += ("_"); name += H2 -> GetTitle(); 
+  TH1F* Ratio = (TH1F*)H1 -> Clone(name);
   Ratio -> Clear();  
   for (int i(0); i < H1 -> GetNbinsX(); i++)
   {
@@ -63,6 +63,7 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   P1 -> Draw(); 
   P1 -> cd(); 
   P1 -> SetLogy(); 
+  H1 -> GetYaxis() -> SetRangeUser(1e-6, 2 * H1 -> Integral());
   H1 -> SetLineColor(kBlack); 
   H1 -> Draw("HIST"); 
   len -> AddEntry(H1, H1 -> GetTitle() ); 
@@ -79,5 +80,5 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   P2 -> cd(); 
 	Ratio -> SetStats(0); 
   Ratio -> SetLineColor(kBlack); 
-  Ratio -> Draw("SAMEHIST"); 
+  Ratio -> Draw("HIST"); 
 }

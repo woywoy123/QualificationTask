@@ -92,6 +92,24 @@ void Shift(TH1F* Hist, int shift)
   }
 }
 
+// Variable Name Generator 
+std::vector<TString> NameGenerator(int number, TString shorty)
+{
+  std::vector<TString> Output; 
+  
+  for (int i(0); i < number; i++)
+  {
+    TString name = shorty; name += (i+1); 
+    Output.push_back(name); 
+  }
+  return Output; 
+
+}
+
+
+
+
+
 // Benchmark function 
 float Pythagoras(std::vector<float> v1, std::vector<float> v2)
 {

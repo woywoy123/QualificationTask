@@ -98,10 +98,6 @@ void PlotLandauXLandau()
   Convolution(Gen_Landau[0], Gen_Landau[0], Results[0]); 
   Convolution(Results[0], Gen_Landau[0], Results[1]); 
   Convolution(Results[1], Gen_Landau[0], Results[2]); 
-  ResidualRemove(Results[0]);  
-  ResidualRemove(Results[1]); 
-  ResidualRemove(Results[2]); 
-  Normalize(Results); 
  
   // Landau2  
   can -> SetLogy(); 
@@ -198,10 +194,11 @@ void PlotDeconvLandauXLandau()
 
   std::cout << "###################### Deconvolution Landaus #######################" << std::endl;
 
-  int bins = 100; 
+  int bins = 200; 
   float min = 0; 
   float max = 20;
-  int Iters = 100;
+  float centering = (max-min)/float(bins);
+  int Iters = 200;
   float width = (max - min)/float(bins); 
  
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
@@ -237,7 +234,7 @@ void PlotDeconvLandauXLandau()
   for (int i(0); i < 3; i++)
   {
     Gen_Landau[i] -> SetLineStyle(kDashed);
-    RatioPlot(Gen_Landau[i], Results[i], can);  
+    RatioPlot(Results[i], Gen_Landau[i], can);  
     can -> Print("DeconvLandauXLandau.pdf"); 
     can -> Clear(); 
 
@@ -255,8 +252,8 @@ void PlotDeconvLandauXGaussian()
   
   int bins = 300; 
   float min = -2; 
-  float max = 20;
-  int Iters = 1000; 
+  float max = 24;
+  int Iters = 400; 
   float centering = (max-min)/float(bins);
  
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
@@ -268,16 +265,16 @@ void PlotDeconvLandauXGaussian()
   Normalize(Gen_Landau); 
 
   // Define the Gaussians 
-  TH1F* Gaussian1 = Gaussian(0, 0.5, bins, min, max, "Original1"); 
-  TH1F* Gaussian2 = Gaussian(0, 0.5, bins, min, max, "Original2"); 
-  TH1F* Gaussian3 = Gaussian(0, 0.5, bins, min, max, "Original3"); 
-  TH1F* Gaussian4 = Gaussian(0, 0.5, bins, min, max, "Original4"); 
+  TH1F* Gaussian1 = Gaussian(0, 0.25, bins, min, max, "Original1"); 
+  TH1F* Gaussian2 = Gaussian(0, 0.25, bins, min, max, "Original2"); 
+  TH1F* Gaussian3 = Gaussian(0, 0.25, bins, min, max, "Original3"); 
+  TH1F* Gaussian4 = Gaussian(0, 0.25, bins, min, max, "Original4"); 
   std::vector<TH1F*> PSF_Original = {Gaussian1, Gaussian2, Gaussian3, Gaussian4}; 
   Normalize(PSF_Original); 
 
   // Convolved histograms 
   std::vector<TString> Name_Conv = {"Landau1XGaussian1", "Landau2XGaussian2", "Landau3XGaussian3", "Landau4XGaussian4"};
-  std::vector<TH1F*> Convs = MakeTH1F(Name_Conv, bins, min, max);
+  std::vector<TH1F*> Convs = MakeTH1F(Name_Conv, bins, min-centering/2, max-centering/2);
 
   // Convolve the Landaus with the Gaussians 
   Convolution(Gen_Landau[0], Gaussian1, Convs[0]); 
@@ -287,57 +284,92 @@ void PlotDeconvLandauXGaussian()
 
   // Reconstructed PSF
   std::vector<TString> Name_PSF = {"Gaussian1", "Gaussian2", "Gaussian3", "Gaussian4"};
-  std::vector<TH1F*> PSF = MakeTH1F(Name_PSF, bins, min, max, "Reconstructed");
+  std::vector<TH1F*> PSF = MakeTH1F(Name_PSF, bins, min-centering/2, max-centering/2, "Reconstructed");
 
   // Reconstructed Landau
   std::vector<TString> Name_Landau = {"Landau1", "Landau2", "Landau3", "Landau4"};
-  std::vector<TH1F*> Landau_Recon = MakeTH1F(Name_Landau, bins, min, max, "Reconstructed");
-
-  // Covergence graph 
-  std::vector<TString> Name_Converge = {"Convergence1", "Convergence2", "Convergence3", "Convergence4"};
-  std::vector<TH1F*> Converge_H = MakeTH1F(Name_Converge, Iters, 0, Iters);
-
+  std::vector<TH1F*> Landau_Recon = MakeTH1F(Name_Landau, bins, min-centering/2, max-centering/2, "Reconstructed");
 
   // Start with reverting the gaussian smearing 
-  std::vector<float> Converge1 = Deconvolution(Convs[0], Gaussian1, Landau_Recon[0] , Iters);
-  //std::vector<float> Converge2 = Deconvolution(Convs[1], Gaussian2, Landau_Recon[1] , Iters);
-  //std::vector<float> Converge3 = Deconvolution(Convs[2], Gaussian3, Landau_Recon[2] , Iters);
-  //std::vector<float> Converge4 = Deconvolution(Convs[3], Gaussian4, Landau_Recon[3] , Iters);  
- 
-  //// Start return the Gaussian smearing PSF
-  //Deconvolution(Convs[0], Gen_Landau[0], PSF[0], Iters);
-  //Deconvolution(Convs[1], Gen_Landau[1], PSF[1], Iters);
-  //Deconvolution(Convs[2], Gen_Landau[2], PSF[2], Iters);
-  //Deconvolution(Convs[3], Gen_Landau[3], PSF[3], Iters);  
+  MultiThreadingDeconvolution(Convs, PSF_Original, Landau_Recon, Iters); 
 
-  //// Convert the convergence vectors to TH1Fs
-  ToTH1F(Converge1, Converge_H[0]);  
-  //ToTH1F(Converge2, Converge_H[1]);
-  //ToTH1F(Converge3, Converge_H[2]);
-  //ToTH1F(Converge4, Converge_H[3]);
+  // Start return the Gaussian smearing PSF
+  MultiThreadingDeconvolution(Convs, Gen_Landau, PSF, Iters);  
 
   TCanvas* can = new TCanvas(); 
   can -> Print("DeconvLandauXGaussian.pdf[");
   can -> SetLogy(); 
 
-  //for (int i(0); i < Gen_Landau.size(); i++)
-  //{
+  for (int i(0); i < Gen_Landau.size(); i++)
+  {
     // Plot the reverting of the Landau
     //Normalize(Landau_Recon[0]); 
-    RatioPlot(Gen_Landau[0], Landau_Recon[0], can); 
+    RatioPlot(Landau_Recon[i], Gen_Landau[i],  can); 
     can -> Print("DeconvLandauXGaussian.pdf");
     can -> Clear(); 
     
-    Converge_H[0] -> Draw("HIST"); 
+    // Plot the Gaussian PSF
+    RatioPlot(PSF[i], PSF_Original[i], can); 
     can -> Print("DeconvLandauXGaussian.pdf");
     can -> Clear(); 
-
-  //  // Plot the Gaussian PSF
-  //  RatioPlot(PSF_Original[i], PSF[i], can); 
-  //  can -> Print("DeconvLandauXGaussian.pdf");
-  //  can -> Clear(); 
-  //}
+  }
   can -> Print("DeconvLandauXGaussian.pdf]");
+}
+
+void PlotDeconvolutionFit()
+{
+  
+  int bins = 300; 
+  float min = -2; 
+  float max = 22;
+  int Iters = 200; 
+  float centering = (max-min)/float(bins);
+ 
+  std::vector<float> LandauParams = {1, 0.9, 0.1}; 
+  std::vector<float> COMP = {0.6, 0.3, 0.05, 0.05}; 
+
+  // Define the Landaus    
+  std::vector<TString> Names = {"Landau1", "Landau2", "Landau3", "Landau4"};
+  std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 5000000, bins, min, max); 
+
+  // Define the Gaussians 
+  TH1F* Gaussian1 = Gaussian(0, 0.2, bins, min, max, "Original1"); 
+  TH1F* Gaussian2 = Gaussian(0, 0.2, bins, min, max, "Original2"); 
+  TH1F* Gaussian3 = Gaussian(0, 0.2, bins, min, max, "Original3"); 
+  TH1F* Gaussian4 = Gaussian(0, 0.2, bins, min, max, "Original4"); 
+  std::vector<TH1F*> PSF_Original = {Gaussian1, Gaussian2, Gaussian3, Gaussian4}; 
+
+  // Create a fake dataset by overlaying multiple Landaus 
+  TH1F* Data = new TH1F("Data", "Data", bins, min-centering/2, max - centering/2); 
+  Data -> Add(Gen_Landau[0]); 
+  Data -> Add(Gen_Landau[1]); 
+  Data -> Add(Gen_Landau[2]); 
+  Data -> Add(Gen_Landau[3]); 
+
+  // Deconvolved PDFs
+  std::vector<TString> Name_Conv = {"Landau1_D", "Landau2_D", "Landau3_D", "Landau4_D"};
+  std::vector<TH1F*> D_PDFs = MakeTH1F(Name_Conv, bins, min-centering/2, max-centering/2);
+  
+  // Deconvolve the "PDFs" with the Gaussian 
+  MultiThreadingDeconvolution(Gen_Landau, PSF_Original, D_PDFs, Iters); 
+  
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+  can -> Print("DeconvolutionFit.pdf["); 
+  for (int i(0); i < Gen_Landau.size(); i++)
+  {
+    Gen_Landau[i] -> SetLineColor(kRed); 
+    Gen_Landau[i] -> Draw("HIST"); 
+    D_PDFs[i] -> Draw("SAMEHIST");   
+    PSF_Original[i] -> SetLineColor(kRed); 
+    PSF_Original[i] -> SetLineStyle(kRed); 
+    PSF_Original[i] -> Draw("SAMEHIST"); 
+
+    can -> Print("DeconvolutionFit.pdf"); 
+    can -> Clear();  
+  }
+
+  FitDeconvolution(Data, D_PDFs);
 
 
 
@@ -345,6 +377,11 @@ void PlotDeconvLandauXGaussian()
 
 
 
+
+
+
+
+  can -> Print("DeconvolutionFit.pdf]"); 
 
 
 

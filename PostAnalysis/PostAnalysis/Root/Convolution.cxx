@@ -248,6 +248,7 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   if (pdf_bins != psf_bins || pdf_min != psf_min || pdf_max != psf_max)
   {
     Converge.push_back(0);
+    std::cout << "Check the centering of the bins...." << std::endl;
     return Converge;
   }
   int bins = pdf_bins; 
@@ -283,7 +284,7 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
 
     d = Pythagoras(Deconv_Vold, Deconv_V); 
     Converge.push_back(d);  
-    //if (d_old - d == 1e-8){break;} 
+    if (d_old - d == 1e-8){break;} 
   }
   
   // Find the bin where the X axis is 0 
@@ -299,32 +300,14 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   return Converge;
 }
 
+void MultiThreadingDeconvolution(std::vector<TH1F*> Data, std::vector<TH1F*> PSF, std::vector<TH1F*> Result, int Iter)
+{
 
+  std::vector<std::thread> th; 
+  for (int i(0); i < PSF.size(); i++){th.push_back(std::thread(Deconvolution, Data[i], PSF[i], Result[i], Iter));}
+  for (std::thread &t : th){t.join();}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
 
 
 
