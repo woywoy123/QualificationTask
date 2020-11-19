@@ -104,7 +104,7 @@ void Convolution(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
     H2[i+Padding] = Hist2 -> GetBinContent(i+1);   
   }
 
-  std::vector<float> Conv = ConvolutionFFT(H1, H2, ZeroPointBin + Padding); 
+  std::vector<float> Conv = ConvolutionSum(H1, H2, ZeroPointBin + Padding); 
 
   for ( int i(0); i < bins; i++)
   {
@@ -113,9 +113,99 @@ void Convolution(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
 }
 
 
+// ======================== Experimental Branch ======================================= //
+std::vector<float> ConvolutionSum(std::vector<float> V1, std::vector<float> V2, int ZeroPointBin)
+{
+  int n = V1.size(); 
+  std::vector<float> conv(2*n, 0); 
+
+  for (int i(0); i < 2*n; i++)
+  {
+    for (int k(0); i - k >= 0; k++)
+    {
+      if (k >= n || i - k >= n){continue;}
+      conv[i] += V1[i-k] * V2[k]; 
+    }
+  }
+  std::vector<float> result( conv.begin() + ZeroPointBin, conv.begin() + n + ZeroPointBin); 
+  return result; 
+}
+
+void ConvolutionExperimental(TH1F* PDF, TH1F* PSF, TH1F* conv)
+{
+  int pdf_bins = PDF -> GetNbinsX(); 
+  int psf_bins = PSF -> GetNbinsX(); 
+
+  // Domain of PDF and PSF 
+  float pdf_min = PDF -> GetXaxis() -> GetXmin(); 
+  float pdf_max = PDF -> GetXaxis() -> GetXmax(); 
+  float psf_min = PSF -> GetXaxis() -> GetXmin();  
+  float psf_max = PSF -> GetXaxis() -> GetXmax(); 
+
+  // Make sure the bin widths are equal before proceeding 
+  float width_pdf = (pdf_max - pdf_min) / float(pdf_bins);   
+  float width_psf = (psf_max - psf_min) / float(psf_bins); 
+
+  // Unify their domains by finding the max and mins of the two distributions 
+  float domain_min; 
+  float domain_max; 
+  if (pdf_min < psf_min){domain_min = pdf_min;}
+  else { domain_min = psf_min; }
+
+  if (pdf_max > psf_max){domain_max = pdf_max;}
+  else { domain_max = psf_max; }
+
+  // Create the new histograms for the new domain definition 
+  int bins = (domain_max - domain_min)/width_psf; 
+
+  // Create unique names for these hists for multithreading  
+  TString unique = PDF -> GetTitle(); unique += ("_"); unique += (PSF -> GetTitle()); unique += ("_"); 
+  TH1F* H1 = new TH1F(unique + "H1", unique + "H1", bins, domain_min, domain_max); 
+  TH1F* H2 = new TH1F(unique + "H2", unique + "H2", bins, domain_min, domain_max); 
+
+  // Find the zero bin position of both histograms 
+  int psf_0 = PSF -> GetXaxis() -> FindBin(0.) -1;  
+  int pdf_0 = PDF -> GetXaxis() -> FindBin(0.) -1;  
+  int bin_0 = H1 -> GetXaxis() -> FindBin(0.) - 1; 
+
+  // Create iterators 
+  int i_psf = 0; 
+  int i_pdf = 0; 
+  for (int i(0); i < bins; i++)
+  {
+    int d_bin_0 = bin_0 - i; 
+
+    // Fill histogram based on PSF
+    if (d_bin_0 <= psf_0)
+    {
+      H1 -> SetBinContent(i+1, PSF -> GetBinContent(i_psf+1)); 
+      i_psf++;
+    } 
+
+    // Fill histogram based on PDF
+    if (d_bin_0 <= pdf_0)
+    {
+      H2 -> SetBinContent(i+1, PDF -> GetBinContent(i_pdf+1)); 
+      i_pdf++;
+    } 
+  }
+
+  // Convert histograms to vectors
+  std::vector<float> PSF_V = ToVector(H1);
+  std::vector<float> PDF_V = ToVector(H2); 
+  std::vector<float> Conv = ConvolutionSum(PDF_V, PSF_V, bin_0); 
+  
+  for (int i(0); i < pdf_bins; i++)
+  {   
+    conv -> SetBinContent(i+1, Conv.at(psf_0 - pdf_0 + i)); 
+  }
+
+  delete H1; 
+  delete H2; 
+}
 
 // ============================ Deconvolution Stuff ======================== //
-std::vector<float> LucyRichardson(std::vector<float> data, std::vector<float> current, std::vector<float> psf, float damp)
+std::vector<float> LucyRichardson(std::vector<float> data, std::vector<float> psf, std::vector<float> current, float damp)
 {
   float offset = (data.size() - current.size())/2; 
   std::vector<float> next(current.size(), 0); 
@@ -133,10 +223,10 @@ std::vector<float> LucyRichardson(std::vector<float> data, std::vector<float> cu
       }
       if (c_j != 0)
       {
-        sum_j += data[j] / (c_j * psf[j-i]);
+        sum_j += data[j] / c_j * psf[j-i];
       }
     }
-    next[i] = current[i] + (1+damp*(sum_j-1)); 
+    next[i] = current[i] * (1+damp*(sum_j-1)); 
     if (next[i] < 0. || std::isnan(next[i]) || std::isinf(next[i]) ){next[i] = 0.;}
   }
   return next;
@@ -210,9 +300,21 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   }
   
   // Convert histograms to vectors
-  std::vector<float> PSF_V = ToVector(H1);
-  std::vector<float> PDF_V = ToVector(H2); 
-  std::vector<float> Deconv_V(bins, 0.5);
+  std::vector<float> Temp1 = ToVector(H1); 
+  std::vector<float> Temp2 = ToVector(H2);
+  std::vector<float> PSF_V;  
+  std::vector<float> PDF_V; 
+  
+  for ( int i(0); i < bins*2; i++)
+  { 
+    if (i < bins){ PSF_V.push_back(Temp1.at(i)); }
+    else { PSF_V.push_back(0.); }
+
+    if (i >= bins ){ PDF_V.push_back(Temp2.at(i-bins)); }
+    else { PDF_V.push_back(0.); }
+  } 
+   
+  std::vector<float> Deconv_V(bins*2, 0.5);
   float d_old = 100; 
   float d = 100; 
 
@@ -220,29 +322,30 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   {
     d_old = d; 
     std::vector<float> Deconv_Vold = Deconv_V; 
-    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 0.75); 
+    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 1); 
 
     d = Pythagoras(Deconv_Vold, Deconv_V); 
     Converge.push_back(d);  
-    if (d_old - d == 1e-8){break;} 
+    //if (d_old - d == 1e-8){break;} 
   }
+ 
+  TH1F* Deconv_H = new TH1F(unique + "Deconv", unique + "Deconv", 2*bins, domain_min*2, domain_max*2);
+  Deconv_H -> SetLineStyle(kDashed); 
+  for (int i(0); i < Deconv_V.size(); i++){Deconv_H -> SetBinContent(i + 1, Deconv_V[i]); }
   
-  TH1F* Deconv_H = new TH1F(unique + "Deconv", unique + "Deconv", bins, domain_min, domain_max);
-  ToTH1F(Deconv_V, Deconv_H); 
-  Output -> Add(Deconv_H);   
-
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-  //Deconv_H -> Draw("HIST*"); 
-  H1 -> Draw("SAMEHIST-"); 
-  H2 -> Draw("SAMEHIST"); 
-  can -> Print("debug.pdf"); 
-
-
+  // Find the bin where the X axis is 0 
+  int decon_0 = Deconv_H -> GetXaxis() -> FindBin(0.)-1; 
+  int out_0 = Output -> GetXaxis() -> FindBin(0.)-1;  
+  
+  // Populate the output  
+  for (int i(0); i < Deconv_V.size(); i++)
+  {
+    Output -> SetBinContent(out_0 - decon_0 +i+1, Deconv_V[i]); 
+  }
   
   delete H1; 
   delete H2;  
-  delete Deconv_H;  
+  delete Deconv_H; 
   return Converge;
 }
 

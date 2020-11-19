@@ -16,6 +16,14 @@ std::vector<float> ConvolutionFFT(std::vector<float> V1, std::vector<float> V2, 
 void Convolution(TH1F* H1, TH1F* H2, TH1F* Out); 
 void ResidualRemove(TH1F* Hist); 
 
+
+std::vector<float> ConvolutionSum(std::vector<float> V1, std::vector<float> V2, int ZeroPointBin); 
+void ConvolutionExperimental(TH1F* H1, TH1F* H2, TH1F* Out); 
+
+
+
+
+
 // Deconvolution 
 std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y); 
 std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter); 

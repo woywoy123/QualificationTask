@@ -73,10 +73,7 @@ void ToTH1F(std::vector<float> Input, TH1F* Hist)
   {
     Hist -> SetBinContent(i+1, Input[i]); 
   }
-
 }
-
-
 
 // Shift a histogram using bins 
 void Shift(TH1F* Hist, int shift)

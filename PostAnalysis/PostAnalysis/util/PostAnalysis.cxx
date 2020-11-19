@@ -13,8 +13,8 @@ int main(int argc, char** argv)
     //PlotGaussian(); 
     //PlotGaussianXGaussian();
     //PlotLandauXLandau(); 
-    PlotLandauXGaussian(); 
-    //PlotDeconvGausXGaus(); 
+    //PlotLandauXGaussian(); 
+    PlotDeconvGausXGaus(); 
     //PlotDeconvLandauXLandau(); // <--- needs fixing 
     //PlotDeconvLandauXGaussian(); 
     
