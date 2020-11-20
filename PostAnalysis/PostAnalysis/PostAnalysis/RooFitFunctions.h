@@ -1,15 +1,19 @@
 #ifndef ROOFITFUNCTIONS_H
-#define ROOTIFTFUNCTION_H
+#define ROOFITFUNCTIONS_H
 
 #include<PostAnalysis/BaseFunctions.h>
 #include<PostAnalysis/Convolution.h>
+#include<PostAnalysis/Plotting.h>
 #include<RooRealVar.h>
+#include<RooGaussian.h>
+#include<RooFFTConvPdf.h>
+#include<RooDataHist.h>
+#include<RooAddPdf.h>
+#include<PostAnalysis/DistributionGenerator.h>
 
 
 
-
-
-void FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H); 
+std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params); 
 
 
 #endif

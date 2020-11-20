@@ -316,13 +316,161 @@ void PlotDeconvLandauXGaussian()
   can -> Print("DeconvLandauXGaussian.pdf]");
 }
 
+void PlotGaussianDeconvolutionFit()
+{
+  int bins = 100; 
+  float min = -8; 
+  float max = 8; 
+  float mean = 0; 
+  float stdev = 1; 
+
+  // Define the Gaussians 
+  TH1F* Gaussian1 = Gaussian(mean, stdev, bins, min, max, "Original1"); 
+  TH1F* Gaussian2 = Gaussian(mean+mean, stdev*sqrt(2), bins, min, max, "Target"); 
+  for (int i(0); i < bins; i++)
+  {
+    Gaussian2 -> SetBinError(i+1, 1e-9); 
+  }
+
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-1}; 
+  Params["m_e"] = {1}; 
+  Params["s_s"] = {0.1}; 
+  Params["s_e"] = {2}; 
+  std::vector<TH1F*> H = FitDeconvolution(Gaussian2, {Gaussian1}, Params); 
+  TCanvas* can = new TCanvas(); 
+  RatioPlot(Gaussian2, H[0], can); 
+  can -> Print("GaussianDeconvolutionFit.pdf"); 
+  Stats({Gaussian2}, {H[0]}); 
+}
+
+void PlotLandauXGausFit()
+{
+  int bins = 1000; 
+  float min = -2; 
+  float max = 20; 
+  float mean = 0; 
+  float stdev = 0.5; 
+
+  std::vector<float> LandauParams = {1, 0.9, 0.1}; 
+  std::vector<float> COMP = {1, 1, 1, 1}; 
+
+  // Define the Landaus    
+  std::vector<TString> Names = {"Landau1", "Landau2", "Landau3", "Landau4"};
+  std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 5000000, bins, min, max); 
+  TH1F* Gaussian1 = Gaussian(mean, stdev, bins, min, max, "Original1"); 
+  
+  // Data 
+  TH1F* FakeData = (TH1F*)Gen_Landau[0] -> Clone("Data"); 
+  FakeData -> SetTitle("Data"); 
+  FakeData -> Reset(); 
+  FakeData -> Add(Gen_Landau[0]);
+  Convolution(FakeData, Gaussian1, FakeData);  
+   
+  for (int i(0); i < bins; i++)
+  {
+    FakeData -> SetBinError(i+1, 1e-9); 
+  }
+
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-1, -1, -1, -1}; 
+  Params["m_e"] = {1, 1, 1, 1}; 
+  Params["s_s"] = {0.001, 0.001, 0.001, 0.001}; 
+  Params["s_e"] = {2, 2, 2, 2}; 
+  std::vector<TH1F*> H = FitDeconvolution(FakeData, Gen_Landau, Params); 
+  TCanvas* can = new TCanvas(); 
+  RatioPlot(FakeData, H[0], can); 
+  can -> Print("LandauXGaussianFit.pdf"); 
+  Stats({FakeData}, {H[0]}); 
+}
+
+void PlotNLandauXNGausFit()
+{
+  
+  int bins = 1000; 
+  float min = -2; 
+  float max = 20;
+  int Iters = 10; 
+  float centering = (max-min)/float(bins);
+ 
+  std::vector<float> LandauParams = {1, 0.9, 0.1}; 
+  std::vector<float> COMP = {0.6, 0.3, 0.05, 0.05}; 
+
+  // Define the Landaus    
+  std::vector<TString> Names = {"Landau1", "Landau2", "Landau3", "Landau4"};
+  std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 5000000, bins, min, max); 
+
+  // Define the Gaussians 
+  TH1F* Gaussian1 = Gaussian(0, 0.2, bins, min, max, "Original1"); 
+  TH1F* Gaussian2 = Gaussian(0, 0.2, bins, min, max, "Original2"); 
+  TH1F* Gaussian3 = Gaussian(0, 0.2, bins, min, max, "Original3"); 
+  TH1F* Gaussian4 = Gaussian(0, 0.2, bins, min, max, "Original4"); 
+  std::vector<TH1F*> PSF_Original = {Gaussian1, Gaussian2, Gaussian3, Gaussian4}; 
+
+  // Create multiple data samples with an underlying Gaussian convolved Landau and stack them. < =============== Continue here  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Create a fake dataset by overlaying multiple Landaus 
+  TH1F* Data = new TH1F("Data", "Data", bins, min-centering/2, max - centering/2); 
+  Data -> Add(Gen_Landau[0]); 
+  Data -> Add(Gen_Landau[1]); 
+  Data -> Add(Gen_Landau[2]); 
+  Data -> Add(Gen_Landau[3]); 
+
+  // Deconvolved PDFs
+  std::vector<TString> Name_Conv = {"Landau1_D", "Landau2_D", "Landau3_D", "Landau4_D"};
+  std::vector<TH1F*> D_PDFs = MakeTH1F(Name_Conv, bins, min-centering/2, max-centering/2);
+  
+  // Deconvolve the "PDFs" with the Gaussian 
+  MultiThreadingDeconvolution(Gen_Landau, PSF_Original, D_PDFs, Iters); 
+  
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+  can -> Print("DeconvolutionFit.pdf["); 
+  for (int i(0); i < Gen_Landau.size(); i++)
+  {
+    Gen_Landau[i] -> SetLineColor(kRed); 
+    Gen_Landau[i] -> Draw("HIST"); 
+    D_PDFs[i] -> Draw("SAMEHIST");   
+    PSF_Original[i] -> SetLineColor(kRed); 
+    PSF_Original[i] -> SetLineStyle(kRed); 
+    PSF_Original[i] -> Draw("SAMEHIST"); 
+
+    can -> Print("DeconvolutionFit.pdf"); 
+    can -> Clear();  
+  }
+
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-1, -1, -1, -1}; 
+  Params["m_e"] = {1, 1, 1, 1}; 
+  Params["s_s"] = {0.05, 0.05, 0.05, 0.05};
+  Params["s_e"] = {1, 1, 1, 1};  
+  FitDeconvolution(Data, D_PDFs, Params);
+  can -> Print("DeconvolutionFit.pdf]"); 
+}
+
 void PlotDeconvolutionFit()
 {
   
-  int bins = 300; 
+  int bins = 1000; 
   float min = -2; 
-  float max = 22;
-  int Iters = 200; 
+  float max = 20;
+  int Iters = 10; 
   float centering = (max-min)/float(bins);
  
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
@@ -369,20 +517,11 @@ void PlotDeconvolutionFit()
     can -> Clear();  
   }
 
-  FitDeconvolution(Data, D_PDFs);
-
-
-
-
-
-
-
-
-
-
-
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-1, -1, -1, -1}; 
+  Params["m_e"] = {1, 1, 1, 1}; 
+  Params["s_s"] = {0.05, 0.05, 0.05, 0.05};
+  Params["s_e"] = {1, 1, 1, 1};  
+  FitDeconvolution(Data, D_PDFs, Params);
   can -> Print("DeconvolutionFit.pdf]"); 
-
-
-
 }

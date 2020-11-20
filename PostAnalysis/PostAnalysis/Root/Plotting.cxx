@@ -43,18 +43,9 @@ void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
 
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 {
-  TString name = H1 -> GetTitle(); name += ("_"); name += H2 -> GetTitle(); 
+  TString name = H1 -> GetTitle(); name += ("/"); name += H2 -> GetTitle(); 
   TH1F* Ratio = (TH1F*)H1 -> Clone(name);
-  Ratio -> Clear();  
-  for (int i(0); i < H1 -> GetNbinsX(); i++)
-  {
-    float e1 = H1 -> GetBinContent(i+1); 
-    float e2 = H2 -> GetBinContent(i+1); 
-    float r; 
-    if (e2 != 0){r = e1/e2;}
-    else {r = 1; }
-    Ratio -> SetBinContent(i+1, r); 
-  }
+  Ratio -> Divide(H2); 
   gStyle -> SetOptStat(0); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
 	H1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^2]");
@@ -62,8 +53,8 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
   P1 -> Draw(); 
   P1 -> cd(); 
-  P1 -> SetLogy(); 
-  H1 -> GetYaxis() -> SetRangeUser(1e-6, 2 * H1 -> Integral());
+  //P1 -> SetLogy(); 
+  //H1 -> GetYaxis() -> SetRangeUser(1e-6,  * H1 -> Integral());
   H1 -> SetLineColor(kBlack); 
   H1 -> Draw("HIST"); 
   len -> AddEntry(H1, H1 -> GetTitle() ); 
@@ -82,3 +73,33 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   Ratio -> SetLineColor(kBlack); 
   Ratio -> Draw("HIST"); 
 }
+
+void PlotRooFit(RooAddPdf model, RooRealVar* Domain, RooDataHist* Data)
+{
+  RooPlot* xframe = Domain -> frame(RooFit::Title("Figure")); 
+  Data -> plotOn(xframe, RooFit::Name("Data")); 
+  model.plotOn(xframe); 
+  TCanvas* can = new TCanvas(); 
+  gPad -> SetLogy(); 
+  xframe -> SetMinimum(1); 
+  xframe -> Draw(); 
+  can -> Update();
+  can -> Print("debug.pdf"); 
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

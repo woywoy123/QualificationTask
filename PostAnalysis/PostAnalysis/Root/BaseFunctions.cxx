@@ -103,12 +103,7 @@ std::vector<TString> NameGenerator(int number, TString shorty)
     Output.push_back(name); 
   }
   return Output; 
-
 }
-
-
-
-
 
 // Benchmark function 
 float Pythagoras(std::vector<float> v1, std::vector<float> v2)

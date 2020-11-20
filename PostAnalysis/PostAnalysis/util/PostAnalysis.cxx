@@ -17,7 +17,10 @@ int main(int argc, char** argv)
     //PlotDeconvGausXGaus(); 
     //PlotDeconvLandauXLandau(); 
     //PlotDeconvLandauXGaussian(); 
-    PlotDeconvolutionFit();  
+    //PlotGaussianDeconvolutionFit(); 
+    //PlotLandauXGausFit(); 
+    PlotNLandauXNGausFit();
+    //PlotDeconvolutionFit();  
   }
 
   // Produce Presentation Figures
