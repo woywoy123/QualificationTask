@@ -4,8 +4,49 @@
 #include<PostAnalysis/DistributionGenerator.h>
 #include<PostAnalysis/BaseFunctions.h>
 
-void GaussianXGaussian()
+void FigureCompiler(TFile* F)
 {
+
+  // Get all the Histogram names in the file, including the directories 
+  std::map<TString, std::vector<TString>> Map; 
+  for (TObject* key : *F -> GetListOfKeys())
+  {
+    auto k = dynamic_cast<TKey*>(key);
+    std::cout << k -> GetName() << "  " << k -> GetClassName() << std::endl;
+    Map[(TString)k -> GetName()] = {}; 
+
+  
+  
+  
+   
+  }
+
+
+
+
+
+
+  //// GaussianXGaussian Figures
+  //if ( Directory(F, "GaussianXGaussian") == true )
+  //{
+  //  F -> cd("GaussianXGaussian"); 
+  //  TH1F* G1 = (TH1F*)gDirectory -> Get("Gaussian_1"); 
+  //  TH1F*
+
+  //}
+
+
+
+
+
+
+
+}
+
+void GaussianXGaussian(TFile* F)
+{
+  F -> mkdir("GaussianXGaussian"); 
+  F -> cd("GaussianXGaussian");  
   int bins = 100; 
   float stdev = 0.5; 
   float mean = -1; 
@@ -15,28 +56,31 @@ void GaussianXGaussian()
   // Generate Gaussian histograms 
   TH1F* Gaus1 = Gaussian(mean, stdev, bins, min, max, "1"); 
   TH1F* Gaus2 = Gaussian(mean+mean, stdev*sqrt(2), bins, min, max, "2");
+
+  // Define the titles of the histograms  
+  TString n1 = "Analytical - M: "; n1 += (mean); n1 += (" STDEV: "); n1 += (stdev);  
+  TString n2 = "Analytical - M: "; n2 += (mean+mean); n2 += (" STDEV: "); n2 += (stdev*sqrt(2));  
   
-  TCanvas* can = new TCanvas(); 
-  can -> Print("Gaussian_Convolution_Test.pdf["); 
-  PlotHists({Gaus1, Gaus2}, {"Analytical_Gaussian_Mean_-1_Stdev_0.5", "Analytical_Gaussian_Mean_-2_Stdev_0.7071"}, can);
-  can -> Print("Gaussian_Convolution_Test.pdf");
-  can -> Clear();
+  // Set the titles on the histograms 
+  Gaus1 -> SetTitle(n1); 
+  Gaus2 -> SetTitle(n2); 
 
-  // Create the Gaussian for the convolution test and the output 
-  TH1F* Gaus_Test = Gaussian(mean, stdev, bins, min, max, "Convolution"); 
-  TH1F* Conv_Gaus = Gaussian(0, 0.1, bins, min, max, "ConvolutionResult"); 
+  // Write to file 
+  Gaus1 -> Write();
+  Gaus2 -> Write(); 
+   
+  // Create a solution TH1F
+  TH1F* Solution = (TH1F*)Gaus1 -> Clone("Convolved_Result"); 
+  Solution -> Reset();  
+  Solution -> SetTitle("Convolution Output"); 
+   
+  // Perform the Convolution with Gaus1
+  Convolution(Gaus1, Gaus1, Solution); 
+  
+  // Write solution to file 
+  Solution -> Write();  
 
-  // Perform the convolution 
-  Convolution(Gaus_Test, Gaus_Test, Conv_Gaus); 
-
-  // Normalize the histograms 
-  Conv_Gaus -> Draw("HIST*");
-  Normalize(Conv_Gaus);
-  Normalize(Gaus2); 
-
-  PlotHists({Conv_Gaus, Gaus2}, {"Gaussian_FFTConvolved", "Analytical_Gaussian_Target"}, can);
-  can -> Print("Gaussian_Convolution_Test.pdf"); 
-  can -> Print("Gaussian_Convolution_Test.pdf]"); 
+  F -> cd(); 
 } 
 
 void LandauXLandau()

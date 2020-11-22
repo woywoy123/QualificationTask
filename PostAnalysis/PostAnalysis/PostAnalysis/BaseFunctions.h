@@ -4,6 +4,7 @@
 #include<TString.h>
 #include<TH1F.h>
 #include<iostream> 
+#include<PostAnalysis/Plotting.h>
 
 // Histogram Generators
 std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, float max, TString Extension = "");
@@ -26,6 +27,9 @@ void ToTH1F(std::vector<float> Input, TH1F* Hist);
 
 // Benchmarking 
 float Pythagoras(std::vector<float> v1, std::vector<float> v2); 
-float SquareError(TH1F* Hist1, TH1F* Hist2); 
-void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2);
+float SquareError(TH1F* Hist1, TH1F* Hist2, float x_min = 0, float x_max = 0);  
+void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2, float x_min = 0, float x_max = 0);
+
+// Plot and Benchmark together 
+void PlotAndBenchmark(std::vector<TH1F*> H1, std::vector<TH1F*> H2, TString Name, TCanvas* can, float x_min = 0, float x_max = 0); 
 #endif

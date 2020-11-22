@@ -117,12 +117,20 @@ float Pythagoras(std::vector<float> v1, std::vector<float> v2)
   return pow(sum, 0.5); 
 }
 
-float SquareError(TH1F* Hist1, TH1F* Hist2)
+float SquareError(TH1F* Hist1, TH1F* Hist2, float x_min, float x_max)
 {
   int bins = Hist1 -> GetNbinsX(); 
+  int bin_min = Hist1 -> GetXaxis() -> FindBin(x_min);
+  int bin_max = Hist1 -> GetXaxis() -> FindBin(x_max);
   
+  if (x_min == x_max)
+  {
+    bin_min = 0; 
+    bin_max = bins; 
+  }
+ 
   std::vector<float> v1, v2; 
-  for (int i(0); i < bins; i++)
+  for (int i(bin_min); i < bin_max; i++)
   {
     v1.push_back(Hist1 -> GetBinContent(i+1)); 
     v2.push_back(Hist2 -> GetBinContent(i+1)); 
@@ -131,16 +139,31 @@ float SquareError(TH1F* Hist1, TH1F* Hist2)
 }
 
 // Benchmark function 
-void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2)
+void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2, float x_min, float x_max)
 {
   std::cout << std::endl;
   for (int i(0); i < Hists1.size(); i++)
   {
     TString n1 = Hists1[i] -> GetTitle(); 
     TString n2 = Hists2[i] -> GetTitle(); 
-    float er = SquareError(Hists1[i], Hists2[i]); 
-    float ks = Hists1[i] -> KolmogorovTest(Hists2[i]);
+    float er = SquareError(Hists1[i], Hists2[i], x_min, x_max); 
+    float ks = Hists1[i] -> KolmogorovTest(Hists2[i], "X");
     std::cout << "Histogram: " << n1 << " Matched with Histogram: " << n2 << " Square Root Error: " << er << " Kalmogorov: " << ks << std::endl;
   }
 }
 
+// Plot and benchmark
+void PlotAndBenchmark(std::vector<TH1F*> H1, std::vector<TH1F*> H2, TString Name, TCanvas* can, float x_min, float x_max)
+{
+  for (int i(0); i < H2.size(); i++)
+  {
+    can -> SetLogy();
+    RatioPlot(H1[i], H2[i], can); 
+    can -> Print(Name);
+    can -> Clear();
+  }
+
+  Stats(H1, H2, x_min, x_max); 
+
+
+}

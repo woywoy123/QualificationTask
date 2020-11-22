@@ -284,7 +284,7 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
 
     d = Pythagoras(Deconv_Vold, Deconv_V); 
     Converge.push_back(d);  
-    if (d_old - d == 1e-8){break;} 
+    //if (d_old - d == 1e-8){break;} 
   }
   
   // Find the bin where the X axis is 0 

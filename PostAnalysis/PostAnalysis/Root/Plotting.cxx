@@ -41,21 +41,43 @@ void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
   Populate(Hists, can, len, kSolid); 
 }
 
+void PlotHists(TH1F* Data, std::vector<TH1F*> Hists, TCanvas* can)
+{
+  gStyle -> SetOptStat(0); 
+  Data -> SetLineColor(kBlack); 
+  Data -> GetYaxis() -> SetRangeUser(0.1, Data -> Integral());
+  Data -> Draw("HIST"); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  Populate(Hists, can, len, kSolid); 
+}
+
+void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can)
+{
+  can -> Clear();
+  gStyle -> SetOptStat(0); 
+  Data -> GetYaxis() -> SetRangeUser(1, Data -> Integral());
+  Data -> Draw("HIST"); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  Populate(truth, can, len, kSolid); 
+  Populate(prediction, can, len, kDashed); 
+}
+
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 {
-  TString name = H1 -> GetTitle(); name += ("/"); name += H2 -> GetTitle(); 
+  TString name = "Ratio Plot: "; name += (H1 -> GetTitle()); name += ("/"); name += H2 -> GetTitle(); 
   TH1F* Ratio = (TH1F*)H1 -> Clone(name);
+  Ratio -> SetTitle(name);
   Ratio -> Divide(H2); 
   gStyle -> SetOptStat(0); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
 	H1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^2]");
 
+  int m_bin = H1 -> GetMaximumBin(); 
   TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
   P1 -> Draw(); 
   P1 -> cd(); 
-  //P1 -> SetLogy(); 
-  //H1 -> GetYaxis() -> SetRangeUser(1e-6,  * H1 -> Integral());
   H1 -> SetLineColor(kBlack); 
+  H1 -> GetYaxis() -> SetRangeUser(1, H1 -> GetBinContent(m_bin+1));
   H1 -> Draw("HIST"); 
   len -> AddEntry(H1, H1 -> GetTitle() ); 
   len -> Draw("SAME");
@@ -70,8 +92,10 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   P2 -> Draw();
   P2 -> cd(); 
 	Ratio -> SetStats(0); 
-  Ratio -> SetLineColor(kBlack); 
-  Ratio -> Draw("HIST"); 
+  Ratio -> SetLineColor(kWhite);
+  Ratio -> GetYaxis() -> SetRangeUser(0.5, 1.5);
+  Ratio -> SetMarkerSize(1); 
+  Ratio -> Draw("epl"); 
 }
 
 void PlotRooFit(RooAddPdf model, RooRealVar* Domain, RooDataHist* Data)
@@ -85,10 +109,7 @@ void PlotRooFit(RooAddPdf model, RooRealVar* Domain, RooDataHist* Data)
   xframe -> Draw(); 
   can -> Update();
   can -> Print("debug.pdf"); 
-
 }
-
-
 
 
 

@@ -1,7 +1,12 @@
 #ifndef PRESENTATIONFIGURES_H
 #define PRESENTATIONFIGURES_H
+#include<TFile.h>
+#include<TKey.h>
 
-void GaussianXGaussian(); 
+void FigureCompiler(TFile* F); 
+
+void GaussianXGaussian(TFile* F); 
 void LandauXLandau(); 
+
 
 #endif

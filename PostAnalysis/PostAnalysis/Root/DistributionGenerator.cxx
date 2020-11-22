@@ -36,7 +36,7 @@ TH1F* Gaussian(float mean, float stdev, int bins, float min, float max, TString 
   max -= Bin_Width*0.5; 
   
   // Create a title for the histogram   
-  TString name = "Gaussian_"; name += (mean); name +=("_"); name += (stdev); name += ("_"); name += (Extension); 
+  TString name = "Gaussian_"; name += (Extension); 
   TH1F* Gaus = new TH1F(name, name, bins, min, max); 
   
   TF1* g = new TF1("gaus", "gaus", min, max); 

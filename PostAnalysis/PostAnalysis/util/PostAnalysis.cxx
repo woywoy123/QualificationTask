@@ -1,10 +1,22 @@
 #include<PostAnalysis/BaseFunctionTest.h>
 #include<PostAnalysis/Experimental.h>
 #include<PostAnalysis/PresentationFigures.h>
+#include<TFile.h>
 
 int main(int argc, char** argv)
 {
-  int option = -1;
+  bool rewrite = true; 
+  int option = -2;
+
+  TFile* F; 
+  if (rewrite == true)
+  {
+    F = new TFile("output.root", "RECREATE"); 
+  }
+  else 
+  {
+    F = new TFile("output.root", "READ"); 
+  }
 
   // Run Tests 
   if (option == -1)
@@ -19,14 +31,14 @@ int main(int argc, char** argv)
     //PlotDeconvLandauXGaussian(); 
     //PlotGaussianDeconvolutionFit(); 
     //PlotLandauXGausFit(); 
-    PlotNLandauXNGausFit();
+    //PlotNLandauXNGausFit();
     //PlotDeconvolutionFit();  
   }
 
   // Produce Presentation Figures
   if (option == -2)
   {
-    GaussianXGaussian(); 
+    GaussianXGaussian(F); 
     LandauXLandau(); 
   }
 
@@ -34,8 +46,18 @@ int main(int argc, char** argv)
   if (option == -3)
   {
   }
+ 
+  // Compile the figures  
+  FigureCompiler(&(*F));   
+ 
+ 
+ 
+ 
+ 
+ 
+ 
   
-  
+  F -> Close();   
   
   std::cout << "fin" << std::endl;
   return 0; 

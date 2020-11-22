@@ -51,7 +51,7 @@ std::vector<RooFFTConvPdf*> RooFFTVariables(std::vector<TString> Names, RooRealV
   return Out; 
 }
 
-std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params)
+std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache, int cache)
 {
   // First we get the domain of the Data histogram we are fitting 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
@@ -72,11 +72,11 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   std::vector<TString> m_N = NameGenerator(n_vars, "_m"); 
 
   // Declare the domain using RooVariables 
-  RooRealVar* x =  new RooRealVar("x", "x", x_min, x_max); 
-  //x -> setRange("fit", -0.5, 18); 
-  x -> setBins(10000, "cache"); 
-  x -> setBins(10000, "fft"); 
-  
+  RooRealVar* x =  new RooRealVar("x", "x", x_min, x_max);
+  x -> setRange("fit", Params["x_range"][0], Params["x_range"][1]); 
+  if (fft_cache != 0){x -> setBins(fft_cache, "fft");}
+  if (cache != 0){ x -> setBins(cache, "cache");}
+   
   // Declare the gaussian variables used to conduct the fit 
   std::vector<RooRealVar*> s_vars = RooVariables(s_N, s_s, s_e); 
   std::vector<RooRealVar*> m_vars = RooVariables(m_N, m_s, m_e);
@@ -88,7 +88,7 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   // Create the Luminosity variables for the fit
   std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
   std::vector<float> l_s(n_vars, 1); 
-  std::vector<float> l_e(n_vars, 3 * Data -> Integral());  
+  std::vector<float> l_e(n_vars, 1.5 * Data -> Integral());  
   std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
   
   // Convert the PDFs to RooPDFs
@@ -110,7 +110,7 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
-  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(8), RooFit::Range("fit")); 
+  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(4), RooFit::Range("fit")); 
   PlotRooFit(model, x, D);  
 
   // Create a histogram vector to store the solution 
