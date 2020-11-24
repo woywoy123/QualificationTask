@@ -72,12 +72,11 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
 	H1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^2]");
 
-  int m_bin = H1 -> GetMaximumBin(); 
   TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
   P1 -> Draw(); 
   P1 -> cd(); 
   H1 -> SetLineColor(kBlack); 
-  H1 -> GetYaxis() -> SetRangeUser(1, H1 -> GetBinContent(m_bin+1));
+  H1 -> GetYaxis() -> SetRangeUser(1, 2*GetMaxValue(H1));
   H1 -> Draw("HIST"); 
   len -> AddEntry(H1, H1 -> GetTitle() ); 
   len -> Draw("SAME");
@@ -111,9 +110,74 @@ void PlotRooFit(RooAddPdf model, RooRealVar* Domain, RooDataHist* Data)
   can -> Print("debug.pdf"); 
 }
 
+// ====================== Proper histogram plotting for the presentation ======================== //
+void GeneratePlot(TH1F* H, TString Title, TCanvas* can, Color_t color, ELineStyle style, TString DrawOption, float Intensity)
+{
+  gStyle -> SetOptStat(0); 
+  if (Title != "")
+  {
+    H -> SetTitle(Title); 
+  }
+  H -> SetLineColor(color); 
+  H -> SetLineColorAlpha(color, Intensity); 
+  H -> SetLineStyle(style); 
+  H -> SetLineWidth(1); 
+  H -> Draw(DrawOption);
+  can -> Update();  
+}
 
+TLegend* GenerateLegend(std::vector<TH1F*> Hist_V, TCanvas* can)
+{
+  TLegend* len = new TLegend(0.9, 0.9, 0.5, 0.8); 
+  for (TH1F* H : Hist_V)
+  {
+    len -> AddEntry(H); 
+  }
+  len -> Draw("SAME");
+  can -> Update(); 
+  return len; 
+}
 
+void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString Xaxis)
+{
+  TString name = "Ratio Plot: "; name += (H1 -> GetTitle()); name += (" / "); name += H2 -> GetTitle(); 
+  TH1F* Ratio = (TH1F*)H1 -> Clone(name);
+  Ratio -> SetTitle(name);
+  Ratio -> Divide(H2); 
+  gStyle -> SetOptStat(0); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.5, 0.8); 
 
+  TH1F* Empty = (TH1F*)H1 -> Clone("empty"); 
+  Empty -> Reset();
+  Empty -> SetTitle(Title);
+  
+  len -> AddEntry(H1); 
+  len -> AddEntry(H2);  
+  
+  TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
+
+  if (Xaxis == "LOG"){P1 -> SetLogy(); }
+  else { Empty -> GetXaxis() -> SetTitle(Xaxis);}
+
+  P1 -> Draw(); 
+  P1 -> cd();
+  Empty -> Draw("HIST");   
+   
+  H1 -> Draw("SAMEHIST"); 
+  H2 -> Draw("SAMEHIST"); 
+  len -> Draw("SAME");  
+
+  can -> cd();
+
+  TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3);  
+  P2 -> Draw();
+  P2 -> cd(); 
+	Ratio -> SetStats(0); 
+  Ratio -> SetLineColor(kWhite);
+  Ratio -> GetYaxis() -> SetRangeUser(0.25, 1.75);
+  Ratio -> SetMarkerSize(1); 
+  Ratio -> Draw("epl"); 
+}
 
 
 

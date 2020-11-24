@@ -6,18 +6,19 @@
 #include<PostAnalysis/Plotting.h>
 #include<PostAnalysis/Convolution.h>
 #include<PostAnalysis/RooFitFunctions.h>
+#include<TFile.h>
 
-void PlotLandau(); 
-void PlotGaussian(); 
-void PlotGaussianXGaussian(); 
-void PlotLandauXLandau(); 
-void PlotLandauXGaussian();
-void PlotDeconvGausXGaus(); 
-void PlotDeconvLandauXLandau(); 
-void PlotDeconvLandauXGaussian(); 
-void PlotLandauXGausFit(); 
-void PlotNLandauXNGausFit(); 
-void PlotGaussianDeconvolutionFit(); 
-void PlotDeconvolutionFit(); 
+void TestLandau(TFile* F); 
+void TestGaussian(TFile* F); 
+void TestGaussianXGaussian(TFile* F); 
+void TestLandauXLandau(TFile* F); 
+void TestLandauXGaussian(TFile* F);
+void TestDeconvGausXGaus(TFile* F); 
+void TestDeconvLandauXLandau(TFile* F); 
+void TestDeconvLandauXGaussian(TFile* F); 
+void TestLandauXGausFit(TFile* F); 
+void TestNLandauXNGausFit(TFile* F); 
+void TestGaussianDeconvolutionFit(TFile* F); 
+void TestDeconvolutionFit(TFile* F); 
 
 #endif

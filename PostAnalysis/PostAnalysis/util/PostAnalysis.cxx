@@ -16,30 +16,24 @@ int main(int argc, char** argv)
   else 
   {
     F = new TFile("output.root", "READ"); 
+    option = -1;  
   }
 
   // Run Tests 
-  if (option == -1)
-  {
-    //PlotLandau(); 
-    //PlotGaussian(); 
-    //PlotGaussianXGaussian();
-    //PlotLandauXLandau(); 
-    //PlotLandauXGaussian(); 
-    //PlotDeconvGausXGaus(); 
-    //PlotDeconvLandauXLandau(); 
-    //PlotDeconvLandauXGaussian(); 
-    //PlotGaussianDeconvolutionFit(); 
-    //PlotLandauXGausFit(); 
-    //PlotNLandauXNGausFit();
-    //PlotDeconvolutionFit();  
-  }
-
-  // Produce Presentation Figures
   if (option == -2)
   {
-    GaussianXGaussian(F); 
-    LandauXLandau(); 
+    TestLandau(F); 
+    TestGaussian(F); 
+    TestGaussianXGaussian(F);
+    TestLandauXLandau(F); 
+    TestLandauXGaussian(F); 
+    TestDeconvGausXGaus(F); 
+    TestDeconvLandauXLandau(F); 
+    TestDeconvLandauXGaussian(F); 
+    TestGaussianDeconvolutionFit(F); 
+    TestLandauXGausFit(F); 
+    TestNLandauXNGausFit(F);
+    TestDeconvolutionFit(F);  
   }
 
   // Run Experimental
@@ -48,7 +42,7 @@ int main(int argc, char** argv)
   }
  
   // Compile the figures  
-  FigureCompiler(&(*F));   
+  FigureCompiler(F);   
  
  
  

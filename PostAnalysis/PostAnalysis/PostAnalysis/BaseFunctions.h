@@ -32,4 +32,8 @@ void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2, float x_min = 0
 
 // Plot and Benchmark together 
 void PlotAndBenchmark(std::vector<TH1F*> H1, std::vector<TH1F*> H2, TString Name, TCanvas* can, float x_min = 0, float x_max = 0); 
+
+// Simple repetitive functions 
+float GetMaxValue(TH1F* H); 
+void BulkWrite(std::vector<TH1F*> Hist_V); 
 #endif

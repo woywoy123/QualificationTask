@@ -147,7 +147,7 @@ void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2, float x_min, fl
     TString n1 = Hists1[i] -> GetTitle(); 
     TString n2 = Hists2[i] -> GetTitle(); 
     float er = SquareError(Hists1[i], Hists2[i], x_min, x_max); 
-    float ks = Hists1[i] -> KolmogorovTest(Hists2[i], "X");
+    float ks = Hists1[i] -> KolmogorovTest(Hists2[i]);
     std::cout << "Histogram: " << n1 << " Matched with Histogram: " << n2 << " Square Root Error: " << er << " Kalmogorov: " << ks << std::endl;
   }
 }
@@ -164,6 +164,19 @@ void PlotAndBenchmark(std::vector<TH1F*> H1, std::vector<TH1F*> H2, TString Name
   }
 
   Stats(H1, H2, x_min, x_max); 
+}
 
+float GetMaxValue(TH1F* H)
+{
+  int bin_m = H -> GetMaximumBin(); 
+  float v = H -> GetBinContent(bin_m+1); 
+  return v; 
+}
 
+void BulkWrite(std::vector<TH1F*> Hist_V)
+{
+  for (TH1F* H : Hist_V)
+  {
+    H -> Write(); 
+  }
 }

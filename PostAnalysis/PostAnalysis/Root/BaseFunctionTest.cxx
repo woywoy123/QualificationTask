@@ -1,7 +1,9 @@
 #include<PostAnalysis/BaseFunctionTest.h>
 
-void PlotLandau()
+void TestLandau(TFile* F)
 {
+  F -> mkdir("TestLandau"); 
+  F -> cd("TestLandau"); 
   int bins = 1000; 
   int min = 0; 
   int max = 20; 
@@ -9,28 +11,27 @@ void PlotLandau()
   std::vector<TString> Names = {"Landau"}; 
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<TH1F*> Lan = Landau(Names, {1.0}, LandauParams, 500000, bins, min, max); 
-
-  TCanvas* can = new TCanvas(); 
-  can -> Print("Landau.pdf["); 
-  PlotHists(Lan[0], can);
-  can -> Print("Landau.pdf"); 
-  can -> Print("Landau.pdf]"); 
-}
-
-void PlotGaussian()
-{
-  TH1F* Gaus = Gaussian(0, 1, 1000, -5, 5);
   
-  TCanvas* can = new TCanvas();
-  can -> Print("Gaussian.pdf["); 
-  Gaus -> Draw("SAMEHIST"); 
-  can -> Update();  
-  can -> Print("Gaussian.pdf"); 
-  can -> Print("Gaussian.pdf]"); 
+  // Write to file
+  Lan[0] -> Write(); 
+
 }
 
-void PlotGaussianXGaussian()
+void TestGaussian(TFile* F)
 {
+  F -> mkdir("TestGaussian");
+  F -> cd("TestGaussian"); 
+  TH1F* Gaus = Gaussian(0, 1, 1000, -5, 5);
+
+  // Write to file
+  Gaus -> Write();  
+}
+
+void TestGaussianXGaussian(TFile* F)
+{
+  F -> mkdir("TestGaussianXGaussian"); 
+  F -> cd("TestGaussianXGaussian"); 
+
   int bins = 100; 
   float stdev = 0.5; 
   float mean = -1; 
@@ -40,28 +41,31 @@ void PlotGaussianXGaussian()
   // Generate Gaussian histograms 
   TH1F* Gaus1 = Gaussian(mean, stdev, bins, min, max, "1"); 
   TH1F* Gaus2 = Gaussian(mean+mean, stdev*sqrt(2), bins, min, max, "2");
-  
-  TCanvas* can = new TCanvas(); 
-  can -> Print("Gaussian_Convolution_Test.pdf["); 
-  Gaus1 -> Draw("HIST");
-  Gaus2 -> Draw("SAMEHIST"); 
-  can -> Print("Gaussian_Convolution_Test.pdf"); 
-  can -> Clear();
+
+  // Define the titles of the histograms  
+  TString n1 = "Analytical - M: "; n1 += (mean); n1 += (" STDEV: "); n1 += (stdev);  
+  TString n2 = "Analytical - M: "; n2 += (mean+mean); n2 += (" STDEV: "); n2 += (stdev*sqrt(2));  
+  Gaus1 -> SetTitle(n1); 
+  Gaus2 -> SetTitle(n2); 
+  Normalize(Gaus1); 
+  Normalize(Gaus2); 
+
+  // Write to file
+  Gaus1 -> Write(); 
+  Gaus2 -> Write(); 
 
   // Create the Gaussian for the convolution test and the output 
-  TH1F* Gaus_Test = Gaussian(mean, stdev, bins, min, max, "Convolution"); 
-  TH1F* Conv_Gaus = Gaussian(0, 0.1, bins, min, max, "ConvolutionResult"); 
-
+  TH1F* Conv_Gaus = (TH1F*)Gaus1 -> Clone("Solution"); 
+  Conv_Gaus -> SetTitle("Solution"); 
+  
   // Perform the convolution 
-  Convolution(Gaus_Test, Gaus_Test, Conv_Gaus); 
+  Convolution(Gaus1, Gaus1, Conv_Gaus); 
 
   // Normalize the histograms 
   Normalize(Conv_Gaus);
-  Normalize(Gaus2); 
 
-  Gaus2 -> Draw("HIST");
-  Conv_Gaus -> Draw("SAMEHIST"); 
-  can -> Print("Gaussian_Convolution_Test.pdf"); 
+  // write to file
+  Conv_Gaus -> Write(); 
   
   std::cout << "########## Analytical Truth Parameters #########" << std::endl;
   std::cout << "# Parameters of Gaussian 1-> Mean: " << mean << " Standard Deviation: " << stdev << std::endl; 
@@ -71,11 +75,13 @@ void PlotGaussianXGaussian()
   std::cout << "######### Output Convolution Parameters ########" << std::endl;
   std::cout << "# Parameters of Convolution-> Mean: " << Conv_Gaus -> GetMean() << " Standard Deviation: " << Conv_Gaus -> GetRMS() << std::endl; 
   std::cout << "# Integral: Analytical -> "<< Gaus2 -> Integral() << " Convolved -> " << Conv_Gaus -> Integral() << std::endl;
-  can -> Print("Gaussian_Convolution_Test.pdf]"); 
 }
 
-void PlotLandauXLandau()
+void TestLandauXLandau(TFile* F)
 {
+  F -> mkdir("TestLandauXLandau"); 
+  F -> cd("TestLandauXLandau"); 
+  
   int bins = 1000; 
   float min = 0; 
   float max = 20; 
@@ -83,85 +89,78 @@ void PlotLandauXLandau()
   std::vector<float> COMP = {1, 1, 1, 1}; 
    
   std::vector<TString> Names = {"Landau1", "Landau2", "Landau3", "Landau4"};
-  std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 500000, bins, min, max); 
-
-  TCanvas* can = new TCanvas(); 
-  can -> Print("Landau_Convolution.pdf["); 
-  can -> SetLogy();
-  PlotHists(Gen_Landau, can);  
-  can -> Print("Landau_Convolution.pdf"); 
-  can -> Clear(); 
-  Normalize(Gen_Landau); 
-
+  std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 5000000, bins, min, max); 
+  
   std::vector<TString> Names_Result = {"Result2", "Result3", "Result4"};  
   std::vector<TH1F*> Results = CloneTH1F(Gen_Landau[0], Names_Result); 
   Convolution(Gen_Landau[0], Gen_Landau[0], Results[0]); 
   Convolution(Results[0], Gen_Landau[0], Results[1]); 
   Convolution(Results[1], Gen_Landau[0], Results[2]); 
- 
-  // Landau2  
-  can -> SetLogy(); 
-  RatioPlot(Gen_Landau[1], Results[0], can); 
-  can -> Print("Landau_Convolution.pdf"); 
-  can -> Clear(); 
 
-  // Landau3
-  RatioPlot(Gen_Landau[2], Results[1], can); 
-  can -> Print("Landau_Convolution.pdf"); 
-  can -> Clear(); 
-
-  // Landau4
-  RatioPlot(Gen_Landau[3], Results[2], can); 
-  can -> Print("Landau_Convolution.pdf"); 
-  can -> Clear(); 
-  can -> Print("Landau_Convolution.pdf]"); 
+  // Normalize the distributions
+  Normalize(Results); 
+  Normalize(Gen_Landau); 
  
   // Compare output with Landau2, Landau3, Landau4 - NOT Landau1!! 
   Stats({Gen_Landau[1], Gen_Landau[2], Gen_Landau[3]}, Results); 
+
+  // Write to file
+  BulkWrite(Gen_Landau); 
+  BulkWrite(Results); 
 }
 
-void PlotLandauXGaussian()
+void TestLandauXGaussian(TFile* F)
 {
-  float min = 0; 
-  float max = 20; 
-  int bins = 100; 
+  F -> mkdir("TestLandauXGaussian"); 
+  F -> cd("TestLandauXGaussian"); 
+
+  float min = -2; 
+  float max = 22; 
+  int bins = 1000; 
+  float mean = 0; 
+  float stdev = 0.1; 
   
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<float> COMP = {1}; 
-   
+  
+  // Generate the Landau 
   std::vector<TString> Names = {"Landau1"};
   std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 500000, bins, min, max); 
   Normalize(Gen_Landau);
 
-  TH1F* Gaus = Gaussian(0, 0.1, bins, min-5, max-5, "1"); 
-   
+  // Generate the Gaussian
+  TH1F* Gaus = Gaussian(mean, stdev, bins, min, max, "1"); 
+  TString name = "M: "; name +=(mean); name +=(" StDev: "); name +=(stdev);
+  Gaus -> SetTitle(name);  
+  
+  // Convolve the Gaussian with the Landau 
   std::vector<TString> Con_Names = {"GaussianXLandau1"};
   std::vector<TH1F*> Gaus_Landau = Landau(Con_Names, COMP, LandauParams, 500000, bins, min, max); 
+  Convolution(Gen_Landau[0], Gaus, Gaus_Landau[0]); 
 
-  ConvolutionExperimental(Gen_Landau[0], Gaus, Gaus_Landau[0]); 
-  
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-  Gaus_Landau[0] -> Draw("HIST");
-  Gaus -> Draw("HISTSAME"); 
-  Gen_Landau[0] -> Draw("SAMEHIST");  
-  can -> Print("LandauXGaussian.pdf"); 
+  // Write to file 
+  Gen_Landau[0] -> Write(); 
+  Gaus -> Write(); 
+  Gaus_Landau[0] -> Write();  
 }
 
-void PlotDeconvGausXGaus()
+void TestDeconvGausXGaus(TFile* F)
 {
+  F -> mkdir("TestDeconvGausXGaus");  
+  F -> cd("TestDeconvGausXGaus");  
+  
   float mean = 0; 
   float stdev = 0.5;
   int bins = 250; 
   float min = -8; 
   float max = 8; 
 
-  TH1F* Gaus_Target = Gaussian(mean, stdev, bins, min, max, "Deconvolution_Target"); 
-  TH1F* Gaus_Start = Gaussian(mean+mean, stdev*sqrt(2), bins, min, max, "Source_Distribution");
+  TH1F* Gaus_Target = Gaussian(mean, stdev, bins, min, max, "Target"); 
+  TH1F* Gaus_Start = Gaussian(mean+mean, stdev*sqrt(2), bins, min, max, "Source");
   
-  TH1F* Gaus_Solution = (TH1F*)Gaus_Target -> Clone("Gaus_Solution"); 
+  TH1F* Gaus_Solution = (TH1F*)Gaus_Target -> Clone("Solution"); 
   Gaus_Solution -> Reset();   
-  Gaus_Solution -> SetTitle("Gaus_Solution"); 
+  Gaus_Solution -> SetTitle("Solution"); 
   
   std::cout << "###################### Analytical Gaussians #######################" << std::endl;
   std::cout << "Source Gaussian -> Mean: " << mean+mean << " Standard Deviation: " << stdev*sqrt(2) << std::endl;
@@ -182,18 +181,17 @@ void PlotDeconvGausXGaus()
 
   Stats({Gaus_Solution}, {Gaus_Target}); 
   
-  TCanvas* can = new TCanvas();
-  Gaus_Solution -> Draw("HIST*"); 
-  //Gaus_Start -> Draw("SAMEHIST"); 
-  Gaus_Target -> Draw("SAMEHIST"); 
-  can -> Print("DeconvGausXGaus.pdf"); 
+  Gaus_Target -> Write(); 
+  Gaus_Start -> Write(); 
+  Gaus_Solution -> Write(); 
 }
 
-void PlotDeconvLandauXLandau()
+void TestDeconvLandauXLandau(TFile* F)
 {
+  F -> mkdir("TestDeconvLandauXLandau"); 
+  F -> cd("TestDeconvLandauXLandau"); 
 
   std::cout << "###################### Deconvolution Landaus #######################" << std::endl;
-
   int bins = 200; 
   float min = 0; 
   float max = 20;
@@ -204,11 +202,11 @@ void PlotDeconvLandauXLandau()
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<float> COMP = {1, 1, 1, 1}; 
    
-  std::vector<TString> Names = {"Landau1_Dec", "Landau2_Dec", "Landau3_Dec", "Landau4_Dec"};
+  std::vector<TString> Names = {"Landau1", "Landau2", "Landau3", "Landau4"};
   std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 5000000, bins, min, max); 
 
   std::vector<TString> Name_Results = {"Result1", "Result2", "Result3"};
-  std::vector<TH1F*> Results = MakeTH1F(Name_Results, bins, min-width/2, max-width/2, "_Deconvolution");
+  std::vector<TH1F*> Results = CloneTH1F(Gen_Landau[0], Name_Results);
   
   std::vector<TString> Name_Converge = {"Convergence1", "Convergence2", "Convergence3"};
   std::vector<TH1F*> Converge_H = MakeTH1F(Name_Converge, Iters, 0, Iters);
@@ -223,39 +221,25 @@ void PlotDeconvLandauXLandau()
   ToTH1F(Converge2, Converge_H[1]);
   ToTH1F(Converge3, Converge_H[2]);
 
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-  can -> Print("DeconvLandauXLandau.pdf["); 
-
-  PlotHists(Gen_Landau, can);
-  can -> Print("DeconvLandauXLandau.pdf"); 
-  can -> Clear(); 
-
-  for (int i(0); i < 3; i++)
-  {
-    Gen_Landau[i] -> SetLineStyle(kDashed);
-    RatioPlot(Results[i], Gen_Landau[i], can);  
-    can -> Print("DeconvLandauXLandau.pdf"); 
-    can -> Clear(); 
-
-    Converge_H[i] -> Draw("HIST*"); 
-    can -> Print("DeconvLandauXLandau.pdf"); 
-    can -> Clear(); 
-  }
-
-  can -> Print("DeconvLandauXLandau.pdf]"); 
-
+  // Write to file 
+  BulkWrite(Gen_Landau); 
+  BulkWrite(Results);
+  BulkWrite(Converge_H); 
+  
+  // Evalutate the deconvolution 
+  Stats({Gen_Landau[0], Gen_Landau[1], Gen_Landau[2]}, Results); 
 }
 
-void PlotDeconvLandauXGaussian()
+void TestDeconvLandauXGaussian(TFile* F)
 {
+  F -> mkdir("TestDeconvLandauXGaussian"); 
+  F -> cd("TestDeconvLandauXGaussian"); 
   
-  int bins = 300; 
+  int bins = 200; 
   float min = -2; 
   float max = 24;
   int Iters = 400; 
   float centering = (max-min)/float(bins);
- 
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<float> COMP = {1, 1, 1, 1}; 
 
@@ -265,16 +249,16 @@ void PlotDeconvLandauXGaussian()
   Normalize(Gen_Landau); 
 
   // Define the Gaussians 
-  TH1F* Gaussian1 = Gaussian(0, 0.25, bins, min, max, "Original1"); 
-  TH1F* Gaussian2 = Gaussian(0, 0.25, bins, min, max, "Original2"); 
-  TH1F* Gaussian3 = Gaussian(0, 0.25, bins, min, max, "Original3"); 
-  TH1F* Gaussian4 = Gaussian(0, 0.25, bins, min, max, "Original4"); 
+  TH1F* Gaussian1 = Gaussian(0, 0.25, bins, min, max, "Gaussian1"); 
+  TH1F* Gaussian2 = Gaussian(0, 0.25, bins, min, max, "Gaussian2"); 
+  TH1F* Gaussian3 = Gaussian(0, 0.25, bins, min, max, "Gaussian3"); 
+  TH1F* Gaussian4 = Gaussian(0, 0.25, bins, min, max, "Gaussian4"); 
   std::vector<TH1F*> PSF_Original = {Gaussian1, Gaussian2, Gaussian3, Gaussian4}; 
   Normalize(PSF_Original); 
 
   // Convolved histograms 
   std::vector<TString> Name_Conv = {"Landau1XGaussian1", "Landau2XGaussian2", "Landau3XGaussian3", "Landau4XGaussian4"};
-  std::vector<TH1F*> Convs = MakeTH1F(Name_Conv, bins, min-centering/2, max-centering/2);
+  std::vector<TH1F*> Convs = CloneTH1F(Gen_Landau[0], Name_Conv);
 
   // Convolve the Landaus with the Gaussians 
   Convolution(Gen_Landau[0], Gaussian1, Convs[0]); 
@@ -282,13 +266,18 @@ void PlotDeconvLandauXGaussian()
   Convolution(Gen_Landau[2], Gaussian3, Convs[2]); 
   Convolution(Gen_Landau[3], Gaussian4, Convs[3]); 
 
+  // Wrtie to file 
+  BulkWrite(Gen_Landau); 
+  BulkWrite(PSF_Original); 
+  BulkWrite(Convs); 
+
   // Reconstructed PSF
-  std::vector<TString> Name_PSF = {"Gaussian1", "Gaussian2", "Gaussian3", "Gaussian4"};
-  std::vector<TH1F*> PSF = MakeTH1F(Name_PSF, bins, min-centering/2, max-centering/2, "Reconstructed");
+  std::vector<TString> Name_PSF = {"R_Gaus_1", "R_Gaus_2", "R_Gaus_3", "R_Gaus_4"};
+  std::vector<TH1F*> PSF = CloneTH1F(Gen_Landau[0], Name_PSF);
 
   // Reconstructed Landau
-  std::vector<TString> Name_Landau = {"Landau1", "Landau2", "Landau3", "Landau4"};
-  std::vector<TH1F*> Landau_Recon = MakeTH1F(Name_Landau, bins, min-centering/2, max-centering/2, "Reconstructed");
+  std::vector<TString> Name_Landau = {"R_Landau_1", "R_Landau_2", "R_Landau_3", "R_Landau_4"};
+  std::vector<TH1F*> Landau_Recon = CloneTH1F(Gen_Landau[0], Name_Landau);
 
   // Start with reverting the gaussian smearing 
   MultiThreadingDeconvolution(Convs, PSF_Original, Landau_Recon, Iters); 
@@ -296,62 +285,57 @@ void PlotDeconvLandauXGaussian()
   // Start return the Gaussian smearing PSF
   MultiThreadingDeconvolution(Convs, Gen_Landau, PSF, Iters);  
 
-  TCanvas* can = new TCanvas(); 
-  can -> Print("DeconvLandauXGaussian.pdf[");
-  can -> SetLogy(); 
-
-  for (int i(0); i < Gen_Landau.size(); i++)
-  {
-    // Plot the reverting of the Landau
-    //Normalize(Landau_Recon[0]); 
-    RatioPlot(Landau_Recon[i], Gen_Landau[i],  can); 
-    can -> Print("DeconvLandauXGaussian.pdf");
-    can -> Clear(); 
-    
-    // Plot the Gaussian PSF
-    RatioPlot(PSF[i], PSF_Original[i], can); 
-    can -> Print("DeconvLandauXGaussian.pdf");
-    can -> Clear(); 
-  }
-  can -> Print("DeconvLandauXGaussian.pdf]");
+  // Write to file
+  BulkWrite(Landau_Recon);  
+  BulkWrite(PSF); 
 }
 
-void PlotGaussianDeconvolutionFit()
+void TestGaussianDeconvolutionFit(TFile* F)
 {
+  F -> mkdir("TestGaussianDeconvolutionFit"); 
+  F -> cd("TestGaussianDeconvolutionFit"); 
+
   int bins = 100; 
   float min = -8; 
   float max = 8; 
-  float mean = 0; 
+  float mean = 1; 
   float stdev = 1; 
 
   // Define the Gaussians 
-  TH1F* Gaussian1 = Gaussian(mean, stdev, bins, min, max, "Original1"); 
+  TH1F* Gaussian1 = Gaussian(mean, stdev, bins, min, max, "Source"); 
   TH1F* Gaussian2 = Gaussian(mean+mean, stdev*sqrt(2), bins, min, max, "Target"); 
   for (int i(0); i < bins; i++)
   {
     Gaussian2 -> SetBinError(i+1, 1e-9); 
   }
 
+  // Define the fitting parameters
   std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-1}; 
-  Params["m_e"] = {1}; 
+  Params["m_s"] = {-5}; 
+  Params["m_e"] = {5}; 
   Params["s_s"] = {0.1}; 
-  Params["s_e"] = {2}; 
+  Params["s_e"] = {4}; 
   Params["x_range"] = {-8, 8}; 
   std::vector<TH1F*> H = FitDeconvolution(Gaussian2, {Gaussian1}, Params, 1000, 10000); 
-  TCanvas* can = new TCanvas(); 
-  RatioPlot(Gaussian2, H[0], can); 
-  can -> Print("GaussianDeconvolutionFit.pdf"); 
+ 
+  // Check the statistcs of the fit  
   Stats({Gaussian2}, {H[0]}); 
+
+  Gaussian1 -> Write(); 
+  Gaussian2 -> Write(); 
+  H[0] -> Write(); 
 }
 
-void PlotLandauXGausFit()
+void TestLandauXGausFit(TFile* F)
 {
-  int bins = 1000; 
+  F -> mkdir("TestLandauXGausFit"); 
+  F -> cd("TestLandauXGausFit"); 
+
+  int bins = 500; 
   float min = -2; 
-  float max = 20; 
+  float max = 18; 
   float mean = 0; 
-  float stdev = 0.5; 
+  float stdev = 0.1; 
 
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<float> COMP = {1, 1, 1, 1}; 
@@ -359,39 +343,42 @@ void PlotLandauXGausFit()
   // Define the Landaus    
   std::vector<TString> Names = {"Landau1", "Landau2", "Landau3", "Landau4"};
   std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 5000000, bins, min, max); 
-  TH1F* Gaussian1 = Gaussian(mean, stdev, bins, min, max, "Original1"); 
+  TH1F* Gaussian1 = Gaussian(mean, stdev, bins, min, max, "1"); 
   
-  // Data 
+  // Fake Data 
   TH1F* FakeData = (TH1F*)Gen_Landau[0] -> Clone("Data"); 
   FakeData -> SetTitle("Data"); 
   FakeData -> Reset(); 
   FakeData -> Add(Gen_Landau[0]);
   Convolution(FakeData, Gaussian1, FakeData);  
-   
-  for (int i(0); i < bins; i++)
-  {
-    FakeData -> SetBinError(i+1, 1e-9); 
-  }
+  for (int i(0); i < bins; i++){FakeData -> SetBinError(i+1, 1e-9);}
 
+  // Perform the fit to the Fake data and see if we can revert the Gaussian convolution 
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-1, -1, -1, -1}; 
   Params["m_e"] = {1, 1, 1, 1}; 
   Params["s_s"] = {0.001, 0.001, 0.001, 0.001}; 
   Params["s_e"] = {2, 2, 2, 2}; 
   Params["x_range"] = {0, 18}; 
-  std::vector<TH1F*> H = FitDeconvolution(FakeData, Gen_Landau, Params, 1000, 10000); 
-  TCanvas* can = new TCanvas(); 
-  RatioPlot(FakeData, H[0], can); 
-  can -> Print("LandauXGaussianFit.pdf"); 
+  std::vector<TH1F*> H = FitDeconvolution(FakeData, Gen_Landau, Params, 10000, 100000); 
   Stats({FakeData}, {H[0]}); 
+
+  // Write to file 
+  BulkWrite(Gen_Landau); 
+  Gaussian1 -> Write();
+  FakeData -> Write(); 
+  BulkWrite(H); 
+
 }
 
-void PlotNLandauXNGausFit()
+void TestNLandauXNGausFit(TFile* F)
 {
+  F -> mkdir("TestNLandauXNGausFit"); 
+  F -> cd("TestNLandauXNGausFit"); 
   
-  int bins = 1000; 
-  float min = -4; 
-  float max = 22;
+  int bins = 500; 
+  float min = -2; 
+  float max = 18;
  
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<float> COMP = {0.6, 0.2, 0.1, 0.1}; 
@@ -425,49 +412,35 @@ void PlotNLandauXNGausFit()
   FakeData -> Add(D[2]); 
   FakeData -> Add(D[3]); 
 
-  for (int i(0); i < bins; i++)
-  {
-    FakeData -> SetBinError(i+1, 1e-9); 
-    Gen_Landau[0] -> SetBinError(i+1, 1e-9); 
-    Gen_Landau[1] -> SetBinError(i+1, 1e-9); 
-    Gen_Landau[2] -> SetBinError(i+1, 1e-9); 
-    Gen_Landau[3] -> SetBinError(i+1, 1e-9); 
-  }
+  for (int i(0); i < bins; i++){FakeData -> SetBinError(i+1, 1e-9);}
 
-  // Plot the truth 
-  TCanvas* can = new TCanvas();  
-  can -> Print("NLandauXNGausFit.pdf["); 
-  can -> SetLogy(); 
-  PlotHists(FakeData, D, can); 
-  can -> Print("NLandauXNGausFit.pdf");
-  
   // Perform the fit  
   std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-0.1, -0.1, -0.1, -0.1}; 
-  Params["m_e"] = {0.1, 0.1, 0.1, 0.1}; 
+  Params["m_s"] = {-0.2, -0.2, -0.2, -0.2}; 
+  Params["m_e"] = {0.2, 0.2, 0.2, 0.2}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {1, 1, 1, 1};  
-  Params["x_range"] = {-0.4, 20}; 
-  std::vector<TH1F*> Results = FitDeconvolution(FakeData, Gen_Landau, Params, 10000, 100);
-  
-  // Plot the output and the results
-  PlotHists(FakeData, D, Results, can); 
-  can -> Print("NLandauXNGausFit.pdf");
+  Params["s_e"] = {0.5, 0.5, 0.5, 0.5};  
+  Params["x_range"] = {-0.4, 16}; 
+  std::vector<TH1F*> Results = FitDeconvolution(FakeData, Gen_Landau, Params, 10000, 100000);
 
-  // Create ratio plots of the truth vs the prediction
-  PlotAndBenchmark(D, Results, "NLandauXNGausFit.pdf", can);
-  can -> Print("NLandauXNGausFit.pdf]"); 
+  // Write to file 
+  BulkWrite(Gen_Landau); 
+  BulkWrite(PSF_Original); 
+  BulkWrite(D); 
+  FakeData -> Write(); 
+  BulkWrite(Results); 
 }
 
-void PlotDeconvolutionFit()
+void TestDeconvolutionFit(TFile* F)
 {
-  
-  int bins  = 1000; 
-  float min = -2;  //-4.02; 
-  float max = 18;  //22;
-  int Iters = 100; 
+  F -> mkdir("TestDeconvolutionFit"); 
+  F -> cd("TestDeconvolutionFit"); 
+
+  int bins  = 500; 
+  float min = -2;   
+  float max = 18;  
+  int Iters = 250; 
   float centering = (max-min)/float(bins);
-  std::cout << centering << std::endl; 
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<float> COMP = {0.6, 0.3, 0.05, 0.05}; 
 
@@ -477,9 +450,9 @@ void PlotDeconvolutionFit()
 
   // Define the Gaussians 
   TH1F* Gaussian1 = Gaussian(0, 0.075, bins, min, max, "Original1"); 
-  TH1F* Gaussian2 = Gaussian(0, 0.075, bins, min, max, "Original2"); 
-  TH1F* Gaussian3 = Gaussian(0, 0.075, bins, min, max, "Original3"); 
-  TH1F* Gaussian4 = Gaussian(0, 0.075, bins, min, max, "Original4"); 
+  TH1F* Gaussian2 = Gaussian(0, 0.08, bins, min, max, "Original2"); 
+  TH1F* Gaussian3 = Gaussian(0, 0.09, bins, min, max, "Original3"); 
+  TH1F* Gaussian4 = Gaussian(0, 0.1, bins, min, max, "Original4"); 
   std::vector<TH1F*> PSF_Original = {Gaussian1, Gaussian2, Gaussian3, Gaussian4}; 
 
   // Create a fake dataset by overlaying multiple Landaus 
@@ -488,15 +461,7 @@ void PlotDeconvolutionFit()
   Data -> Add(Gen_Landau[1]); 
   Data -> Add(Gen_Landau[2]); 
   Data -> Add(Gen_Landau[3]); 
-
-  for (int i(0); i < bins; i++)
-  {
-    Data -> SetBinError(i+1, 1e-9); 
-    //Gen_Landau[0] -> SetBinError(i+1, 1e-9); 
-    //Gen_Landau[1] -> SetBinError(i+1, 1e-9); 
-    //Gen_Landau[2] -> SetBinError(i+1, 1e-9); 
-    //Gen_Landau[3] -> SetBinError(i+1, 1e-9); 
-  }
+  for (int i(0); i < bins; i++){Data -> SetBinError(i+1, 1e-9);}
 
   // Deconvolved PDFs
   std::vector<TString> Name_Conv = {"Landau1_D", "Landau2_D", "Landau3_D", "Landau4_D"};
@@ -505,37 +470,22 @@ void PlotDeconvolutionFit()
   // Deconvolve the "PDFs" with the Gaussian 
   MultiThreadingDeconvolution(Gen_Landau, PSF_Original, D_PDFs, Iters); 
 
-  // Plot the initial deconvolved PDFs with the Gaussians that were used for the deconvolution   
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-  can -> Print("DeconvolutionFit.pdf["); 
-  for (int i(0); i < Gen_Landau.size(); i++)
-  {
-    Gen_Landau[i] -> SetLineColor(kRed); 
-    Gen_Landau[i] -> GetYaxis() -> SetRangeUser(0.1, Gen_Landau[i] -> Integral()); 
-    Gen_Landau[i] -> Draw("HIST"); 
-    D_PDFs[i] -> Draw("SAMEHIST");   
-    PSF_Original[i] -> SetLineColor(kRed); 
-    PSF_Original[i] -> SetLineStyle(kRed); 
-    PSF_Original[i] -> Draw("SAMEHIST"); 
-    can -> Print("DeconvolutionFit.pdf"); 
-    can -> Clear();  
-  }
-
+  // Perform the fit 
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-0.1, -0.1, -0.1, -0.1}; 
   Params["m_e"] = {0.1, 0.1, 0.1, 0.1}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
   Params["x_range"] = {-0.4, 20}; 
-  std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params, 100000, 1000000);
-   
-  // Plot the outs and do some statistical analysis
-  PlotHists(Data, Gen_Landau, Result, can); 
-  can -> Print("DeconvolutionFit.pdf"); 
- 
-  can -> Clear(); 
-  PlotAndBenchmark(Gen_Landau, Result, "DeconvolutionFit.pdf", can, 0, 20); 
-  
-  can -> Print("DeconvolutionFit.pdf]"); 
+  std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params, 10000, 100000);
+  Stats(Result, Gen_Landau, 0.4, 16); 
+
+  // Write to file
+  BulkWrite(Gen_Landau); 
+  BulkWrite(PSF_Original); 
+  BulkWrite(D_PDFs); 
+  Data -> Write(); 
+  BulkWrite(Result); 
+
+
 }
