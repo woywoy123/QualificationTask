@@ -27,6 +27,28 @@ std::vector<TH1F*> Landau(std::vector<TString> Names, std::vector<float> COMP, s
   return Hists; 
 }
 
+std::vector<TH1F*> WrongLandau(std::vector<TString> Names, std::vector<float> COMP, std::vector<float> Parameters, int Number, int bins, float min, float max)
+{
+
+  std::vector<TH1F*> Hists = MakeTH1F(Names, bins, min, max); 
+  
+  // Define the generator and initialize the parameters 
+  TF1 Lan("Lan", "landau", min, max);
+  for (int i(0); i < Parameters.size(); i++){Lan.SetParameter(i, Parameters[i]);}
+ 
+  // Fill the hist vector
+  for (int i(0); i < Number; i++)
+  {
+    for (int y(0); y < Hists.size(); y++)
+    {
+      float r(0);
+      for (int x(0); x < y+1; x++){r = r + Lan.GetRandom();}
+      if (COMP[y] > 0){ Hists[y] -> Fill(r, COMP[y]); } 
+    }   
+  }
+  return Hists; 
+}
+
 TH1F* Gaussian(float mean, float stdev, int bins, float min, float max, TString Extension)
 {
   float Bin_Width = (max - min)/float(bins); 

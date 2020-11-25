@@ -22,18 +22,22 @@ int main(int argc, char** argv)
   // Run Tests 
   if (option == -2)
   {
-    TestLandau(F); 
-    TestGaussian(F); 
-    TestGaussianXGaussian(F);
-    TestLandauXLandau(F); 
-    TestLandauXGaussian(F); 
-    TestDeconvGausXGaus(F); 
-    TestDeconvLandauXLandau(F); 
-    TestDeconvLandauXGaussian(F); 
-    TestGaussianDeconvolutionFit(F); 
-    TestLandauXGausFit(F); 
-    TestNLandauXNGausFit(F);
-    TestDeconvolutionFit(F);  
+    //TestLandau(F); 
+    //TestGaussian(F); 
+    //TestGaussianXGaussian(F);
+    //TestLandauXLandau(F); 
+    //TestLandauXGaussian(F); 
+    //TestDeconvGausXGaus(F); 
+    //TestDeconvLandauXLandau(F); 
+    //TestDeconvLandauXGaussian(F); 
+    //TestGaussianDeconvolutionFit(F); 
+    //TestLandauXGausFit(F); 
+    //TestNLandauXNGausFit(F);
+    //TestDeconvolutionFit(F);  
+    //TestComparisonBinCenteringLandauXLandau(F); 
+    //TestOscillationLucyRichardson(F); 
+    TestAlgorithm(F); 
+  
   }
 
   // Run Experimental

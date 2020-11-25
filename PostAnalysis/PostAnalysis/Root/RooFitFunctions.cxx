@@ -111,7 +111,7 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
   model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(4), RooFit::Range("fit")); 
-  PlotRooFit(model, x, D);  
+  //PlotRooFit(model, x, D);  
 
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 

@@ -101,9 +101,6 @@ void TestLandauXLandau(TFile* F)
   Normalize(Results); 
   Normalize(Gen_Landau); 
  
-  // Compare output with Landau2, Landau3, Landau4 - NOT Landau1!! 
-  Stats({Gen_Landau[1], Gen_Landau[2], Gen_Landau[3]}, Results); 
-
   // Write to file
   BulkWrite(Gen_Landau); 
   BulkWrite(Results); 
@@ -178,8 +175,6 @@ void TestDeconvGausXGaus(TFile* F)
   std::cout << "###################### Deconvolution Gaussians #####################" << std::endl;
   std::cout << "Deconvolved Gaussian -> Mean: " << mean_g << " Standard Deviation: " << stdev_g << std::endl;
   std::cout << std::endl;
-
-  Stats({Gaus_Solution}, {Gaus_Target}); 
   
   Gaus_Target -> Write(); 
   Gaus_Start -> Write(); 
@@ -191,7 +186,6 @@ void TestDeconvLandauXLandau(TFile* F)
   F -> mkdir("TestDeconvLandauXLandau"); 
   F -> cd("TestDeconvLandauXLandau"); 
 
-  std::cout << "###################### Deconvolution Landaus #######################" << std::endl;
   int bins = 200; 
   float min = 0; 
   float max = 20;
@@ -225,9 +219,6 @@ void TestDeconvLandauXLandau(TFile* F)
   BulkWrite(Gen_Landau); 
   BulkWrite(Results);
   BulkWrite(Converge_H); 
-  
-  // Evalutate the deconvolution 
-  Stats({Gen_Landau[0], Gen_Landau[1], Gen_Landau[2]}, Results); 
 }
 
 void TestDeconvLandauXGaussian(TFile* F)
@@ -317,10 +308,6 @@ void TestGaussianDeconvolutionFit(TFile* F)
   Params["s_e"] = {4}; 
   Params["x_range"] = {-8, 8}; 
   std::vector<TH1F*> H = FitDeconvolution(Gaussian2, {Gaussian1}, Params, 1000, 10000); 
- 
-  // Check the statistcs of the fit  
-  Stats({Gaussian2}, {H[0]}); 
-
   Gaussian1 -> Write(); 
   Gaussian2 -> Write(); 
   H[0] -> Write(); 
@@ -361,8 +348,6 @@ void TestLandauXGausFit(TFile* F)
   Params["s_e"] = {2, 2, 2, 2}; 
   Params["x_range"] = {0, 18}; 
   std::vector<TH1F*> H = FitDeconvolution(FakeData, Gen_Landau, Params, 10000, 100000); 
-  Stats({FakeData}, {H[0]}); 
-
   // Write to file 
   BulkWrite(Gen_Landau); 
   Gaussian1 -> Write();
@@ -478,7 +463,6 @@ void TestDeconvolutionFit(TFile* F)
   Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
   Params["x_range"] = {-0.4, 20}; 
   std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params, 10000, 100000);
-  Stats(Result, Gen_Landau, 0.4, 16); 
 
   // Write to file
   BulkWrite(Gen_Landau); 
@@ -486,6 +470,261 @@ void TestDeconvolutionFit(TFile* F)
   BulkWrite(D_PDFs); 
   Data -> Write(); 
   BulkWrite(Result); 
+}
+
+void TestComparisonBinCenteringLandauXLandau(TFile* F)
+{
+  F -> mkdir("TestComparisonBinCenteringLandauXLandau"); 
+  F -> cd("TestComparisonBinCenteringLandauXLandau"); 
+  
+  int bins = 500; 
+  float min = -2; 
+  float max = 18;
+ 
+  std::vector<float> LandauParams = {1, 0.9, 0.1}; 
+  std::vector<float> COMP = {1, 1, 1, 1}; 
+  
+  // Create the names for the two Landaus. One being the non bin centered and the other being centered. These are the numerically generated Landaus 
+  // Wrong  
+  std::vector<TString> Name_W = {"Landau1_W", "Landau2_W", "Landau3_W", "Landau4_W"};
+  std::vector<TH1F*> Landau_W = WrongLandau(Name_W, COMP, LandauParams, 500000, bins, min, max); 
+
+  // Normal 
+  std::vector<TString> Name_N = {"Landau1", "Landau2", "Landau3", "Landau4"}; 
+  std::vector<TH1F*> Landau_N = Landau(Name_N, COMP, LandauParams, 500000, bins, min, max); 
+  
+  // Create Result Histograms 
+  // Wrong  
+  std::vector<TString> Name_RW = {"Landau1_RW", "Landau2_RW", "Landau3_RW", "Landau4_RW"};
+  std::vector<TH1F*> Landau_RW = CloneTH1F(Landau_W[0], Name_RW); 
+
+  // Normal
+  std::vector<TString> Name_RN = {"Landau1_RN", "Landau2_RN", "Landau3_RN", "Landau4_RN"};
+  std::vector<TH1F*> Landau_RN = CloneTH1F(Landau_N[0], Name_RN); 
+
+  // Start the Convolution with Landau1
+  // Wrong 
+  Convolution(Landau_W[0], Landau_W[0], Landau_RW[1]);
+  Convolution(Landau_RW[1], Landau_W[0], Landau_RW[2]);
+  Convolution(Landau_RW[2], Landau_W[0], Landau_RW[3]);
+
+  // Normal
+  Convolution(Landau_N[0], Landau_N[0], Landau_RN[1]);
+  Convolution(Landau_RN[1], Landau_N[0], Landau_RN[2]);
+  Convolution(Landau_RN[2], Landau_N[0], Landau_RN[3]);
+
+  // Normalize all the histograms
+  Normalize(Landau_W); 
+  Normalize(Landau_RW); 
+  Normalize(Landau_N); 
+  Normalize(Landau_RN); 
+
+  // Write to File 
+  BulkWrite(Landau_W); 
+  BulkWrite(Landau_RW); 
+  BulkWrite(Landau_N); 
+  BulkWrite(Landau_RN); 
+}
+
+void TestOscillationLucyRichardson(TFile* F)
+{
+  F -> mkdir("TestOscillationLucyRichardson"); 
+  F -> cd("TestOscillationLucyRichardson"); 
+
+  float min = -2; 
+  float max = 18;
+ 
+  std::vector<float> LandauParams = {1, 0.9, 0.1}; 
+  std::vector<float> COMP = {1}; 
+  
+  // Normal 
+  TH1F* Landau_500 = Landau({"B_500"}, COMP, LandauParams, 500000, 500, min, max)[0]; 
+  TH1F* Landau_200 = Landau({"B_200"}, COMP, LandauParams, 500000, 200, min, max)[0]; 
+  TH1F* Landau_100 = Landau({"B_100"}, COMP, LandauParams, 500000, 100, min, max)[0]; 
+  Landau_500 -> SetTitle("Landau with 500 bins"); 
+  Landau_200 -> SetTitle("Landau with 200 bins");  
+  Landau_100 -> SetTitle("Landau with 100 bins");
+  Landau_500 -> Write(); 
+  Landau_200 -> Write(); 
+  Landau_100 -> Write(); 
+ 
+  // Gaussians being defined 
+  TH1F* G_500_05 = Gaussian(0, 0.3, 500, min, max, "G_1");  
+  TH1F* G_500_075 = Gaussian(0, 0.2, 500, min, max, "G_2");
+  TH1F* G_500_1 = Gaussian(0, 0.1, 500, min, max, "G_3");
+  G_500_05 -> SetTitle("Gaussian with 500 bins - M: 0, S: 0.3");   
+  G_500_075 -> SetTitle("Gaussian with 500 bins - M: 0, S: 0.2"); 
+  G_500_1 -> SetTitle("Gaussian with 500 bins - M: 0, S: 0.1"); 
+  G_500_05 -> Write(); 
+  G_500_075 -> Write(); 
+  G_500_1 -> Write(); 
+
+  TH1F* G_200_05 = Gaussian(0, 0.2, 200, min, max, "G_4"); 
+  TH1F* G_100_05 = Gaussian(0, 0.2, 100, min, max, "G_5"); 
+  G_200_05 -> SetTitle("Gaussian with 200 bins - M: 0, S: 0.2"); 
+  G_100_05 -> SetTitle("Gaussian with 100 bins - M: 0, S: 0.2"); 
+  G_200_05 -> Write(); 
+  G_100_05 -> Write(); 
+
+  // Perform the Deconvolution with different Gaussian Widths 
+  std::vector<TString> Result_500_G_N = {"B_500_G_05_I_100_x", "B_500_G_075_I_100", "B_500_G_1_I_100"};
+  std::vector<TH1F*> Results_500_G = CloneTH1F(Landau_500, Result_500_G_N);  
+  MultiThreadingDeconvolution({Landau_500, Landau_500, Landau_500}, {G_500_05, G_500_075, G_500_1}, Results_500_G, 100); 
+  Results_500_G[0] -> SetTitle("G 500 bins - M: 0, S: 0.3, 100 I");
+  Results_500_G[1] -> SetTitle("G 500 bins - M: 0, S: 0.2, 100 I");
+  Results_500_G[2] -> SetTitle("G 500 bins - M: 0, S: 0.1, 100 I");
+  Results_500_G[0] -> Write(); 
+  Results_500_G[1] -> Write(); 
+  Results_500_G[2] -> Write(); 
+
+  // Perform the Deconvolution with different number of iterations 
+  std::vector<TString> Result_500_I_N = {"B_500_G_05_I_100", "B_500_G_05_I_200", "B_500_G_05_I_300"};
+  std::vector<TH1F*> Results_500_I = CloneTH1F(Landau_500, Result_500_I_N);  
+  Deconvolution(Landau_500, G_500_05, Results_500_I[0], 100); 
+  Deconvolution(Landau_500, G_500_05, Results_500_I[1], 200); 
+  Deconvolution(Landau_500, G_500_05, Results_500_I[2], 300); 
+  Results_500_I[0] -> SetTitle("G 500 bins - M: 0, S: 0.3, 100 I");  
+  Results_500_I[1] -> SetTitle("G 500 bins - M: 0, S: 0.3, 200 I"); 
+  Results_500_I[2] -> SetTitle("G 500 bins - M: 0, S: 0.3, 300 I"); 
+  Results_500_I[0] -> Write(); 
+  Results_500_I[1] -> Write(); 
+  Results_500_I[2] -> Write(); 
+
+  // Perform the Deconvolution with different number of bins 
+  TH1F* Results_B_100 = CloneTH1F(Landau_100, {"B_100_G_05_I_100_b"})[0];  
+  TH1F* Results_B_200 = CloneTH1F(Landau_200, {"B_200_G_05_I_100_b"})[0];  
+  TH1F* Results_B_500 = CloneTH1F(Landau_500, {"B_500_G_05_I_100_b"})[0];  
+  MultiThreadingDeconvolution({Landau_100, Landau_200, Landau_500}, {G_100_05, G_200_05, G_500_075}, {Results_B_100, Results_B_200, Results_B_500}, 100);  
+
+  Results_B_100 -> SetTitle("G 100 bins - M: 0, S: 0.2, 100 I");
+  Results_B_200 -> SetTitle("G 200 bins - M: 0, S: 0.2, 100 I");
+  Results_B_500 -> SetTitle("G 500 bins - M: 0, S: 0.2, 100 I");
+  Results_B_100 -> Write(); 
+  Results_B_200 -> Write(); 
+  Results_B_500 -> Write(); 
+}
+
+void TestAlgorithm(TFile* F)
+{
+  F -> mkdir("TestAlgorithm");
+  F -> cd("TestAlgorithm");
+
+  int bins  = 500; 
+  float min = -2;   
+  float max = 18;  
+  int Iters = 200; 
+  float centering = (max-min)/float(bins);
+  std::vector<float> LandauParams = {1, 0.9, 0.1}; 
+  std::vector<float> COMP = {0.6, 0.3, 0.05, 0.05}; 
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-0.1, -0.1, -0.1, -0.1}; 
+  Params["m_e"] = {0.1, 0.1, 0.1, 0.1}; 
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.2, 0.2, 0.2, 0.2};  
+  Params["x_range"] = {-0.4, 16}; 
+
+  // Define the Landaus    
+  std::vector<TString> Names = {"Landau1", "Landau2", "Landau3", "Landau4"};
+  std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 5000000, bins, min, max); 
+  BulkWrite(Gen_Landau); 
+
+  // Define the Gaussians 
+  TH1F* Gaussian1 = Gaussian(0, 0.075, bins, min, max, "Original1"); 
+  TH1F* Gaussian2 = Gaussian(0, 0.08, bins, min, max, "Original2"); 
+  TH1F* Gaussian3 = Gaussian(0, 0.09, bins, min, max, "Original3"); 
+  TH1F* Gaussian4 = Gaussian(0, 0.1, bins, min, max, "Original4"); 
+  std::vector<TH1F*> PSF = {Gaussian1, Gaussian2, Gaussian3, Gaussian4}; 
+  BulkWrite(PSF); 
+
+  // Create a fake dataset by first smearing it and then overlaying multiple Landaus 
+  std::vector<TH1F*> Smear = CloneTH1F(Gen_Landau[0], {"L1xG1", "L2xG2", "L3xG3", "L4xG4"}); 
+  Convolution(Gen_Landau[0], Gaussian1, Smear[0]); 
+  Convolution(Gen_Landau[1], Gaussian2, Smear[1]); 
+  Convolution(Gen_Landau[2], Gaussian3, Smear[2]); 
+  Convolution(Gen_Landau[3], Gaussian4, Smear[3]); 
+
+  TH1F* Data = new TH1F("Data", "Data", bins, min-centering/2, max - centering/2); 
+  Data -> Add(Smear[0]); 
+  Data -> Add(Smear[1]); 
+  Data -> Add(Smear[2]); 
+  Data -> Add(Smear[3]); 
+  for (int i(0); i < bins; i++){Data -> SetBinError(i+1, 1e-9);}
+  BulkWrite(Smear);  
+  Data -> Write();
+  
+  int iter = 5; 
+  std::vector<TString> Name_Conv = {"Landau1_D", "Landau2_D", "Landau3_D", "Landau4_D"};
+  TH1F* trk1 = Gen_Landau[0]; 
+  TH1F* Temp = (TH1F*)Data -> Clone("Data_Copy"); 
+  TCanvas* can = new TCanvas();
+  can -> SetLogy(); 
+  for (int i(0); i < iter; i++)
+  {
+     
+    TH1F* trk1_old = (TH1F*)trk1 -> Clone("trk1_old"); 
+    
+    TString in; in += (i); 
+    std::vector<TH1F*> ntrk = ConvolveNTimes(trk1, 4, in);       
+    Normalize(ntrk); 
+
+    // Deconvolve the "PDFs" with the Gaussian 
+    std::vector<TH1F*> D_PDFs = CloneTH1F(trk1, Name_Conv);
+    MultiThreadingDeconvolution(ntrk, PSF, D_PDFs, Iters); 
+  
+    std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params);
+    trk1 -> Reset();  
+    Temp -> Reset();  
+    Temp -> Add(Data); 
+    
+    float heat = (float)(i+2)/(float)iter;  
+    Temp -> Add(Result[1], -heat); 
+    Temp -> Add(Result[2], -heat); 
+    Temp -> Add(Result[3], -heat); 
+    trk1 -> Add(Temp);  
+
+    PlotHists(Data, Smear, Result, can);  
+    can -> Print("test.pdf");  
+
+    float d = SquareError(trk1, trk1_old); 
+    std::cout << "distance: " << d << std::endl; 
+    
+    for (int c(0); c < ntrk.size(); c++)
+    {
+      TString name = ntrk[c] -> GetTitle();
+      Result[c] -> SetTitle(name);  
+    }
+     
+    BulkDelete(D_PDFs);
+    BulkDelete(ntrk);  
+    BulkWrite(Result);
+    delete trk1_old; 
+  }
+
+
+
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

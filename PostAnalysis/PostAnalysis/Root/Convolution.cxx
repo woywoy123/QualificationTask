@@ -204,6 +204,24 @@ void ConvolutionExperimental(TH1F* PDF, TH1F* PSF, TH1F* conv)
   delete H2; 
 }
 
+std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, TString extension)
+{
+  std::vector<TString> Names;  
+  for (int i(0); i < n; i++)
+  {
+    TString name = "TRK_"; name +=(i+1); name +=("_"); name += (extension);  
+    Names.push_back(name);  
+  }
+  std::vector<TH1F*> Hist_V = CloneTH1F(Start, Names);
+  Hist_V[0] -> Add(Start);  
+  
+  for (int i(0); i < n-1; i++)
+  {
+    Convolution(Hist_V[i], Start, Hist_V[i+1]); 
+  }
+  return Hist_V; 
+}
+
 // ============================ Deconvolution Stuff ======================== //
 std::vector<float> LucyRichardson(std::vector<float> data, std::vector<float> psf, std::vector<float> current, float damp)
 {

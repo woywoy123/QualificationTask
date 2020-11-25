@@ -17,10 +17,14 @@ std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, flo
 // Clone and Reset the histograms 
 std::vector<TH1F*> CloneTH1F(TH1F* Hist, std::vector<TString> Names)
 {
+  float min = Hist -> GetXaxis() -> GetXmin(); 
+  float max = Hist -> GetXaxis() -> GetXmax(); 
+  int bins = Hist -> GetNbinsX();  
+  
   std::vector<TH1F*> Output; 
   for (int i(0); i < Names.size(); i++)
   {
-    TH1F* H = (TH1F*)Hist -> Clone(Names[i]); 
+    TH1F* H = new TH1F(Names[i], Names[i], bins, min, max);  
     H -> Reset(); 
     H -> SetTitle(Names[i]); 
     Output.push_back(H); 
@@ -138,32 +142,47 @@ float SquareError(TH1F* Hist1, TH1F* Hist2, float x_min, float x_max)
   return Pythagoras(v1, v2); 
 }
 
-// Benchmark function 
-void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2, float x_min, float x_max)
-{
-  std::cout << std::endl;
-  for (int i(0); i < Hists1.size(); i++)
+float ErrorByIntegral(TH1F* Hist1, TH1F* Hist2, float x_min, float x_max)
+{ 
+  int bins = Hist1 -> GetNbinsX(); 
+  int bin_min = Hist1 -> GetXaxis() -> FindBin(x_min); 
+  int bin_max = Hist1 -> GetXaxis() -> FindBin(x_max); 
+
+  if (x_min == x_max)
   {
-    TString n1 = Hists1[i] -> GetTitle(); 
-    TString n2 = Hists2[i] -> GetTitle(); 
-    float er = SquareError(Hists1[i], Hists2[i], x_min, x_max); 
-    float ks = Hists1[i] -> KolmogorovTest(Hists2[i]);
-    std::cout << "Histogram: " << n1 << " Matched with Histogram: " << n2 << " Square Root Error: " << er << " Kalmogorov: " << ks << std::endl;
+    bin_min = 0; 
+    bin_max = bins; 
   }
+  
+  // Calculate the total error from Hist1, compared to Hist2
+  float sum = 0; 
+  for (int i(bin_min); i < bin_max; i++)
+  {
+    float h1 = Hist1 -> GetBinContent(i+1); 
+    float h2 = Hist2 -> GetBinContent(i+1); 
+    sum += std::abs(h1 - h2);
+  } 
+  float A = Hist2 -> Integral(bin_min, bin_max); 
+  return sum/A; 
+
 }
 
-// Plot and benchmark
-void PlotAndBenchmark(std::vector<TH1F*> H1, std::vector<TH1F*> H2, TString Name, TCanvas* can, float x_min, float x_max)
+void Statistics(TH1F* H1, TH1F* H2, float x_min, float x_max)
 {
-  for (int i(0); i < H2.size(); i++)
+  float max = H1 -> GetXaxis() -> GetXmax(); 
+  float min = H1 -> GetXaxis() -> GetXmin(); 
+
+  if (x_min == x_max) 
   {
-    can -> SetLogy();
-    RatioPlot(H1[i], H2[i], can); 
-    can -> Print(Name);
-    can -> Clear();
+    x_max = max; 
+    x_min = min;   
   }
 
-  Stats(H1, H2, x_min, x_max); 
+  std::cout << "####################################################" << std::endl; 
+  std::cout << "H1: " << H1 -> GetTitle() << " ::::: H2: " << H2 -> GetTitle() << std::endl;
+  std::cout << "Domain selected: " << x_min << " -> " << x_max << std::endl;
+  std::cout << "- Absolute Error / Integral of H2: " << ErrorByIntegral(H1, H2, x_min, x_max) << std::endl;
+  std::cout << "- KolmogorovTest: " << H2 -> KolmogorovTest(H1) << std::endl;
 }
 
 float GetMaxValue(TH1F* H)
@@ -180,3 +199,12 @@ void BulkWrite(std::vector<TH1F*> Hist_V)
     H -> Write(); 
   }
 }
+
+void BulkDelete(std::vector<TH1F*> Hist_V)
+{
+  for (int i(0); i < Hist_V.size(); i++)
+  {
+    delete Hist_V[i]; 
+  }
+}
+

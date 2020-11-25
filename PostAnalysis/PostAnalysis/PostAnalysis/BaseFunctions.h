@@ -28,12 +28,11 @@ void ToTH1F(std::vector<float> Input, TH1F* Hist);
 // Benchmarking 
 float Pythagoras(std::vector<float> v1, std::vector<float> v2); 
 float SquareError(TH1F* Hist1, TH1F* Hist2, float x_min = 0, float x_max = 0);  
-void Stats(std::vector<TH1F*> Hists1, std::vector<TH1F*> Hists2, float x_min = 0, float x_max = 0);
-
-// Plot and Benchmark together 
-void PlotAndBenchmark(std::vector<TH1F*> H1, std::vector<TH1F*> H2, TString Name, TCanvas* can, float x_min = 0, float x_max = 0); 
+float ErrorByIntegral(TH1F* Hist1, TH1F* Hist2, float x_min = 0, float x_max = 0); 
+void Statistics(TH1F* H1, TH1F* H2, float x_min = 0, float x_max = 0); 
 
 // Simple repetitive functions 
 float GetMaxValue(TH1F* H); 
 void BulkWrite(std::vector<TH1F*> Hist_V); 
+void BulkDelete(std::vector<TH1F*> Hist_V); 
 #endif

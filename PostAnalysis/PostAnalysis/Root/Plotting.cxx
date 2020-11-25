@@ -37,7 +37,8 @@ void PlotHists(std::vector<TH1F*> Hists, std::vector<TString> Legend_Titles, TCa
 void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
 {
   gStyle -> SetOptStat(0); 
-  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+  Hists[0] -> GetYaxis() -> SetRangeUser(1e-6, 1e6); 
   Populate(Hists, can, len, kSolid); 
 }
 
@@ -178,13 +179,3 @@ void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString 
   Ratio -> SetMarkerSize(1); 
   Ratio -> Draw("epl"); 
 }
-
-
-
-
-
-
-
-
-
-

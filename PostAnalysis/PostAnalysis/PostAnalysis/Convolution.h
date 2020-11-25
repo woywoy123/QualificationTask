@@ -16,13 +16,10 @@
 std::vector<float> ConvolutionFFT(std::vector<float> V1, std::vector<float> V2, int ZeroPointBin); 
 void Convolution(TH1F* H1, TH1F* H2, TH1F* Out); 
 void ResidualRemove(TH1F* Hist); 
-
-
 std::vector<float> ConvolutionSum(std::vector<float> V1, std::vector<float> V2, int ZeroPointBin); 
 void ConvolutionExperimental(TH1F* H1, TH1F* H2, TH1F* Out); 
 
-
-
+std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, TString extension); 
 
 
 // Deconvolution 

@@ -29,6 +29,9 @@ void FigureCompiler(TFile* F)
     if (CompilerName == "TestLandauXGausFit"){ PlotLandauXGausFit(can, Hist_V, filename); }
     if (CompilerName == "TestNLandauXNGausFit"){ PlotNLandauXNGausFit(can, Hist_V, filename); }
     if (CompilerName == "TestDeconvolutionFit"){ PlotDeconvolutionFit(can, Hist_V, filename); }
+    if (CompilerName == "TestComparisonBinCenteringLandauXLandau"){ PlotComparisonBinCenteringLandauXLandau(can, Hist_V, filename);}
+    if (CompilerName == "TestOscillationLucyRichardson"){ PlotOscillationLucyRichardson(can, Hist_V, filename);}
+    if (CompilerName == "TestAlgorithm"){ PlotAlgorithm(can, Hist_V, filename);}
     can -> Clear(); 
     can -> Print(filename);  
   }
@@ -572,23 +575,267 @@ void PlotDeconvolutionFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filen
   can -> Clear(); 
 
   Hist_V[1] -> GetYaxis() -> SetRangeUser(1, 1e8); 
-  GenerateRatioPlot(Hist_V[1], Hist_V[14], can, "Shape and Luminosity Predictions Compared to compared to Truth", "LOG"); 
+  GenerateRatioPlot(Hist_V[1], Hist_V[14], can, "Shape and Luminosity Predictions From RooFit compared to Truth", "LOG"); 
   can -> Update(); 
   can -> Print(filename); 
   can -> Clear(); 
 
   Hist_V[2] -> GetYaxis() -> SetRangeUser(1, 1e8); 
-  GenerateRatioPlot(Hist_V[2], Hist_V[15], can, "Shape and Luminosity Predictions Compared tocompared to  Truth", "LOG"); 
+  GenerateRatioPlot(Hist_V[2], Hist_V[15], can, "Shape and Luminosity Predictions From RooFit compared to  Truth", "LOG"); 
   can -> Update(); 
   can -> Print(filename); 
   can -> Clear(); 
 
   Hist_V[3] -> GetYaxis() -> SetRangeUser(1, 1e8); 
-  GenerateRatioPlot(Hist_V[3], Hist_V[16], can, "Shape and Luminosity Predictions Compared tocompared to  Truth", "LOG"); 
+  GenerateRatioPlot(Hist_V[3], Hist_V[16], can, "Shape and Luminosity Predictions From RooFit compared to  Truth", "LOG"); 
   can -> Update(); 
   can -> Print(filename); 
   can -> Clear(); 
 
+  // Write out the statistics or the hists 
+  std::cout << "############ Statistics of the Fit #################" << std::endl;
+  std::cout << "# Centered: " << std::endl;   
+  Statistics(Hist_V[0], Hist_V[13], 1, 16); 
+  Statistics(Hist_V[1], Hist_V[14], 1, 16); 
+  Statistics(Hist_V[2], Hist_V[15], 1, 16);
+  Statistics(Hist_V[3], Hist_V[16], 1, 16);
+  std::cout << std::endl; 
+
 }
 
+void PlotComparisonBinCenteringLandauXLandau(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
+{
+  TH1F* Empty = (TH1F*)Hist_V[0] -> Clone("Empty Space");
+  Empty -> Reset(); 
+  Empty -> GetYaxis() -> SetRangeUser(1e-8, 2); 
+  
+  // Plot the PDFs and the PSF used for this fit 
+  can -> SetLogy(); 
+  GeneratePlot(Empty, "Landau Distribution Generated from not Centering the Bins", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[0], "Landau 1", can, kRed, kSolid, "SAMEHIST", 0.5); 
+  GeneratePlot(Hist_V[1], "Landau 2", can, kOrange, kSolid, "SAMEHIST", 0.8); 
+  GeneratePlot(Hist_V[2], "Landau 3", can, kViolet, kSolid, "SAMEHIST", 0.8);
+  GeneratePlot(Hist_V[3], "Landau 4", can, kGreen, kSolid, "SAMEHIST", 0.8);
+  GenerateLegend({Hist_V[0],  Hist_V[1], Hist_V[2],  Hist_V[3]}, can); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear(); 
 
+  // Plot the PDFs and the PSF used for this fit 
+  GeneratePlot(Empty, "Landau Distribution Generated from Centering the Bins", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[8], "Landau 1", can, kRed, kSolid, "SAMEHIST", 0.5); 
+  GeneratePlot(Hist_V[9], "Landau 2", can, kOrange, kSolid, "SAMEHIST", 0.8); 
+  GeneratePlot(Hist_V[10], "Landau 3", can, kViolet, kSolid, "SAMEHIST", 0.8);
+  GeneratePlot(Hist_V[11], "Landau 4", can, kGreen, kSolid, "SAMEHIST", 0.8);
+  GenerateLegend({Hist_V[8],  Hist_V[9], Hist_V[10],  Hist_V[11]}, can); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear();  
+
+  // Landau Wrong
+  can -> SetLogy();
+  Hist_V[1] -> GetYaxis() -> SetRangeUser(1e-8, 2); 
+  GenerateRatioPlot(Hist_V[1], Hist_V[5], can, "Shape Difference Between Numerically Generated Landau and Convolved Landau (Non Centering)", "LOG"); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear(); 
+
+  Hist_V[2] -> GetYaxis() -> SetRangeUser(1e-8, 2); 
+  GenerateRatioPlot(Hist_V[2], Hist_V[6], can, "Shape Difference Between Numerically Generated Landau and Convolved Landau (Non Centering)", "LOG"); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear(); 
+
+  Hist_V[3] -> GetYaxis() -> SetRangeUser(1e-8, 2); 
+  GenerateRatioPlot(Hist_V[3], Hist_V[7], can, "Shape Difference Between Numerically Generated Landau and Convolved Landau (Non Centering)", "LOG"); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear(); 
+
+  // Landau Correct
+  Hist_V[9] -> GetYaxis() -> SetRangeUser(1e-8, 2); 
+  GenerateRatioPlot(Hist_V[9], Hist_V[13], can, "Shape Difference Between Numerically Generated Landau and Convolved Landau (Centering)", "LOG"); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear(); 
+
+  Hist_V[10] -> GetYaxis() -> SetRangeUser(1e-8, 2); 
+  GenerateRatioPlot(Hist_V[10], Hist_V[14], can, "Shape Difference Between Numerically Generated Landau and Convolved Landau (Centering)", "LOG"); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear(); 
+
+  Hist_V[11] -> GetYaxis() -> SetRangeUser(1e-8, 2); 
+  GenerateRatioPlot(Hist_V[11], Hist_V[15], can, "Shape Difference Between Numerically Generated Landau and Convolved Landau (Centering)", "LOG"); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear(); 
+
+  // Write out the statistics or the hists 
+  std::cout << "############ Landau Bin Centering vs Landau Non Bin Centering #################" << std::endl;
+  std::cout << "# Not Centered: " << std::endl;   
+  Statistics(Hist_V[1], Hist_V[5], 1, 16); 
+  Statistics(Hist_V[2], Hist_V[6], 1, 16); 
+  Statistics(Hist_V[3], Hist_V[7], 1, 16); 
+  std::cout << std::endl;
+  std::cout << "# Centered: " << std::endl;   
+  Statistics(Hist_V[9], Hist_V[13], 1, 16); 
+  Statistics(Hist_V[10], Hist_V[14], 1, 16); 
+  Statistics(Hist_V[11], Hist_V[15], 1, 16);
+  std::cout << std::endl; 
+
+}
+
+void PlotOscillationLucyRichardson(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
+{
+  can -> SetLogy(); 
+  GeneratePlot(Hist_V[0], "", can, kRed, kSolid, "HIST", 1); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  GeneratePlot(Hist_V[1], "", can, kRed, kSolid, "HIST", 1); 
+  can -> Print(filename); 
+  can -> Clear();
+  
+  GeneratePlot(Hist_V[2], "", can, kRed, kSolid, "HIST", 1); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  can -> SetLogy(0); 
+  TH1F* Empty = CloneTH1F(Hist_V[3], {"Empty"})[0]; 
+  GeneratePlot(Empty, "Gaussians with different Standard Deviations", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[3], "", can, kRed, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[4], "", can, kBlue, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[5], "", can, kOrange, kSolid, "SAMEHIST", 1); 
+  GenerateLegend({Hist_V[3],  Hist_V[4], Hist_V[5]}, can); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  GeneratePlot(Hist_V[6], "", can, kRed, kSolid, "HIST", 1); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  GeneratePlot(Hist_V[7], "", can, kRed, kSolid, "HIST", 1); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  can -> SetLogy(); 
+  Empty -> GetYaxis() -> SetRangeUser(1, 1e6);
+  GeneratePlot(Empty, "Deconvolving a Landau with different Gaussian Widths", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[8], "", can, kRed, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[9], "", can, kBlue, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[10], "", can, kOrange, kSolid, "SAMEHIST", 1); 
+  GenerateLegend({Hist_V[8],  Hist_V[9], Hist_V[10]}, can); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  GeneratePlot(Empty, "Deconvolving a Landau with the same Gaussian and different number of Iterations", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[11], "", can, kRed, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[12], "", can, kBlue, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[13], "", can, kOrange, kSolid, "SAMEHIST", 1); 
+  GenerateLegend({Hist_V[11],  Hist_V[12], Hist_V[13]}, can); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  Hist_V[14] -> GetYaxis() -> SetRangeUser(1, 1e6);
+  GeneratePlot(Hist_V[14], "Deconvolving Landau with a Gaussian - 100 bins", can, kRed, kSolid, "HIST", 1); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  Hist_V[15] -> GetYaxis() -> SetRangeUser(1, 1e6);
+  GeneratePlot(Hist_V[15], "Deconvolving Landau with a Gaussian - 200 bins", can, kRed, kSolid, "HIST", 1); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  Hist_V[16] -> GetYaxis() -> SetRangeUser(1, 1e6);
+  GeneratePlot(Hist_V[16], "Deconvolving Landau with a Gaussian - 500 bins", can, kRed, kSolid, "HIST", 1); 
+  can -> Print(filename); 
+  can -> Clear();
+}
+
+void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
+{
+  for (TH1F* H : Hist_V)
+  {
+    std::cout << H -> GetTitle() << std::endl;  
+  }
+  
+  for (int i(0); i < 8; i++){ Normalize(Hist_V[i]); }
+
+  TH1F* Empty = (TH1F*)Hist_V[0] -> Clone("Empty Space");
+  Empty -> Reset(); 
+  Empty -> GetYaxis() -> SetRangeUser(1e-6, 2); 
+  
+  // Plot the PDFs and the PSF used for this fit 
+  can -> SetLogy(); 
+  GeneratePlot(Empty, "Original Landau Distributions with the Gaussians", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[0], "Landau 1", can, kRed, kSolid, "SAMEHIST", 0.5); 
+  GeneratePlot(Hist_V[1], "Landau 2", can, kOrange, kSolid, "SAMEHIST", 0.8); 
+  GeneratePlot(Hist_V[2], "Landau 3", can, kViolet, kSolid, "SAMEHIST", 0.8);
+  GeneratePlot(Hist_V[3], "Landau 4", can, kGreen, kSolid, "SAMEHIST", 0.8);
+  GeneratePlot(Hist_V[4], "Gaussian 1", can, kRed,    kDashed, "SAMEHIST", 0.5); 
+  GeneratePlot(Hist_V[5], "Gaussian 2", can, kOrange, kDashed, "SAMEHIST", 0.8); 
+  GeneratePlot(Hist_V[6], "Gaussian 3", can, kViolet, kDashed, "SAMEHIST", 0.8);
+  GeneratePlot(Hist_V[7], "Gaussian 4", can, kGreen,  kDashed, "SAMEHIST", 0.8);
+  GenerateLegend({Hist_V[0],  Hist_V[1], Hist_V[2],  Hist_V[3], Hist_V[4],  Hist_V[5], Hist_V[6],  Hist_V[7] }, can); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear(); 
+
+  Empty -> GetYaxis() -> SetRangeUser(1, 1e7); 
+  GeneratePlot(Empty, "Fake Data with Smearing applied", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[12], "", can, kBlack,  kSolid, "SAMEHIST", 0.5);
+  GeneratePlot(Hist_V[8], "", can, kRed, kDashed, "SAMEHIST", 0.5); 
+  GeneratePlot(Hist_V[9], "", can, kOrange, kDashed, "SAMEHIST", 0.8); 
+  GeneratePlot(Hist_V[10], "", can, kViolet, kDashed, "SAMEHIST", 0.8);
+  GeneratePlot(Hist_V[11], "", can, kGreen, kDashed, "SAMEHIST", 0.8);
+  GenerateLegend({Hist_V[12],  Hist_V[8], Hist_V[9],  Hist_V[10], Hist_V[11]}, can); 
+  can -> Update(); 
+  can -> Print(filename); 
+  can -> Clear(); 
+
+  for (int i(13); i < Hist_V.size()-4; i++)
+  {
+    std::cout << "############ Algorithm Test #################" << std::endl;
+    Statistics(Hist_V[i], Hist_V[8], 1, 16); 
+    Hist_V[i] -> GetYaxis() -> SetRangeUser(1, 1e7); 
+    GenerateRatioPlot(Hist_V[i], Hist_V[8], can, "Ratio Plot of the Truth and Prediction", "LOG"); 
+    can -> Print(filename); 
+    can -> Clear();   
+    i++;
+
+    Statistics(Hist_V[i], Hist_V[9], 1, 16); 
+    Hist_V[i] -> GetYaxis() -> SetRangeUser(1, 1e7); 
+    GenerateRatioPlot(Hist_V[i], Hist_V[9], can, "Ratio Plot of the Truth and Prediction", "LOG"); 
+    can -> Print(filename); 
+    can -> Clear(); 
+    i++; 
+
+    Statistics(Hist_V[i], Hist_V[10], 1, 16); 
+    Hist_V[i] -> GetYaxis() -> SetRangeUser(1, 1e7); 
+    GenerateRatioPlot(Hist_V[i], Hist_V[10], can, "Ratio Plot of the Truth and Prediction", "LOG"); 
+    can -> Print(filename); 
+    can -> Clear(); 
+    i++; 
+
+    Statistics(Hist_V[i], Hist_V[11], 1, 16); 
+    Hist_V[i] -> GetYaxis() -> SetRangeUser(1, 1e7); 
+    GenerateRatioPlot(Hist_V[i], Hist_V[11], can, "Ratio Plot of the Truth and Prediction", "LOG"); 
+    can -> Print(filename); 
+    can -> Clear();
+    std::cout << std::endl;
+  
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+}

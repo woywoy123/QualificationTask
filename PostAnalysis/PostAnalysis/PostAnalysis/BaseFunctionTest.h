@@ -20,5 +20,7 @@ void TestLandauXGausFit(TFile* F);
 void TestNLandauXNGausFit(TFile* F); 
 void TestGaussianDeconvolutionFit(TFile* F); 
 void TestDeconvolutionFit(TFile* F); 
-
+void TestComparisonBinCenteringLandauXLandau(TFile* F); 
+void TestOscillationLucyRichardson(TFile* F); 
+void TestAlgorithm(TFile* F); 
 #endif
