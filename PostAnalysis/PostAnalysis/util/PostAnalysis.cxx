@@ -37,6 +37,7 @@ int main(int argc, char** argv)
     //TestComparisonBinCenteringLandauXLandau(F); 
     //TestOscillationLucyRichardson(F); 
     TestAlgorithm(F); 
+    //TestReadFile(F); 
   
   }
 
@@ -47,14 +48,6 @@ int main(int argc, char** argv)
  
   // Compile the figures  
   FigureCompiler(F);   
- 
- 
- 
- 
- 
- 
- 
-  
   F -> Close();   
   
   std::cout << "fin" << std::endl;

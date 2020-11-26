@@ -19,5 +19,5 @@ void PlotDeconvolutionFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filen
 void PlotComparisonBinCenteringLandauXLandau(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename);
 void PlotOscillationLucyRichardson(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename);
 void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename);
-
+void PlotTestReadFile(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename);
 #endif

@@ -13,7 +13,8 @@ std::vector<TH1F*> CloneTH1F(TH1F* Hist, std::vector<TString> Names);
 // Histogram manipulation 
 void Normalize(TH1F* Hist); 
 void Normalize(std::vector<TH1F*> Hists); 
-void Shift(TH1F* Hist, int shift); 
+void Shift(TH1F* Hist, int shift);
+void Scale(TH1F* Data, std::vector<TH1F*> ntrk); 
 
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty); 

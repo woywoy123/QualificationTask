@@ -96,6 +96,34 @@ void Shift(TH1F* Hist, int shift)
   }
 }
 
+void Scale(TH1F* Data, std::vector<TH1F*> ntrk)
+{
+    int excess_i = 0;
+    float excess_sum;  
+    for (int i(0); i < Data ->GetNbinsX(); i++)
+    {
+      float e = Data -> GetBinContent(i+1); 
+      float sum(0);  
+      for (int c(0); c < ntrk.size(); c++)
+      {
+        sum += ntrk[c] -> GetBinContent(i+1);  
+      }
+      
+      if ( sum > e && e > 1)
+      {
+        excess_sum += sum/e; 
+        excess_i++;  
+      }
+    }
+     
+    if ( excess_i > 1)
+    {
+      float average = excess_sum / (float)excess_i; 
+      for (int c(0); c < ntrk.size(); c++){ntrk[c] -> Scale((float)1/average);}
+    }
+}
+
+
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty)
 {
@@ -194,10 +222,7 @@ float GetMaxValue(TH1F* H)
 
 void BulkWrite(std::vector<TH1F*> Hist_V)
 {
-  for (TH1F* H : Hist_V)
-  {
-    H -> Write(); 
-  }
+  for (TH1F* H : Hist_V){H -> Write();}
 }
 
 void BulkDelete(std::vector<TH1F*> Hist_V)

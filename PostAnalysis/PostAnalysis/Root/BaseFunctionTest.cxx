@@ -612,7 +612,7 @@ void TestAlgorithm(TFile* F)
   int bins  = 500; 
   float min = -2;   
   float max = 18;  
-  int Iters = 200; 
+  int Iters = 100; 
   float centering = (max-min)/float(bins);
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<float> COMP = {0.6, 0.3, 0.05, 0.05}; 
@@ -620,7 +620,7 @@ void TestAlgorithm(TFile* F)
   Params["m_s"] = {-0.1, -0.1, -0.1, -0.1}; 
   Params["m_e"] = {0.1, 0.1, 0.1, 0.1}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.2, 0.2, 0.2, 0.2};  
+  Params["s_e"] = {0.5, 0.5, 0.5, 0.5};  
   Params["x_range"] = {-0.4, 16}; 
 
   // Define the Landaus    
@@ -652,14 +652,27 @@ void TestAlgorithm(TFile* F)
   BulkWrite(Smear);  
   Data -> Write();
   
-  int iter = 5; 
+  int iter = 15; 
   std::vector<TString> Name_Conv = {"Landau1_D", "Landau2_D", "Landau3_D", "Landau4_D"};
-  TH1F* trk1 = Gen_Landau[0]; 
+  TH1F* trk1 = (TH1F*)Gen_Landau[0] -> Clone("trk1"); 
   TH1F* Temp = (TH1F*)Data -> Clone("Data_Copy"); 
   TCanvas* can = new TCanvas();
   can -> SetLogy(); 
+ 
+  std::vector<TH1F*> Output; 
+  float d = 0;  
   for (int i(0); i < iter; i++)
   {
+
+    auto Average =[](TH1F* new_H, TH1F* old_H)
+    {
+      for (int i(0); i < new_H -> GetNbinsX(); i++)
+      {
+        float e = new_H -> GetBinContent(i+1); 
+        float f = old_H -> GetBinContent(i+1); 
+        old_H -> SetBinContent(i+1, (e+f)/2.);  
+      }
+    };
      
     TH1F* trk1_old = (TH1F*)trk1 -> Clone("trk1_old"); 
     
@@ -669,62 +682,57 @@ void TestAlgorithm(TFile* F)
 
     // Deconvolve the "PDFs" with the Gaussian 
     std::vector<TH1F*> D_PDFs = CloneTH1F(trk1, Name_Conv);
-    MultiThreadingDeconvolution(ntrk, PSF, D_PDFs, Iters); 
-  
-    std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params);
+    MultiThreadingDeconvolution(ntrk, PSF, D_PDFs, Iters);
+    std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params, 100000, 1000000);
+    //Scale(Data, Result);  
+   
+   
+   
+    float d_old = d;   
+    TH1F* trk_old = (TH1F*)trk1 -> Clone("trk_old");  
     trk1 -> Reset();  
     Temp -> Reset();  
     Temp -> Add(Data); 
-    
-    float heat = (float)(i+2)/(float)iter;  
-    Temp -> Add(Result[1], -heat); 
-    Temp -> Add(Result[2], -heat); 
-    Temp -> Add(Result[3], -heat); 
+    Temp -> Add(Result[1], -1); 
+    Temp -> Add(Result[2], -1); 
+    Temp -> Add(Result[3], -1); 
     trk1 -> Add(Temp);  
-
-    PlotHists(Data, Smear, Result, can);  
-    can -> Print("test.pdf");  
-
-    float d = SquareError(trk1, trk1_old); 
-    std::cout << "distance: " << d << std::endl; 
+    Average(Result[0], trk1);  
     
-    for (int c(0); c < ntrk.size(); c++)
+    PlotHists(Data, Result, Smear, can);  
+    can -> Print("test.pdf"); 
+    can -> Clear();   
+    
+    for (int x(0); x < Result.size(); x++) 
     {
-      TString name = ntrk[c] -> GetTitle();
-      Result[c] -> SetTitle(name);  
+      TString name = ntrk[x] -> GetTitle(); 
+      delete ntrk[x];  
+      TH1F* Hist = (TH1F*)Result[x] -> Clone(name); 
+      Hist -> SetTitle(name); 
+      Output.push_back(Hist); 
     }
-     
+    
+    d = SquareError(trk_old, trk1); 
+    std::cout << "<<<<<<<<<<"<<  d_old - d << std::endl;  
+    
+    BulkDelete(Result);  
     BulkDelete(D_PDFs);
-    BulkDelete(ntrk);  
-    BulkWrite(Result);
     delete trk1_old; 
   }
+  BulkWrite(Output); 
 
+}
+
+void TestReadFile(TFile* F)
+{
+  F -> mkdir("TestReadFile"); 
+  F -> cd("TestReadFile"); 
+
+  TH1F* H = new TH1F("", "", 100, 0, 1); 
+  H -> Write(); 
 
 
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

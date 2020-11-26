@@ -32,6 +32,7 @@ void FigureCompiler(TFile* F)
     if (CompilerName == "TestComparisonBinCenteringLandauXLandau"){ PlotComparisonBinCenteringLandauXLandau(can, Hist_V, filename);}
     if (CompilerName == "TestOscillationLucyRichardson"){ PlotOscillationLucyRichardson(can, Hist_V, filename);}
     if (CompilerName == "TestAlgorithm"){ PlotAlgorithm(can, Hist_V, filename);}
+    if (CompilerName == "TestReadFile"){ PlotTestReadFile(can, Hist_V, filename);}
     can -> Clear(); 
     can -> Print(filename);  
   }
@@ -794,7 +795,7 @@ void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
   can -> Print(filename); 
   can -> Clear(); 
 
-  for (int i(13); i < Hist_V.size()-4; i++)
+  for (int i(13); i < Hist_V.size(); i++)
   {
     std::cout << "############ Algorithm Test #################" << std::endl;
     Statistics(Hist_V[i], Hist_V[8], 1, 16); 
@@ -824,18 +825,33 @@ void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
     can -> Print(filename); 
     can -> Clear();
     std::cout << std::endl;
+  }
+}
+
+void PlotTestReadFile(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
+{
+  TString Dir = "Merged.root"; 
+  std::map<TString, std::vector<TH1F*>> MC = MonteCarlo(Dir); 
+  std::vector<TString> Names = {"trk1_IBL", "trk2_IBL", "trk3_IBL", "trk4_IBL", "trk1_Blayer", "trk2_Blayer", "trk3_Blayer", "trk4_Blayer", "trk1_layer1", "trk2_layer1", "trk3_layer1", "trk4_layer1", "trk1_layer2", "trk2_layer2", "trk3_layer2", "trk4_layer2", "trk1_All", "trk2_All", "trk3_All", "trk4_All", "dEdx_IBL", "dEdx_Blayer", "dEdx_layer1", "dEdx_layer2", "dEdx_ntrk_All"}; 
+ 
   
+  can -> SetLogy(); 
+  std::vector<Color_t> Col = {kRed, kGreen, kBlue, kOrange}; 
+  for (TString N : Names)
+  {
+    std::vector<TH1F*> Hist_V = MC[N];
+    TH1F* Empty = (TH1F*)Hist_V[0] -> Clone("EMPTY"); 
+    Empty -> Reset(); 
+    Empty -> GetYaxis() -> SetRangeUser(1, 1e7);  
+    GeneratePlot(Empty, N, can, kWhite, kSolid, "HIST", 0); 
+    for (int i(0); i < Hist_V.size(); i++)
+    {
+      Hist_V[i] -> Scale(1e10); 
+      GeneratePlot(Hist_V[i], "", can, Col[i], kSolid, "SAMEHIST", 1); 
+    }
+    can -> Print(filename); 
+    can -> Clear(); 
   }
 
-
-
-
-
-
-
-
-
-
-
-
 }
+
