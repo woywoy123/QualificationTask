@@ -157,7 +157,11 @@ void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString 
   
   TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
 
-  if (Xaxis == "LOG"){P1 -> SetLogy(); }
+  if (Xaxis == "LOG")
+  {
+    P1 -> SetLogy(); 
+    Empty -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^{2}]");
+  }
   else { Empty -> GetXaxis() -> SetTitle(Xaxis);}
 
   P1 -> Draw(); 

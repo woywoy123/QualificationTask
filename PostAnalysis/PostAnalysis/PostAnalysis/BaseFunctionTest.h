@@ -24,4 +24,5 @@ void TestComparisonBinCenteringLandauXLandau(TFile* F);
 void TestOscillationLucyRichardson(TFile* F); 
 void TestAlgorithm(TFile* F); 
 void TestReadFile(TFile* F); 
+void TestMonteCarloMatchConvolution(TFile* F); 
 #endif

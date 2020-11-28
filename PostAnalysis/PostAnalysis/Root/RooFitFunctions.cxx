@@ -87,7 +87,7 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   
   // Create the Luminosity variables for the fit
   std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
-  std::vector<float> l_s(n_vars, 1); 
+  std::vector<float> l_s(n_vars, 0); 
   std::vector<float> l_e(n_vars, 1.5 * Data -> Integral());  
   std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
   

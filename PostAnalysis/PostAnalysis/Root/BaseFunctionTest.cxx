@@ -1,4 +1,5 @@
 #include<PostAnalysis/BaseFunctionTest.h>
+#include<PostAnalysis/IO.h>
 
 void TestLandau(TFile* F)
 {
@@ -606,13 +607,24 @@ void TestOscillationLucyRichardson(TFile* F)
 
 void TestAlgorithm(TFile* F)
 {
+
+  auto Average =[](TH1F* new_H, TH1F* old_H)
+  {
+    for (int i(0); i < new_H -> GetNbinsX(); i++)
+    {
+      float e = new_H -> GetBinContent(i+1); 
+      float f = old_H -> GetBinContent(i+1); 
+      old_H -> SetBinContent(i+1, (e+f)/2.);  
+    }
+  };
+
   F -> mkdir("TestAlgorithm");
   F -> cd("TestAlgorithm");
 
   int bins  = 500; 
   float min = -2;   
   float max = 18;  
-  int Iters = 100; 
+  int Iters = 250; 
   float centering = (max-min)/float(bins);
   std::vector<float> LandauParams = {1, 0.9, 0.1}; 
   std::vector<float> COMP = {0.6, 0.3, 0.05, 0.05}; 
@@ -652,7 +664,7 @@ void TestAlgorithm(TFile* F)
   BulkWrite(Smear);  
   Data -> Write();
   
-  int iter = 15; 
+  int iter = 10; 
   std::vector<TString> Name_Conv = {"Landau1_D", "Landau2_D", "Landau3_D", "Landau4_D"};
   TH1F* trk1 = (TH1F*)Gen_Landau[0] -> Clone("trk1"); 
   TH1F* Temp = (TH1F*)Data -> Clone("Data_Copy"); 
@@ -661,35 +673,19 @@ void TestAlgorithm(TFile* F)
  
   std::vector<TH1F*> Output; 
   float d = 0;  
+  TH1F* Progress = new TH1F("Progress", "Progress", iter, 0, iter); 
   for (int i(0); i < iter; i++)
   {
-
-    auto Average =[](TH1F* new_H, TH1F* old_H)
-    {
-      for (int i(0); i < new_H -> GetNbinsX(); i++)
-      {
-        float e = new_H -> GetBinContent(i+1); 
-        float f = old_H -> GetBinContent(i+1); 
-        old_H -> SetBinContent(i+1, (e+f)/2.);  
-      }
-    };
-     
-    TH1F* trk1_old = (TH1F*)trk1 -> Clone("trk1_old"); 
-    
-    TString in; in += (i); 
+    float d_old = d;   
+    TString in; in +=(i);  
     std::vector<TH1F*> ntrk = ConvolveNTimes(trk1, 4, in);       
     Normalize(ntrk); 
 
-    // Deconvolve the "PDFs" with the Gaussian 
     std::vector<TH1F*> D_PDFs = CloneTH1F(trk1, Name_Conv);
     MultiThreadingDeconvolution(ntrk, PSF, D_PDFs, Iters);
-    std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params, 100000, 1000000);
-    //Scale(Data, Result);  
+    std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params, 100000, 100000);
    
-   
-   
-    float d_old = d;   
-    TH1F* trk_old = (TH1F*)trk1 -> Clone("trk_old");  
+    TH1F* trk1_old = (TH1F*)trk1 -> Clone("trk_old");  
     trk1 -> Reset();  
     Temp -> Reset();  
     Temp -> Add(Data); 
@@ -699,9 +695,9 @@ void TestAlgorithm(TFile* F)
     trk1 -> Add(Temp);  
     Average(Result[0], trk1);  
     
-    PlotHists(Data, Result, Smear, can);  
-    can -> Print("test.pdf"); 
-    can -> Clear();   
+    d = SquareError(trk1_old, trk1); 
+    float p = std::abs(d - d_old);  
+    Progress -> SetBinContent(i+1, p);    
     
     for (int x(0); x < Result.size(); x++) 
     {
@@ -710,17 +706,14 @@ void TestAlgorithm(TFile* F)
       TH1F* Hist = (TH1F*)Result[x] -> Clone(name); 
       Hist -> SetTitle(name); 
       Output.push_back(Hist); 
-    }
-    
-    d = SquareError(trk_old, trk1); 
-    std::cout << "<<<<<<<<<<"<<  d_old - d << std::endl;  
+    }   
     
     BulkDelete(Result);  
     BulkDelete(D_PDFs);
     delete trk1_old; 
   }
   BulkWrite(Output); 
-
+  Progress -> Write();
 }
 
 void TestReadFile(TFile* F)
@@ -730,9 +723,103 @@ void TestReadFile(TFile* F)
 
   TH1F* H = new TH1F("", "", 100, 0, 1); 
   H -> Write(); 
-
-
-
-
 }
 
+void TestMonteCarloMatchConvolution(TFile* F)
+{ 
+  F -> Write();
+  TString Dir = "Merged.root"; 
+  std::map<TString, std::vector<TH1F*>> MC = MonteCarlo(Dir); 
+
+  F -> ReOpen("UPDATE"); 
+  F -> mkdir("TestMonteCarloMatchConvolution"); 
+  F -> cd("TestMonteCarloMatchConvolution"); 
+
+
+  // Get the 1 Track distribution
+  std::vector<TH1F*> trk1 = MC["trk1_All"]; 
+
+  // Get the 2 Track distribution
+  std::vector<TH1F*> trk2 = MC["trk2_All"]; 
+
+  // Get the 3 Track distribution
+  std::vector<TH1F*> trk3 = MC["trk3_All"]; 
+
+  // Get the 4 Track distribution
+  std::vector<TH1F*> trk4 = MC["trk4_All"]; 
+
+  // Test in Two cases:
+  // - How well does the convolution of 1 track match the other tracks 
+  // - How well does the convolution + Fitting of 1 track match other tracks 
+  // Is there an improvement?
+  
+  TH1F* trk1_tru1 = trk1[0]; 
+  TH1F* trk2_tru2 = trk2[1]; 
+  TH1F* trk3_tru3 = trk3[2]; 
+  TH1F* trk4_tru4 = trk4[3]; 
+
+  // Parameters of the histograms 
+  int bins = trk1_tru1 -> GetNbinsX(); 
+  float min = trk1_tru1 -> GetXaxis() -> GetXmin(); 
+  float max = trk1_tru1 -> GetXaxis() -> GetXmax(); 
+  float width = (max - min)/float(bins); 
+  min+=width/2.;
+  max+=width/2.; 
+
+  // Just convolution 
+  std::vector<TH1F*> ntrks_Conv = ConvolveNTimes(trk1_tru1, 4, "Conv"); 
+  Normalize(ntrks_Conv); 
+
+  // Convolution + Deconvolution + Fit 
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-0.1, -0.1, -0.1, -0.1}; 
+  Params["m_e"] = {0.1, 0.1, 0.1, 0.1}; 
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.5, 0.5, 0.5, 0.5};  
+  Params["x_range"] = {-0.4, 16}; 
+
+  TH1F* Gaus = Gaussian(0, 0.1, bins, min, max, "Original1");  
+  std::vector<TH1F*> PSF = {Gaus, Gaus, Gaus, Gaus};  
+  std::vector<TH1F*> ntrks_F = ConvolveNTimes(trk1_tru1, 4, "Fit");
+  TCanvas* c = new TCanvas("l"); 
+  
+  std::vector<TString> Names_De ={"trk1_Deconv", "trk2_Deconv", "trk3_Deconv", "trk4_Deconv"}; 
+  std::vector<TH1F*> PDF_D = CloneTH1F(ntrks_Conv[0], Names_De);  
+  MultiThreadingDeconvolution(ntrks_F, PSF, PDF_D, 200); 
+  c -> SetLogy(); 
+  PDF_D[0] -> Draw("HIST");  
+  c -> Print("debug.pdf"); 
+
+
+
+  std::vector<TH1F*> trk1_Fit = FitDeconvolution(trk1_tru1, {PDF_D[0]}, Params, 100000, 100000);
+  TH1F* trk1_Fit_ = (TH1F*)trk1_Fit[0] -> Clone("trk1_Fit"); 
+  delete trk1_Fit[0]; 
+  
+  std::vector<TH1F*> trk2_Fit = FitDeconvolution(trk2_tru2, {PDF_D[1]}, Params, 100000, 100000);
+  TH1F* trk2_Fit_ = (TH1F*)trk2_Fit[0] -> Clone("trk2_Fit"); 
+  delete trk2_Fit[0]; 
+ 
+  std::vector<TH1F*> trk3_Fit = FitDeconvolution(trk3_tru3, {PDF_D[2]}, Params, 100000, 100000);
+  TH1F* trk3_Fit_ = (TH1F*)trk3_Fit[0] -> Clone("trk3_Fit"); 
+  delete trk3_Fit[0]; 
+ 
+  std::vector<TH1F*> trk4_Fit = FitDeconvolution(trk4_tru4, {PDF_D[3]}, Params, 100000, 100000);
+  TH1F* trk4_Fit_ = (TH1F*)trk4_Fit[0] -> Clone("trk4_Fit"); 
+  delete trk4_Fit[0]; 
+ 
+ 
+  trk1_tru1 -> Write();
+  trk2_tru2 -> Write(); 
+  trk3_tru3 -> Write();
+  trk4_tru4 -> Write(); 
+
+  BulkWrite(ntrks_Conv);  
+ 
+  Gaus -> Write();
+  BulkWrite(ntrks_F); 
+  trk1_Fit_ -> Write();  
+  trk2_Fit_ -> Write(); 
+  trk3_Fit_ -> Write(); 
+  trk4_Fit_ -> Write(); 
+}

@@ -24,7 +24,7 @@ std::map<TString, std::vector<TH1F*>> ReadEntries(TFile* F)
 
 std::map<TString, std::vector<TH1F*>> GetHist(std::map<TString, std::vector<TString>> Map, TString dir)
 { 
-  TFile* F = new TFile(dir);
+  TFile* F = new TFile(dir, "READ");
   std::map<TString, std::vector<TH1F*>> Out;  
   
   std::map<TString, std::vector<TString>>::iterator M; 
@@ -37,7 +37,7 @@ std::map<TString, std::vector<TH1F*>> GetHist(std::map<TString, std::vector<TStr
     F -> cd(layer); 
     for (TString H_N : H)   
     {
-      TH1F* Hist = (TH1F*)gDirectory -> Get(H_N); 
+      TH1F* Hist = (TH1F*)gDirectory -> Get(H_N);
       Hist_V.push_back(Hist);  
     }
     F -> cd(); 

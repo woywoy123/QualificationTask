@@ -36,9 +36,9 @@ int main(int argc, char** argv)
     //TestDeconvolutionFit(F);  
     //TestComparisonBinCenteringLandauXLandau(F); 
     //TestOscillationLucyRichardson(F); 
-    TestAlgorithm(F); 
+    //TestAlgorithm(F); 
     //TestReadFile(F); 
-  
+    TestMonteCarloMatchConvolution(F); 
   }
 
   // Run Experimental

@@ -213,7 +213,7 @@ std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, TString extension)
     Names.push_back(name);  
   }
   std::vector<TH1F*> Hist_V = CloneTH1F(Start, Names);
-  Hist_V[0] -> Add(Start);  
+  Hist_V[0] -> Add(Start, 1);  
   
   for (int i(0); i < n-1; i++)
   {
@@ -263,10 +263,14 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   
   // Get out of the function - Cant deconvolve 
   std::vector<float> Converge;
+
   if (pdf_bins != psf_bins || pdf_min != psf_min || pdf_max != psf_max)
   {
     Converge.push_back(0);
+    std::cout << "###################################" << std::endl;
     std::cout << "Check the centering of the bins...." << std::endl;
+    std::cout << pdf_bins << " psf ->: " << psf_bins << " \n " << pdf_min << " psf ->: " << psf_min << " \n " << pdf_max << " :: psf ->: " << psf_max << std::endl;
+    std::cout << "###################################" << std::endl;
     return Converge;
   }
   int bins = pdf_bins; 

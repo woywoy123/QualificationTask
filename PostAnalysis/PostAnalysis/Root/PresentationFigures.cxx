@@ -33,6 +33,8 @@ void FigureCompiler(TFile* F)
     if (CompilerName == "TestOscillationLucyRichardson"){ PlotOscillationLucyRichardson(can, Hist_V, filename);}
     if (CompilerName == "TestAlgorithm"){ PlotAlgorithm(can, Hist_V, filename);}
     if (CompilerName == "TestReadFile"){ PlotTestReadFile(can, Hist_V, filename);}
+    if (CompilerName == "TestMonteCarloMatchConvolution") { PlotMonteCarloMatchConvolution(can, Hist_V, filename);}
+
     can -> Clear(); 
     can -> Print(filename);  
   }
@@ -755,12 +757,7 @@ void PlotOscillationLucyRichardson(TCanvas* can, std::vector<TH1F*> Hist_V, TStr
 }
 
 void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
-{
-  for (TH1F* H : Hist_V)
-  {
-    std::cout << H -> GetTitle() << std::endl;  
-  }
-  
+{  
   for (int i(0); i < 8; i++){ Normalize(Hist_V[i]); }
 
   TH1F* Empty = (TH1F*)Hist_V[0] -> Clone("Empty Space");
@@ -795,7 +792,7 @@ void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
   can -> Print(filename); 
   can -> Clear(); 
 
-  for (int i(13); i < Hist_V.size(); i++)
+  for (int i(13); i < Hist_V.size()-1; i++)
   {
     std::cout << "############ Algorithm Test #################" << std::endl;
     Statistics(Hist_V[i], Hist_V[8], 1, 16); 
@@ -826,6 +823,11 @@ void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
     can -> Clear();
     std::cout << std::endl;
   }
+  can -> SetLogy();
+  GeneratePlot(Hist_V[Hist_V.size()-1], "", can, kWhite, kSolid, "HIST*", 1);
+  can -> Print(filename); 
+
+
 }
 
 void PlotTestReadFile(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
@@ -852,6 +854,106 @@ void PlotTestReadFile(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
     can -> Print(filename); 
     can -> Clear(); 
   }
-
 }
 
+void PlotMonteCarloMatchConvolution(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
+{
+  int x(0); 
+  for (TH1F* H : Hist_V)
+  {
+    std::cout << H -> GetTitle() << " --> " << x << std::endl; 
+    x++; 
+  }
+  TH1F* Empty = (TH1F*)Hist_V[0] -> Clone("Empty"); 
+  Empty -> Reset(); 
+ 
+  // Original Monte Carlo pure templates 
+  can -> SetLogy();  
+  Empty -> GetYaxis() -> SetRangeUser(1e-11, 1e-3);
+  GeneratePlot(Empty, "Monte Carlo Distributions of n-tracks, n-truth", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[0], "Track 1, Truth 1", can, kRed, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[1], "Track 2, Truth 2", can, kOrange, kSolid, "SAMEHIST", 1);  
+  GeneratePlot(Hist_V[2], "Track 3, Truth 3", can, kViolet, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[3], "Track 4, Truth 4", can, kGreen, kSolid, "SAMEHIST", 1); 
+  GenerateLegend({Hist_V[0], Hist_V[1], Hist_V[2], Hist_V[3]}, can);  
+  can -> Print(filename); 
+  can -> Clear(); 
+
+  //==== Compare the convolved distributions with the pure Monte Carlo distributions 
+  // Clone the originals 
+  Normalize(Hist_V); 
+
+  // Make a Ratio Plot
+  Hist_V[0] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[4] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[0], Hist_V[4], can, "Ratio Plot of 1 Track - 1 Truth Compared to Monte Carlo", "LOG"); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  Hist_V[1] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[5] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[1], Hist_V[5], can, "Ratio Plot of 2 Track - 2 Truth Compared to Monte Carlo", "LOG"); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  Hist_V[2] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[6] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[2], Hist_V[6], can, "Ratio Plot of 3 Track - 3 Truth Compared to Monte Carlo", "LOG"); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  Hist_V[3] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[7] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[3], Hist_V[7], can, "Ratio Plot of 4 Track - 4 Truth Compared to Monte Carlo", "LOG"); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  //==== Compare the Deconvolved and Fitted Convolutions with the pure Monte Carlo distributions 
+  // Plot the Gaussian being used for the deconvolution
+  GeneratePlot(Empty, "The Gaussian being used for Deconvolution", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[8], "", can, kBlack, kSolid, "SAMEHIST", 1); 
+  GenerateLegend({Hist_V[8]}, can); 
+  can -> Print(filename); 
+  can -> Clear();  
+  
+  // Make a Ratio Plot
+  Hist_V[0] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[4] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[0], Hist_V[9], can, "Ratio Plot of 1 Track - 1 Truth Compared to Monte Carlo", "LOG"); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  Hist_V[1] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[5] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[1], Hist_V[10], can, "Ratio Plot of 2 Track - 2 Truth Compared to Monte Carlo", "LOG"); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  Hist_V[2] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[6] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[2], Hist_V[11], can, "Ratio Plot of 3 Track - 3 Truth Compared to Monte Carlo", "LOG"); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  Hist_V[3] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[7] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[3], Hist_V[12], can, "Ratio Plot of 4 Track - 4 Truth Compared to Monte Carlo", "LOG"); 
+  can -> Print(filename); 
+  can -> Clear();
+
+  // ==== Now we compare the distributions using a statistical analysis 
+  std::cout << "#################################### Statistics ########################################" << std::endl;
+  std::cout << "==== Just using convolution:" << std::endl;
+  Statistics(Hist_V[0], Hist_V[4], 1, 18); 
+  Statistics(Hist_V[1], Hist_V[5], 1, 18); 
+  Statistics(Hist_V[2], Hist_V[6], 1, 18); 
+  Statistics(Hist_V[3], Hist_V[7], 1, 18); 
+  std::cout << std::endl;
+
+  std::cout << "==== Using Deconvolution + Gaussian:" << std::endl;
+  Statistics(Hist_V[0], Hist_V[9], 1, 18); 
+  Statistics(Hist_V[1], Hist_V[10], 1, 18); 
+  Statistics(Hist_V[2], Hist_V[11], 1, 18); 
+  Statistics(Hist_V[3], Hist_V[12], 1, 18); 
+  std::cout << std::endl;
+}
