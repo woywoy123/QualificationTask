@@ -1,27 +1,13 @@
 #include<PostAnalysis/Plotting.h>
-#include<PostAnalysis/Constants.h>
 
-TCanvas* Plotting::SimplePlot(TH1F* Hist)
+
+void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style)
 {
-  TCanvas* can = new TCanvas();
-  gStyle -> SetOptStat(0);
-  can -> SetLogy();
-  Hist -> Draw("SAMEHIST");
-  
-  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-  len -> AddEntry(Hist, Hist -> GetTitle()); 
-  len -> Draw("SAME");
-  can -> Update(); 
-
-  return can; 
-}
-
-void Plotting::Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style)
-{
+  std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kViolet, kOrange, kCoffee, kAurora}; 
   for (int i(0); i < Hists.size(); i++)
   {
     TH1F* H = Hists[i];
-    H -> SetLineColor(Constants::Colors[i]);
+    H -> SetLineColor(Colors[i]);
     H -> SetLineStyle(Style);
     H -> SetLineWidth(1);
     H -> Draw("SAMEHIST");
@@ -31,404 +17,169 @@ void Plotting::Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, EL
   }
 }
 
-TCanvas* Plotting::PlotHists(std::vector<TH1F*> Hists)
+void PlotHists(TH1F* Hist, TCanvas* can)
 {
-  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-  TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
+  Hist -> Draw("SAMEHIST"); 
+  can -> Update(); 
+}
+
+void PlotHists(std::vector<TH1F*> Hists, std::vector<TString> Legend_Titles, TCanvas* can)
+{
   gStyle -> SetOptStat(0); 
-  Populate(Hists, can, len);
-  return can;
-}
-
-void Plotting::PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
-{
-  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-  can -> SetLogy(); 
-  gStyle -> SetOptStat(0); 
-  Populate(Hists, can, len);
-}
-
-TCanvas* Plotting::PlotHists(std::vector<TH1F*> Hists, TH1F* Data)
-{
-  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-  gStyle -> SetOptStat(0); 
-  Data -> SetLineColor(kBlack);
-  Data -> Draw("SAMEHIST");
-  Populate(Hists, can, len);
-  len -> AddEntry(Data, Data -> GetTitle()); 
-  return can; 
-}
-
-void Plotting::PlotHists(std::vector<TH1F*> Hists, TH1F* Data, TCanvas* can)
-{
-  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-  can -> SetLogy(); 
-  gStyle -> SetOptStat(0); 
-  Data -> SetLineColor(kBlack);
-  Data -> SetMinimum(1e-8);
-  Data -> Draw("SAMEHIST");
-  Populate(Hists, can, len);
-  len -> AddEntry(Data, Data -> GetTitle()); 
-}
-
-TCanvas* Plotting::PlotHists(TH1F* Hists, TH1F* Data)
-{
-  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-  gStyle -> SetOptStat(0); 
-  Data -> SetLineColor(kBlack);
-  Data -> Draw("SAMEHIST");
-  Populate({Hists}, can, len);
-  len -> AddEntry(Data, Data -> GetTitle()); 
-  return can; 
-}
-
-TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data)
-{
-  TCanvas* can = new TCanvas();
-  can -> SetLogy(); 
-  gStyle -> SetOptStat(0);
-  can -> Divide(2,2); 
-  for (int i(0); i < Hists.size(); i++)
-  {
-    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-    can -> cd(i+1) -> SetLogy(); 
-    can -> cd(i+1);
-    Data[i] -> SetLineColor(kBlack);
-    Data[i] -> GetYaxis() -> SetRangeUser(1, Data[i] -> Integral()); 
-    Data[i] -> Draw("SAMEHIST"); 
-    Populate(Hists[i], can, len);
-    len -> AddEntry(Data[i], Data[i] -> GetTitle()); 
-    can -> Update();
-  }
-  return can;
-}
-
-void Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<std::vector<TH1F*>> Closure, std::vector<TH1F*> Data, TCanvas* can)
-{
-  can -> SetWindowSize(2400, 1200); 
-  for (int i(0); i < Hists.size(); i++)
-  {
-    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-    can -> cd(i+1) -> SetLogy(); 
-    can -> cd(i+1);
-    Data[i] -> SetLineColor(kBlack);
-		Data[i] -> GetYaxis() -> SetRangeUser(1, Data[i] -> Integral()); 
-    Data[i] -> Draw("SAMEHIST"); 
-    Populate(Hists[i], can, len, kSolid);
-    Populate(Closure[i], can, len, kDashed); 
-    len -> AddEntry(Data[i], Data[i] -> GetTitle()); 
-    can -> Update();
-  }
-}
-
-void Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, TH1F* Data, TCanvas* can)
-{
-  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-  can -> cd(1) -> SetLogy(); 
-  Data -> SetLineColor(kBlack);
-  Data -> GetYaxis() -> SetRangeUser(1, Data -> Integral()); 
-  Data -> Draw("SAMEHIST"); 
+  for (int i(0); i < Hists.size(); i++){Hists[i] -> SetTitle(Legend_Titles[i]); }
+  
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  can -> cd(1); 
   Populate(Hists, can, len, kSolid);
-  Populate(Closure, can, len, kDotted); 
-  len -> AddEntry(Data, Data -> GetTitle()); 
-  can -> Update();
 }
 
-void Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data, TCanvas* can)
+void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
 {
-  for (int i(0); i < Hists.size(); i++)
-  {
-    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-    can -> cd(i+1) -> SetLogy(); 
-    can -> cd(i+1);
-    Data[i] -> SetLineColor(kBlack);
-    Data[i] -> Draw("SAMEHIST"); 
-    Populate(Hists[i], can, len);
-    len -> AddEntry(Data[i], Data[i] -> GetTitle()); 
-  }
+  gStyle -> SetOptStat(0); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
+  Hists[0] -> GetYaxis() -> SetRangeUser(1e-6, 1e6); 
+  Populate(Hists, can, len, kSolid); 
 }
 
-TCanvas* Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data)
+void PlotHists(TH1F* Data, std::vector<TH1F*> Hists, TCanvas* can)
 {
-  TCanvas* can = new TCanvas();  
-  can -> SetLogy(); 
-  gStyle -> SetOptStat(0);
-  can -> Divide(Data.size()); 
-  for (int i(0); i < Hists.size(); i++)
-  {
-    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-    can -> cd(i+1) -> SetLogy(); 
-    can -> cd(i+1);
-    Data[i] -> SetLineColor(kBlack);
-    Data[i] -> Draw("SAMEHIST"); 
-    Populate({Hists[i]}, can, len);
-    len -> AddEntry(Data[i], Data[i] -> GetTitle()); 
-  }
-  return can; 
+  gStyle -> SetOptStat(0); 
+  Data -> SetLineColor(kBlack); 
+  Data -> GetYaxis() -> SetRangeUser(0.1, Data -> Integral());
+  Data -> Draw("HIST"); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  Populate(Hists, can, len, kSolid); 
 }
 
-TCanvas* Plotting::PlotHists(std::vector<std::vector<TH1F*>> Hists)
+void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can)
 {
-  TCanvas* can = new TCanvas();  
-  can -> SetLogy(); 
-  gStyle -> SetOptStat(0);
-  can -> Divide(Hists.size()); 
-  for (int i(0); i < Hists.size(); i++)
-  {
-    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-    can -> cd(i+1) -> SetLogy(); 
-    can -> cd(i+1);
-    Populate(Hists[i], can, len);
-  }
-  return can; 
+  can -> Clear();
+  gStyle -> SetOptStat(0); 
+  Data -> GetYaxis() -> SetRangeUser(1, Data -> Integral());
+  Data -> Draw("HIST"); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  Populate(truth, can, len, kSolid); 
+  Populate(prediction, can, len, kDashed); 
 }
 
-void Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Subtract, std::vector<TH1F*> Closure, TCanvas* can)
+void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 {
-  auto Fill =[](TH1F* H, Color_t col, TCanvas* can, TLegend* len)
-  {
-    H -> SetLineColor(col); 
-    H -> SetLineWidth(1); 
-    H -> SetAxisRange(1, H -> Integral(), "Y");
-    H -> Draw("SAMEHIST");
-  
-    len -> AddEntry(H, H -> GetTitle());
-    len -> Draw("SAME");
-    can -> Update(); 
-  }; 
-
-  gStyle -> SetOptStat(0);
-  for (int i(0); i < Hists.size(); i++)
-  {
-    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-    can -> cd(i+1) -> SetLogy(); 
-    can -> cd(i+1);
-    Fill(Hists[i], kRed, can, len);
-    Fill(Subtract[i], kOrange, can, len);
-    Fill(Closure[i], kViolet, can, len);
-  }
-}
-
-void Plotting::PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Subtract, TCanvas* can)
-{
-  auto Fill =[](TH1F* H, Color_t col, TCanvas* can, TLegend* len)
-  {
-    H -> SetLineColor(col); 
-    H -> SetLineWidth(1); 
-    H -> SetAxisRange(1e-9, 1, "Y");
-    H -> Draw("SAMEHIST");
-  
-    len -> AddEntry(H, H -> GetTitle());
-    len -> Draw("SAME");
-    can -> Update(); 
-  }; 
-
-  gStyle -> SetOptStat(0);
-  for (int i(0); i < Hists.size(); i++)
-  {
-    TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-    can -> cd(i+1) -> SetLogy(); 
-    can -> cd(i+1);
-    Fill(Hists[i], kRed, can, len);
-    Fill(Subtract[i], kBlack, can, len);
-  }
-}
-
-TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data)
-{
-  RooPlot* xframe = Domain -> frame(RooFit::Title("Figure"));
-  Data -> plotOn(xframe, RooFit::Name("Data"));
-  for (int i(0); i < PDFs.size(); i++)
-  {
-    TString name = "trk-"; name+=(i+1);
-    model.plotOn(xframe, RooFit::Name(name), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Constants::Colors[i]));  
-  }
-  TCanvas* can = new TCanvas();
-  gPad -> SetLogy();
-  xframe -> SetMinimum(1e-9); 
-  xframe -> Draw();
-  can -> Update();
-  return can;
-}
-
-TCanvas* Plotting::PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data)
-{
-  RooPlot* xframe = Domain -> frame(RooFit::Title("Figure"));
-  Data -> plotOn(xframe, RooFit::Name("Data"));
-  for (int i(0); i < PDFs.size(); i++)
-  {
-    TString name = "trk-"; name+=(i+1);
-    model.plotOn(xframe, RooFit::Name(name), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Constants::Colors[i]));  
-  }
-  TCanvas* can = new TCanvas();
-  gPad -> SetLogy();
-  xframe -> SetMinimum(1); 
-  xframe -> Draw();
-  can -> Update();
-  can -> Print("PlotDebug.pdf"); 
-  return can;
-}
-
-TCanvas* Plotting::PlotHists(RooHistPdf model, RooRealVar Domain, RooDataHist Data)
-{
-  RooPlot* xframe = Domain.frame(RooFit::Title("Figure"));
-  Data.plotOn(xframe, RooFit::Name("Data"));
-  model.plotOn(xframe);  
-  TCanvas* can = new TCanvas();
-  gPad -> SetLogy();
-  xframe -> SetMinimum(1e-9); 
-  xframe -> Draw();
-  can -> Update();
-  return can;
-}
-
-void Plotting::DifferencePlot(TH1F* H1, TH1F* H2, TCanvas* can)
-{
-
-  TH1F* Ratio = (TH1F*)H1 -> Clone("Difference");
-  Ratio -> Clear();  
-  for (int i(0); i < H1 -> GetNbinsX(); i++)
-  {
-    float e1 = H1 -> GetBinContent(i+1); 
-    float e2 = H2 -> GetBinContent(i+1); 
-    float diff = e1 - e2; 
-    Ratio -> SetBinContent(i+1, diff); 
-  }
+  TString name = "Ratio Plot: "; name += (H1 -> GetTitle()); name += ("/"); name += H2 -> GetTitle(); 
+  TH1F* Ratio = (TH1F*)H1 -> Clone(name);
+  Ratio -> SetTitle(name);
+  Ratio -> Divide(H2); 
+  gStyle -> SetOptStat(0); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
 	H1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^2]");
 
   TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
   P1 -> Draw(); 
   P1 -> cd(); 
-  P1 -> SetLogy(); 
-  H1 -> Draw("SAMEHIST"); 
-  H1 -> SetStats(0);  
-  H2 -> SetLineColor(kRed);
-  H2 -> Draw("SAMEHIST"); 
-  
-  can -> cd();
-
-  TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3); 
-  P2 -> Draw();
-  P2 -> cd(); 
-	Ratio -> SetStats(0); 
-  Ratio -> Draw("SAMEHIST"); 
-}
-
-void Plotting::RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
-{
-
-  TH1F* Ratio = (TH1F*)H1 -> Clone("Ratio");
-  Ratio -> Clear();  
-  for (int i(0); i < H1 -> GetNbinsX(); i++)
-  {
-    float e1 = H1 -> GetBinContent(i+1); 
-    float e2 = H2 -> GetBinContent(i+1); 
-    float r; 
-    if (e2 != 0){r = e1/e2;}
-    else {r = 1; }
-    Ratio -> SetBinContent(i+1, r); 
-  }
-	H1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^2]");
-
-  TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
-  P1 -> Draw(); 
-  P1 -> cd(); 
-  P1 -> SetLogy(); 
   H1 -> SetLineColor(kBlack); 
-  H1 -> Draw("SAMEHIST"); 
+  H1 -> GetYaxis() -> SetRangeUser(1, 2*GetMaxValue(H1));
+  H1 -> Draw("HIST"); 
+  len -> AddEntry(H1, H1 -> GetTitle() ); 
+  len -> Draw("SAME");
   H1 -> SetStats(0);  
   H2 -> SetLineColor(kRed);
   H2 -> Draw("SAMEHIST"); 
-  
+  len -> AddEntry(H2, H2 -> GetTitle() );
+  len -> Draw("SAME");  
   can -> cd();
 
   TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3);  
   P2 -> Draw();
   P2 -> cd(); 
-  //P2 -> SetLogy(); 
 	Ratio -> SetStats(0); 
-  Ratio -> Draw("SAMEHIST"); 
+  Ratio -> SetLineColor(kWhite);
+  Ratio -> GetYaxis() -> SetRangeUser(0.5, 1.5);
+  Ratio -> SetMarkerSize(1); 
+  Ratio -> Draw("epl"); 
 }
 
-void DistributionGenerators::Landau(std::vector<TH1F*> Hists, std::vector<float> COMP, std::vector<float> Parameters, int Number, float min, float max)
+void PlotRooFit(RooAddPdf model, RooRealVar* Domain, RooDataHist* Data)
 {
-  // Define the generator and initialize the parameters 
-  TF1 Lan("Lan", "landau", min, max);
-  for (int i(0); i < Parameters.size(); i++){Lan.SetParameter(i, Parameters[i]);}
- 
-  // Fill the hist vector
-  for (int i(0); i < Number; i++)
+  RooPlot* xframe = Domain -> frame(RooFit::Title("Figure")); 
+  Data -> plotOn(xframe, RooFit::Name("Data")); 
+  model.plotOn(xframe); 
+  TCanvas* can = new TCanvas(); 
+  gPad -> SetLogy(); 
+  xframe -> SetMinimum(1); 
+  xframe -> Draw(); 
+  can -> Update();
+  can -> Print("debug.pdf"); 
+}
+
+// ====================== Proper histogram plotting for the presentation ======================== //
+void GeneratePlot(TH1F* H, TString Title, TCanvas* can, Color_t color, ELineStyle style, TString DrawOption, float Intensity)
+{
+  gStyle -> SetOptStat(0); 
+  if (Title != "")
   {
-    for (int y(0); y < Hists.size(); y++)
-    {
-      float r(0);
-      for (int x(0); x < y+1; x++){r = r + Lan.GetRandom();}
-      if (COMP[y] > 0){ Hists[y] -> Fill(r, COMP[y]); } 
-    }   
+    H -> SetTitle(Title); 
   }
+  H -> SetLineColor(color); 
+  H -> SetLineColorAlpha(color, Intensity); 
+  H -> SetLineStyle(style); 
+  H -> SetLineWidth(1); 
+  H -> Draw(DrawOption);
+  can -> Update();  
 }
 
-void DistributionGenerators::Gaussian(float mean, float stdev, int Number, TH1F* Hist)
+TLegend* GenerateLegend(std::vector<TH1F*> Hist_V, TCanvas* can)
 {
-  float bins = Hist -> GetNbinsX(); 
-  TF1* g = new TF1("gaus", "gaus", -float(bins)/2, float(bins)/2); 
-  g -> SetParameters(1, mean, stdev);
-  Hist -> Add(g); 
-}
-
-std::vector<TH1F*> DistributionGenerators::FillTH1F(std::vector<TString> Names, TString dir)
-{
-  TFile* File = new TFile(dir); 
-  std::vector<TH1F*> Hists; 
-  for (TString name : Names)
+  TLegend* len = new TLegend(0.9, 0.9, 0.5, 0.8); 
+  for (TH1F* H : Hist_V)
   {
-    TH1F* Hist; 
-    for (int i(0); i < Constants::Detector.size(); i++)
-    {
-      if (i == 0){ Hist = TH1FFromFile(name, Constants::Detector[i], File); }
-      else { Hist -> Add(TH1FFromFile(name, Constants::Detector[i], File)); }
-    }
-    Hists.push_back(Hist); 
+    len -> AddEntry(H); 
   }
-
-  return Hists; 
+  len -> Draw("SAME");
+  can -> Update(); 
+  return len; 
 }
 
-TH1F* DistributionGenerators::FillTH1F(TString name, std::vector<TString> SubDir, TString dir, std::vector<TString> Detector)
+void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString Xaxis)
 {
-  TFile* File = new TFile(dir); 
-  TH1F* Hist; 
-  int i=0;
-  for (TString Layer : Detector)
+  TString name = "Ratio Plot: "; name += (H1 -> GetTitle()); name += (" / "); name += H2 -> GetTitle(); 
+  TH1F* Ratio = (TH1F*)H1 -> Clone(name);
+  Ratio -> SetTitle(name);
+  Ratio -> Divide(H2); 
+  gStyle -> SetOptStat(0); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.5, 0.8); 
+
+  TH1F* Empty = (TH1F*)H1 -> Clone("empty"); 
+  Empty -> Reset();
+  Empty -> SetTitle(Title);
+  
+  len -> AddEntry(H1); 
+  len -> AddEntry(H2);  
+  
+  TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1.0);
+
+  if (Xaxis == "LOG")
   {
-    for (TString sub : SubDir)
-    {
-      TString directory = Layer + sub;
-      if (i == 0){ Hist = TH1FFromFile(name, directory, File); }
-      else { Hist -> Add(TH1FFromFile(name, directory, File)); } 
-      i++;
-    }
+    P1 -> SetLogy(); 
+    Empty -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^{2}]");
   }
+  else { Empty -> GetXaxis() -> SetTitle(Xaxis);}
 
-  return Hist; 
+  P1 -> Draw(); 
+  P1 -> cd();
+  Empty -> Draw("HIST");   
+   
+  H1 -> Draw("SAMEHIST"); 
+  H2 -> Draw("SAMEHIST"); 
+  len -> Draw("SAME");  
+
+  can -> cd();
+
+  TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3);  
+  P2 -> Draw();
+  P2 -> cd(); 
+	Ratio -> SetStats(0); 
+  Ratio -> SetLineColor(kWhite);
+  Ratio -> GetYaxis() -> SetRangeUser(0.25, 1.75);
+  Ratio -> SetMarkerSize(1); 
+  Ratio -> Draw("epl"); 
 }
-
-
-// === Private 
-TH1F* DistributionGenerators::TH1FFromFile(TString Name, TString Layer, TFile* file)
-{
-  file -> cd(Layer);
-  TH1F* Hist = (TH1F*)gDirectory -> Get(Name);
-  file -> cd();
-  return Hist; 
-}
-
-
-
-
-

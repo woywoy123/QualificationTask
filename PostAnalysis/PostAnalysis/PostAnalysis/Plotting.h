@@ -1,69 +1,25 @@
-#include<TH1F.h>
-#include<TF1.h>
-#include<TCanvas.h>
-#include<TLegend.h>
 #include<TStyle.h>
-#include<TRandom.h>
-#include<TFile.h>
-#include<RooAddPdf.h>
-#include<RooHistPdf.h>
+#include<TH1F.h>
+#include<TLegend.h>
+#include<TCanvas.h>
 #include<RooRealVar.h>
 #include<RooDataHist.h>
+#include<RooAddPdf.h>
 #include<RooPlot.h>
-#include<RooFFTConvPdf.h>
-#include<TStyle.h>
-#include<PostAnalysis/Constants.h>
-#include<TRatioPlot.h>
-#include<TMultiGraph.h>
+#include<PostAnalysis/BaseFunctions.h>
 
-#ifndef PLOTTING_H
-#define PLOTTING_H
 
-class Plotting
-{
-  public:
-    TCanvas* SimplePlot(TH1F* Hist);
-    void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style = kSolid);
-    void PlotHists(std::vector<TH1F*> Hists, TCanvas* can);
-    void PlotHists(std::vector<TH1F*> Hists, TH1F* Data, TCanvas* can);
-    void PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data, TCanvas* can); 
-    void PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, TH1F* Data, TCanvas* can);
-    void PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<std::vector<TH1F*>> Closure, std::vector<TH1F*> Data, TCanvas* can);
-    void PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Closure, std::vector<TH1F*> Data, TCanvas* can);
-    void PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data, TCanvas* can);
+void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style);
+void PlotHists(TH1F* Hist, TCanvas* can); 
+void PlotHists(std::vector<TH1F*> Hists, TCanvas* can); 
+void PlotHists(std::vector<TH1F*> Hists, std::vector<TString> Legend_Titles, TCanvas* can); 
+void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can); 
+void PlotHists(TH1F* Data, std::vector<TH1F*> truth, TCanvas* can); 
+void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can); 
+void PlotRooFit(RooAddPdf model, RooRealVar* Domain, RooDataHist* Data);
+void GeneratePlot(TH1F* H, TString Title, TCanvas* can, Color_t color, ELineStyle style, TString DrawOption, float Intensity); 
+TLegend* GenerateLegend(std::vector<TH1F*> Hist_V, TCanvas* can); 
+void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString Xaxis);
 
-    TCanvas* PlotHists(std::vector<TH1F*> Hists);
-    TCanvas* PlotHists(std::vector<TH1F*> Hists, TH1F* Data);
-    TCanvas* PlotHists(TH1F* Hists, TH1F* Data);
-    TCanvas* PlotHists(std::vector<std::vector<TH1F*>> Hists, std::vector<TH1F*> Data);
-    TCanvas* PlotHists(std::vector<TH1F*> Hists, std::vector<TH1F*> Data);
-    TCanvas* PlotHists(std::vector<std::vector<TH1F*>> Hists);
-    TCanvas* PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data);
-    TCanvas* PlotHists(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data);
-    TCanvas* PlotHists(RooHistPdf model, RooRealVar Domain, RooDataHist Data);
 
-    void DifferencePlot(TH1F* H1, TH1F* H2, TCanvas* can); 
-    void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can); 
-};
 
-class DistributionGenerators
-{
-  public:
-    // Landau Generator 
-    void Landau(std::vector<TH1F*> Hists, 
-                std::vector<float> COMP, 
-                std::vector<float> Parameters, 
-                int Number, float min, float max);
-    // Gaussian Generator 
-    void Gaussian(float mean, float stdev, int Number, TH1F* Hist);
-
-    // Monte Carlo
-    std::vector<TH1F*> FillTH1F(std::vector<TString>, TString dir);
-    TH1F* FillTH1F(TString name, std::vector<TString> SubDir, TString dir, std::vector<TString> Detector = Constants::Detector);
-
-  private:
-    TH1F* TH1FFromFile(TString Name, TString Layer, TFile* file);  
-
-};
-
-#endif
