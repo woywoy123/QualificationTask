@@ -85,6 +85,67 @@ void GraphicalLandau()
   can -> Print("Graph.pdf]"); 
 }
 
+void FindSymmetryGaussian()
+{
+  float max = 10.5; 
+  float min = 0.5;
+  int bins = 101;  
+  float width = (max-min)/(float)bins; width = width/2;  
+  min -= width; 
+  max -= width; 
+ 
+  TH1F* Gaus = Gaussian(1, 0.1, bins, min, max);
+  TH1F* G2 = (TH1F*)Gaus -> Clone("G"); 
+  G2 -> Reset();
+  std::vector<float> Forward; 
+  std::vector<float> Backward;  
+  for ( int i(0); i < Gaus -> GetNbinsX(); i++)
+  {
+    Forward.push_back(Gaus -> GetBinContent(i+1)); 
+    Backward.push_back(Gaus -> GetBinContent(bins - i -1));  
+  }
+  
+  G2 -> SetLineStyle(kDashed);
+  G2 -> SetLineColor(kRed); 
+  TCanvas* can = new TCanvas();
+
+  float low = 0;  
+  int shift = 0;
+  bool symmetric = false; 
+  for (int i(0); i < bins; i++)
+  {
+    float e = Forward[i]; 
+    for (int j(0); j < bins; j++)
+    {
+      float f = Backward[j]; 
+      float dif = e + f; 
+      if (dif > low)
+      {
+        low = dif; 
+        shift = j;
+      } 
+    }
+    for (int k(0); k < bins; k++)
+    {
+      G2 -> SetBinContent(k-shift+1, Backward[k]); 
+    }
+
+    std::cout << shift << std::endl;
+    Gaus -> Draw("HIST"); 
+    G2 -> Draw("SAMEHIST"); 
+    can -> Print("debug.pdf");
+    
+    if (shift == 0){symmetric = true;} 
+  }
+   
+  
+  
+  
+  
+  
+   
+ 
+ 
 
 
 
@@ -92,22 +153,5 @@ void GraphicalLandau()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
 

@@ -58,7 +58,6 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
   int n_vars = PDF_H.size(); 
-  float c = (x_max - x_min)/float(bins); 
  
   // Input variables;  
   // Standard Deviation 
@@ -123,7 +122,7 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
     float m = m_vars[i] -> getVal(); 
     float n = l_vars[i] -> getVal(); 
 
-    TH1F* G = Gaussian(m, s, bins, x_min+c*0.5, x_max+c*0.5);  
+    TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
     Convolution(G, PDF_H[i], Out_H[i]); 
     Normalize(Out_H[i]);
     Out_H[i] -> Scale(n); 

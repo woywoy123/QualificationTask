@@ -55,7 +55,7 @@ std::map<TString, std::vector<TH1F*>> MonteCarlo(TString dir)
     std::vector<TString> Names; 
     for (int x(0); x < i; x++)
     {
-      TString name = "ntrk_"; name +=(ntrk); name += ("_tru"); name += (x+1); name += ("_dEdx_AfterCTIDELoop"); 
+      TString name = "DEDX_NEW_TRUTH_DEF/dEdx_ntrk_"; name +=(x+1); name += ("_nsdo_"); name += (x+1); name +=("_1keV"); 
       Names.push_back(name); 
     }
     return Names; 

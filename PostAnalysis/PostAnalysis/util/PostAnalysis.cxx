@@ -6,12 +6,13 @@
 int main(int argc, char** argv)
 {
   bool rewrite = true; 
-  int option = -2;
+  int option;
 
   TFile* F; 
   if (rewrite == true)
   {
-    F = new TFile("output.root", "RECREATE"); 
+    F = new TFile("output.root", "RECREATE");
+    option = -2; 
   }
   else 
   {
@@ -44,6 +45,7 @@ int main(int argc, char** argv)
   // Run Experimental
   if (option == -3)
   {
+    FindSymmetryGaussian();
   }
  
   // Compile the figures  

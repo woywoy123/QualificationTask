@@ -16,7 +16,9 @@ void FigureCompiler(TFile* F)
   for (M = Map.begin(); M != Map.end(); M++)
   {
     TString CompilerName = M ->first; 
-    std::vector<TH1F*> Hist_V = M ->second; 
+    std::vector<TH1F*> Hist_V = M ->second;
+    
+    can -> Print(filename);  
     if (CompilerName == "TestLandau"){ PlotLandau(can, Hist_V, filename); }
     if (CompilerName == "TestGaussian"){ PlotGaussian(can, Hist_V, filename); } 
     if (CompilerName == "TestGaussianXGaussian"){ PlotGaussianXGaussian(can, Hist_V, filename); } 
@@ -34,9 +36,8 @@ void FigureCompiler(TFile* F)
     if (CompilerName == "TestAlgorithm"){ PlotAlgorithm(can, Hist_V, filename);}
     if (CompilerName == "TestReadFile"){ PlotTestReadFile(can, Hist_V, filename);}
     if (CompilerName == "TestMonteCarloMatchConvolution") { PlotMonteCarloMatchConvolution(can, Hist_V, filename);}
-
     can -> Clear(); 
-    can -> Print(filename);  
+    can -> SetLogy(0);
   }
   can -> Print("Output.pdf]");
 }
@@ -78,6 +79,8 @@ void PlotGaussianXGaussian(TCanvas* can, std::vector<TH1F*> Hist_V, TString file
 
 void PlotLandauXLandau(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
 {
+
+  can -> SetLogy(); 
   // First plot the different Landaus that were numerically generated 
   TH1F* Empty = (TH1F*)Hist_V[0] -> Clone("Empty Space");
   Empty -> Reset(); 
@@ -90,25 +93,25 @@ void PlotLandauXLandau(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
   GenerateLegend({Hist_V[0],  Hist_V[1], Hist_V[2], Hist_V[3]}, can);  
   can -> Update(); 
   can -> Print(filename);
-
+  
   // Now draw Ratio plots of the individual Landaus that were convolved 
   Hist_V[1] -> GetYaxis() -> SetRangeUser(1e-8, 0.02); 
   Hist_V[4] -> SetLineStyle(kDashed); 
-  GenerateRatioPlot(Hist_V[1], Hist_V[4], can, "A Convolved Landau overlayed with a Numerically generated Landau",  "dE/dx [MeV g^{-1} cm^2]"); 
+  GenerateRatioPlot(Hist_V[1], Hist_V[4], can, "A Convolved Landau overlayed with a Numerically generated Landau",  "LOG"); 
   can -> Update();  
   can -> Print(filename);
   can -> Clear();
   
   Hist_V[2] -> GetYaxis() -> SetRangeUser(1e-8, 0.014); 
   Hist_V[5] -> SetLineStyle(kDashed); 
-  GenerateRatioPlot(Hist_V[2], Hist_V[5], can, "A Convolved Landau overlayed with a Numerically generated Landau",  "dE/dx [MeV g^{-1} cm^2]"); 
+  GenerateRatioPlot(Hist_V[2], Hist_V[5], can, "A Convolved Landau overlayed with a Numerically generated Landau",  "LOG"); 
   can -> Update();  
   can -> Print(filename);
   can -> Clear(); 
    
   Hist_V[3] -> GetYaxis() -> SetRangeUser(1e-8, 0.012); 
   Hist_V[6] -> SetLineStyle(kDashed); 
-  GenerateRatioPlot(Hist_V[3], Hist_V[6], can, "A Convolved Landau overlayed with a Numerically generated Landau",  "dE/dx [MeV g^{-1} cm^2]"); 
+  GenerateRatioPlot(Hist_V[3], Hist_V[6], can, "A Convolved Landau overlayed with a Numerically generated Landau",  "LOG"); 
   can -> Update();  
   can -> Print(filename);
 }
@@ -486,6 +489,16 @@ void PlotNLandauXNGausFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filen
   can -> Update(); 
   can -> Print(filename); 
   can -> Clear(); 
+
+  // Write out the statistics or the hists 
+  std::cout << "############ Statistics of the Fit #################" << std::endl;
+  std::cout << "# Centered: " << std::endl;   
+  Statistics(Hist_V[8], Hist_V[13], 1, 16); 
+  Statistics(Hist_V[9], Hist_V[14], 1, 16); 
+  Statistics(Hist_V[10], Hist_V[15], 1, 16);
+  Statistics(Hist_V[11], Hist_V[16], 1, 16);
+  std::cout << std::endl; 
+
 }
 
 void PlotDeconvolutionFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
@@ -869,7 +882,8 @@ void PlotMonteCarloMatchConvolution(TCanvas* can, std::vector<TH1F*> Hist_V, TSt
  
   // Original Monte Carlo pure templates 
   can -> SetLogy();  
-  Empty -> GetYaxis() -> SetRangeUser(1e-11, 1e-3);
+  Empty -> GetYaxis() -> SetRangeUser(1e-9, 1e-2);
+  Empty -> GetXaxis() -> SetRangeUser(0, 20); 
   GeneratePlot(Empty, "Monte Carlo Distributions of n-tracks, n-truth", can, kWhite, kSolid, "HIST", 0); 
   GeneratePlot(Hist_V[0], "Track 1, Truth 1", can, kRed, kSolid, "SAMEHIST", 1); 
   GeneratePlot(Hist_V[1], "Track 2, Truth 2", can, kOrange, kSolid, "SAMEHIST", 1);  
@@ -885,24 +899,28 @@ void PlotMonteCarloMatchConvolution(TCanvas* can, std::vector<TH1F*> Hist_V, TSt
 
   // Make a Ratio Plot
   Hist_V[0] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[0] -> GetXaxis() -> SetRangeUser(0, 20); 
   Hist_V[4] -> SetLineStyle(kDashed); 
   GenerateRatioPlot(Hist_V[0], Hist_V[4], can, "Ratio Plot of 1 Track - 1 Truth Compared to Monte Carlo", "LOG"); 
   can -> Print(filename); 
   can -> Clear();
 
   Hist_V[1] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[1] -> GetXaxis() -> SetRangeUser(0, 20); 
   Hist_V[5] -> SetLineStyle(kDashed); 
   GenerateRatioPlot(Hist_V[1], Hist_V[5], can, "Ratio Plot of 2 Track - 2 Truth Compared to Monte Carlo", "LOG"); 
   can -> Print(filename); 
   can -> Clear();
 
   Hist_V[2] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[2] -> GetXaxis() -> SetRangeUser(0, 20); 
   Hist_V[6] -> SetLineStyle(kDashed); 
   GenerateRatioPlot(Hist_V[2], Hist_V[6], can, "Ratio Plot of 3 Track - 3 Truth Compared to Monte Carlo", "LOG"); 
   can -> Print(filename); 
   can -> Clear();
 
   Hist_V[3] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
+  Hist_V[3] -> GetXaxis() -> SetRangeUser(0, 20); 
   Hist_V[7] -> SetLineStyle(kDashed); 
   GenerateRatioPlot(Hist_V[3], Hist_V[7], can, "Ratio Plot of 4 Track - 4 Truth Compared to Monte Carlo", "LOG"); 
   can -> Print(filename); 
@@ -910,34 +928,43 @@ void PlotMonteCarloMatchConvolution(TCanvas* can, std::vector<TH1F*> Hist_V, TSt
 
   //==== Compare the Deconvolved and Fitted Convolutions with the pure Monte Carlo distributions 
   // Plot the Gaussian being used for the deconvolution
-  GeneratePlot(Empty, "The Gaussian being used for Deconvolution", can, kWhite, kSolid, "HIST", 0); 
-  GeneratePlot(Hist_V[8], "", can, kBlack, kSolid, "SAMEHIST", 1); 
-  GenerateLegend({Hist_V[8]}, can); 
+  Empty -> GetYaxis() -> SetRangeUser(1e-9, 1);
+  GeneratePlot(Empty, "The Gaussian + Distributions being used for Deconvolution", can, kWhite, kSolid, "HIST", 0); 
+  GeneratePlot(Hist_V[8], "", can, kBlack, kDashed, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[9], "", can, kRed, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[10], "", can, kOrange, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[11], "", can, kViolet, kSolid, "SAMEHIST", 1); 
+  GeneratePlot(Hist_V[12], "", can, kGreen, kSolid, "SAMEHIST", 1); 
+  GenerateLegend({Hist_V[8], Hist_V[9], Hist_V[10], Hist_V[11], Hist_V[12]}, can); 
   can -> Print(filename); 
   can -> Clear();  
   
   // Make a Ratio Plot
   Hist_V[0] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
-  Hist_V[4] -> SetLineStyle(kDashed); 
-  GenerateRatioPlot(Hist_V[0], Hist_V[9], can, "Ratio Plot of 1 Track - 1 Truth Compared to Monte Carlo", "LOG"); 
+  Hist_V[0] -> GetXaxis() -> SetRangeUser(0, 20);
+  Hist_V[0] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[0], Hist_V[13], can, "Ratio Plot of 1 Track - 1 Truth Compared to Monte Carlo", "LOG"); 
   can -> Print(filename); 
   can -> Clear();
 
   Hist_V[1] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
-  Hist_V[5] -> SetLineStyle(kDashed); 
-  GenerateRatioPlot(Hist_V[1], Hist_V[10], can, "Ratio Plot of 2 Track - 2 Truth Compared to Monte Carlo", "LOG"); 
+  Hist_V[1] -> GetXaxis() -> SetRangeUser(0, 20);
+  Hist_V[1] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[1], Hist_V[14], can, "Ratio Plot of 2 Track - 2 Truth Compared to Monte Carlo", "LOG"); 
   can -> Print(filename); 
   can -> Clear();
 
   Hist_V[2] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
-  Hist_V[6] -> SetLineStyle(kDashed); 
-  GenerateRatioPlot(Hist_V[2], Hist_V[11], can, "Ratio Plot of 3 Track - 3 Truth Compared to Monte Carlo", "LOG"); 
+  Hist_V[2] -> GetXaxis() -> SetRangeUser(0, 20);
+  Hist_V[2] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[2], Hist_V[15], can, "Ratio Plot of 3 Track - 3 Truth Compared to Monte Carlo", "LOG"); 
   can -> Print(filename); 
   can -> Clear();
 
   Hist_V[3] -> GetYaxis() -> SetRangeUser(1e-9, 1e-1);
-  Hist_V[7] -> SetLineStyle(kDashed); 
-  GenerateRatioPlot(Hist_V[3], Hist_V[12], can, "Ratio Plot of 4 Track - 4 Truth Compared to Monte Carlo", "LOG"); 
+  Hist_V[3] -> GetXaxis() -> SetRangeUser(0, 20);
+  Hist_V[3] -> SetLineStyle(kDashed); 
+  GenerateRatioPlot(Hist_V[3], Hist_V[16], can, "Ratio Plot of 4 Track - 4 Truth Compared to Monte Carlo", "LOG"); 
   can -> Print(filename); 
   can -> Clear();
 
@@ -951,9 +978,9 @@ void PlotMonteCarloMatchConvolution(TCanvas* can, std::vector<TH1F*> Hist_V, TSt
   std::cout << std::endl;
 
   std::cout << "==== Using Deconvolution + Gaussian:" << std::endl;
-  Statistics(Hist_V[0], Hist_V[9], 1, 18); 
-  Statistics(Hist_V[1], Hist_V[10], 1, 18); 
-  Statistics(Hist_V[2], Hist_V[11], 1, 18); 
-  Statistics(Hist_V[3], Hist_V[12], 1, 18); 
+  Statistics(Hist_V[0], Hist_V[13], 1, 18); 
+  Statistics(Hist_V[1], Hist_V[14], 1, 18); 
+  Statistics(Hist_V[2], Hist_V[15], 1, 18); 
+  Statistics(Hist_V[3], Hist_V[16], 1, 18); 
   std::cout << std::endl;
 }

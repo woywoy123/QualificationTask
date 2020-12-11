@@ -254,27 +254,31 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
 {
   int pdf_bins = PDF -> GetNbinsX(); 
   int psf_bins = PSF -> GetNbinsX(); 
+  int out_bins = Output -> GetNbinsX();
 
   // Domain of PDF and PSF 
   float pdf_min = PDF -> GetXaxis() -> GetXmin(); 
   float pdf_max = PDF -> GetXaxis() -> GetXmax(); 
   float psf_min = PSF -> GetXaxis() -> GetXmin();  
   float psf_max = PSF -> GetXaxis() -> GetXmax(); 
+  float out_min = Output -> GetXaxis() -> GetXmin();  
+  float out_max = Output -> GetXaxis() -> GetXmax(); 
   
   // Get out of the function - Cant deconvolve 
   std::vector<float> Converge;
 
-  if (pdf_bins != psf_bins || pdf_min != psf_min || pdf_max != psf_max)
+  if ((pdf_bins != psf_bins || pdf_min != psf_min || pdf_max != psf_max) || (out_bins != psf_bins || out_min != psf_min || out_max != psf_max))
   {
     Converge.push_back(0);
     std::cout << "###################################" << std::endl;
     std::cout << "Check the centering of the bins...." << std::endl;
-    std::cout << pdf_bins << " psf ->: " << psf_bins << " \n " << pdf_min << " psf ->: " << psf_min << " \n " << pdf_max << " :: psf ->: " << psf_max << std::endl;
+    std::cout << pdf_bins << " psf ->: " << psf_bins << " \n " << 
+    pdf_min << " psf ->: " << psf_min << " \n " << 
+    pdf_max << " :: psf ->: " << psf_max << std::endl;
     std::cout << "###################################" << std::endl;
     return Converge;
   }
   int bins = pdf_bins; 
-
 
   // Find the zero bin of the x-axis 
   int bin_0 = PDF -> GetXaxis() -> FindBin(0.) -1; 
@@ -287,13 +291,19 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   
   for ( int i(0); i < bins*2; i++)
   { 
-    if (i < bins){ PSF_V.push_back(Temp1.at(i)); }
+    if (i < bins)
+    { 
+      PSF_V.push_back(Temp1.at(i)); 
+    }
     else { PSF_V.push_back(0.); }
 
-    if (i >= bins ){ PDF_V.push_back(Temp2.at(i-bins)); }
+    if (i >= bins )
+    { 
+      PDF_V.push_back(Temp2.at(i-bins)); 
+    }
     else { PDF_V.push_back(0.); }
   } 
-   
+
   std::vector<float> Deconv_V(bins*2, 0.5);
   float d_old = 100; 
   float d = 100; 
@@ -302,7 +312,7 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   {
     d_old = d; 
     std::vector<float> Deconv_Vold = Deconv_V; 
-    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 1); 
+    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 0.95); 
 
     d = Pythagoras(Deconv_Vold, Deconv_V); 
     Converge.push_back(d);  
@@ -311,7 +321,6 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   
   // Find the bin where the X axis is 0 
   int out_0 = Output -> GetXaxis() -> FindBin(0.)-1;  
-  int out_bins = Output -> GetNbinsX();
   
   // Populate the output  
   for (int i(0); i < Deconv_V.size(); i++)
