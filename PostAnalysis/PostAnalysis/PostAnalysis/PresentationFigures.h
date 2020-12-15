@@ -21,5 +21,5 @@ void PlotOscillationLucyRichardson(TCanvas* can, std::vector<TH1F*> Hist_V, TStr
 void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename);
 void PlotTestReadFile(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename);
 void PlotMonteCarloMatchConvolution(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename);
-
+void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename);
 #endif

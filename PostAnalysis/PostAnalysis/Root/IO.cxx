@@ -22,7 +22,7 @@ std::map<TString, std::vector<TH1F*>> ReadEntries(TFile* F)
   return Map; 
 }
 
-std::map<TString, std::vector<TH1F*>> GetHist(std::map<TString, std::vector<TString>> Map, TString dir)
+std::map<TString, std::vector<TH1F*>> GetHist(std::map<TString, std::vector<TString>> Map, TString dir, TString scnd = "")
 { 
   TFile* F = new TFile(dir, "READ");
   std::map<TString, std::vector<TH1F*>> Out;  
@@ -34,14 +34,13 @@ std::map<TString, std::vector<TH1F*>> GetHist(std::map<TString, std::vector<TStr
     std::vector<TString> H = M -> second; 
     std::vector<TH1F*> Hist_V; 
     
-    F -> cd(layer); 
+    F -> cd(layer + scnd); 
     for (TString H_N : H)   
     {
       TH1F* Hist = (TH1F*)gDirectory -> Get(H_N);
       Hist_V.push_back(Hist);  
     }
     F -> cd(); 
-
     Out[layer] = Hist_V; 
   }
   return Out; 
@@ -55,7 +54,7 @@ std::map<TString, std::vector<TH1F*>> MonteCarlo(TString dir)
     std::vector<TString> Names; 
     for (int x(0); x < i; x++)
     {
-      TString name = "DEDX_NEW_TRUTH_DEF/dEdx_ntrk_"; name +=(x+1); name += ("_nsdo_"); name += (x+1); name +=("_1keV"); 
+      TString name = "dEdx_ntrk_"; name +=(ntrk); name += ("_nsdo_"); name += (x+1); name +=("_1keV"); 
       Names.push_back(name); 
     }
     return Names; 
@@ -80,9 +79,10 @@ std::map<TString, std::vector<TH1F*>> MonteCarlo(TString dir)
     std::vector<TH1F*> trk_n; 
     for (int i(0); i < ntrk.size(); i++)
     {
-      TH1F* h = (TH1F*)ntrk[i] -> Clone(trk); 
+      TString name = ntrk[i] -> GetTitle(); name += ("_All"); 
+      TH1F* h = (TH1F*)ntrk[i] -> Clone(name); 
       h -> Reset(); 
-      h -> SetTitle(trk); 
+      h -> SetTitle(name); 
       trk_n.push_back(h);   
     }
     
@@ -104,28 +104,28 @@ std::map<TString, std::vector<TH1F*>> MonteCarlo(TString dir)
   trk1_m["Blayer"] =  Name_Generator(1, 4); 
   trk1_m["layer1"] =  Name_Generator(1, 4); 
   trk1_m["layer2"] =  Name_Generator(1, 4); 
-  std::map<TString, std::vector<TH1F*>> trk1_H = GetHist(trk1_m, dir);  
+  std::map<TString, std::vector<TH1F*>> trk1_H = GetHist(trk1_m, dir, "/DEDX_NEW_TRUTH_DEF");  
 
   std::map<TString, std::vector<TString>> trk2_m; 
   trk2_m["IBL"] =  Name_Generator(2, 4); 
   trk2_m["Blayer"] =  Name_Generator(2, 4); 
   trk2_m["layer1"] =  Name_Generator(2, 4); 
   trk2_m["layer2"] =  Name_Generator(2, 4); 
-  std::map<TString, std::vector<TH1F*>> trk2_H = GetHist(trk2_m, dir);  
+  std::map<TString, std::vector<TH1F*>> trk2_H = GetHist(trk2_m, dir, "/DEDX_NEW_TRUTH_DEF");  
 
   std::map<TString, std::vector<TString>> trk3_m; 
   trk3_m["IBL"] =  Name_Generator(3, 4); 
   trk3_m["Blayer"] =  Name_Generator(3, 4); 
   trk3_m["layer1"] =  Name_Generator(3, 4); 
   trk3_m["layer2"] =  Name_Generator(3, 4); 
-  std::map<TString, std::vector<TH1F*>> trk3_H = GetHist(trk3_m, dir);  
+  std::map<TString, std::vector<TH1F*>> trk3_H = GetHist(trk3_m, dir, "/DEDX_NEW_TRUTH_DEF");  
 
   std::map<TString, std::vector<TString>> trk4_m; 
   trk4_m["IBL"] =  Name_Generator(4, 4); 
   trk4_m["Blayer"] =  Name_Generator(4, 4); 
   trk4_m["layer1"] =  Name_Generator(4, 4); 
   trk4_m["layer2"] =  Name_Generator(4, 4); 
-  std::map<TString, std::vector<TH1F*>> trk4_H = GetHist(trk4_m, dir);  
+  std::map<TString, std::vector<TH1F*>> trk4_H = GetHist(trk4_m, dir, "/DEDX_NEW_TRUTH_DEF");  
 
   std::map<TString, std::vector<TString>> trk_dEdx; 
   trk_dEdx["IBL"] = {"dEdx_ntrk_1", "dEdx_ntrk_2", "dEdx_ntrk_3", "dEdx_ntrk_4"}; 

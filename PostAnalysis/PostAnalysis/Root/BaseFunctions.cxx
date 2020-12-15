@@ -206,11 +206,11 @@ void Statistics(TH1F* H1, TH1F* H2, float x_min, float x_max)
     x_min = min;   
   }
 
-  std::cout << "####################################################" << std::endl; 
   std::cout << "H1: " << H1 -> GetTitle() << " ::::: H2: " << H2 -> GetTitle() << std::endl;
   std::cout << "Domain selected: " << x_min << " -> " << x_max << std::endl;
   std::cout << "- Absolute Error / Integral of H2: " << ErrorByIntegral(H1, H2, x_min, x_max) << std::endl;
   std::cout << "- KolmogorovTest: " << H2 -> KolmogorovTest(H1) << std::endl;
+  std::cout << "- Normalization: H1: " << H1 -> Integral() << " :::: H2: " << H2 -> Integral() << " :::: H1/H2: " << float(H1 -> Integral()) / float(H2 -> Integral()) << std::endl; 
 }
 
 float GetMaxValue(TH1F* H)
