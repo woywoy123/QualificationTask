@@ -98,33 +98,55 @@ void Shift(TH1F* Hist, int shift)
 
 void Scale(TH1F* Data, std::vector<TH1F*> ntrk)
 {
-    int excess_i = 0;
-    float excess_sum;  
-    for (int i(0); i < Data ->GetNbinsX(); i++)
+  int excess_i = 0;
+  float excess_sum;  
+  for (int i(0); i < Data ->GetNbinsX(); i++)
+  {
+    float e = Data -> GetBinContent(i+1); 
+    float sum(0);  
+    for (int c(0); c < ntrk.size(); c++)
     {
-      float e = Data -> GetBinContent(i+1); 
-      float sum(0);  
-      for (int c(0); c < ntrk.size(); c++)
-      {
-        sum += ntrk[c] -> GetBinContent(i+1);  
-      }
-      
-      if ( sum > e && e > 1)
-      {
-        excess_sum += sum/e; 
-        excess_i++;  
-      }
+      sum += ntrk[c] -> GetBinContent(i+1);  
     }
-     
-    if ( excess_i > 1)
+    
+    if ( sum > e && e > 1)
     {
-      float average = excess_sum / (float)excess_i; 
-      for (int c(0); c < ntrk.size(); c++){ntrk[c] -> Scale((float)1/average);}
+      excess_sum += sum/e; 
+      excess_i++;  
     }
+  }
+   
+  if ( excess_i > 1)
+  {
+    float average = excess_sum / (float)excess_i; 
+    for (int c(0); c < ntrk.size(); c++){ntrk[c] -> Scale((float)1/average);}
+  }
 }
 
+void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
+{
+  for (int i(0); i < Data ->GetNbinsX(); i++)
+  {
+    float e = Data -> GetBinContent(i+1); 
+    float sum(0);  
+    for (int c(0); c < ntrk.size(); c++)
+    {
+      sum += ntrk[c] -> GetBinContent(i+1);  
+    }
+    if (e != 0)
+    {
+      float r = sum/e;
+      
+      for (int c(0); c < ntrk.size(); c++)
+      {
+        float en = ntrk[c] -> GetBinContent(i+1);
+        ntrk[c] -> SetBinContent(i+1, en/r);  
+      }
+    }
+  }
+}
 
-// Variable Name Generator 
+//Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty)
 {
   std::vector<TString> Output; 

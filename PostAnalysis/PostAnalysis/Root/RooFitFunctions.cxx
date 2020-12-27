@@ -87,7 +87,7 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   // Create the Luminosity variables for the fit
   std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
   std::vector<float> l_s(n_vars, 0); 
-  std::vector<float> l_e(n_vars, 1.5 * Data -> Integral());  
+  std::vector<float> l_e(n_vars, 1.1 * Data -> Integral());  
   std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
   
   // Convert the PDFs to RooPDFs
@@ -181,7 +181,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   // Create the Luminosity variables for the fit
   std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
   std::vector<float> l_s(n_vars, 0); 
-  std::vector<float> l_e(n_vars, 1.5 * Data -> Integral());  
+  std::vector<float> l_e(n_vars, 1. * Data -> Integral());  
   std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
   
   // Convert the PDFs to RooPDFs
@@ -216,7 +216,11 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     float s = s_vars[i] -> getVal(); 
     float m = m_vars[i] -> getVal(); 
     float n = l_vars[i] -> getVal(); 
-    std::vector<float> P = {m, s, n}; 
+    float s_e = s_vars[i] -> getError(); 
+    float m_e = m_vars[i] -> getError(); 
+    float n_e = l_vars[i] -> getError(); 
+
+    std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
 
     TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
     Convolution(G, PDF_H[i], Out_H[i]); 

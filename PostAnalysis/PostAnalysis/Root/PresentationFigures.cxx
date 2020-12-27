@@ -1089,12 +1089,6 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
   Closure({8, 9, 10, 11},{40, 41, 42, 43}, Hist_V, Empty, "Track 3 Monte Carlo Truth vs Reconstructed", can, filename); 
   Closure({12, 13, 14, 15},{44, 45, 46, 47}, Hist_V, Empty, "Track 4 Monte Carlo Truth vs Reconstructed", can, filename); 
 
-
-
-
-
-
-
   // ==== Now we compare the distributions using a statistical analysis 
   std::cout << "#################################### Statistics ########################################" << std::endl;
   std::cout << "=========Track-1: Statistics" << std::endl; 

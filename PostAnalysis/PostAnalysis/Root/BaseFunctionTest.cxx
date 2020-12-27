@@ -422,10 +422,9 @@ void TestNLandauXNGausFit(TFile* F)
     std::cout << "Truth vs Prediction of histogram: " << name << std::endl;  
     float Inte = H -> Integral();   
     float Lumi = FakeData -> Integral(); 
-    std::cout << "Fraction Truth: " << COMP[i] << " Prediction: " << Inte / Lumi << std::endl; 
-    std::cout << "Mean Truth: " << mean << " Prediction: " << Pre[0] << std::endl; 
-    std::cout << "Stdev Truth: " << stdev << " Prediction: " << Pre[1] << std::endl; 
-
+    std::cout << "Fraction Truth: " << COMP[i] << " Prediction: " << Inte / Lumi << " Error: " << Pre[5] /Lumi << std::endl; 
+    std::cout << "Mean Truth: " << mean << " Prediction: " << Pre[0] << " Error: " << Pre[3] << std::endl; 
+    std::cout << "Stdev Truth: " << stdev << " Prediction: " << Pre[1] << " Error: " << Pre[4] << std::endl; 
     Results.push_back(H); 
   }
 
@@ -802,30 +801,45 @@ void TestMonteCarloMatchConvolution(TFile* F)
   
   std::vector<TString> Names_De ={"trk1_Deconv", "trk2_Deconv", "trk3_Deconv", "trk4_Deconv"}; 
   std::vector<TH1F*> PDF_D = CloneTH1F(trk1_tru1, Names_De); 
-  
   MultiThreadingDeconvolution(ntrks_F, PSF, PDF_D, 150); 
 
-  std::vector<TH1F*> trk1_Fit = FitDeconvolution(trk1_tru1, {PDF_D[0]}, Params, 100000, 1000000);
-  TH1F* trk1_Fit_ = (TH1F*)trk1_Fit[0] -> Clone("trk1_Fit"); 
+
+
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk1_Fit = FitDeconvolutionPerformance(trk1_tru1, {PDF_D[0]}, Params, 100000, 1000000);
+  std::pair<TH1F*, std::vector<float>> trk1_pair = trk1_Fit[0]; 
+  TH1F* trk1_F = trk1_pair.first; 
+  std::vector<float> Perf_trk1 = trk1_pair.second; 
+  TH1F* trk1_Fit_ = (TH1F*)trk1_F -> Clone("trk1_Fit"); 
   trk1_Fit_ -> SetTitle("TRK_1_FIT"); 
-  delete trk1_Fit[0]; 
-  
-  std::vector<TH1F*> trk2_Fit = FitDeconvolution(trk2_tru2, {PDF_D[1]}, Params, 100000, 1000000);
-  TH1F* trk2_Fit_ = (TH1F*)trk2_Fit[0] -> Clone("trk2_Fit"); 
+  delete trk1_F; 
+ 
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk2_Fit = FitDeconvolutionPerformance(trk2_tru2, {PDF_D[1]}, Params, 100000, 1000000);
+  std::pair<TH1F*, std::vector<float>> trk2_pair = trk2_Fit[0]; 
+  TH1F* trk2_F = trk2_pair.first; 
+  std::vector<float> Perf_trk2 = trk2_pair.second; 
+  TH1F* trk2_Fit_ = (TH1F*)trk2_F -> Clone("trk2_Fit"); 
   trk2_Fit_ -> SetTitle("TRK_2_FIT"); 
-  delete trk2_Fit[0]; 
+  delete trk2_F; 
  
-  std::vector<TH1F*> trk3_Fit = FitDeconvolution(trk3_tru3, {PDF_D[2]}, Params, 100000, 1000000);
-  TH1F* trk3_Fit_ = (TH1F*)trk3_Fit[0] -> Clone("trk3_Fit"); 
+
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk3_Fit = FitDeconvolutionPerformance(trk3_tru3, {PDF_D[2]}, Params, 100000, 1000000);
+  std::pair<TH1F*, std::vector<float>> trk3_pair = trk3_Fit[0]; 
+  TH1F* trk3_F = trk3_pair.first; 
+  std::vector<float> Perf_trk3 = trk3_pair.second; 
+  TH1F* trk3_Fit_ = (TH1F*)trk3_F -> Clone("trk3_Fit"); 
   trk3_Fit_ -> SetTitle("TRK_3_FIT"); 
-  delete trk3_Fit[0]; 
+  delete trk3_F; 
  
-  std::vector<TH1F*> trk4_Fit = FitDeconvolution(trk4_tru4, {PDF_D[3]}, Params, 100000, 1000000);
-  TH1F* trk4_Fit_ = (TH1F*)trk4_Fit[0] -> Clone("trk4_Fit"); 
+
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk4_Fit = FitDeconvolutionPerformance(trk4_tru4, {PDF_D[3]}, Params, 100000, 1000000);
+  std::pair<TH1F*, std::vector<float>> trk4_pair = trk4_Fit[0]; 
+  TH1F* trk4_F = trk4_pair.first; 
+  std::vector<float> Perf_trk4 = trk4_pair.second; 
+  TH1F* trk4_Fit_ = (TH1F*)trk4_F -> Clone("trk4_Fit"); 
   trk4_Fit_ -> SetTitle("TRK_4_FIT"); 
-  delete trk4_Fit[0]; 
- 
- 
+  delete trk4_F; 
+
+
   trk1_tru1 -> Write();
   trk2_tru2 -> Write(); 
   trk3_tru3 -> Write();
@@ -839,6 +853,23 @@ void TestMonteCarloMatchConvolution(TFile* F)
   trk2_Fit_ -> Write(); 
   trk3_Fit_ -> Write(); 
   trk4_Fit_ -> Write(); 
+
+
+  std::cout << "############################################" << std::endl;
+  std::cout << "/// Track 1 " << std::endl; 
+  std::cout << "Normalization: " << Perf_trk1[2] << " Error: " << Perf_trk1[5] / trk1_Fit_ -> Integral() << std::endl;
+
+  std::cout << "/// Track 2 " << std::endl; 
+  std::cout << "Normalization: " << Perf_trk2[2] << " Error: " << Perf_trk2[5] / trk2_Fit_ -> Integral() << std::endl;
+ 
+  std::cout << "/// Track 3 " << std::endl; 
+  std::cout << "Normalization: " << Perf_trk3[2] << " Error: " << Perf_trk3[5] / trk3_Fit_ -> Integral() << std::endl;
+
+  std::cout << "/// Track 4 " << std::endl; 
+  std::cout << "Normalization: " << Perf_trk4[2] << " Error: " << Perf_trk4[5] / trk4_Fit_ -> Integral() << std::endl;
+
+
+
 }
 
 void TestMonteCarloFit(TFile* F)
@@ -905,10 +936,10 @@ void TestMonteCarloFit(TFile* F)
   max+=width/2.; 
 
   // Set Error small so the fit performs better
-  for (int i(0); i < trk1_D -> GetNbinsX(); i++){trk1_D -> SetBinError(i+1, 1e-9);}
-  for (int i(0); i < trk2_D -> GetNbinsX(); i++){trk2_D -> SetBinError(i+1, 1e-9);}
-  for (int i(0); i < trk3_D -> GetNbinsX(); i++){trk3_D -> SetBinError(i+1, 1e-9);}
-  for (int i(0); i < trk4_D -> GetNbinsX(); i++){trk4_D -> SetBinError(i+1, 1e-9);}
+  //for (int i(0); i < trk1_D -> GetNbinsX(); i++){trk1_D -> SetBinError(i+1, 1e-9);}
+  //for (int i(0); i < trk2_D -> GetNbinsX(); i++){trk2_D -> SetBinError(i+1, 1e-9);}
+  //for (int i(0); i < trk3_D -> GetNbinsX(); i++){trk3_D -> SetBinError(i+1, 1e-9);}
+  //for (int i(0); i < trk4_D -> GetNbinsX(); i++){trk4_D -> SetBinError(i+1, 1e-9);}
   // ======================= End of Data Preparation ====================== //
 
   // Just convolution 
@@ -917,36 +948,87 @@ void TestMonteCarloFit(TFile* F)
 
   // Convolution + Deconvolution + Fit 
   std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-0.5, -0.5, -0.5, -0.5}; 
-  Params["m_e"] = {0.5, 0.5, 0.5, 0.5}; 
-  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  float m = 1; 
+  Params["m_s"] = {-m, -m, -m, -m}; 
+  Params["m_e"] = {m, m, m, m}; 
+  Params["s_s"] = {0.005, 0.005, 0.005, 0.005};
   Params["s_e"] = {0.5, 0.5, 0.5, 0.5};  
-  Params["x_range"] = {-2, 10}; 
+  Params["x_range"] = {-1, 11}; 
+  float stdev = 0.01;
+  float mean = 0; 
 
   // Create the Raw Convolved PDFs used for the entire algo 
-  TH1F* Gaus = Gaussian(0, 0.02, bins, min, max, "Original1");  
+  TH1F* Gaus = Gaussian(mean, stdev, bins, min, max, "Original1");  
   std::vector<TH1F*> PSF = {Gaus, Gaus, Gaus, Gaus};  
   std::vector<TH1F*> ntrks_F = ConvolveNTimes(trk1_tru1, 4, "Fit");
  
   // Perform the deconvolution 
   std::vector<TString> Names_De ={"trk1_Deconv", "trk2_Deconv", "trk3_Deconv", "trk4_Deconv"}; 
   std::vector<TH1F*> PDF_D = CloneTH1F(trk1_tru1, Names_De); 
-  MultiThreadingDeconvolution(ntrks_F, PSF, PDF_D, 150); 
+  MultiThreadingDeconvolution(ntrks_F, PSF, PDF_D, 250); 
   
   // ====== Apply the fit to the data ========= //
-  std::vector<TH1F*> trk1_Fit = FitDeconvolution(trk1_D, PDF_D, Params, 100000, 1000000);
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk1_fit = FitDeconvolutionPerformance(trk1_D, PDF_D, Params, 1000000, 1000000);
+  TH1F* trk1_tru1_f = trk1_fit[0].first; 
+  TH1F* trk1_tru2_f = trk1_fit[1].first; 
+  TH1F* trk1_tru3_f = trk1_fit[2].first; 
+  TH1F* trk1_tru4_f = trk1_fit[3].first; 
+  std::vector<TH1F*> trk1_Fit = {trk1_tru1_f, trk1_tru2_f, trk1_tru3_f, trk1_tru4_f};  
+  
+  // Parameter output of fit 
+  std::vector<float> trk1_tru1_fout = trk1_fit[0].second; 
+  std::vector<float> trk1_tru2_fout = trk1_fit[1].second;
+  std::vector<float> trk1_tru3_fout = trk1_fit[2].second;
+  std::vector<float> trk1_tru4_fout = trk1_fit[3].second;
+  
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk2_fit = FitDeconvolutionPerformance(trk2_D, PDF_D, Params, 1000000, 1000000);
+  TH1F* trk2_tru1_f = trk2_fit[0].first; 
+  TH1F* trk2_tru2_f = trk2_fit[1].first; 
+  TH1F* trk2_tru3_f = trk2_fit[2].first; 
+  TH1F* trk2_tru4_f = trk2_fit[3].first; 
+  std::vector<TH1F*> trk2_Fit = {trk2_tru1_f, trk2_tru2_f, trk2_tru3_f, trk2_tru4_f};  
+   
+  // Parameter output of fit 
+  std::vector<float> trk2_tru1_fout = trk2_fit[0].second; 
+  std::vector<float> trk2_tru2_fout = trk2_fit[1].second;
+  std::vector<float> trk2_tru3_fout = trk2_fit[2].second;
+  std::vector<float> trk2_tru4_fout = trk2_fit[3].second;
+ 
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk3_fit = FitDeconvolutionPerformance(trk3_D, PDF_D, Params, 1000000, 1000000);
+  TH1F* trk3_tru1_f = trk3_fit[0].first; 
+  TH1F* trk3_tru2_f = trk3_fit[1].first; 
+  TH1F* trk3_tru3_f = trk3_fit[2].first; 
+  TH1F* trk3_tru4_f = trk3_fit[3].first; 
+  std::vector<TH1F*> trk3_Fit = {trk3_tru1_f, trk3_tru2_f, trk3_tru3_f, trk3_tru4_f}; 
+
+  // Parameter output of fit 
+  std::vector<float> trk3_tru1_fout = trk3_fit[0].second; 
+  std::vector<float> trk3_tru2_fout = trk3_fit[1].second;
+  std::vector<float> trk3_tru3_fout = trk3_fit[2].second;
+  std::vector<float> trk3_tru4_fout = trk3_fit[3].second;
+ 
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk4_fit = FitDeconvolutionPerformance(trk4_D, PDF_D, Params, 1000000, 1000000);
+  TH1F* trk4_tru1_f = trk4_fit[0].first; 
+  TH1F* trk4_tru2_f = trk4_fit[1].first; 
+  TH1F* trk4_tru3_f = trk4_fit[2].first; 
+  TH1F* trk4_tru4_f = trk4_fit[3].first; 
+  std::vector<TH1F*> trk4_Fit = {trk4_tru1_f, trk4_tru2_f, trk4_tru3_f, trk4_tru4_f}; 
+
+  // Parameter output of fit 
+  std::vector<float> trk4_tru1_fout = trk4_fit[0].second; 
+  std::vector<float> trk4_tru2_fout = trk4_fit[1].second;
+  std::vector<float> trk4_tru3_fout = trk4_fit[2].second;
+  std::vector<float> trk4_tru4_fout = trk4_fit[3].second;
+
   std::vector<TString> trk1_Names = {"Track_1_Tru_1_Fit", "Track_1_Tru_2_Fit", "Track_1_Tru_3_Fit", "Track_1_Tru_4_Fit"}; 
   std::vector<TH1F*> trk1_F = CopyAll(trk1_Fit, trk1_Names); 
  
-  std::vector<TH1F*> trk2_Fit = FitDeconvolution(trk2_D, PDF_D, Params, 100000, 1000000);
   std::vector<TString> trk2_Names = {"Track_2_Tru_1_Fit", "Track_2_Tru_2_Fit", "Track_2_Tru_3_Fit", "Track_2_Tru_4_Fit"}; 
   std::vector<TH1F*> trk2_F = CopyAll(trk2_Fit, trk2_Names); 
  
-  std::vector<TH1F*> trk3_Fit = FitDeconvolution(trk3_D, PDF_D, Params, 100000, 1000000);
   std::vector<TString> trk3_Names = {"Track_3_Tru_1_Fit", "Track_3_Tru_2_Fit", "Track_3_Tru_3_Fit", "Track_3_Tru_4_Fit"}; 
   std::vector<TH1F*> trk3_F = CopyAll(trk3_Fit, trk3_Names); 
  
-  std::vector<TH1F*> trk4_Fit = FitDeconvolution(trk4_D, PDF_D, Params, 100000, 1000000);
   std::vector<TString> trk4_Names = {"Track_4_Tru_1_Fit", "Track_4_Tru_2_Fit", "Track_4_Tru_3_Fit", "Track_4_Tru_4_Fit"}; 
   std::vector<TH1F*> trk4_F = CopyAll(trk4_Fit, trk4_Names); 
 
@@ -972,15 +1054,155 @@ void TestMonteCarloFit(TFile* F)
   BulkWrite(trk2_F); 
   BulkWrite(trk3_F); 
   BulkWrite(trk4_F); 
+
+  std::cout << "################### Gaussian Fit Parameters ################################## " << std::endl;
+  auto PrintStats = [] (std::vector<float> Stats, std::map<TString, std::vector<float>> Params, int index, float mean, float stdev)
+  {
+    std::cout << "Original Gaussian Parameters -> mean: " << mean << " standard dev: " << stdev << std::endl;
+    std::cout << "Range of fit -> mean: " << Params["m_s"][index] << " -> " << Params["m_e"][index] << std::endl;
+    std::cout << "Range of fit -> standard dev: " << Params["s_s"][index] << " -> " << Params["s_e"][index] << std::endl;
+    std::cout << "Final Fit Output -> mean: " << Stats[0] << " +- " << Stats[3] << " standard dev: " << Stats[1] << " +- " << Stats[4] << std::endl;
+    std::cout << "___________________________________________" << std::endl;
+    std::cout << std::endl;
+  };
+
+  std::cout << "Track 1, Truth 1" << std::endl;
+  PrintStats(trk1_tru1_fout, Params, 0, mean, stdev);
+  std::cout << "Track 1, Truth 2" << std::endl;
+  PrintStats(trk1_tru2_fout, Params, 1, mean, stdev);
+  std::cout << "Track 1, Truth 3" << std::endl;
+  PrintStats(trk1_tru3_fout, Params, 2, mean, stdev);
+  std::cout << "Track 1, Truth 4" << std::endl;
+  PrintStats(trk1_tru4_fout, Params, 3, mean, stdev);
+
+  std::cout << "Track 2, Truth 1" << std::endl;
+  PrintStats(trk2_tru1_fout, Params, 0, mean, stdev);
+  std::cout << "Track 2, Truth 2" << std::endl;
+  PrintStats(trk2_tru2_fout, Params, 1, mean, stdev);
+  std::cout << "Track 2, Truth 3" << std::endl;
+  PrintStats(trk2_tru3_fout, Params, 2, mean, stdev);
+  std::cout << "Track 2, Truth 4" << std::endl;
+  PrintStats(trk2_tru4_fout, Params, 3, mean, stdev);
+
+  std::cout << "Track 3, Truth 1" << std::endl;
+  PrintStats(trk3_tru1_fout, Params, 0, mean, stdev);
+  std::cout << "Track 3, Truth 2" << std::endl;
+  PrintStats(trk3_tru2_fout, Params, 1, mean, stdev);
+  std::cout << "Track 3, Truth 3" << std::endl;
+  PrintStats(trk3_tru3_fout, Params, 2, mean, stdev);
+  std::cout << "Track 3, Truth 4" << std::endl;
+  PrintStats(trk3_tru4_fout, Params, 3, mean, stdev);
+
+  std::cout << "Track 4, Truth 1" << std::endl;
+  PrintStats(trk4_tru1_fout, Params, 0, mean, stdev);
+  std::cout << "Track 4, Truth 2" << std::endl;
+  PrintStats(trk4_tru2_fout, Params, 1, mean, stdev);
+  std::cout << "Track 4, Truth 3" << std::endl;
+  PrintStats(trk4_tru3_fout, Params, 2, mean, stdev);
+  std::cout << "Track 4, Truth 4" << std::endl;
+  PrintStats(trk4_tru4_fout, Params, 3, mean, stdev);
+
+
 }
 
 void TestAlgorithmFull(TFile* F)
 {
+  F -> Write(); 
+  TString Dir = "Merged.root";
+  std::map<TString, std::vector<TH1F*>> MC = MonteCarlo(Dir); 
+
+  F -> ReOpen("UPDATE"); 
+  F -> mkdir("TestAlgorithmFull"); 
+  F -> cd ("TestAlgorithmFull"); 
+
+  // ============================ Retrieve the data histograms ================================ //
+  std::vector<TH1F*> trk1 = MC["trk1_All"]; 
+  
+  // Sum the histograms together 
+  TH1F* Data = (TH1F*)trk1[0] -> Clone("1_trk_DATA"); 
+  Data -> SetTitle("Track 1 Data"); 
+  Data -> Reset();
+  for (TH1F* H : trk1){Data -> Add(H);}
+  
+  // =========================== Parameters for the algorithm ================================ // 
+  int iter = 20; 
+  int LR_iter = 250; 
+  float m = 0.00001; 
+
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-m, -m, -m, -m}; 
+  Params["m_e"] = {m, m, m, m}; 
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
+  Params["x_range"] = {-1, 11}; 
+  
+  float mean_g = 0; 
+  float stdev_g = 0.05;
+  
+  int bins = Data -> GetNbinsX(); 
+  float min = Data -> GetXaxis() -> GetXmin(); 
+  float max = Data -> GetXaxis() -> GetXmax(); 
+  float width = (max - min)/float(bins); 
+  min+=width/2.;
+  max+=width/2.; 
+
+  // ========================== Gaussian and initial model =================================== //
+  TH1F* Gaus = Gaussian(mean_g, stdev_g, bins, min, max, "Original1");  
+  std::vector<TH1F*> PSF = {Gaus, Gaus, Gaus, Gaus};  
+  TH1F* Data_Copy = (TH1F*)Data -> Clone("Data_Copy"); 
+  // ========================= Start of main algorithm ====================================== //
+
+  TCanvas* can = new TCanvas(); 
+  Gaus -> Draw(); 
+  can -> Print("Gaus.pdf");
+  can -> SetLogy(); 
+  std::vector<TH1F*> ntrk_model; 
+  for (int i(0); i < iter; i++)
+  { 
+
+    std::cout << "Iteration: " << i +1 << std::endl; 
+
+    if ( i == 0)
+    {
+      ntrk_model = ConvolveNTimes(Data_Copy, 4, "Model"); 
+      Data_Copy -> Reset(); 
+      Data_Copy -> Add(Data); 
+    }
+
+    std::vector<TString> TempNames = NameGenerator(ntrk_model.size(), "_De"); 
+    std::vector<TH1F*> TempHist = CloneTH1F(ntrk_model[0], TempNames); 
+    MultiThreadingDeconvolution(ntrk_model, PSF, TempHist, LR_iter); 
+    for (int i(0); i < ntrk_model.size(); i++)
+    {
+      delete ntrk_model[i]; 
+    }
+
+    std::vector<std::pair<TH1F*, std::vector<float>>> Fit_model = FitDeconvolutionPerformance(Data_Copy, TempHist, Params, 100000, 100000); 
+
+    TH1F* trk1_tru1 = Fit_model[0].first; 
+    TH1F* trk1_tru2 = Fit_model[1].first; 
+    TH1F* trk1_tru3 = Fit_model[2].first; 
+    TH1F* trk1_tru4 = Fit_model[3].first; 
+    std::vector<TH1F*> ntrks = {trk1_tru1, trk1_tru2, trk1_tru3, trk1_tru4};
+    ScaleShape(Data_Copy, ntrks);
+
+    float heat = float(i + 1) / float(iter); 
+    Data_Copy -> Add(trk1_tru2, -heat); 
+    Data_Copy -> Add(trk1_tru3, -heat); 
+    Data_Copy -> Add(trk1_tru4, -heat); 
+  
+    PlotHists(Data_Copy, trk1, ntrks, can); 
+    can -> Print("Debug.pdf");  
+
+    for (int i(0); i < TempHist.size(); i++)
+    {
+      delete TempHist[i]; 
+    }
+
+    ntrk_model = ntrks; 
 
 
-
-
-
+  }
 
 
 

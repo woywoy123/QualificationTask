@@ -41,6 +41,7 @@ int main(int argc, char** argv)
     //TestReadFile(F); 
     //TestMonteCarloMatchConvolution(F); 
     TestMonteCarloFit(F); 
+    //TestAlgorithmFull(F); 
   }
 
   // Run Experimental
