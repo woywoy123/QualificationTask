@@ -164,3 +164,147 @@ std::map<TString, std::vector<TH1F*>> MonteCarlo(TString dir)
   return Map;
 
 }
+
+std::map<TString, std::vector<TH1F*>> MonteCarloLayerEnergy(TString dir)
+{
+  std::vector<TString> Layers = {"IBL", "Blayer", "layer1", "layer2"}; 
+  std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
+                                    "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
+                                    "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
+                                    "higher_GeV"}; 
+  auto GenerateNames = [](int trks, int tru, TString Energy = "", int term = -1)
+  {
+    std::vector<TString> Output; 
+    for (int i(0); i < trks; i++)
+    {
+      if ( term != -1 )
+      {
+        i = term; 
+      }
+      for (int y(0); y < tru; y++)
+      {
+        TString name = "dEdx_ntrk_"; name += (i+1); name += ("_ntru_"); name += (y+1); name += (Energy); 
+        Output.push_back(name); 
+      }
+      if (term != -1 )
+      {
+        break; 
+      }
+    }
+    return Output; 
+  };
+
+  auto Sort = [&](int trk, int tru, std::vector<TString> Dirs, std::map<TString, std::vector<TH1F*>> map, TString Energy)
+  {
+    int s_index = (trk-1)*tru; 
+    int e_index = trk*tru;    
+   
+    std::vector<TString> Names = GenerateNames(trk, tru, Energy); 
+    std::vector<TH1F*> Hists_V; 
+
+    for (int p(0); p < Dirs.size(); p++)
+    {
+      TString n = Dirs[p]; 
+      std::vector<TH1F*> Hist = map[n];  
+      if (p == 0)
+      {
+        for (int i(s_index); i < e_index; i++)
+        {
+          TH1F* Temp = (TH1F*)Hist[i] -> Clone(Names[i]); 
+          Temp -> SetTitle(Names[i]);  
+          Hists_V.push_back(Temp);  
+        }
+      }
+      else
+      {
+        int x(0); 
+        for (int i(s_index); i < e_index; i++)
+        {
+          Hists_V[x] -> Add(Hist[i]); 
+          x++; 
+        }
+      }
+    }
+    return Hists_V; 
+  };
+
+  auto Merge =[] (std::vector<TH1F*> Hout, std::vector<TH1F*> Hin)
+  {
+    for (int i(0); i < Hout.size(); i++)
+    {
+      Hout[i] -> Add(Hin[i]); 
+    }
+  }; 
+
+
+
+  int ntru = 4; 
+  int ntrk = 4; 
+  std::vector<TString> Names = GenerateNames(ntrk, ntru); 
+  std::map<TString, std::vector<TString>> ToGet; 
+  for (int i(0); i < Layers.size(); i++)
+  {
+    for (int y(0); y < JetEnergy.size(); y++)
+    {
+      TString name = Layers[i]; name += ("/"); name += (JetEnergy[y]); 
+      ToGet[name] = Names; 
+    }
+  }
+  std::map<TString, std::vector<TH1F*>> Dump = GetHist(ToGet, dir); 
+  std::map<TString, std::vector<TH1F*>> Map; 
+  for (int i(0); i < JetEnergy.size(); i++)
+  {
+    std::vector<TString> Dirs; 
+    for (int y(0); y < Layers.size(); y++)
+    {
+      TString name = Layers[y]; name += ("/"); name += (JetEnergy[i]); 
+      Dirs.push_back(name); 
+    }
+    
+    Map["Track_1_" + JetEnergy[i]] = Sort(1, ntru, Dirs, Dump, "_" + JetEnergy[i]); 
+    Map["Track_2_" + JetEnergy[i]] = Sort(2, ntru, Dirs, Dump, "_" + JetEnergy[i]); 
+    Map["Track_3_" + JetEnergy[i]] = Sort(3, ntru, Dirs, Dump, "_" + JetEnergy[i]); 
+    Map["Track_4_" + JetEnergy[i]] = Sort(4, ntru, Dirs, Dump, "_" + JetEnergy[i]); 
+  }
+  
+  std::vector<TH1F*> trk1_all; 
+  std::vector<TH1F*> trk2_all; 
+  std::vector<TH1F*> trk3_all; 
+  std::vector<TH1F*> trk4_all; 
+  for (int i(0); i < JetEnergy.size(); i++)
+  {
+    std::vector<TH1F*> t1 = Map["Track_1_" + JetEnergy[i]]; 
+    std::vector<TH1F*> t2 = Map["Track_2_" + JetEnergy[i]]; 
+    std::vector<TH1F*> t3 = Map["Track_3_" + JetEnergy[i]]; 
+    std::vector<TH1F*> t4 = Map["Track_4_" + JetEnergy[i]]; 
+    
+    if (i == 0)
+    {
+      std::vector<TString> trk1_n = GenerateNames(ntrk, ntru, "", 0); 
+      std::vector<TString> trk2_n = GenerateNames(ntrk, ntru, "", 1); 
+      std::vector<TString> trk3_n = GenerateNames(ntrk, ntru, "", 2); 
+      std::vector<TString> trk4_n = GenerateNames(ntrk, ntru, "", 3); 
+      
+      trk1_all = CloneTH1F(t1[0], trk1_n); 
+      trk2_all = CloneTH1F(t2[0], trk2_n);   
+      trk3_all = CloneTH1F(t3[0], trk3_n);   
+      trk4_all = CloneTH1F(t4[0], trk4_n);   
+    }
+    else 
+    {
+      Merge(trk1_all, t1); 
+      Merge(trk2_all, t2); 
+      Merge(trk3_all, t3); 
+      Merge(trk4_all, t4); 
+    }
+  }
+  Map["Track_1_All"] = trk1_all; 
+  Map["Track_2_All"] = trk2_all; 
+  Map["Track_3_All"] = trk3_all; 
+  Map["Track_4_All"] = trk4_all; 
+  return Map; 
+}
+
+
+
+

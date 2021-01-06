@@ -39,8 +39,9 @@ int main(int argc, char** argv)
     //TestOscillationLucyRichardson(F); 
     //TestAlgorithm(F); 
     //TestReadFile(F); 
+    TestReadFileTrackEnergy(F); 
     //TestMonteCarloMatchConvolution(F); 
-    TestMonteCarloFit(F); 
+    //TestMonteCarloFit(F); 
     //TestAlgorithmFull(F); 
   }
 

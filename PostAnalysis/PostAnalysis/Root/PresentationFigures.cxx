@@ -35,6 +35,7 @@ void FigureCompiler(TFile* F)
     if (CompilerName == "TestOscillationLucyRichardson"){ PlotOscillationLucyRichardson(can, Hist_V, filename);}
     if (CompilerName == "TestAlgorithm"){ PlotAlgorithm(can, Hist_V, filename);}
     if (CompilerName == "TestReadFile"){ PlotTestReadFile(can, Hist_V, filename);}
+    if (CompilerName == "TestReadFileTrackEnergy") {PlotReadFileTrackEnergy(can, Hist_V, filename); }
     if (CompilerName == "TestMonteCarloMatchConvolution") { PlotMonteCarloMatchConvolution(can, Hist_V, filename);}
     if (CompilerName == "TestMonteCarloFit"){PlotMonteCarloFit(can, Hist_V, filename); }
     can -> Clear(); 
@@ -868,6 +869,100 @@ void PlotTestReadFile(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
     can -> Print(filename); 
     can -> Clear(); 
   }
+}
+
+void PlotReadFileTrackEnergy(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
+{
+  TString Dir = "Merged.root"; 
+  std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir);  
+  std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
+                                    "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
+                                    "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
+                                    "higher_GeV"}; 
+  std::vector<TString> Track_Names = {"Track_1_", "Track_2_", "Track_3_", "Track_4_"}; 
+  std::vector<Color_t> Col = {kRed, kGreen, kBlue, kOrange}; 
+
+  can -> SetLogy(); 
+  for (TString J : JetEnergy)
+  {
+    for (TString T : Track_Names)
+    {
+      TString name = T + J; 
+      std::vector<TH1F*> Hist_V = MC[name]; 
+      
+      int count(0); 
+      for (TH1F* H : Hist_V)
+      {
+        float L = H -> GetEntries(); 
+        if ( L == 0 ) {count++;}
+      }
+      
+      if (count == Hist_V.size()) {continue;}
+
+
+
+      TH1F* Empty = (TH1F*)Hist_V[0] -> Clone("EMPTY"); 
+      Empty -> Reset(); 
+      Empty -> GetYaxis() -> SetRangeUser(1e-6, 1e2);  
+      GeneratePlot(Empty, name, can, kWhite, kSolid, "HIST", 0); 
+      for (int i(0); i < Hist_V.size(); i++)
+      {
+        GeneratePlot(Hist_V[i], "", can, Col[i], kSolid, "SAMEHIST", 1); 
+      }
+      can -> Print(filename); 
+      can -> Clear(); 
+    }
+  }
+  
+  std::map<TString, std::vector<TH1F*>> MC_Other = MonteCarlo(Dir); 
+
+  std::vector<TH1F*> MC_Other_trk1 = MC_Other["trk1_All"]; 
+  std::vector<TH1F*> MC_Other_trk2 = MC_Other["trk2_All"]; 
+  std::vector<TH1F*> MC_Other_trk3 = MC_Other["trk3_All"]; 
+  std::vector<TH1F*> MC_Other_trk4 = MC_Other["trk4_All"]; 
+  Normalize(MC_Other_trk1); 
+  Normalize(MC_Other_trk2); 
+  Normalize(MC_Other_trk3); 
+  Normalize(MC_Other_trk4); 
+
+  std::vector<TH1F*> MC_trk1 = MC["Track_1_All"]; 
+  std::vector<TH1F*> MC_trk2 = MC["Track_2_All"]; 
+  std::vector<TH1F*> MC_trk3 = MC["Track_3_All"]; 
+  std::vector<TH1F*> MC_trk4 = MC["Track_4_All"]; 
+  Normalize(MC_trk1); 
+  Normalize(MC_trk2); 
+  Normalize(MC_trk3); 
+  Normalize(MC_trk4); 
+
+  for (int i(0); i < MC_trk1.size(); i++)
+  {
+    TH1F* H_Other_1 = MC_Other_trk1[i]; 
+    TH1F* H_1 = MC_trk1[i]; 
+    GenerateRatioPlot(H_Other_1, H_1, can, "Track 1 compare", "LOG"); 
+    can -> Print(filename); 
+    can -> Clear(); 
+
+    TH1F* H_Other_2 = MC_Other_trk2[i]; 
+    TH1F* H_2 = MC_trk2[i]; 
+    GenerateRatioPlot(H_Other_2, H_2, can, "Track 2 compare", "LOG"); 
+    can -> Print(filename); 
+    can -> Clear(); 
+
+    TH1F* H_Other_3 = MC_Other_trk3[i]; 
+    TH1F* H_3 = MC_trk3[i]; 
+    GenerateRatioPlot(H_Other_3, H_3, can, "Track 3 compare", "LOG"); 
+    can -> Print(filename); 
+    can -> Clear(); 
+
+    TH1F* H_Other_4 = MC_Other_trk4[i]; 
+    TH1F* H_4 = MC_trk4[i]; 
+    GenerateRatioPlot(H_Other_4, H_4, can, "Track 4 compare", "LOG"); 
+    can -> Print(filename); 
+    can -> Clear(); 
+
+  }
+  
+
 }
 
 void PlotMonteCarloMatchConvolution(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)

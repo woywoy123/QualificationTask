@@ -743,6 +743,15 @@ void TestReadFile(TFile* F)
   H -> Write(); 
 }
 
+void TestReadFileTrackEnergy(TFile* F)
+{
+  F -> mkdir("TestReadFileTrackEnergy"); 
+  F -> cd ("TestReadFileTrackEnergy"); 
+  TH1F* H = new TH1F("", "", 100, 0, 1); 
+  H -> Write(); 
+}
+
+
 void TestMonteCarloMatchConvolution(TFile* F)
 { 
   F -> Write();
@@ -789,10 +798,10 @@ void TestMonteCarloMatchConvolution(TFile* F)
 
   // Convolution + Deconvolution + Fit 
   std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-0.5, -0.5, -0.5, -0.5}; 
-  Params["m_e"] = {0.5, 0.5, 0.5, 0.5}; 
+  Params["m_s"] = {-0.1, -0.1, -0.1, -0.1}; 
+  Params["m_e"] = {0.1, 0.1, 0.1, 0.1}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.5, 0.5, 0.5, 0.5};  
+  Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
   Params["x_range"] = {0, 10}; 
 
   TH1F* Gaus = Gaussian(0, 0.02, bins, min, max, "Original1");  
@@ -805,7 +814,7 @@ void TestMonteCarloMatchConvolution(TFile* F)
 
 
 
-  std::vector<std::pair<TH1F*, std::vector<float>>> trk1_Fit = FitDeconvolutionPerformance(trk1_tru1, {PDF_D[0]}, Params, 100000, 1000000);
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk1_Fit = FitDeconvolutionPerformance(trk1_tru1, {PDF_D[0]}, Params, 100000, 100000);
   std::pair<TH1F*, std::vector<float>> trk1_pair = trk1_Fit[0]; 
   TH1F* trk1_F = trk1_pair.first; 
   std::vector<float> Perf_trk1 = trk1_pair.second; 
@@ -813,7 +822,7 @@ void TestMonteCarloMatchConvolution(TFile* F)
   trk1_Fit_ -> SetTitle("TRK_1_FIT"); 
   delete trk1_F; 
  
-  std::vector<std::pair<TH1F*, std::vector<float>>> trk2_Fit = FitDeconvolutionPerformance(trk2_tru2, {PDF_D[1]}, Params, 100000, 1000000);
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk2_Fit = FitDeconvolutionPerformance(trk2_tru2, {PDF_D[1]}, Params, 100000, 100000);
   std::pair<TH1F*, std::vector<float>> trk2_pair = trk2_Fit[0]; 
   TH1F* trk2_F = trk2_pair.first; 
   std::vector<float> Perf_trk2 = trk2_pair.second; 
@@ -822,7 +831,7 @@ void TestMonteCarloMatchConvolution(TFile* F)
   delete trk2_F; 
  
 
-  std::vector<std::pair<TH1F*, std::vector<float>>> trk3_Fit = FitDeconvolutionPerformance(trk3_tru3, {PDF_D[2]}, Params, 100000, 1000000);
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk3_Fit = FitDeconvolutionPerformance(trk3_tru3, {PDF_D[2]}, Params, 100000, 100000);
   std::pair<TH1F*, std::vector<float>> trk3_pair = trk3_Fit[0]; 
   TH1F* trk3_F = trk3_pair.first; 
   std::vector<float> Perf_trk3 = trk3_pair.second; 
@@ -831,7 +840,7 @@ void TestMonteCarloMatchConvolution(TFile* F)
   delete trk3_F; 
  
 
-  std::vector<std::pair<TH1F*, std::vector<float>>> trk4_Fit = FitDeconvolutionPerformance(trk4_tru4, {PDF_D[3]}, Params, 100000, 1000000);
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk4_Fit = FitDeconvolutionPerformance(trk4_tru4, {PDF_D[3]}, Params, 100000, 100000);
   std::pair<TH1F*, std::vector<float>> trk4_pair = trk4_Fit[0]; 
   TH1F* trk4_F = trk4_pair.first; 
   std::vector<float> Perf_trk4 = trk4_pair.second; 
@@ -968,7 +977,7 @@ void TestMonteCarloFit(TFile* F)
   MultiThreadingDeconvolution(ntrks_F, PSF, PDF_D, 250); 
   
   // ====== Apply the fit to the data ========= //
-  std::vector<std::pair<TH1F*, std::vector<float>>> trk1_fit = FitDeconvolutionPerformance(trk1_D, PDF_D, Params, 1000000, 1000000);
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk1_fit = FitDeconvolutionPerformance(trk1_D, PDF_D, Params, 1000000, 100000);
   TH1F* trk1_tru1_f = trk1_fit[0].first; 
   TH1F* trk1_tru2_f = trk1_fit[1].first; 
   TH1F* trk1_tru3_f = trk1_fit[2].first; 
@@ -981,7 +990,7 @@ void TestMonteCarloFit(TFile* F)
   std::vector<float> trk1_tru3_fout = trk1_fit[2].second;
   std::vector<float> trk1_tru4_fout = trk1_fit[3].second;
   
-  std::vector<std::pair<TH1F*, std::vector<float>>> trk2_fit = FitDeconvolutionPerformance(trk2_D, PDF_D, Params, 1000000, 1000000);
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk2_fit = FitDeconvolutionPerformance(trk2_D, PDF_D, Params, 1000000, 100000);
   TH1F* trk2_tru1_f = trk2_fit[0].first; 
   TH1F* trk2_tru2_f = trk2_fit[1].first; 
   TH1F* trk2_tru3_f = trk2_fit[2].first; 
@@ -994,7 +1003,7 @@ void TestMonteCarloFit(TFile* F)
   std::vector<float> trk2_tru3_fout = trk2_fit[2].second;
   std::vector<float> trk2_tru4_fout = trk2_fit[3].second;
  
-  std::vector<std::pair<TH1F*, std::vector<float>>> trk3_fit = FitDeconvolutionPerformance(trk3_D, PDF_D, Params, 1000000, 1000000);
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk3_fit = FitDeconvolutionPerformance(trk3_D, PDF_D, Params, 1000000, 100000);
   TH1F* trk3_tru1_f = trk3_fit[0].first; 
   TH1F* trk3_tru2_f = trk3_fit[1].first; 
   TH1F* trk3_tru3_f = trk3_fit[2].first; 
@@ -1007,7 +1016,7 @@ void TestMonteCarloFit(TFile* F)
   std::vector<float> trk3_tru3_fout = trk3_fit[2].second;
   std::vector<float> trk3_tru4_fout = trk3_fit[3].second;
  
-  std::vector<std::pair<TH1F*, std::vector<float>>> trk4_fit = FitDeconvolutionPerformance(trk4_D, PDF_D, Params, 1000000, 1000000);
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk4_fit = FitDeconvolutionPerformance(trk4_D, PDF_D, Params, 1000000, 100000);
   TH1F* trk4_tru1_f = trk4_fit[0].first; 
   TH1F* trk4_tru2_f = trk4_fit[1].first; 
   TH1F* trk4_tru3_f = trk4_fit[2].first; 
@@ -1101,9 +1110,44 @@ void TestMonteCarloFit(TFile* F)
   PrintStats(trk4_tru3_fout, Params, 2, mean, stdev);
   std::cout << "Track 4, Truth 4" << std::endl;
   PrintStats(trk4_tru4_fout, Params, 3, mean, stdev);
-
-
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void TestAlgorithmFull(TFile* F)
 {
