@@ -39,7 +39,10 @@ int main(int argc, char** argv)
     //TestOscillationLucyRichardson(F); 
     //TestAlgorithm(F); 
     //TestReadFile(F); 
-    TestMonteCarloMatchConvolution(F); 
+    TestReadFileTrackEnergy(F); 
+    //TestMonteCarloMatchConvolution(F); 
+    //TestMonteCarloFit(F); 
+    //TestAlgorithmFull(F); 
   }
 
   // Run Experimental

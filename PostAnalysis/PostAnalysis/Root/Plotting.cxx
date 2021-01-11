@@ -56,7 +56,8 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> predicti
 {
   can -> Clear();
   gStyle -> SetOptStat(0); 
-  Data -> GetYaxis() -> SetRangeUser(1, Data -> Integral());
+  Data -> GetYaxis() -> SetRangeUser(1e-9, Data -> Integral());
+  Data -> GetXaxis() -> SetRangeUser(0, 12);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
   Populate(truth, can, len, kSolid); 

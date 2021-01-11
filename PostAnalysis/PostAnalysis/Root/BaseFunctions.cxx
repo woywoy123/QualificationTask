@@ -98,33 +98,55 @@ void Shift(TH1F* Hist, int shift)
 
 void Scale(TH1F* Data, std::vector<TH1F*> ntrk)
 {
-    int excess_i = 0;
-    float excess_sum;  
-    for (int i(0); i < Data ->GetNbinsX(); i++)
+  int excess_i = 0;
+  float excess_sum;  
+  for (int i(0); i < Data ->GetNbinsX(); i++)
+  {
+    float e = Data -> GetBinContent(i+1); 
+    float sum(0);  
+    for (int c(0); c < ntrk.size(); c++)
     {
-      float e = Data -> GetBinContent(i+1); 
-      float sum(0);  
-      for (int c(0); c < ntrk.size(); c++)
-      {
-        sum += ntrk[c] -> GetBinContent(i+1);  
-      }
-      
-      if ( sum > e && e > 1)
-      {
-        excess_sum += sum/e; 
-        excess_i++;  
-      }
+      sum += ntrk[c] -> GetBinContent(i+1);  
     }
-     
-    if ( excess_i > 1)
+    
+    if ( sum > e && e > 1)
     {
-      float average = excess_sum / (float)excess_i; 
-      for (int c(0); c < ntrk.size(); c++){ntrk[c] -> Scale((float)1/average);}
+      excess_sum += sum/e; 
+      excess_i++;  
     }
+  }
+   
+  if ( excess_i > 1)
+  {
+    float average = excess_sum / (float)excess_i; 
+    for (int c(0); c < ntrk.size(); c++){ntrk[c] -> Scale((float)1/average);}
+  }
 }
 
+void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
+{
+  for (int i(0); i < Data ->GetNbinsX(); i++)
+  {
+    float e = Data -> GetBinContent(i+1); 
+    float sum(0);  
+    for (int c(0); c < ntrk.size(); c++)
+    {
+      sum += ntrk[c] -> GetBinContent(i+1);  
+    }
+    if (e != 0)
+    {
+      float r = sum/e;
+      
+      for (int c(0); c < ntrk.size(); c++)
+      {
+        float en = ntrk[c] -> GetBinContent(i+1);
+        ntrk[c] -> SetBinContent(i+1, en/r);  
+      }
+    }
+  }
+}
 
-// Variable Name Generator 
+//Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty)
 {
   std::vector<TString> Output; 
@@ -206,11 +228,11 @@ void Statistics(TH1F* H1, TH1F* H2, float x_min, float x_max)
     x_min = min;   
   }
 
-  std::cout << "####################################################" << std::endl; 
   std::cout << "H1: " << H1 -> GetTitle() << " ::::: H2: " << H2 -> GetTitle() << std::endl;
   std::cout << "Domain selected: " << x_min << " -> " << x_max << std::endl;
   std::cout << "- Absolute Error / Integral of H2: " << ErrorByIntegral(H1, H2, x_min, x_max) << std::endl;
   std::cout << "- KolmogorovTest: " << H2 -> KolmogorovTest(H1) << std::endl;
+  std::cout << "- Normalization: H1: " << H1 -> Integral() << " :::: H2: " << H2 -> Integral() << " :::: H1/H2: " << float(H1 -> Integral()) / float(H2 -> Integral()) << std::endl; 
 }
 
 float GetMaxValue(TH1F* H)
