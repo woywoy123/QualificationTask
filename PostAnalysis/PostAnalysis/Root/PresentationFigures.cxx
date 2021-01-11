@@ -899,8 +899,6 @@ void PlotReadFileTrackEnergy(TCanvas* can, std::vector<TH1F*> Hist_V, TString fi
       
       if (count == Hist_V.size()) {continue;}
 
-
-
       TH1F* Empty = (TH1F*)Hist_V[0] -> Clone("EMPTY"); 
       Empty -> Reset(); 
       Empty -> GetYaxis() -> SetRangeUser(1e-6, 1e2);  
