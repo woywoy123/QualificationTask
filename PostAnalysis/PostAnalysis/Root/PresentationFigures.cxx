@@ -957,9 +957,13 @@ void PlotReadFileTrackEnergy(TCanvas* can, std::vector<TH1F*> Hist_V, TString fi
     GenerateRatioPlot(H_Other_4, H_4, can, "Track 4 compare", "LOG"); 
     can -> Print(filename); 
     can -> Clear(); 
-
   }
   
+
+
+
+
+
 
 }
 
@@ -1101,7 +1105,7 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
     for (int i(0); i < I2.size(); i++)
     {
       TString N = Name; N +=(i+1);
-      Hist_V[I1[i]] -> GetYaxis() -> SetRangeUser(1e-9, 10);
+      Hist_V[I1[i]] -> GetYaxis() -> SetRangeUser(1e-1, 100000);
       Hist_V[I1[i]] -> GetXaxis() -> SetRangeUser(0, 10); 
       Hist_V[I2[i]] ->  SetLineStyle(kDashed); 
       GenerateRatioPlot(Hist_V[I1[i]], Hist_V[I2[i]], can, "Ratio Plot of " + N + " Compared to Monte Carlo", "LOG"); 
@@ -1141,7 +1145,7 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
 
   // Original Monte Carlo pure templates 
   can -> SetLogy();  
-  Empty -> GetYaxis() -> SetRangeUser(1e-9, 10);
+  Empty -> GetYaxis() -> SetRangeUser(1e-1, 1e8);
   Empty -> GetXaxis() -> SetRangeUser(-2, 10); 
   GenClosure({0, 1, 2, 3, 16}, Hist_V, Empty, "Track-1 Truth Distribution", can, filename); 
   GenClosure({4, 5, 6, 7, 17}, Hist_V, Empty, "Track-2 Truth Distribution", can, filename); 
@@ -1155,7 +1159,7 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
   GenClosureRatio({12, 13, 14, 15},{44, 45, 46, 47}, Hist_V, "Track-4, Truth-", can, filename);  
 
   // Plot the Gaussian being used for the deconvolution
-  Empty -> GetYaxis() -> SetRangeUser(1e-9, 10);
+  Empty -> GetYaxis() -> SetRangeUser(1e-1, 1e8);
   GeneratePlot(Empty, "The Gaussian + Distributions being used for Deconvolution", can, kWhite, kSolid, "HIST", 0); 
   GeneratePlot(Hist_V[24], "Gaussian", can, kBlack, kDashed, "SAMEHIST", 1); 
   GeneratePlot(Hist_V[20], "Conv 1", can, kRed, kSolid, "SAMEHIST", 1); 
@@ -1167,7 +1171,7 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
   can -> Clear();  
  
   // Plot the Deconvolved Hists
-  Empty -> GetYaxis() -> SetRangeUser(1e-9, 10);
+  Empty -> GetYaxis() -> SetRangeUser(1e-1, 1e10);
   GeneratePlot(Empty, "The Deconvolved Histograms", can, kWhite, kSolid, "HIST", 0); 
   GeneratePlot(Hist_V[28], "Deconv 1", can, kRed, kSolid, "SAMEHIST", 1); 
   GeneratePlot(Hist_V[29], "Deconv 2", can, kOrange, kSolid, "SAMEHIST", 1); 
@@ -1213,6 +1217,4 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
   std::cout << std::endl;
 
 }
-
-
 

@@ -237,9 +237,10 @@ std::map<TString, std::vector<TH1F*>> MonteCarloLayerEnergy(TString dir)
   }; 
 
 
-
   int ntru = 4; 
   int ntrk = 4; 
+  
+  // ================= Getting the eventWeight based histograms ========================= // 
   std::vector<TString> Names = GenerateNames(ntrk, ntru); 
   std::map<TString, std::vector<TString>> ToGet; 
   for (int i(0); i < Layers.size(); i++)
@@ -250,6 +251,7 @@ std::map<TString, std::vector<TH1F*>> MonteCarloLayerEnergy(TString dir)
       ToGet[name] = Names; 
     }
   }
+
   std::map<TString, std::vector<TH1F*>> Dump = GetHist(ToGet, dir); 
   std::map<TString, std::vector<TH1F*>> Map; 
   for (int i(0); i < JetEnergy.size(); i++)
@@ -302,6 +304,72 @@ std::map<TString, std::vector<TH1F*>> MonteCarloLayerEnergy(TString dir)
   Map["Track_2_All"] = trk2_all; 
   Map["Track_3_All"] = trk3_all; 
   Map["Track_4_All"] = trk4_all; 
+
+
+  // ==================== Get the eventWeight = 1 based histograms ======================== //
+  std::vector<TString> Names_eW1 = GenerateNames(ntrk, ntru, "_EW_1"); 
+  std::map<TString, std::vector<TString>> ToGet_eW1; 
+  for (int i(0); i < Layers.size(); i++)
+  {
+    for (int y(0); y < JetEnergy.size(); y++)
+    {
+      TString name = Layers[i]; name += ("/"); name += (JetEnergy[y]); 
+      ToGet[name] = Names; 
+    }
+  }
+
+  std::map<TString, std::vector<TH1F*>> Dump_eW1 = GetHist(ToGet, dir); 
+  for (int i(0); i < JetEnergy.size(); i++)
+  {
+    std::vector<TString> Dirs; 
+    for (int y(0); y < Layers.size(); y++)
+    {
+      TString name = Layers[y]; name += ("/"); name += (JetEnergy[i]); 
+      Dirs.push_back(name); 
+    }
+    
+    Map["Track_1_" + JetEnergy[i] + "_eW1"] = Sort(1, ntru, Dirs, Dump_eW1, "_" + JetEnergy[i] + "_EW_1"); 
+    Map["Track_2_" + JetEnergy[i] + "_eW1"] = Sort(2, ntru, Dirs, Dump_eW1, "_" + JetEnergy[i] + "_EW_1"); 
+    Map["Track_3_" + JetEnergy[i] + "_eW1"] = Sort(3, ntru, Dirs, Dump_eW1, "_" + JetEnergy[i] + "_EW_1"); 
+    Map["Track_4_" + JetEnergy[i] + "_eW1"] = Sort(4, ntru, Dirs, Dump_eW1, "_" + JetEnergy[i] + "_EW_1"); 
+  }
+  
+  std::vector<TH1F*> trk1_all_eW1; 
+  std::vector<TH1F*> trk2_all_eW1; 
+  std::vector<TH1F*> trk3_all_eW1; 
+  std::vector<TH1F*> trk4_all_eW1; 
+  for (int i(0); i < JetEnergy.size(); i++)
+  {
+    std::vector<TH1F*> t1 = Map["Track_1_" + JetEnergy[i] + "_eW1"]; 
+    std::vector<TH1F*> t2 = Map["Track_2_" + JetEnergy[i] + "_eW1"]; 
+    std::vector<TH1F*> t3 = Map["Track_3_" + JetEnergy[i] + "_eW1"]; 
+    std::vector<TH1F*> t4 = Map["Track_4_" + JetEnergy[i] + "_eW1"]; 
+    
+    if (i == 0)
+    {
+      std::vector<TString> trk1_n = GenerateNames(ntrk, ntru, "_EW_1", 0); 
+      std::vector<TString> trk2_n = GenerateNames(ntrk, ntru, "_EW_1", 1); 
+      std::vector<TString> trk3_n = GenerateNames(ntrk, ntru, "_EW_1", 2); 
+      std::vector<TString> trk4_n = GenerateNames(ntrk, ntru, "_EW_1", 3); 
+      
+      trk1_all = CloneTH1F(t1[0], trk1_n); 
+      trk2_all = CloneTH1F(t2[0], trk2_n);   
+      trk3_all = CloneTH1F(t3[0], trk3_n);   
+      trk4_all = CloneTH1F(t4[0], trk4_n);   
+    }
+    else 
+    {
+      Merge(trk1_all, t1); 
+      Merge(trk2_all, t2); 
+      Merge(trk3_all, t3); 
+      Merge(trk4_all, t4); 
+    }
+  }
+  Map["Track_1_All_eW1"] = trk1_all; 
+  Map["Track_2_All_eW1"] = trk2_all; 
+  Map["Track_3_All_eW1"] = trk3_all; 
+  Map["Track_4_All_eW1"] = trk4_all; 
+
   return Map; 
 }
 

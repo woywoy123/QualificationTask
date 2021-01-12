@@ -36,9 +36,17 @@ void PlotHists(std::vector<TH1F*> Hists, std::vector<TString> Legend_Titles, TCa
 
 void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
 {
+  float m; 
+  for (TH1F* H : Hists)
+  {
+    int b = H -> GetMaximumBin(); 
+    float m_n = H -> GetBinContent(b+1); 
+    if (m_n > m){ m = m_n; }
+  }
+
   gStyle -> SetOptStat(0); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-  Hists[0] -> GetYaxis() -> SetRangeUser(1e-6, 1e6); 
+  Hists[0] -> GetYaxis() -> SetRangeUser(1e-6, m*2); 
   Populate(Hists, can, len, kSolid); 
 }
 
@@ -54,10 +62,13 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> Hists, TCanvas* can)
 
 void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can)
 {
+  int bin = Data -> GetMaximumBin(); 
+  float m = Data -> GetBinContent(bin+1); 
+  
   can -> Clear();
   gStyle -> SetOptStat(0); 
-  Data -> GetYaxis() -> SetRangeUser(1e-9, Data -> Integral());
-  Data -> GetXaxis() -> SetRangeUser(0, 12);
+  Data -> GetYaxis() -> SetRangeUser(1e-6, m*2);
+  Data -> GetXaxis() -> SetRangeUser(0, 10);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
   Populate(truth, can, len, kSolid); 

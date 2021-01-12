@@ -798,19 +798,19 @@ void TestMonteCarloMatchConvolution(TFile* F)
 
   // Convolution + Deconvolution + Fit 
   std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-0.1, -0.1, -0.1, -0.1}; 
-  Params["m_e"] = {0.1, 0.1, 0.1, 0.1}; 
+  Params["m_s"] = {-0.01, -0.01, -0.01, -0.01}; 
+  Params["m_e"] = {0.01, 0.01, 0.01, 0.01}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
-  Params["x_range"] = {0, 10}; 
+  Params["s_e"] = {0.4, 0.4, 0.4, 0.4};  
+  Params["x_range"] = {0.5, 9}; 
 
-  TH1F* Gaus = Gaussian(0, 0.02, bins, min, max, "Original1");  
+  TH1F* Gaus = Gaussian(0, 0.4, bins, min, max, "Original1");  
   std::vector<TH1F*> PSF = {Gaus, Gaus, Gaus, Gaus};  
   std::vector<TH1F*> ntrks_F = ConvolveNTimes(trk1_tru1, 4, "Fit");
   
   std::vector<TString> Names_De ={"trk1_Deconv", "trk2_Deconv", "trk3_Deconv", "trk4_Deconv"}; 
   std::vector<TH1F*> PDF_D = CloneTH1F(trk1_tru1, Names_De); 
-  MultiThreadingDeconvolution(ntrks_F, PSF, PDF_D, 150); 
+  MultiThreadingDeconvolution(ntrks_F, PSF, PDF_D, 200); 
 
 
 
@@ -957,7 +957,7 @@ void TestMonteCarloFit(TFile* F)
 
   // Convolution + Deconvolution + Fit 
   std::map<TString, std::vector<float>> Params; 
-  float m = 1; 
+  float m = 0.1; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.005, 0.005, 0.005, 0.005};
@@ -1110,145 +1110,5 @@ void TestMonteCarloFit(TFile* F)
   PrintStats(trk4_tru3_fout, Params, 2, mean, stdev);
   std::cout << "Track 4, Truth 4" << std::endl;
   PrintStats(trk4_tru4_fout, Params, 3, mean, stdev);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void TestAlgorithmFull(TFile* F)
-{
-  F -> Write(); 
-  TString Dir = "Merged.root";
-  std::map<TString, std::vector<TH1F*>> MC = MonteCarlo(Dir); 
-
-  F -> ReOpen("UPDATE"); 
-  F -> mkdir("TestAlgorithmFull"); 
-  F -> cd ("TestAlgorithmFull"); 
-
-  // ============================ Retrieve the data histograms ================================ //
-  std::vector<TH1F*> trk1 = MC["trk1_All"]; 
-  
-  // Sum the histograms together 
-  TH1F* Data = (TH1F*)trk1[0] -> Clone("1_trk_DATA"); 
-  Data -> SetTitle("Track 1 Data"); 
-  Data -> Reset();
-  for (TH1F* H : trk1){Data -> Add(H);}
-  
-  // =========================== Parameters for the algorithm ================================ // 
-  int iter = 20; 
-  int LR_iter = 250; 
-  float m = 0.00001; 
-
-  std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-m, -m, -m, -m}; 
-  Params["m_e"] = {m, m, m, m}; 
-  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
-  Params["x_range"] = {-1, 11}; 
-  
-  float mean_g = 0; 
-  float stdev_g = 0.05;
-  
-  int bins = Data -> GetNbinsX(); 
-  float min = Data -> GetXaxis() -> GetXmin(); 
-  float max = Data -> GetXaxis() -> GetXmax(); 
-  float width = (max - min)/float(bins); 
-  min+=width/2.;
-  max+=width/2.; 
-
-  // ========================== Gaussian and initial model =================================== //
-  TH1F* Gaus = Gaussian(mean_g, stdev_g, bins, min, max, "Original1");  
-  std::vector<TH1F*> PSF = {Gaus, Gaus, Gaus, Gaus};  
-  TH1F* Data_Copy = (TH1F*)Data -> Clone("Data_Copy"); 
-  // ========================= Start of main algorithm ====================================== //
-
-  TCanvas* can = new TCanvas(); 
-  Gaus -> Draw(); 
-  can -> Print("Gaus.pdf");
-  can -> SetLogy(); 
-  std::vector<TH1F*> ntrk_model; 
-  for (int i(0); i < iter; i++)
-  { 
-
-    std::cout << "Iteration: " << i +1 << std::endl; 
-
-    if ( i == 0)
-    {
-      ntrk_model = ConvolveNTimes(Data_Copy, 4, "Model"); 
-      Data_Copy -> Reset(); 
-      Data_Copy -> Add(Data); 
-    }
-
-    std::vector<TString> TempNames = NameGenerator(ntrk_model.size(), "_De"); 
-    std::vector<TH1F*> TempHist = CloneTH1F(ntrk_model[0], TempNames); 
-    MultiThreadingDeconvolution(ntrk_model, PSF, TempHist, LR_iter); 
-    for (int i(0); i < ntrk_model.size(); i++)
-    {
-      delete ntrk_model[i]; 
-    }
-
-    std::vector<std::pair<TH1F*, std::vector<float>>> Fit_model = FitDeconvolutionPerformance(Data_Copy, TempHist, Params, 100000, 100000); 
-
-    TH1F* trk1_tru1 = Fit_model[0].first; 
-    TH1F* trk1_tru2 = Fit_model[1].first; 
-    TH1F* trk1_tru3 = Fit_model[2].first; 
-    TH1F* trk1_tru4 = Fit_model[3].first; 
-    std::vector<TH1F*> ntrks = {trk1_tru1, trk1_tru2, trk1_tru3, trk1_tru4};
-    ScaleShape(Data_Copy, ntrks);
-
-    float heat = float(i + 1) / float(iter); 
-    Data_Copy -> Add(trk1_tru2, -heat); 
-    Data_Copy -> Add(trk1_tru3, -heat); 
-    Data_Copy -> Add(trk1_tru4, -heat); 
-  
-    PlotHists(Data_Copy, trk1, ntrks, can); 
-    can -> Print("Debug.pdf");  
-
-    for (int i(0); i < TempHist.size(); i++)
-    {
-      delete TempHist[i]; 
-    }
-
-    ntrk_model = ntrks; 
-
-
-  }
-
-
-
 }
 

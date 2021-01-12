@@ -27,5 +27,4 @@ void TestReadFile(TFile* F);
 void TestReadFileTrackEnergy(TFile* F); 
 void TestMonteCarloMatchConvolution(TFile* F);
 void TestMonteCarloFit(TFile* F); 
-void TestAlgorithmFull(TFile* F);  
 #endif

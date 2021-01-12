@@ -143,6 +143,13 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
         ntrk[c] -> SetBinContent(i+1, en/r);  
       }
     }
+    else
+    {
+      for (int c(0); c < ntrk.size(); c++)
+      {
+        ntrk[c] -> SetBinContent(i+1, e); 
+      }
+    }
   }
 }
 

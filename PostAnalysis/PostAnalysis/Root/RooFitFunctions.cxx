@@ -51,6 +51,17 @@ std::vector<RooFFTConvPdf*> RooFFTVariables(std::vector<TString> Names, RooRealV
   return Out; 
 }
 
+std::vector<RooGaussian*> RooGaussianConstraint(std::vector<TString> Names, std::vector<RooRealVar*> Variables, std::vector<float> InitialPred, std::vector<float> Resolution)
+{
+  std::vector<RooGaussian*> Out; 
+  for (int i(0); i < Variables.size(); i++)
+  {
+    RooGaussian* v_constrain = new RooGaussian(Names[i] + "_Con", Names[i] + "_Con", *Variables[i], RooFit::RooConst(InitialPred[i]), RooFit::RooConst(Resolution[i]));
+    Out.push_back(v_constrain); 
+  }
+  return Out; 
+}
+
 std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache, int cache)
 {
   // First we get the domain of the Data histogram we are fitting 
@@ -203,8 +214,24 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
-  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(4), RooFit::Range("fit")); 
+  
+  // Make the mean constant
+  for (int i(0); i < m_vars.size(); i++){m_vars[i] -> setConstant(true);}
+  
+  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit")); 
   //PlotRooFit(model, x, D);  
+  
+  // Make mean variable and the others constant
+  //for (int i(0); i < m_vars.size(); i++)
+  //{
+  //  m_vars[i] -> setConstant(false);
+  //  s_vars[i] -> setConstant(true); 
+  //  l_vars[i] -> setConstant(true); 
+  //}
+  //model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit")); 
+
+
+
 
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 
@@ -222,7 +249,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
 
     std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
 
-    TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
+    TH1F* G = Gaussian(0, s, bins, x_min, x_max);  
     Convolution(G, PDF_H[i], Out_H[i]); 
     Normalize(Out_H[i]);
     Out_H[i] -> Scale(n); 
@@ -245,10 +272,6 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   delete D; 
   return Out; 
 }
-
-
-
-
 
 
 

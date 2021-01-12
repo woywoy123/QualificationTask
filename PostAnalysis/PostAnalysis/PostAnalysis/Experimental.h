@@ -1,14 +1,15 @@
 #ifndef EXPERIMENTAL_H
 #define EXPERIMENTAL_H
 
-#include<PostAnalysis/DistributionGenerator.h>
-#include<PostAnalysis/Plotting.h>
-#include<TGraph.h>
-#include<TMultiGraph.h>
-#include<PostAnalysis/Convolution.h>
 #include<PostAnalysis/BaseFunctions.h>
+#include<PostAnalysis/IO.h>
+#include<PostAnalysis/DistributionGenerator.h>
+#include<PostAnalysis/Convolution.h>
+#include<PostAnalysis/RooFitFunctions.h>
+#include<PostAnalysis/Plotting.h>
 
-void GraphicalLandau(); 
-void FindSymmetryGaussian(); 
+std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth); 
+void AlgorithmMonteCarlo(); 
+void Shifting(TH1F* H); 
 
 #endif
