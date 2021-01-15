@@ -15,7 +15,7 @@ void Normalize(TH1F* Hist);
 void Normalize(std::vector<TH1F*> Hists); 
 void Shift(TH1F* Hist, int shift);
 void Scale(TH1F* Data, std::vector<TH1F*> ntrk); 
-void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk); 
+void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk, float gamma); 
 
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty); 

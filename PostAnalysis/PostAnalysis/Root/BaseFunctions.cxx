@@ -123,7 +123,7 @@ void Scale(TH1F* Data, std::vector<TH1F*> ntrk)
   }
 }
 
-void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
+void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk, float gamma)
 {
   for (int i(0); i < Data ->GetNbinsX(); i++)
   {
@@ -135,12 +135,13 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
     }
     if (e != 0)
     {
-      float r = sum/e;
+      float p = sum/e;
+      float r = exp((-sum + e)*gamma);
       
       for (int c(0); c < ntrk.size(); c++)
       {
         float en = ntrk[c] -> GetBinContent(i+1);
-        ntrk[c] -> SetBinContent(i+1, en/r);  
+        ntrk[c] -> SetBinContent(i+1, en*r/p);  
       }
     }
     else

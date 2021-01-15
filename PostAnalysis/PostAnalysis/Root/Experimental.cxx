@@ -1,7 +1,46 @@
 #include<PostAnalysis/Experimental.h>
 
-std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth)
+std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth, int trk_Data)
 {
+  auto ResetHist =[] (TH1F* H)
+  {
+    for (int x(0); x < H -> GetNbinsX(); x++)
+    {
+      H -> SetBinContent(x+1, 0);
+    }
+  };
+
+  auto ShapeSigmoid =[] (std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit, std::vector<TH1F*> ntrk_Conv, int i)
+  {
+    for (int p(0); p < trk_Fit.size(); p++)
+    {
+      TH1F* New = trk_Fit[p].first; 
+      for (int z(0); z < New -> GetNbinsX(); z++)
+      {
+        float e = New -> GetBinContent(z+1); 
+        float f = ntrk_Conv[p] -> GetBinContent(z+1); 
+        
+        if (i > 0)
+        {
+          float dif = e-f; 
+          float sig = 1./(1+std::exp(dif)); 
+          ntrk_Conv[p] -> SetBinContent(z+1, e*(1-sig)+f*sig); 
+        }
+      } 
+      ntrk_Conv[p] -> Reset(); 
+      ntrk_Conv[p] -> Add(New); 
+      delete New;
+    }
+  };
+
+  auto LoopGen =[] (std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF)
+
+
+
+
+
+  };
+
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
 
@@ -28,45 +67,89 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
 
   std::vector<TString> Names_Dec = NameGenerator(Data.size(), "Dec_Trk_");  
   std::vector<TH1F*> PDF_D = CloneTH1F(Data[0], Names_Dec);  
-
   std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(Data[0], Data.size(), "C"); 
-  
+ 
+  TH1F* Data_Copy = Data[trk_Data]; 
   for (int i(0); i < iterations; i++)
   {
-    MultiThreadingDeconvolution(ntrk_Conv, PSF, PDF_D, Params["LR_iterations"][0]); 
-
-    std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data[0], PDF_D, Params, 10000, 10000);
+    MultiThreadingDeconvolutionExperimental(ntrk_Conv, PSF, PDF_D, Params["LR_iterations"][0]); 
+    std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data[trk_Data], PDF_D, Params, 100000, 100000);
     
-    if (i == 0)
-    {
-      for (int p(0); p < trk_Fit.size(); p++)
-      {
-        TH1F* New = trk_Fit[p].first;
-        ntrk_Conv[p] -> Reset(); 
-        ntrk_Conv[p] -> Add(New); 
-      }
-    }
+    ShapeSigmoid(trk_Fit, ntrk_Conv, i); 
+    ScaleShape(Data[trk_Data], ntrk_Conv, 0.1); 
+    PlotHists(Data[trk_Data], Truth, ntrk_Conv, can); 
+  
+    //std::vector<TH1F*> ntrk_Conv_1;
+    //std::vector<TH1F*> PSF_1;  
+    //std::vector<TH1F*> PDF_D_1; 
+    //std::vector<TH1F*> Truth_1; 
+    //for (int p(0); p < trk_Fit.size(); p++)
+    //{
+    //  if (trk_Data == p){ Data_Copy -> Add(ntrk_Conv[p], -1); }
+    //  else 
+    //  {
+    //    ntrk_Conv_1.push_back(ntrk_Conv[p]);
+    //    PSF_1.push_back(PSF[p]); 
+    //    PDF_D_1.push_back(PDF_D[p]); 
+    //    Truth_1.push_back(Truth[p]); 
+    //  }
+    //}
+    //
+    //Data_Copy -> Draw("HIST"); 
+    //can -> Print("Debug.pdf");
+    //
+    //MultiThreadingDeconvolutionExperimental(ntrk_Conv_1, PSF_1, PDF_D_1, Params["LR_iterations"][0]); 
+    //std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit_1 = FitDeconvolutionPerformance(Data_Copy, PDF_D_1, Params, 100000, 100000);
+    //
+    //ShapeSigmoid(trk_Fit_1, ntrk_Conv_1, i); 
+    //ScaleShape(Data_Copy, ntrk_Conv_1, 0.1); 
+    //PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
+    
 
-    //ScaleShape(Data[0], ntrk_Conv); 
-    for (int p(0); p < trk_Fit.size(); p++)
-    {
-      TH1F* New = trk_Fit[p].first; 
-      for (int z(0); z < bins; z++)
-      {
-        float e = New -> GetBinContent(z+1); 
-        float f = ntrk_Conv[p] -> GetBinContent(z+1); 
-        if (i > 0)
-        {
-          ntrk_Conv[p] -> SetBinContent(z+1, (e+f)/2.); 
-        }
-      } 
-      ntrk_Conv[p] -> Reset(); 
-      ntrk_Conv[p] -> Add(New); 
-      delete New;
-    }
+    
 
 
-    PlotHists(Data[0], Truth, ntrk_Conv, can); 
+
+     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     can -> Print("Debug.pdf"); 
 
   }
@@ -74,15 +157,12 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   return Out; 
 }
 
-
-
-
 void Shifting(TH1F* H)
 {
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
 
-  int LucyRichardson = 500; 
+  int LucyRichardson = 100; 
   int bins = H -> GetNbinsX(); 
   float min = H -> GetXaxis() -> GetXmin(); 
   float max = H -> GetXaxis() -> GetXmax(); 
@@ -94,9 +174,7 @@ void Shifting(TH1F* H)
   float m = 0; 
   float s = 0.05;
   TH1F* Gaus = Gaussian(m ,s, bins, min, max, "Gaus"); 
-  TH1F* Dec = (TH1F*)H -> Clone("Dec"); 
-  Dec -> Reset(); 
-  
+  TH1F* Dec = (TH1F*)H -> Clone("DecP"); 
   TH1F* Temp = (TH1F*)H -> Clone("Temp"); 
 
   Gaus -> Draw("HIST"); 
@@ -105,7 +183,7 @@ void Shifting(TH1F* H)
   H -> GetYaxis() -> SetRangeUser(1e-6, 1);
   for (int i(0); i < 100; i++)
   {
-    MultiThreadingDeconvolution({Temp}, {Gaus}, {Dec}, LucyRichardson); 
+    DeconvolutionExperimental(Temp, Gaus, Dec, LucyRichardson); 
     Convolution(Dec, Gaus, Temp); 
     Normalize(Temp); 
     Normalize(H); 
@@ -134,15 +212,15 @@ void AlgorithmMonteCarlo()
   };
 
   std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-0.1, -0.1, -0.1, -0.1}; 
-  Params["m_e"] = {0.1, 0.1, 0.1, 0.1}; 
+  Params["m_s"] = {-0.001, -0.001, -0.001, -0.001}; 
+  Params["m_e"] = {0.001, 0.001, 0.001, 0.001}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
-  Params["x_range"] = {0, 10}; 
-  Params["iterations"] = {50}; 
-  Params["LR_iterations"] = {200}; 
+  Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
+  Params["x_range"] = {0, 9.5}; 
+  Params["iterations"] = {250}; 
+  Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.1, 0.1, 0.1, 0.1}; 
+  Params["G_Stdev"] = {0.04, 0.04, 0.04, 0.04}; 
 
   TString Dir = "Merged.root"; 
   std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 
@@ -156,6 +234,6 @@ void AlgorithmMonteCarlo()
   TH1F* Trk3 = Sum_Hist(Track3, "trk3_data"); 
   TH1F* Trk4 = Sum_Hist(Track4, "trk4_data"); 
   std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
-  //MainAlgorithm(Data, Params, Track1); 
-  Shifting(Data[0]); 
+  MainAlgorithm(Data, Params, Track1, 0); 
+  //Shifting(Data[0]); 
 }

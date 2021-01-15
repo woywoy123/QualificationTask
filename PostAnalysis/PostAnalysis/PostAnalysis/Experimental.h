@@ -8,7 +8,7 @@
 #include<PostAnalysis/RooFitFunctions.h>
 #include<PostAnalysis/Plotting.h>
 
-std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth); 
+std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth, int trk_Data); 
 void AlgorithmMonteCarlo(); 
 void Shifting(TH1F* H); 
 

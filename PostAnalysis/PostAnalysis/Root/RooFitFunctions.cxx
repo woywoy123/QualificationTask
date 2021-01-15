@@ -222,16 +222,13 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   //PlotRooFit(model, x, D);  
   
   // Make mean variable and the others constant
-  //for (int i(0); i < m_vars.size(); i++)
-  //{
-  //  m_vars[i] -> setConstant(false);
-  //  s_vars[i] -> setConstant(true); 
-  //  l_vars[i] -> setConstant(true); 
-  //}
-  //model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit")); 
-
-
-
+  for (int i(0); i < m_vars.size(); i++)
+  {
+    m_vars[i] -> setConstant(false);
+    s_vars[i] -> setConstant(true); 
+    l_vars[i] -> setConstant(true); 
+  }
+  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit")); 
 
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 
@@ -249,8 +246,8 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
 
     std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
 
-    TH1F* G = Gaussian(0, s, bins, x_min, x_max);  
-    Convolution(G, PDF_H[i], Out_H[i]); 
+    TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
+    Convolution(PDF_H[i], G, Out_H[i]); 
     Normalize(Out_H[i]);
     Out_H[i] -> Scale(n); 
     
