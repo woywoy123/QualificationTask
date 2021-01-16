@@ -34,6 +34,8 @@ std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, TString extension)
   {
     Convolution(Hist_V[i], Start, Hist_V[i+1]); 
   }
+
+  Normalize(Hist_V); 
   return Hist_V; 
 }
 
@@ -204,15 +206,13 @@ void DeconvolutionExperimental(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
   {
     Out -> SetBinContent(i+1 + bin_0, Deconv_V[i]);
   }
-
-  Normalize(Out);
 }
 
 void MultiThreadingDeconvolution(std::vector<TH1F*> Data, std::vector<TH1F*> PSF, std::vector<TH1F*> Result, int Iter)
 {
 
   std::vector<std::thread> th; 
-  for (int i(0); i < PSF.size(); i++){th.push_back(std::thread(Deconvolution, Data[i], PSF[i], Result[i], Iter));}
+  for (int i(0); i < Result.size(); i++){th.push_back(std::thread(Deconvolution, Data[i], PSF[i], Result[i], Iter));}
   for (std::thread &t : th){t.join();}
 
 }
@@ -221,7 +221,7 @@ void MultiThreadingDeconvolutionExperimental(std::vector<TH1F*> Data, std::vecto
 {
 
   std::vector<std::thread> th; 
-  for (int i(0); i < PSF.size(); i++){th.push_back(std::thread(DeconvolutionExperimental, Data[i], PSF[i], Result[i], Iter));}
+  for (int i(0); i < Result.size(); i++){th.push_back(std::thread(DeconvolutionExperimental, Data[i], PSF[i], Result[i], Iter));}
   for (std::thread &t : th){t.join();}
 
 }

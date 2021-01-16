@@ -135,13 +135,15 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk, float gamma)
     }
     if (e != 0)
     {
-      float p = sum/e;
-      float r = exp((-sum + e)*gamma);
+      float p = std::abs(sum/e);
       
       for (int c(0); c < ntrk.size(); c++)
       {
         float en = ntrk[c] -> GetBinContent(i+1);
-        ntrk[c] -> SetBinContent(i+1, en*r/p);  
+        float r = exp((1 -1*p)*gamma);
+        if (r == 0){ continue; }
+        
+        ntrk[c] -> SetBinContent(i+1, r * en);  
       }
     }
     else
