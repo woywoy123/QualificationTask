@@ -6,7 +6,7 @@
 int main(int argc, char** argv)
 {
   bool rewrite = false; 
-  int option = -3;
+  int option = -4;
 
   TFile* F; 
   if (rewrite == true)
@@ -35,8 +35,8 @@ int main(int argc, char** argv)
     //TestNLandauXNGausFit(F);
     //TestDeconvolutionFit(F);  
     //TestComparisonBinCenteringLandauXLandau(F); 
-    TestOscillationLucyRichardson(F); 
-    //TestAlgorithm(F); 
+    //TestOscillationLucyRichardson(F); 
+    TestAlgorithm(F); 
     //TestReadFile(F); 
     //TestReadFileTrackEnergy(F); 
     //TestMonteCarloMatchConvolution(F); 

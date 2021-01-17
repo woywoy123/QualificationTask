@@ -21,7 +21,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
         float f = ntrk_Conv[p] -> GetBinContent(z+1); 
         
         if ( e == 0) {continue;}
-        float dif = std::pow((f-e), 2); 
+        float dif = std::pow((f-e), 1); 
         float sig = 1./(1+std::exp(dif)); 
         ntrk_Conv[p] -> SetBinContent(z+1, e*(1-sig)+f*sig); 
       } 
@@ -42,7 +42,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     std::vector<TH1F*> PDF_D = CloneTH1F(Data, Names_Dec);
     
     MultiThreadingDeconvolutionExperimental(ntrk_Conv, PSF, PDF_D, Params["LR_iterations"][0]); 
-    std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data, PDF_D, Params, 10000, 10000);
+    std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data, PDF_D, Params, 10000, 100000);
     
     std::vector<TH1F*> ntrk_C; 
     std::vector<TH1F*> F_C;

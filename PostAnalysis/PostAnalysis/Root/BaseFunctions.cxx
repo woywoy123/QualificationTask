@@ -1,5 +1,6 @@
 #include<PostAnalysis/BaseFunctions.h>
 
+
 // Creates Histograms from vector names - Used for bulk generation 
 std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, float max, TString Extension)
 {
@@ -263,5 +264,147 @@ void BulkDelete(std::vector<TH1F*> Hist_V)
   {
     delete Hist_V[i]; 
   }
+}
+
+std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data)
+{
+  auto ResetHist =[] (TH1F* H)
+  {
+    for (int x(0); x < H -> GetNbinsX(); x++)
+    {
+      H -> SetBinContent(x+1, 0);
+    }
+  };
+
+  auto ShapeSigmoid =[] (std::vector<TH1F*> trk_Fit, std::vector<TH1F*> ntrk_Conv)
+  {
+    for (int p(0); p < trk_Fit.size(); p++)
+    {
+      TH1F* New = trk_Fit[p]; 
+      for (int z(0); z < New -> GetNbinsX(); z++)
+      {
+        float e = New -> GetBinContent(z+1); 
+        float f = ntrk_Conv[p] -> GetBinContent(z+1); 
+        
+        if ( e == 0) {continue;}
+        float dif = std::pow((f-e), 2); 
+        float sig = 1./(1+std::exp(dif)); 
+        ntrk_Conv[p] -> SetBinContent(z+1, e*(1-sig)+f*sig); 
+      } 
+    }
+  };
+
+  auto LoopGen =[&](std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF, TH1F* Data, std::map<TString, std::vector<float>> Params, std::vector<int> sub_index)
+  {
+    std::vector<TString> Names_Dec; 
+    int index = 0;  
+    for (int i(0); i < sub_index.size(); i++)
+    {
+      index++; 
+      if (sub_index[i] == 0){continue;}
+      TString name = "Dec_Trk_"; name += (index); 
+      Names_Dec.push_back(name);
+    }
+    std::vector<TH1F*> PDF_D = CloneTH1F(Data, Names_Dec);
+    
+    MultiThreadingDeconvolutionExperimental(ntrk_Conv, PSF, PDF_D, Params["LR_iterations"][0]); 
+    std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data, PDF_D, Params, Params["cache"][0], Params["cache"][0]);
+    
+    std::vector<TH1F*> ntrk_C; 
+    std::vector<TH1F*> F_C;
+    index = 0; 
+    for (int i(0); i < sub_index.size(); i++)
+    {
+      if (sub_index[i] == 0){continue;}
+      if (sub_index[i] == 2)
+      {
+        ntrk_Conv[i] -> Reset();
+        ntrk_Conv[i] -> Add(trk_Fit[i].first); 
+      }
+
+      F_C.push_back(trk_Fit[index].first); 
+      ntrk_C.push_back(ntrk_Conv[i]);
+      index++;
+    }
+    ScaleShape(Data, F_C, 1); 
+    ShapeSigmoid(F_C, ntrk_C); 
+    
+    for (int i(0); i < PDF_D.size(); i++){delete PDF_D[i];}
+    for (int i(0); i < F_C.size(); i++){delete F_C[i];}
+  };
+
+  int iterations = Params["iterations"][0]; 
+  int LucyRichardson = Params["LR_iterations"][0]; 
+  int bins = Data[0] -> GetNbinsX(); 
+  float min = Data[0] -> GetXaxis() -> GetXmin(); 
+  float max = Data[0] -> GetXaxis() -> GetXmax(); 
+  float width = (max - min) / float(bins); 
+  min += width / 2.; 
+  max += width / 2.; 
+  
+  std::vector<TH1F*> PSF; 
+  for (int x(0); x < Data.size(); x++)
+  {
+    TString name = "Gaussian_"; name += (x+1); 
+    float m = Params["G_Mean"][x]; 
+    float s = Params["G_Stdev"][x];
+    TH1F* Gaus = Gaussian(m ,s, bins, min, max, name); 
+    PSF.push_back(Gaus);
+  }
+
+  std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(Data[0], Data.size(), "C"); 
+  TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+
+  std::map<TString, std::vector<TH1F*>> Out; 
+  
+  // Main Loop
+  std::vector<int> sub_index;  
+  for (int i(0); i < iterations; i++)
+  {
+    if (i == 0)
+    {
+      sub_index = {2, 2, 2, 2}; 
+    }
+    else
+    {
+      sub_index = {1,1,1,1};
+    }
+    LoopGen(ntrk_Conv, PSF, Data_Copy, Params, sub_index); 
+
+    if (i < 1){continue;}
+
+    for (int x(0); x < ntrk_Conv.size(); x++)
+    {
+      if (x != trk_Data)
+      {
+        Data_Copy -> Add(ntrk_Conv[x], -1);
+        sub_index[x] = 0; 
+      }
+    }
+    
+    LoopGen(ntrk_Conv, PSF, Data_Copy, Params, sub_index); 
+    ScaleShape(Data_Copy, {ntrk_Conv[trk_Data]}, 1); 
+
+    delete Data_Copy; 
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+     
+    TString base = "_ntrk_"; base += (trk_Data+1); base += ("_iter_"); base += (i); 
+    TString iter = "Iteration_"; iter += (i); 
+    for (int x(0); x < ntrk_Conv.size(); x++)
+    {
+      TString name = ntrk_Conv[x] -> GetTitle(); name += (base); 
+      TH1F* H = (TH1F*)ntrk_Conv[x] -> Clone(name); 
+      H -> SetTitle(name); 
+      
+      for (int p(0); p < H -> GetNbinsX(); p++)
+      {
+        H -> SetBinError(p+1, 1e-9); 
+      }
+      Out[iter].push_back(H); 
+    }
+  }
+  BulkDelete(ntrk_Conv);
+  BulkDelete(PSF); 
+  return Out; 
 }
 

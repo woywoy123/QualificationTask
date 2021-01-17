@@ -11,6 +11,7 @@
 
 void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style);
 void PlotHists(TH1F* Hist, TCanvas* can); 
+void PlotHists(std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can); 
 void PlotHists(std::vector<TH1F*> Hists, TCanvas* can); 
 void PlotHists(std::vector<TH1F*> Hists, std::vector<TString> Legend_Titles, TCanvas* can); 
 void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can); 

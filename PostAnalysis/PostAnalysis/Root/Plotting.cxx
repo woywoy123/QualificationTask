@@ -75,6 +75,29 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> predicti
   Populate(prediction, can, len, kDashed); 
 }
 
+void PlotHists(std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can)
+{
+  float sum = 0; 
+  for (int i(0); i < prediction.size(); i++)
+  {
+    int bin = prediction[i] -> GetMaximumBin(); 
+    float m = prediction[i] -> GetBinContent(bin+1); 
+    sum += m;  
+  }
+  
+  TH1F* Data = (TH1F*)truth[0] -> Clone("Data"); 
+  Data -> Reset(); 
+
+  can -> Clear();
+  gStyle -> SetOptStat(0); 
+  Data -> GetYaxis() -> SetRangeUser(1e-6, sum*1.5);
+  Data -> GetXaxis() -> SetRangeUser(0, 10);
+  Data -> Draw("HIST"); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  Populate(truth, can, len, kSolid); 
+  Populate(prediction, can, len, kDashed); 
+}
+
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 {
   TString name = "Ratio Plot: "; name += (H1 -> GetTitle()); name += ("/"); name += H2 -> GetTitle(); 

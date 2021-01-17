@@ -628,110 +628,66 @@ void TestOscillationLucyRichardson(TFile* F)
 void TestAlgorithm(TFile* F)
 {
 
-  auto Average =[](TH1F* new_H, TH1F* old_H)
+  F -> Write(); 
+
+  auto Sum_Hist =[] (std::vector<TH1F*> Hists, TString Name)
   {
-    for (int i(0); i < new_H -> GetNbinsX(); i++)
+    TH1F* Hist = (TH1F*)Hists[0] -> Clone(Name); 
+    Hist -> Reset();  
+    Hist -> SetTitle(Name); 
+    for (int i(0); i < Hists.size(); i++)
     {
-      float e = new_H -> GetBinContent(i+1); 
-      float f = old_H -> GetBinContent(i+1); 
-      old_H -> SetBinContent(i+1, (e+f)/2.);  
+      Hist -> Add(Hists[i]); 
     }
+    return Hist; 
   };
 
-  F -> mkdir("TestAlgorithm");
-  F -> cd("TestAlgorithm");
-
-  int bins  = 200; 
-  float min = -2;   
-  float max = 18;  
-  int Iters = 50; 
-  float centering = (max-min)/float(bins);
-  std::vector<float> LandauParams = {1, 0.9, 0.1}; 
-  std::vector<float> COMP = {0.6, 0.3, 0.05, 0.05}; 
-  std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-0.1, -0.1, -0.1, -0.1}; 
-  Params["m_e"] = {0.1, 0.1, 0.1, 0.1}; 
-  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {2, 2, 2, 2};  
-  Params["x_range"] = {-0.4, 16}; 
-
-  // Define the Landaus    
-  std::vector<TString> Names = {"Landau1", "Landau2", "Landau3", "Landau4"};
-  std::vector<TH1F*> Gen_Landau = Landau(Names, COMP, LandauParams, 5000000, bins, min, max); 
-  BulkWrite(Gen_Landau); 
-
-  // Define the Gaussians 
-  TH1F* Gaussian1 = Gaussian(0, 0.075, bins, min, max, "Original1"); 
-  TH1F* Gaussian2 = Gaussian(0, 0.08, bins, min, max, "Original2"); 
-  TH1F* Gaussian3 = Gaussian(0, 0.09, bins, min, max, "Original3"); 
-  TH1F* Gaussian4 = Gaussian(0, 0.1, bins, min, max, "Original4"); 
-  std::vector<TH1F*> PSF = {Gaussian1, Gaussian2, Gaussian3, Gaussian4}; 
-  BulkWrite(PSF); 
-
-  // Create a fake dataset by first smearing it and then overlaying multiple Landaus 
-  std::vector<TH1F*> Smear = CloneTH1F(Gen_Landau[0], {"L1xG1", "L2xG2", "L3xG3", "L4xG4"}); 
-  Convolution(Gen_Landau[0], Gaussian1, Smear[0]); 
-  Convolution(Gen_Landau[1], Gaussian2, Smear[1]); 
-  Convolution(Gen_Landau[2], Gaussian3, Smear[2]); 
-  Convolution(Gen_Landau[3], Gaussian4, Smear[3]); 
-
-  TH1F* Data = new TH1F("Data", "Data", bins, min-centering/2, max - centering/2); 
-  Data -> Add(Smear[0]); 
-  Data -> Add(Smear[1]); 
-  Data -> Add(Smear[2]); 
-  Data -> Add(Smear[3]); 
-  for (int i(0); i < bins; i++){Data -> SetBinError(i+1, 1e-9);}
-  BulkWrite(Smear);  
-  Data -> Write();
-  
-  int iter = 10; 
-  std::vector<TString> Name_Conv = {"Landau1_D", "Landau2_D", "Landau3_D", "Landau4_D"};
-  TH1F* trk1 = (TH1F*)Gen_Landau[0] -> Clone("trk1"); 
-  TH1F* Temp = (TH1F*)Data -> Clone("Data_Copy"); 
-  TCanvas* can = new TCanvas();
-  can -> SetLogy(); 
- 
-  std::vector<TH1F*> Output; 
-  float d = 0;  
-  TH1F* Progress = new TH1F("Progress", "Progress", iter, 0, iter); 
-  for (int i(0); i < iter; i++)
+  auto Write_To_File =[&] (std::map<TString, std::vector<TH1F*>> Map)
   {
-    float d_old = d;   
-    TString in; in +=(i);  
-    std::vector<TH1F*> ntrk = ConvolveNTimes(trk1, 4, in);       
-    Normalize(ntrk); 
-
-    std::vector<TH1F*> D_PDFs = CloneTH1F(trk1, Name_Conv);
-    MultiThreadingDeconvolution(ntrk, PSF, D_PDFs, Iters);
-    std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params, 10000, 1000000);
-    Scale(Data, Result); 
-     
-    TH1F* trk1_old = (TH1F*)trk1 -> Clone("trk_old");  
-    trk1 -> Reset();  
-    trk1 -> Add(Result[0]);  
-   
-    
-    d = SquareError(trk1_old, trk1); 
-    float p = std::abs(d - d_old);  
-    Progress -> SetBinContent(i+1, p);    
-    
-    for (int x(0); x < Result.size(); x++) 
+    typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
+    for (it i = Map.begin(); i != Map.end(); i++)
     {
-      TString name = ntrk[x] -> GetTitle(); 
-      delete ntrk[x];  
-      TH1F* Hist = (TH1F*)Result[x] -> Clone(name); 
-      Hist -> SetTitle(name); 
-      Output.push_back(Hist); 
-    }   
-    
-    BulkDelete(Result);  
-    BulkDelete(D_PDFs);
-    delete trk1_old; 
+      std::vector<TH1F*> H = i ->second; 
+      BulkWrite(H); 
+      BulkDelete(H); 
+    }
+  }; 
 
-    std::cout << "################''" << i << std::endl;
-  }
-  BulkWrite(Output); 
-  Progress -> Write();
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-0.001, -0.001, -0.001, -0.001}; 
+  Params["m_e"] = {0.001, 0.001, 0.001, 0.001}; 
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.06, 0.06, 0.06, 0.06};  
+  Params["x_range"] = {0.5, 9.5}; 
+  Params["iterations"] = {50}; 
+  Params["LR_iterations"] = {100}; 
+  Params["G_Mean"] = {0, 0, 0, 0}; 
+  Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
+  Params["cache"] = {100000}; 
+
+  TString Dir = "Merged.root"; 
+  std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 
+  F -> ReOpen("UPDATE"); 
+  F -> mkdir("TestAlgorithm"); 
+  F -> cd("TestAlgorithm"); 
+
+  std::vector<TH1F*> Track1 = MC["Track_1_All"];
+  std::vector<TH1F*> Track2 = MC["Track_2_All"];
+  std::vector<TH1F*> Track3 = MC["Track_3_All"];
+  std::vector<TH1F*> Track4 = MC["Track_4_All"];
+  
+  std::map<TString, std::vector<TH1F*>> Trk1_Measurements = MainAlgorithm(Track1, Params, 0); 
+  Write_To_File(Trk1_Measurements);  
+  
+  std::map<TString, std::vector<TH1F*>> Trk2_Measurements = MainAlgorithm(Track2, Params, 1); 
+  Write_To_File(Trk2_Measurements);  
+  
+  std::map<TString, std::vector<TH1F*>> Trk3_Measurements = MainAlgorithm(Track3, Params, 2); 
+  Write_To_File(Trk3_Measurements);  
+
+  std::map<TString, std::vector<TH1F*>> Trk4_Measurements = MainAlgorithm(Track4, Params, 3); 
+  Write_To_File(Trk4_Measurements);  
+
 }
 
 void TestReadFile(TFile* F)

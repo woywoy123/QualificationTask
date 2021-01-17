@@ -5,6 +5,9 @@
 #include<TH1F.h>
 #include<iostream> 
 #include<PostAnalysis/Plotting.h>
+#include<PostAnalysis/Convolution.h>
+#include<PostAnalysis/DistributionGenerator.h>
+#include<PostAnalysis/RooFitFunctions.h>
 
 // Histogram Generators
 std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, float max, TString Extension = "");
@@ -37,4 +40,13 @@ void Statistics(TH1F* H1, TH1F* H2, float x_min = 0, float x_max = 0);
 float GetMaxValue(TH1F* H); 
 void BulkWrite(std::vector<TH1F*> Hist_V); 
 void BulkDelete(std::vector<TH1F*> Hist_V); 
+
+// Main Algorithm function 
+std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data);
+
+
+
+
+
+
 #endif
