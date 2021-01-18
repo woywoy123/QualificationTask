@@ -657,13 +657,13 @@ void TestAlgorithm(TFile* F)
   Params["m_s"] = {-0.001, -0.001, -0.001, -0.001}; 
   Params["m_e"] = {0.001, 0.001, 0.001, 0.001}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.06, 0.06, 0.06, 0.06};  
-  Params["x_range"] = {0.5, 9.5}; 
+  Params["s_e"] = {0.15, 0.15, 0.15, 0.15};  
+  Params["x_range"] = {0.1, 9.8}; 
   Params["iterations"] = {50}; 
-  Params["LR_iterations"] = {100}; 
+  Params["LR_iterations"] = {150}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
-  Params["cache"] = {100000}; 
+  Params["cache"] = {10000}; 
 
   TString Dir = "Merged.root"; 
   std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 
@@ -757,7 +757,7 @@ void TestMonteCarloMatchConvolution(TFile* F)
   Params["m_s"] = {-0.01, -0.01, -0.01, -0.01}; 
   Params["m_e"] = {0.01, 0.01, 0.01, 0.01}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.4, 0.4, 0.4, 0.4};  
+  Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
   Params["x_range"] = {0.5, 9}; 
 
   TH1F* Gaus = Gaussian(0, 0.4, bins, min, max, "Original1");  

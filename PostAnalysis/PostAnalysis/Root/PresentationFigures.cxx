@@ -787,9 +787,15 @@ void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
       TH1F* H2 = MC_Truth[i]; 
       RatioPlot(H1, H2, can);
       can -> Print(filename); 
-      Statistics(H1, H2, 0, 10); 
+      Statistics(H1, H2, 0.1, 9.8); 
     }
   };
+
+  int trks = 4; 
+  int ntruth = 4; 
+  int itera = 10;
+
+
 
   std::map<TString, TH1F*> Map; 
   for (int i(0); i < Hist_V.size(); i++)
@@ -800,13 +806,13 @@ void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
 
   // Iteration -> Tracks -> ntruth 
   std::vector<std::vector<std::vector<TH1F*>>> Hists; 
-  for (int v(0); v < 49; v++)
+  for (int v(0); v < itera -1; v++)
   {
     std::vector<std::vector<TH1F*>> Tracks; 
-    for (int i(0); i < 4; i++)
+    for (int i(0); i < trks; i++)
     {
       std::vector<TH1F*> Truth;  
-      for (int y(0); y < 4; y++)
+      for (int y(0); y < ntruth; y++)
       {
         TString name = "TRK_"; name += (y+1); name += ("_C_ntrk_"); name += (i+1); name += ("_iter_"); name += (v+1); 
         Truth.push_back(Map[name]);  

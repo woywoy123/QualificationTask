@@ -2,69 +2,52 @@
 
 std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth, int trk_Data)
 {
-  auto ResetHist =[] (TH1F* H)
+  auto ShapeSigmoid =[] (TH1F* trk_Fit, TH1F* ntrk_Conv)
   {
-    for (int x(0); x < H -> GetNbinsX(); x++)
+    for (int z(0); z < trk_Fit -> GetNbinsX(); z++)
     {
-      H -> SetBinContent(x+1, 0);
-    }
+      float e = trk_Fit -> GetBinContent(z+1); 
+      float f = ntrk_Conv -> GetBinContent(z+1); 
+      
+      if ( e == 0 && f == 0) {continue;}
+      float dif = std::pow(-1 * std::abs(e-f)/(e+f), 1); 
+      float sig = 1./(1+std::exp(dif)); 
+      ntrk_Conv -> SetBinContent(z+1, e*(1-sig)+f*sig); 
+    } 
   };
 
-  auto ShapeSigmoid =[] (std::vector<TH1F*> trk_Fit, std::vector<TH1F*> ntrk_Conv)
-  {
-    for (int p(0); p < trk_Fit.size(); p++)
-    {
-      TH1F* New = trk_Fit[p]; 
-      for (int z(0); z < New -> GetNbinsX(); z++)
-      {
-        float e = New -> GetBinContent(z+1); 
-        float f = ntrk_Conv[p] -> GetBinContent(z+1); 
-        
-        if ( e == 0) {continue;}
-        float dif = std::pow((f-e), 1); 
-        float sig = 1./(1+std::exp(dif)); 
-        ntrk_Conv[p] -> SetBinContent(z+1, e*(1-sig)+f*sig); 
-      } 
-    }
-  };
-
-  auto LoopGen =[&](std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF, TH1F* Data, std::map<TString, std::vector<float>> Params, std::vector<int> sub_index)
+  auto LoopGen =[&](std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF, TH1F* Data, std::map<TString, std::vector<float>> Params)
   {
     std::vector<TString> Names_Dec; 
     int index = 0;  
-    for (int i(0); i < sub_index.size(); i++)
+    for (int i(0); i < ntrk_Conv.size(); i++)
     {
-      index++; 
-      if (sub_index[i] == 0){continue;}
-      TString name = "Dec_Trk_"; name += (index); 
+      TString name = "Dec_"; name += (ntrk_Conv[i] -> GetTitle()); 
       Names_Dec.push_back(name);
     }
     std::vector<TH1F*> PDF_D = CloneTH1F(Data, Names_Dec);
     
     MultiThreadingDeconvolutionExperimental(ntrk_Conv, PSF, PDF_D, Params["LR_iterations"][0]); 
-    std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data, PDF_D, Params, 10000, 100000);
+    std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data, PDF_D, Params, 10000, 10000);
     
-    std::vector<TH1F*> ntrk_C; 
     std::vector<TH1F*> F_C;
-    index = 0; 
-    for (int i(0); i < sub_index.size(); i++)
+    std::vector<float> Lumi; 
+    for (int i(0); i < trk_Fit.size(); i++)
     {
-      if (sub_index[i] == 0){continue;}
-      if (sub_index[i] == 2)
-      {
-        ntrk_Conv[i] -> Reset();
-        ntrk_Conv[i] -> Add(trk_Fit[i].first); 
-      }
-
-      F_C.push_back(trk_Fit[index].first); 
-      ntrk_C.push_back(ntrk_Conv[i]);
-      index++;
+      F_C.push_back(trk_Fit[i].first); 
+      Lumi.push_back(trk_Fit[i].first -> Integral()); 
     }
-    ScaleShape(Data, F_C, 1); 
-    ShapeSigmoid(F_C, ntrk_C); 
     
+    if (ntrk_Conv.size() != 1)
+    {
+      //Scale(Data, F_C); 
+      ScaleShape(Data, F_C, 1); 
+    }
+    for (int i(0); i < ntrk_Conv.size(); i++){ShapeSigmoid(F_C[i], ntrk_Conv[i]); } 
+
     for (int i(0); i < PDF_D.size(); i++){delete PDF_D[i];}
     for (int i(0); i < F_C.size(); i++){delete F_C[i];}
+    return Lumi; 
   };
 
   TCanvas* can = new TCanvas(); 
@@ -92,34 +75,30 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   can -> Print("Gaus.pdf"); 
 
   std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(Data[0], Data.size(), "C"); 
- 
   TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+  std::vector<float> L = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
+  
+  for (int i(0); i < L.size(); i++){ ntrk_Conv[i] -> Scale(L[i]); }
 
-  std::vector<int> sub_index;  
   for (int i(0); i < iterations; i++)
   {
-    if (i == 0)
-    {
-      sub_index = {2, 2, 2, 2}; 
-    }
-    else
-    {
-      sub_index = {1,1,1,1};
-    }
-    LoopGen(ntrk_Conv, PSF, Data_Copy, Params, sub_index); 
+    LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
     PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
     can -> Print("Debug.pdf"); 
 
-    if (i < 1){continue;}
-
+    std::vector<TH1F*> Delta;
+    std::vector<TH1F*> Delta_PSF; 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
       if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      else 
+      { 
+        Delta.push_back(ntrk_Conv[x]); 
+        Delta_PSF.push_back(PSF[x]); 
+      }
     }
-
-    sub_index = {1, 0, 0, 0};
-    LoopGen(ntrk_Conv, PSF, Data_Copy, Params, sub_index); 
-    ScaleShape(Data_Copy, {ntrk_Conv[0]}, 1); 
+    
+    LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
     PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
     can -> Print("Debug.pdf"); 
 
@@ -188,10 +167,10 @@ void AlgorithmMonteCarlo()
   Params["m_s"] = {-0.001, -0.001, -0.001, -0.001}; 
   Params["m_e"] = {0.001, 0.001, 0.001, 0.001}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.06, 0.06, 0.06, 0.06};  
-  Params["x_range"] = {0.5, 9.5}; 
+  Params["s_e"] = {0.15, 0.15, 0.15, 0.15};  
+  Params["x_range"] = {0.1, 10}; 
   Params["iterations"] = {150}; 
-  Params["LR_iterations"] = {100}; 
+  Params["LR_iterations"] = {150}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
 
@@ -207,7 +186,7 @@ void AlgorithmMonteCarlo()
   TH1F* Trk3 = Sum_Hist(Track3, "trk3_data"); 
   TH1F* Trk4 = Sum_Hist(Track4, "trk4_data"); 
   std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
-  MainAlgorithm(Data, Params, Track1, 0); 
+  MainAlgorithm(Data, Params, Track2, 1); 
   //Shifting(Data[0]); 
   
 }

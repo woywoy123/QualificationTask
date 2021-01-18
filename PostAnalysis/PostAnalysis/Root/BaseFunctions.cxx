@@ -141,10 +141,8 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk, float gamma)
       for (int c(0); c < ntrk.size(); c++)
       {
         float en = ntrk[c] -> GetBinContent(i+1);
-        float r = exp((1 -1*p)*gamma);
-        if (r == 0){ continue; }
         
-        ntrk[c] -> SetBinContent(i+1, r * en);  
+        ntrk[c] -> SetBinContent(i+1, 0.5*(1./p)*en + 0.5*en);  
       }
     }
     else
@@ -268,41 +266,28 @@ void BulkDelete(std::vector<TH1F*> Hist_V)
 
 std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data)
 {
-  auto ResetHist =[] (TH1F* H)
+
+  auto ShapeSigmoid =[] (TH1F* trk_Fit, TH1F* ntrk_Conv)
   {
-    for (int x(0); x < H -> GetNbinsX(); x++)
+    for (int z(0); z < trk_Fit -> GetNbinsX(); z++)
     {
-      H -> SetBinContent(x+1, 0);
-    }
+      float e = trk_Fit -> GetBinContent(z+1); 
+      float f = ntrk_Conv -> GetBinContent(z+1); 
+      
+      if ( e == 0 && f == 0) {continue;}
+      float dif = std::pow(-1 * std::abs(e-f)/abs(e+f), 1); 
+      float sig = 1./(1+std::exp(dif)); 
+      ntrk_Conv -> SetBinContent(z+1, e*(1-sig)+f*sig); 
+    } 
   };
 
-  auto ShapeSigmoid =[] (std::vector<TH1F*> trk_Fit, std::vector<TH1F*> ntrk_Conv)
-  {
-    for (int p(0); p < trk_Fit.size(); p++)
-    {
-      TH1F* New = trk_Fit[p]; 
-      for (int z(0); z < New -> GetNbinsX(); z++)
-      {
-        float e = New -> GetBinContent(z+1); 
-        float f = ntrk_Conv[p] -> GetBinContent(z+1); 
-        
-        if ( e == 0) {continue;}
-        float dif = std::pow((f-e), 2); 
-        float sig = 1./(1+std::exp(dif)); 
-        ntrk_Conv[p] -> SetBinContent(z+1, e*(1-sig)+f*sig); 
-      } 
-    }
-  };
-
-  auto LoopGen =[&](std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF, TH1F* Data, std::map<TString, std::vector<float>> Params, std::vector<int> sub_index)
+  auto LoopGen =[&](std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF, TH1F* Data, std::map<TString, std::vector<float>> Params)
   {
     std::vector<TString> Names_Dec; 
     int index = 0;  
-    for (int i(0); i < sub_index.size(); i++)
+    for (int i(0); i < ntrk_Conv.size(); i++)
     {
-      index++; 
-      if (sub_index[i] == 0){continue;}
-      TString name = "Dec_Trk_"; name += (index); 
+      TString name = "Dec_"; name += (ntrk_Conv[i] -> GetTitle()); 
       Names_Dec.push_back(name);
     }
     std::vector<TH1F*> PDF_D = CloneTH1F(Data, Names_Dec);
@@ -310,25 +295,19 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     MultiThreadingDeconvolutionExperimental(ntrk_Conv, PSF, PDF_D, Params["LR_iterations"][0]); 
     std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data, PDF_D, Params, Params["cache"][0], Params["cache"][0]);
     
-    std::vector<TH1F*> ntrk_C; 
     std::vector<TH1F*> F_C;
-    index = 0; 
-    for (int i(0); i < sub_index.size(); i++)
+    for (int i(0); i < trk_Fit.size(); i++)
     {
-      if (sub_index[i] == 0){continue;}
-      if (sub_index[i] == 2)
-      {
-        ntrk_Conv[i] -> Reset();
-        ntrk_Conv[i] -> Add(trk_Fit[i].first); 
-      }
-
-      F_C.push_back(trk_Fit[index].first); 
-      ntrk_C.push_back(ntrk_Conv[i]);
-      index++;
+      F_C.push_back(trk_Fit[i].first); 
     }
-    ScaleShape(Data, F_C, 1); 
-    ShapeSigmoid(F_C, ntrk_C); 
     
+    if (ntrk_Conv.size() != 1){ScaleShape(Data, F_C, 1); }
+    for (int i(0); i < ntrk_Conv.size(); i++)
+    {
+      //Scale(Data, F_C); 
+      ShapeSigmoid(F_C[i], ntrk_Conv[i]); 
+    } 
+
     for (int i(0); i < PDF_D.size(); i++){delete PDF_D[i];}
     for (int i(0); i < F_C.size(); i++){delete F_C[i];}
   };
@@ -354,37 +333,28 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
 
   std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(Data[0], Data.size(), "C"); 
   TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+  LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
+  Scale(Data_Copy, ntrk_Conv); 
 
   std::map<TString, std::vector<TH1F*>> Out; 
-  
-  // Main Loop
-  std::vector<int> sub_index;  
   for (int i(0); i < iterations; i++)
   {
-    if (i == 0)
-    {
-      sub_index = {2, 2, 2, 2}; 
-    }
-    else
-    {
-      sub_index = {1,1,1,1};
-    }
-    LoopGen(ntrk_Conv, PSF, Data_Copy, Params, sub_index); 
+    LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
 
-    if (i < 1){continue;}
-
+    std::vector<TH1F*> Delta;
+    std::vector<TH1F*> Delta_PSF; 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x != trk_Data)
-      {
-        Data_Copy -> Add(ntrk_Conv[x], -1);
-        sub_index[x] = 0; 
+      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      else 
+      { 
+        Delta.push_back(ntrk_Conv[x]); 
+        Delta_PSF.push_back(PSF[x]); 
       }
     }
     
-    LoopGen(ntrk_Conv, PSF, Data_Copy, Params, sub_index); 
-    ScaleShape(Data_Copy, {ntrk_Conv[trk_Data]}, 1); 
-
+    LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
+    
     delete Data_Copy; 
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
      

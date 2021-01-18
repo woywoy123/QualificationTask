@@ -16,7 +16,7 @@ int main(int argc, char** argv)
   }
   else 
   {
-    F = new TFile("output.root", "READ"); 
+    F = new TFile("output.root", "READ");
   }
 
   // Run Tests 
