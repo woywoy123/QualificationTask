@@ -51,17 +51,6 @@ std::vector<RooFFTConvPdf*> RooFFTVariables(std::vector<TString> Names, RooRealV
   return Out; 
 }
 
-std::vector<RooGaussian*> RooGaussianConstraint(std::vector<TString> Names, std::vector<RooRealVar*> Variables, std::vector<float> InitialPred, std::vector<float> Resolution)
-{
-  std::vector<RooGaussian*> Out; 
-  for (int i(0); i < Variables.size(); i++)
-  {
-    RooGaussian* v_constrain = new RooGaussian(Names[i] + "_Con", Names[i] + "_Con", *Variables[i], RooFit::RooConst(InitialPred[i]), RooFit::RooConst(Resolution[i]));
-    Out.push_back(v_constrain); 
-  }
-  return Out; 
-}
-
 std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache, int cache)
 {
   // First we get the domain of the Data histogram we are fitting 
@@ -216,20 +205,14 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   RooDataHist* D = RooDataVariable("data", x, Data); 
   
   // Make the mean constant
-  for (int i(0); i < m_vars.size(); i++){m_vars[i] -> setConstant(true);}
+  for (int i(0); i < m_vars.size(); i++)
+  {
+    m_vars[i] -> setConstant(true);
+  }
   
   model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit")); 
   //PlotRooFit(model, x, D);  
-  
-  // Make mean variable and the others constant
-  for (int i(0); i < m_vars.size(); i++)
-  {
-    m_vars[i] -> setConstant(false);
-    s_vars[i] -> setConstant(true); 
-    l_vars[i] -> setConstant(true); 
-  }
-  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit")); 
-
+ 
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 
   std::vector<TH1F*> Out_H = CloneTH1F(PDF_H[0], out_N); 

@@ -794,9 +794,7 @@ void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
   int trks = 4; 
   int ntruth = 4; 
   int itera = 10;
-
-
-
+  
   std::map<TString, TH1F*> Map; 
   for (int i(0); i < Hist_V.size(); i++)
   {
@@ -837,9 +835,9 @@ void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
     {
       std::vector<TH1F*> Track = Iteration[trk];
       if (trk == 0){Packs(Track, Track1, can, filename); }
-      //if (trk == 1){Packs(Track, Track2, can, filename); }
-      //if (trk == 2){Packs(Track, Track3, can, filename); }
-      //if (trk == 3){Packs(Track, Track4, can, filename); }
+      if (trk == 1){Packs(Track, Track2, can, filename); }
+      if (trk == 2){Packs(Track, Track3, can, filename); }
+      if (trk == 3){Packs(Track, Track4, can, filename); }
     }
   }
  

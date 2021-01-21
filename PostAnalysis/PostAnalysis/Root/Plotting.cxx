@@ -52,9 +52,13 @@ void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
 
 void PlotHists(TH1F* Data, std::vector<TH1F*> Hists, TCanvas* can)
 {
+  int bin = Data -> GetMaximumBin(); 
+  float m = Data -> GetBinContent(bin+1); 
+  
+  can -> Clear();
   gStyle -> SetOptStat(0); 
-  Data -> SetLineColor(kBlack); 
-  Data -> GetYaxis() -> SetRangeUser(0.1, Data -> Integral());
+  Data -> GetYaxis() -> SetRangeUser(1e-6, m);  
+  Data -> GetXaxis() -> SetRangeUser(0, 10);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
   Populate(Hists, can, len, kSolid); 

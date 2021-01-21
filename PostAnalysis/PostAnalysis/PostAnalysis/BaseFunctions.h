@@ -17,8 +17,6 @@ std::vector<TH1F*> CloneTH1F(TH1F* Hist, std::vector<TString> Names);
 void Normalize(TH1F* Hist); 
 void Normalize(std::vector<TH1F*> Hists); 
 void Shift(TH1F* Hist, int shift);
-void Scale(TH1F* Data, std::vector<TH1F*> ntrk); 
-void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk, float gamma); 
 
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty); 
@@ -40,13 +38,5 @@ void Statistics(TH1F* H1, TH1F* H2, float x_min = 0, float x_max = 0);
 float GetMaxValue(TH1F* H); 
 void BulkWrite(std::vector<TH1F*> Hist_V); 
 void BulkDelete(std::vector<TH1F*> Hist_V); 
-
-// Main Algorithm function 
-std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data);
-
-
-
-
-
 
 #endif

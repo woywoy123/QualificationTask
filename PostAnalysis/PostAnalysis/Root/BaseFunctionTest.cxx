@@ -1,5 +1,6 @@
 #include<PostAnalysis/BaseFunctionTest.h>
 #include<PostAnalysis/IO.h>
+#include<PostAnalysis/AlgorithmFunctions.h>
 
 void TestLandau(TFile* F)
 {
@@ -657,9 +658,9 @@ void TestAlgorithm(TFile* F)
   Params["m_s"] = {-0.001, -0.001, -0.001, -0.001}; 
   Params["m_e"] = {0.001, 0.001, 0.001, 0.001}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.15, 0.15, 0.15, 0.15};  
-  Params["x_range"] = {0.1, 9.8}; 
-  Params["iterations"] = {50}; 
+  Params["s_e"] = {0.075, 0.075, 0.075, 0.075};  
+  Params["x_range"] = {0.2, 9.8}; 
+  Params["iterations"] = {10}; 
   Params["LR_iterations"] = {150}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
@@ -675,17 +676,22 @@ void TestAlgorithm(TFile* F)
   std::vector<TH1F*> Track2 = MC["Track_2_All"];
   std::vector<TH1F*> Track3 = MC["Track_3_All"];
   std::vector<TH1F*> Track4 = MC["Track_4_All"];
+  TH1F* Trk1 = Sum_Hist(Track1, "trk1_data"); 
+  TH1F* Trk2 = Sum_Hist(Track2, "trk2_data"); 
+  TH1F* Trk3 = Sum_Hist(Track3, "trk3_data"); 
+  TH1F* Trk4 = Sum_Hist(Track4, "trk4_data"); 
+  std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
   
-  std::map<TString, std::vector<TH1F*>> Trk1_Measurements = MainAlgorithm(Track1, Params, 0); 
+  std::map<TString, std::vector<TH1F*>> Trk1_Measurements = MainAlgorithm(Data, Params, 0); 
   Write_To_File(Trk1_Measurements);  
   
-  std::map<TString, std::vector<TH1F*>> Trk2_Measurements = MainAlgorithm(Track2, Params, 1); 
+  std::map<TString, std::vector<TH1F*>> Trk2_Measurements = MainAlgorithm(Data, Params, 1); 
   Write_To_File(Trk2_Measurements);  
   
-  std::map<TString, std::vector<TH1F*>> Trk3_Measurements = MainAlgorithm(Track3, Params, 2); 
+  std::map<TString, std::vector<TH1F*>> Trk3_Measurements = MainAlgorithm(Data, Params, 2); 
   Write_To_File(Trk3_Measurements);  
 
-  std::map<TString, std::vector<TH1F*>> Trk4_Measurements = MainAlgorithm(Track4, Params, 3); 
+  std::map<TString, std::vector<TH1F*>> Trk4_Measurements = MainAlgorithm(Data, Params, 3); 
   Write_To_File(Trk4_Measurements);  
 
 }
@@ -758,7 +764,7 @@ void TestMonteCarloMatchConvolution(TFile* F)
   Params["m_e"] = {0.01, 0.01, 0.01, 0.01}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
-  Params["x_range"] = {0.5, 9}; 
+  Params["x_range"] = {0.1, 9.8}; 
 
   TH1F* Gaus = Gaussian(0, 0.4, bins, min, max, "Original1");  
   std::vector<TH1F*> PSF = {Gaus, Gaus, Gaus, Gaus};  

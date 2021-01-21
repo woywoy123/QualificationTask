@@ -6,7 +6,7 @@
 int main(int argc, char** argv)
 {
   bool rewrite = false; 
-  int option = -4;
+  int option = -3;
 
   TFile* F; 
   if (rewrite == true)
@@ -44,13 +44,15 @@ int main(int argc, char** argv)
   }
 
   // Run Experimental
-  if (option == -3)
+  if (option == -3 && rewrite == false)
   {
     AlgorithmMonteCarlo();
   }
- 
-  // Compile the figures  
-  FigureCompiler(F);   
+  else
+  {
+    // Compile the figures  
+    FigureCompiler(F);   
+  } 
   F -> Close();   
   
   std::cout << "fin" << std::endl;
