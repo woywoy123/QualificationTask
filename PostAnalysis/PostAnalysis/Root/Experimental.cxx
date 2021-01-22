@@ -34,11 +34,12 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
   Flush(F_C, ntrk_Conv, false); 
 
+  TString name = Data[trk_Data] -> GetTitle(); name += (".pdf"); 
   for (int i(0); i < iterations; i++)
   {
     delete Data_Copy; 
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-
+    
     std::vector<TH1F*> Not_trk; 
     std::vector<TH1F*> Not_PSF; 
     std::vector<TH1F*> Truth_Not;  
@@ -52,26 +53,16 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
         Truth_Not.push_back(Truth[x]); 
       }
     }
-    //Average(Data_Copy);  
-    for (int x(0); x < Data_Copy -> GetNbinsX(); x++)
-    {
-      float e = Data_Copy -> GetBinContent(x+1); 
-      if (e < 0){Data_Copy -> SetBinContent(x+1, 1e-10); }
-    }
-
+    //Average(Data_Copy);
 
     F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);     
-    Scale(Data_Copy, F_C); 
-    Flush(F_C, Not_trk);  
+    ScaleShape(Data_Copy, F_C); 
+    Flush(F_C, Not_trk, true);
     PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
-    can -> Print("Debug.pdf"); 
+    can -> Print(name); 
 
     delete Data_Copy; 
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-
-    F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params);     
-    ScaleShape(Data_Copy, F_C); 
-    Flush(F_C, ntrk_Conv);  
 
     std::vector<TH1F*> Delta;
     std::vector<TH1F*> Delta_PSF; 
@@ -87,14 +78,11 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     }
     
     F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params);     
-    Flush(F_C, Delta);  
+    ScaleShape(Data_Copy, F_C); 
+    Flush(F_C, Delta, true);  
 
     PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
-    can -> Print("Debug.pdf"); 
-
- 
-    
-    
+    can -> Print(name); 
     
   }
   std::map<TString, std::vector<TH1F*>> Out; 
@@ -116,13 +104,13 @@ void AlgorithmMonteCarlo()
   };
 
   std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-0.01, -0.01, -0.01, -0.01}; 
-  Params["m_e"] = {0.01, 0.01, 0.01, 0.01}; 
-  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["m_s"] = {-0.001, -0.001, -0.001, -0.001}; 
+  Params["m_e"] = {0.001, 0.001, 0.001, 0.001}; 
+  Params["s_s"] = {0.025, 0.025, 0.025, 0.025};
   Params["s_e"] = {0.075, 0.075, 0.075, 0.075};  
-  Params["x_range"] = {0., 9.8}; 
-  Params["iterations"] = {50}; 
-  Params["LR_iterations"] = {150}; 
+  Params["x_range"] = {0.01, 9.8}; 
+  Params["iterations"] = {100}; 
+  Params["LR_iterations"] = {100}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
   Params["cache"] = {10000}; 
@@ -140,9 +128,9 @@ void AlgorithmMonteCarlo()
   TH1F* Trk4 = Sum_Hist(Track4, "trk4_data"); 
   std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
   MainAlgorithm(Data, Params, Track1, 0); 
-  //MainAlgorithm(Data, Params, Track2, 1); 
-  //MainAlgorithm(Data, Params, Track3, 2); 
-  //MainAlgorithm(Data, Params, Track3, 3);  
+  MainAlgorithm(Data, Params, Track2, 1); 
+  MainAlgorithm(Data, Params, Track3, 2); 
+  MainAlgorithm(Data, Params, Track3, 3);  
   
   Shifting(Data[0]); 
   
