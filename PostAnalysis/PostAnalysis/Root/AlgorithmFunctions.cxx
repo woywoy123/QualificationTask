@@ -7,16 +7,14 @@ void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv)
     float e = trk_Fit -> GetBinContent(z+1); 
     float f = ntrk_Conv -> GetBinContent(z+1); 
     
-    float sig = std::exp(-std::abs((e/f)));
-    float log = 1./ (1 + sig); 
-   
+    float sig = std::exp(-1 + std::abs(e - f)/f);
+    float log = 1. / (1 + sig); 
     if (f <= 0 && e <= 0)
     { 
-      f = 0; 
       log = 0; 
       e = std::abs((ntrk_Conv -> GetBinContent(z-1) + e + ntrk_Conv -> GetBinContent(z))/3.); 
     } 
-    //std::cout << log << std::endl;
+    
     ntrk_Conv -> SetBinContent(z+1, e*(1-log)+f*log); 
   } 
 }
@@ -61,18 +59,15 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
     for (int z(0); z < ntrk.size(); z++)
     {
       float point = ntrk[z] -> GetBinContent(i+1); 
-      float ed = point*(e/(sum));  
-      float sig = std::exp(-std::abs(sum/e));
+      float ed = point*(e/sum);  
+      float sig = std::exp(-0.01 + std::pow(std::abs(ed - point) /point, 1));
       float log = 1./ (1 + sig); 
       if (sum <= 0 || ed <= 0)
       {
         ed = std::abs((ntrk[z] -> GetBinContent(i-1) + point + ntrk[z] -> GetBinContent(i))/3.);
-        log = 0; 
-        point = 0; 
+        log = 1; 
       }
-      
-      //std::cout << ed << " ::: " << log << " ::: " << point << std::endl;
-      ntrk[z] -> SetBinContent(i+1, ed*(1-log)+point*log); 
+      ntrk[z] -> SetBinContent(i+1, point*(1-log)+ed*log); 
     }     
   }
 }
