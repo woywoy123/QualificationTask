@@ -183,7 +183,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     }
 
     F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);     
-    ScaleShape(Data_Copy, F_C); 
+    //ScaleShape(Data_Copy, F_C); 
     Flush(F_C, Not_trk, true);
     PlotHists(Data_Copy, ntrk_Conv, can); 
     can -> Print(name); 

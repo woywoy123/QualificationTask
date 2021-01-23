@@ -660,8 +660,8 @@ void TestAlgorithm(TFile* F)
   Params["s_s"] = {0.025, 0.025, 0.025, 0.025};
   Params["s_e"] = {0.075, 0.075, 0.075, 0.075};  
   Params["x_range"] = {0.01, 9.8}; 
-  Params["iterations"] = {200}; 
-  Params["LR_iterations"] = {100}; 
+  Params["iterations"] = {100}; 
+  Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
   Params["cache"] = {100000}; 
