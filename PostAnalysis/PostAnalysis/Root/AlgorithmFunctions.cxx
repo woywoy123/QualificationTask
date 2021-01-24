@@ -181,8 +181,16 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   Flush(F_C, ntrk_Conv, false); 
 
   TCanvas* can = new TCanvas(); 
-  TString name = Data[trk_Data] -> GetTitle(); name += (".pdf"); 
   can -> SetLogy();
+  TString name = Data[trk_Data] -> GetTitle(); name += (".pdf"); 
+
+  std::vector<TString> Names_Dec; 
+  for (int i(0); i < ntrk_Conv.size(); i++)
+  {
+    TString name = "Temp_"; name += (ntrk_Conv[i] -> GetTitle()); 
+    Names_Dec.push_back(name);
+  }
+
   float Error = 10; 
   for (int i(0); i < iterations; i++)
   {
@@ -243,7 +251,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
         std::vector<TH1F*> Temp_PSF; 
         for (int p(0); p < ntrk_Conv.size(); p++)
         {
-          if (p == x || p == t) { Data_Copy -> Add(ntrk_Conv[p], (-1+0.01*heat)); } 
+          if (p == x || p == t) { Data_Copy -> Add(ntrk_Conv[p], -1); } 
           else
           {
             Temp.push_back(ntrk_Conv[p]); 
