@@ -7,9 +7,9 @@ void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv)
     float e = trk_Fit -> GetBinContent(z+1); 
     float f = ntrk_Conv -> GetBinContent(z+1); 
     
-    float sig = std::exp(-1 + std::abs(e - f)/f);
+    float sig = std::exp(-0.1 + std::abs(e - f)/f);
     float log = 1. / (1 + sig); 
-    if (f <= 0 && e <= 0)
+    if (f <= 0 || e <= 0)
     { 
       log = 0; 
       e = std::abs((ntrk_Conv -> GetBinContent(z-1) + e + ntrk_Conv -> GetBinContent(z))/3.); 
@@ -48,6 +48,8 @@ void Scale(TH1F* Data, std::vector<TH1F*> ntrk)
 
 void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
 {
+  float Error = FitError(Data, ntrk); 
+  std::cout << Error << std::endl;
   for (int i(0); i < Data ->GetNbinsX(); i++)
   {
     float e = Data -> GetBinContent(i+1); 
@@ -60,11 +62,11 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
     {
       float point = ntrk[z] -> GetBinContent(i+1); 
       float ed = point*(e/sum);  
-      float sig = std::exp(-0.01 + std::pow(std::abs(ed - point) /point, 1));
+      float sig = std::exp(-1 + Error*std::pow(std::abs(ed - point) /point, 2));
       float log = 1./ (1 + sig); 
       if (sum <= 0 || ed <= 0)
       {
-        ed = std::abs((ntrk[z] -> GetBinContent(i-1) + point + ntrk[z] -> GetBinContent(i))/3.);
+        ed = std::abs((Data -> GetBinContent(i-1) + e + Data -> GetBinContent(i))/(3.));
         log = 1; 
       }
       ntrk[z] -> SetBinContent(i+1, point*(1-log)+ed*log); 
@@ -72,8 +74,27 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
   }
 }
 
+float FitError(TH1F* Data, std::vector<TH1F*> ntrk)
+{
+  int bins = Data -> GetNbinsX(); 
+  float sum_D = 0; 
+  float sum_E = 0;  
+  for (int i(0); i < bins; i++)
+  {
+    float e = Data -> GetBinContent(i+1); 
+    float sum_H = 0; 
+    for (int p(0); p < ntrk.size(); p++){sum_H += std::abs(ntrk[p] -> GetBinContent(i+1));}
+    sum_E += std::abs(sum_H - e);  
+  }
+  sum_E = sum_E/Data -> Integral();
+  return sum_E;
+}
+
+
+
 void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool sig)
 {
+  if (F_C.size() != ntrk_Conv.size()) {std::cout << "!!!!!!!!!!!!!!!!!" << std::endl; }
   for (int i(0); i < F_C.size(); i++)
   {
     if (sig == false)
@@ -96,12 +117,11 @@ void Average(TH1F* Data)
     float y = Data -> GetBinContent(i+1); 
     float sum = 0; 
     int p = 0; 
-    if (y > 0) {continue;}
+    //if (y > 0) {continue;}
     for (int x(-1); x < 2; x++)
     {
       float e = Data -> GetBinContent(i + x + 1); 
-      if (e < 0){continue;}
-      sum += e;
+      sum += std::abs(e);
       p++; 
     }
     if (p == 0){ p = 1; }
@@ -121,14 +141,13 @@ std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF,
     Names_Dec.push_back(name);
   }
   std::vector<TH1F*> PDF_D = CloneTH1F(Data, Names_Dec);
-  
   MultiThreadingDeconvolutionExperimental(ntrk_Conv, PSF, PDF_D, Params["LR_iterations"][0]); 
   std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data, PDF_D, Params, Params["cache"][0], Params["cache"][0]);
-  
+  for (int i(0); i < Names_Dec.size(); i++){delete PDF_D[i];}
+ 
   std::vector<TH1F*> F_C;
   for (int i(0); i < trk_Fit.size(); i++){F_C.push_back(trk_Fit[i].first); }
   
-  for (int i(0); i < PDF_D.size(); i++){delete PDF_D[i];}
   return F_C; 
 }
 
@@ -164,10 +183,14 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   TCanvas* can = new TCanvas(); 
   TString name = Data[trk_Data] -> GetTitle(); name += (".pdf"); 
   can -> SetLogy();
+  float Error = 10; 
   for (int i(0); i < iterations; i++)
   {
-    delete Data_Copy; 
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+    F_C = CloneTH1F(Data_Copy, Names_Dec);
+    for (int x(0); x < F_C.size(); x++){F_C[x] -> Add(ntrk_Conv[x], 1);}
+    ScaleShape(Data_Copy, F_C); 
+    Flush(F_C, ntrk_Conv, true); 
 
     std::vector<TH1F*> Not_trk; 
     std::vector<TH1F*> Not_PSF; 
@@ -179,12 +202,13 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
       {
         Not_trk.push_back(ntrk_Conv[x]); 
         Not_PSF.push_back(PSF[x]);
+        Truth_Not.push_back(Truth[x]); 
       }
     }
-
-    F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);     
-    //ScaleShape(Data_Copy, F_C); 
+    
+    F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
     Flush(F_C, Not_trk, true);
+    
     PlotHists(Data_Copy, ntrk_Conv, can); 
     can -> Print(name); 
 
@@ -195,7 +219,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     std::vector<TH1F*> Delta_PSF; 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1;}
      
       if ( x == trk_Data )
       {
@@ -203,17 +227,40 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
         Delta_PSF.push_back(PSF[x]); 
       }
     }
-    
     F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params);     
-    ScaleShape(Data_Copy, F_C); 
-    Flush(F_C, Delta, true);  
-
-    PlotHists(Data_Copy, ntrk_Conv, can); 
-    can -> Print(name); 
-
+    Flush(F_C, Delta, true); 
 
     delete Data_Copy; 
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+    for (int x(0); x < ntrk_Conv.size(); x++)
+    {
+      for (int t(0); t < ntrk_Conv.size(); t++)
+      {
+
+        if (x == t){continue;}
+        Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+        
+        std::vector<TH1F*> Temp; 
+        std::vector<TH1F*> Temp_PSF; 
+        for (int p(0); p < ntrk_Conv.size(); p++)
+        {
+          if (p == x || p == t) { Data_Copy -> Add(ntrk_Conv[p], (-1+0.01*heat)); } 
+          else
+          {
+            Temp.push_back(ntrk_Conv[p]); 
+            Temp_PSF.push_back(PSF[p]); 
+          }
+        }
+        F_C = LoopGen(Temp, Temp_PSF, Data_Copy, Params); 
+        float E = FitError(Data_Copy, F_C); 
+        if (E < Error){Flush(F_C, Temp, true); Error = E; std::cout << "LOWER!!!" << std::endl;} 
+        else{BulkDelete(F_C); std::cout << "Higher " << E << std::endl;}
+    
+        PlotHists(Data_Copy, ntrk_Conv, can); 
+        can -> Print(name); 
+
+        delete Data_Copy; 
+      }
+    }
      
     TString base = "_ntrk_"; base += (trk_Data+1); base += ("_iter_"); base += (i); 
     TString iter = "Iteration_"; iter += (i); 
