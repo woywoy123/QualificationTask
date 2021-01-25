@@ -152,7 +152,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
   int n_vars = PDF_H.size(); 
- 
+
   // Input variables;  
   // Standard Deviation 
   std::vector<float> s_s = Params["s_s"]; 
@@ -181,7 +181,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   // Create the Luminosity variables for the fit
   std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
   std::vector<float> l_s(n_vars, 0); 
-  std::vector<float> l_e(n_vars, 1. * Data -> Integral());  
+  std::vector<float> l_e(n_vars, Data -> Integral());  
   std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
   
   // Convert the PDFs to RooPDFs
@@ -203,15 +203,8 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
-  
-  // Make the mean constant
-  for (int i(0); i < m_vars.size(); i++)
-  {
-    m_vars[i] -> setConstant(true);
-  }
-  
   model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit")); 
-  //PlotRooFit(model, x, D);  
+  //PlotRooFit(model, x, fft_vars, D);  
  
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 

@@ -657,14 +657,14 @@ void TestAlgorithm(TFile* F)
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-0.001, -0.001, -0.001, -0.001}; 
   Params["m_e"] = {0.001, 0.001, 0.001, 0.001}; 
-  Params["s_s"] = {0.025, 0.025, 0.025, 0.025};
-  Params["s_e"] = {0.075, 0.075, 0.075, 0.075};  
-  Params["x_range"] = {0.01, 9.8}; 
+  Params["s_s"] = {0.04, 0.04, 0.04, 0.04};
+  Params["s_e"] = {0.15, 0.15, 0.15, 0.15};  
+  Params["x_range"] = {0.01, 13.}; 
   Params["iterations"] = {100}; 
-  Params["LR_iterations"] = {50}; 
+  Params["LR_iterations"] = {100}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
-  Params["cache"] = {100000}; 
+  Params["G_Stdev"] = {0.075, 0.075, 0.075, 0.075}; 
+  Params["cache"] = {10000}; 
 
   TString Dir = "Merged.root"; 
   std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 
@@ -693,6 +693,97 @@ void TestAlgorithm(TFile* F)
 
   std::map<TString, std::vector<TH1F*>> Trk4_Measurements = MainAlgorithm(Data, Params, 3); 
   Write_To_File(Trk4_Measurements);  
+}
+
+void TestAlgorithmJetEnergy(TFile* F)
+{
+  auto Sum_Hist =[] (std::vector<TH1F*> Hists, TString Name)
+  {
+    TH1F* Hist = (TH1F*)Hists[0] -> Clone(Name); 
+    Hist -> Reset();  
+    Hist -> SetTitle(Name); 
+    for (int i(0); i < Hists.size(); i++)
+    {
+      Hist -> Add(Hists[i]); 
+    }
+    return Hist; 
+  };
+
+  F -> Write(); 
+  std::vector<TString> Layers = {"IBL", "Blayer", "layer1", "layer2"}; 
+  std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
+                                    "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
+                                    "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
+                                    "higher_GeV"}; 
+
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-0.001, -0.001, -0.001, -0.001}; 
+  Params["m_e"] = {0.001, 0.001, 0.001, 0.001}; 
+  Params["s_s"] = {0.025, 0.025, 0.025, 0.025};
+  Params["s_e"] = {0.075, 0.075, 0.075, 0.075};  
+  Params["x_range"] = {0.01, 9.8}; 
+  Params["iterations"] = {100}; 
+  Params["LR_iterations"] = {50}; 
+  Params["G_Mean"] = {0, 0, 0, 0}; 
+  Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
+  Params["cache"] = {10000}; 
+
+  TString Dir = "Merged.root"; 
+  std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 
+  F -> ReOpen("UPDATE"); 
+  F -> mkdir("TestAlgorithmJetEnergy"); 
+  F -> cd("TestAlgorithmJetEnergy"); 
+
+  typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
+  for (int i(0); i < JetEnergy.size(); i++)
+  {
+    TString Jet = JetEnergy[i]; 
+    TString b1 = "Track_1_" + Jet; 
+    TString b2 = "Track_2_" + Jet; 
+    TString b3 = "Track_3_" + Jet; 
+    TString b4 = "Track_4_" + Jet; 
+    TH1F* Track1 = Sum_Hist(MC[b1], b1); 
+    TH1F* Track2 = Sum_Hist(MC[b2], b2); 
+    TH1F* Track3 = Sum_Hist(MC[b3], b3); 
+    TH1F* Track4 = Sum_Hist(MC[b4], b4); 
+    std::vector<TH1F*> Data = {Track1, Track2, Track3, Track4};  
+    
+    // Check if the Track data hists actually have data 
+    float L1 = Track1 -> Integral(); 
+    float L2 = Track2 -> Integral(); 
+    float L3 = Track3 -> Integral(); 
+    float L4 = Track4 -> Integral(); 
+    
+    if (L1 == 0 || L2 == 0 || L3 == 0 || L4 == 0){ continue; }
+    TString dir = "TestAlgorithmJetEnergy/"+ Jet; 
+    F -> mkdir(dir); 
+    F -> cd(dir); 
+    std::map<TString, std::vector<TH1F*>> Trk1_Measurements = MainAlgorithm(Data, Params, 0); 
+    it x1 = Trk1_Measurements.end(); 
+    std::vector<TH1F*> H1 = Trk1_Measurements[x1 -> first]; 
+    BulkWrite(H1); 
+    BulkWrite(MC[b1]); 
+
+    std::map<TString, std::vector<TH1F*>> Trk2_Measurements = MainAlgorithm(Data, Params, 1); 
+    it x2 = Trk2_Measurements.end(); 
+    std::vector<TH1F*> H2 = Trk2_Measurements[x2 -> first]; 
+    BulkWrite(H2); 
+    BulkWrite(MC[b2]); 
+
+    std::map<TString, std::vector<TH1F*>> Trk3_Measurements = MainAlgorithm(Data, Params, 2); 
+    it x3 = Trk3_Measurements.end(); 
+    std::vector<TH1F*> H3 = Trk3_Measurements[x3 -> first]; 
+    BulkWrite(H3); 
+    BulkWrite(MC[b3]); 
+
+    std::map<TString, std::vector<TH1F*>> Trk4_Measurements = MainAlgorithm(Data, Params, 3); 
+    it x4 = Trk4_Measurements.end(); 
+    std::vector<TH1F*> H4 = Trk4_Measurements[x4 -> first]; 
+    BulkWrite(H4); 
+    BulkWrite(MC[b4]); 
+
+    F -> cd("TestAlgorithmJetEnergy"); 
+  }
 
 }
 

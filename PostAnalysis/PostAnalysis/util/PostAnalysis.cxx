@@ -37,6 +37,7 @@ int main(int argc, char** argv)
     //TestComparisonBinCenteringLandauXLandau(F); 
     //TestOscillationLucyRichardson(F); 
     TestAlgorithm(F); 
+    //TestAlgorithmJetEnergy(F);  
     //TestReadFile(F); 
     //TestReadFileTrackEnergy(F); 
     //TestMonteCarloMatchConvolution(F); 

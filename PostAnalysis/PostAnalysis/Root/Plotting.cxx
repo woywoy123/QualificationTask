@@ -72,7 +72,7 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> predicti
   can -> Clear();
   gStyle -> SetOptStat(0); 
   Data -> GetYaxis() -> SetRangeUser(1e-6, m*2);
-  Data -> GetXaxis() -> SetRangeUser(0, 10);
+  Data -> GetXaxis() -> SetRangeUser(0, 13);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
   Populate(truth, can, len, kSolid); 
@@ -137,17 +137,23 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   Ratio -> Draw("epl"); 
 }
 
-void PlotRooFit(RooAddPdf model, RooRealVar* Domain, RooDataHist* Data)
+void PlotRooFit(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data)
 {
   RooPlot* xframe = Domain -> frame(RooFit::Title("Figure")); 
   Data -> plotOn(xframe, RooFit::Name("Data")); 
-  model.plotOn(xframe); 
+  std::vector<Color_t> Colors = {kRed, kGreen, kOrange, kBlue}; 
+  for (int i(0); i < PDFs.size(); i++)
+  {
+    TString name = "trk-"; name += (i+1); 
+    model.plotOn(xframe, RooFit::Name(name), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Colors[i])); 
+  }
   TCanvas* can = new TCanvas(); 
   gPad -> SetLogy(); 
-  xframe -> SetMinimum(1); 
+  xframe -> SetMinimum(1e-8); 
   xframe -> Draw(); 
   can -> Update();
   can -> Print("debug.pdf"); 
+  delete can; 
 }
 
 // ====================== Proper histogram plotting for the presentation ======================== //
