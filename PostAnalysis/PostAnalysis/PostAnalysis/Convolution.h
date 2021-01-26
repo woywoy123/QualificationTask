@@ -8,8 +8,6 @@
 #include<PostAnalysis/BaseFunctions.h>
 #include<thread>
 
-// Delete after
-#include<TCanvas.h>
 
 
 // Convolution 

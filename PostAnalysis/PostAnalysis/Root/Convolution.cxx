@@ -198,7 +198,7 @@ void DeconvolutionExperimental(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
 
   for (int i(0); i < iter; i++)
   {
-    Deconv_V = LucyRichardson(Signal_V, PSF_V, Deconv_V, 0.95); 
+    Deconv_V = LucyRichardson(Signal_V, PSF_V, Deconv_V, 0.75); 
   }
 
   int Padding = ((r - 1)*bins)/2; 

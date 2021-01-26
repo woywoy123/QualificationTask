@@ -5,7 +5,7 @@ std::vector<RooRealVar*> RooVariables(std::vector<TString> Names, std::vector<fl
   std::vector<RooRealVar*> Variables; 
   for (int i(0); i < Names.size(); i++)
   {
-    RooRealVar* r = new RooRealVar(Names[i], Names[i], Begin[i], End[i]); 
+    RooRealVar* r = new RooRealVar(Names[i], Names[i], (Begin[i] + End[i])/2., Begin[i], End[i]); 
     Variables.push_back(r); 
   }
   return Variables; 
@@ -45,7 +45,8 @@ std::vector<RooFFTConvPdf*> RooFFTVariables(std::vector<TString> Names, RooRealV
   std::vector<RooFFTConvPdf*> Out; 
   for (int i(0); i < Names.size(); i++)
   {
-    RooFFTConvPdf* p = new RooFFTConvPdf(Names[i] + "pxg", Names[i] + "pxg", *domain, *PDFs[i], *Gaus[i]); 
+    RooFFTConvPdf* p = new RooFFTConvPdf(Names[i] + "pxg", Names[i] + "pxg", *domain, *PDFs[i], *Gaus[i]);
+    p -> setBufferFraction(0); 
     Out.push_back(p); 
   }
   return Out; 
@@ -219,16 +220,17 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     float s_e = s_vars[i] -> getError(); 
     float m_e = m_vars[i] -> getError(); 
     float n_e = l_vars[i] -> getError(); 
-
+    
     std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
 
-    TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
-    Convolution(PDF_H[i], G, Out_H[i]); 
+    TF1 T = TF1(*fft_vars[i] -> asTF(RooArgList(*x))); 
+    T.SetNpx(bins); 
+    TH1* H = T.CreateHistogram(); 
+
+    Out_H[i] -> Add(H, 1); 
     Normalize(Out_H[i]);
     Out_H[i] -> Scale(n); 
-    
     Out.push_back(std::pair<TH1F*, std::vector<float>>(Out_H[i], P)); 
-    delete G; 
   }
  
   // Flush all the variables 

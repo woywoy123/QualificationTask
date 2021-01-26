@@ -6,15 +6,15 @@ void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv)
   {
     float e = trk_Fit -> GetBinContent(z+1); 
     float f = ntrk_Conv -> GetBinContent(z+1); 
-    
-    float sig = std::exp(-5 + std::abs(e - f)/f);
-    float log = 1. / (1 + sig); 
-    if (f <= 0 || e <= 0)
+
+    float sig = std::exp(-1 + 1*std::abs(e - f)/f);
+    float log = 1. / (1 + (e/f)*sig); 
+    if (f <= 0)
     { 
       log = 0; 
-      e = std::abs((ntrk_Conv -> GetBinContent(z-1) + e + ntrk_Conv -> GetBinContent(z))/3.); 
+      e = (std::abs(ntrk_Conv -> GetBinContent(z-1)) + std::abs(e) + std::abs(ntrk_Conv -> GetBinContent(z))/3.); 
     } 
-    
+    if (std::isinf(sig)){log = 1;}
     ntrk_Conv -> SetBinContent(z+1, e*(1-log)+f*log); 
   } 
 }
@@ -48,7 +48,6 @@ void Scale(TH1F* Data, std::vector<TH1F*> ntrk)
 
 void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
 {
-  float Error = FitError(Data, ntrk); 
   for (int i(0); i < Data ->GetNbinsX(); i++)
   {
     float e = Data -> GetBinContent(i+1); 
@@ -61,12 +60,23 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
     {
       float point = ntrk[z] -> GetBinContent(i+1); 
       float ed = point*(e/sum);  
-      float sig = std::exp(-1 + std::pow(std::abs(ed - point) /point, 1));
-      float log = 1./ (1 + Error*sig); 
-      if (sum <= 0 || ed <= 0)
+      float sig = std::exp(5*(-0.1 + 1*std::pow(std::abs(ed - point) /point, 1)));
+      float log = 1./ (1 + sig); 
+      if (ed <= 0 || sum <= 0)
       {
-        ed = std::abs((Data -> GetBinContent(i-1) + e + Data -> GetBinContent(i))/(3.));
-        log = 1; 
+        float total = 0; 
+        int it = 0; 
+        for (int p(0); p < ntrk.size(); p++)
+        {
+          for (int y(0); y < ntrk[p] -> GetNbinsX(); y++)
+          {
+            total += ntrk[p] -> GetBinContent(y+1); 
+            it++; 
+          }
+        }
+
+        ed = total / float(it);  
+        log = 0; 
       }
       ntrk[z] -> SetBinContent(i+1, point*(1-log)+ed*log); 
     }     
@@ -116,16 +126,15 @@ void Average(TH1F* Data)
     float y = Data -> GetBinContent(i+1); 
     float sum = 0; 
     int p = 0; 
-    for (int x(-1); x < 2; x++)
-    {
-      float e = Data -> GetBinContent(i + x + 1); 
-      if (e <= 0){ e = 1e-12; }
-      sum += std::abs(e);
-      p++; 
-    }
-    if (p == 0){ p = 1; }
+    //for (int x(0); x < 1; x++)
+    //{
+    //  float e = Data -> GetBinContent(i + x + 1); 
+    //  sum += e;
+    //  p++; 
+    //}
+    //if ( sum < 0 ){sum = 0;}
     sum = sum / float(p); 
-    Data -> SetBinContent(i+1, sum); 
+    //Data -> SetBinContent(i+1, sum); 
   }
 }
 
@@ -214,7 +223,6 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
     std::vector<TH1F*> Not_trk; 
     std::vector<TH1F*> Not_PSF; 
-    std::vector<TH1F*> Truth_Not;  
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
       if (x == trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }

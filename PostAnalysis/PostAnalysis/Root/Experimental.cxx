@@ -14,7 +14,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   float width = (max - min) / float(bins); 
   min += width / 2.; 
   max += width / 2.; 
-  
+
   std::vector<TH1F*> PSF; 
   for (int x(0); x < Data.size(); x++)
   {
@@ -41,29 +41,20 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     TString name = "Temp_"; name += (ntrk_Conv[i] -> GetTitle()); 
     Names_Dec.push_back(name);
   }
+  
+  can -> SetLogy(); 
+  Data[trk_Data] -> Draw("HIST"); 
+  ntrk_Conv[0] -> Draw("SAMEHIST"); 
+  ntrk_Conv[1] -> Draw("SAMEHIST"); 
+  ntrk_Conv[2] -> Draw("SAMEHIST"); 
+  ntrk_Conv[3] -> Draw("SAMEHIST"); 
  
+  
+  can -> Print(name); 
+
+
   for (int i(0); i < iterations; i++)
   {
-
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-
-    std::vector<TH1F*> Delta;
-    std::vector<TH1F*> Delta_PSF; 
-    for (int x(0); x < ntrk_Conv.size(); x++)
-    {
-      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
-     
-      if ( x == trk_Data )
-      {
-        Delta.push_back(ntrk_Conv[x]); 
-        Delta_PSF.push_back(PSF[x]); 
-      }
-    }
-    F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params);    
-    Flush(F_C, Delta, true); 
-
-    delete Data_Copy; 
-
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
     std::vector<TH1F*> Not_trk; 
     std::vector<TH1F*> Not_PSF; 
@@ -80,11 +71,30 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     }
     F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
     Flush(F_C, Not_trk, true);
-   
-    Average(Data_Copy); 
+    Average(Data_Copy);  
+
     PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
     can -> Print(name); 
-    
+    delete Data_Copy; 
+
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+
+    std::vector<TH1F*> Delta;
+    std::vector<TH1F*> Delta_PSF; 
+    for (int x(0); x < ntrk_Conv.size(); x++)
+    {
+      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      else 
+      {
+        Delta.push_back(ntrk_Conv[x]); 
+        Delta_PSF.push_back(PSF[x]); 
+      }
+    }
+    F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
+    Average(Data_Copy); 
+    ScaleShape(Data_Copy, F_C); 
+    Flush(F_C, Delta, true); 
+
     delete Data_Copy; 
 
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
@@ -113,16 +123,17 @@ void AlgorithmMonteCarlo()
     return Hist; 
   };
 
+  float m = 0.0001; 
   std::map<TString, std::vector<float>> Params; 
-  Params["m_s"] = {-0.001, -0.001, -0.001, -0.001}; 
-  Params["m_e"] = {0.001, 0.001, 0.001, 0.001}; 
-  Params["s_s"] = {0.04, 0.04, 0.04, 0.04};
-  Params["s_e"] = {0.15, 0.15, 0.15, 0.15};  
-  Params["x_range"] = {0.2, 13.}; 
-  Params["iterations"] = {100}; 
-  Params["LR_iterations"] = {100}; 
+  Params["m_s"] = {-m, -m, -m, -m}; 
+  Params["m_e"] = {m, m, m, m}; 
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
+  Params["x_range"] = {-2, 12.}; 
+  Params["iterations"] = {300}; 
+  Params["LR_iterations"] = {150}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.1, 0.1, 0.1, 0.1}; 
+  Params["G_Stdev"] = {0.015, 0.015, 0.015, 0.015}; 
   Params["cache"] = {10000}; 
 
   TString Dir = "Merged.root"; 
@@ -138,9 +149,9 @@ void AlgorithmMonteCarlo()
   TH1F* Trk4 = Sum_Hist(Track4, "trk4_data"); 
   std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
   MainAlgorithm(Data, Params, Track1, 0); 
-  MainAlgorithm(Data, Params, Track2, 1); 
-  MainAlgorithm(Data, Params, Track3, 2); 
-  MainAlgorithm(Data, Params, Track3, 3);  
+  //MainAlgorithm(Data, Params, Track2, 1); 
+  //MainAlgorithm(Data, Params, Track3, 2); 
+  //MainAlgorithm(Data, Params, Track3, 3);  
   
   Shifting(Data[0]); 
   
@@ -152,7 +163,7 @@ void Shifting(TH1F* H)
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
 
-  int LucyRichardson = 100; 
+  int LucyRichardson = 300; 
   int bins = H -> GetNbinsX(); 
   float min = H -> GetXaxis() -> GetXmin(); 
   float max = H -> GetXaxis() -> GetXmax(); 
@@ -171,10 +182,14 @@ void Shifting(TH1F* H)
   can -> Print("Debug.pdf"); 
 
   H -> GetYaxis() -> SetRangeUser(1e-6, 1);
-  for (int i(0); i < 100; i++)
+  for (int i(0); i < 50; i++)
   {
-    Deconvolution(Temp, Gaus, Dec, LucyRichardson); 
     Convolution(Dec, Gaus, Temp); 
+    DeconvolutionExperimental(Temp, Gaus, Dec, LucyRichardson); 
+     
+    
+    
+    //Convolution(Dec, Gaus, Temp); 
     Normalize(Temp); 
     Normalize(H); 
     H -> SetLineStyle(kSolid); 
