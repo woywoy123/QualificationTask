@@ -5,8 +5,8 @@
 
 int main(int argc, char** argv)
 {
-  bool rewrite = true; 
-  int option;
+  bool rewrite = false; 
+  int option = -3;
 
   TFile* F; 
   if (rewrite == true)
@@ -16,8 +16,7 @@ int main(int argc, char** argv)
   }
   else 
   {
-    F = new TFile("output.root", "READ"); 
-    option = -1;  
+    F = new TFile("output.root", "READ");
   }
 
   // Run Tests 
@@ -37,25 +36,26 @@ int main(int argc, char** argv)
     //TestDeconvolutionFit(F);  
     //TestComparisonBinCenteringLandauXLandau(F); 
     //TestOscillationLucyRichardson(F); 
-    //TestAlgorithm(F); 
+    TestAlgorithm(F); 
+    //TestAlgorithmJetEnergy(F);  
     //TestReadFile(F); 
-    TestReadFileTrackEnergy(F); 
+    //TestReadFileTrackEnergy(F); 
     //TestMonteCarloMatchConvolution(F); 
     //TestMonteCarloFit(F); 
-    //TestAlgorithmFull(F); 
   }
 
   // Run Experimental
-  if (option == -3)
+  if (option == -3 && rewrite == false)
   {
-    FindSymmetryGaussian();
+    AlgorithmMonteCarlo();
   }
- 
-  // Compile the figures  
-  FigureCompiler(F);   
+  else
+  {
+    // Compile the figures  
+    FigureCompiler(F);   
+  } 
   F -> Close();   
   
   std::cout << "fin" << std::endl;
   return 0; 
-
 }

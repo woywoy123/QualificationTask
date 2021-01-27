@@ -10,14 +10,11 @@
 #include<RooDataHist.h>
 #include<RooAddPdf.h>
 #include<PostAnalysis/DistributionGenerator.h>
-
-
+#include<TF1.h>
+#include<RooArgList.h>
+#include<RooNumConvPdf.h>
 
 std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache = 0, int cache = 0); 
-
 std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache = 0, int cache = 0); 
-
-
-
 
 #endif

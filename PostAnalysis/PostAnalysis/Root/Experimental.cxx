@@ -1,157 +1,211 @@
 #include<PostAnalysis/Experimental.h>
+#include<PostAnalysis/AlgorithmFunctions.h>
 
-std::vector<TGraph*> NumericalLandau(std::vector<float> COMP, std::vector<float> Parameters, float min, float max, int points, int toys)
+std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth, int trk_Data)
 {
-  TF1 Lan("Lan", "landau", min, max); 
-  for (int i(0); i < Parameters.size(); i++)
-  {
-    Lan.SetParameter(i, Parameters[i]);
-  } 
 
-  std::vector<std::vector<float>> L(COMP.size()); 
-  
-  for (int x(0); x < toys; x++)
-  {
-    float r = 0; 
-    for (int i(0); i < COMP.size(); i++)
-    {
-      r = r + Lan.GetRandom(); 
-      L[i].push_back(r); 
-    }
-  }
-  
-  std::vector<TGraph*> Output; 
-  float delta = (max - min)/float(points); 
-  for (int i(0); i < L.size(); i++ )
-  {
-    std::map<float, std::pair<float, int>> Landau_map; 
-    for (int x(1); x <= points; x++)
-    {
-      float x_range = delta * x; 
-      Landau_map[x_range] = std::pair<float, int>(x_range, 1); 
-    }
-    
-    std::map<float, std::pair<float, int>>::iterator m; 
-    for (m = Landau_map.begin(); m != Landau_map.end(); m++)
-    {
-      float c_range = m -> first; 
-      std::pair<float, int> e = m -> second; 
-      int hits = e.second; 
-      float dEdx = e.first; 
-  
-      for (int x(0); x < L[i].size(); x++)
-      {
-        float h = L[i][x]; 
-  
-        if (c_range < h && h <= c_range + delta)
-        {
-          hits++; 
-          dEdx = dEdx + h;  
-        }
-      }
-      dEdx = dEdx/float(hits); 
-      Landau_map[c_range] = std::pair<float, int>(dEdx, hits); 
-    }
-
-    Double_t x[points], y[points]; 
-    Int_t v = 0; 
-    for (m = Landau_map.begin(); m != Landau_map.end(); m++)
-    {
-      std::pair<float, int> p = m -> second; 
-      x[v] = p.first; 
-      y[v] = p.second; 
-      v++; 
-    }
-    
-    TGraph* gr = new TGraph(points, x, y); 
-    Output.push_back(gr);  
-  }
-  return Output; 
-}
-
-void GraphicalLandau()
-{
-  std::vector<TGraph*> Land = NumericalLandau({1, 1}, {1, 0.9, 0.1}, 0, 20, 100, 10000000); 
-  
   TCanvas* can = new TCanvas(); 
-  can -> Print("Graph.pdf["); 
-  for (TGraph* G : Land)
-  {
-    can -> SetLogy(); 
-    G -> Draw("AC"); 
-    can -> Print("Graph.pdf"); 
-    can -> Clear();
-  } 
-  can -> Print("Graph.pdf]"); 
-}
+  can -> SetLogy(); 
 
-void FindSymmetryGaussian()
-{
-  float max = 10.5; 
-  float min = 0.5;
-  int bins = 101;  
-  float width = (max-min)/(float)bins; width = width/2;  
-  min -= width; 
-  max -= width; 
- 
-  TH1F* Gaus = Gaussian(1, 0.1, bins, min, max);
-  TH1F* G2 = (TH1F*)Gaus -> Clone("G"); 
-  G2 -> Reset();
-  std::vector<float> Forward; 
-  std::vector<float> Backward;  
-  for ( int i(0); i < Gaus -> GetNbinsX(); i++)
+  int iterations = Params["iterations"][0]; 
+  int bins = Data[0] -> GetNbinsX(); 
+  float min = Data[0] -> GetXaxis() -> GetXmin(); 
+  float max = Data[0] -> GetXaxis() -> GetXmax(); 
+  float width = (max - min) / float(bins); 
+  min += width / 2.; 
+  max += width / 2.; 
+
+  std::vector<TH1F*> PSF; 
+  for (int x(0); x < Data.size(); x++)
   {
-    Forward.push_back(Gaus -> GetBinContent(i+1)); 
-    Backward.push_back(Gaus -> GetBinContent(bins - i -1));  
+    TString name = "Gaussian_"; name += (x+1); 
+    float m = Params["G_Mean"][x]; 
+    float s = Params["G_Stdev"][x];
+    TH1F* Gaus = Gaussian(m ,s, bins, min, max, name); 
+    PSF.push_back(Gaus);
+  }
+  PlotHists(PSF, can);  
+  can -> Print("Gaus.pdf"); 
+
+  std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(Data[0], Data.size(), "C"); 
+  TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+
+  std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
+  Flush(F_C, ntrk_Conv, false); 
+
+  TString name = Data[trk_Data] -> GetTitle(); name += (".pdf"); 
+  std::vector<TString> Names_Dec; 
+  for (int i(0); i < ntrk_Conv.size(); i++)
+  {
+    TString name = "Temp_"; name += (ntrk_Conv[i] -> GetTitle()); 
+    Names_Dec.push_back(name);
   }
   
-  G2 -> SetLineStyle(kDashed);
-  G2 -> SetLineColor(kRed); 
-  TCanvas* can = new TCanvas();
+  //can -> SetLogy(); 
+  //Data[trk_Data] -> SetLineColor(kBlack); 
+  //Data[trk_Data] -> Add(F_C[0], -1);
+  //Data[trk_Data] -> Draw("HIST"); 
+  //F_C[0] -> SetLineColor(kRed); 
+  //F_C[0] -> Draw("SAMEHIST"); 
+  //F_C[1] -> SetLineColor(kOrange); 
+  //F_C[1] -> Draw("SAMEHIST"); 
+  //F_C[2] -> SetLineColor(kGreen); 
+  //F_C[2] -> Draw("SAMEHIST"); 
+  //F_C[3] -> SetLineColor(kMagenta); 
+  //F_C[3] -> Draw("SAMEHIST"); 
+  //can -> Print(name); 
+  //Flush(F_C, ntrk_Conv, false); 
 
-  float low = 0;  
-  int shift = 0;
-  bool symmetric = false; 
-  for (int i(0); i < bins; i++)
+
+  for (int i(0); i < iterations; i++)
   {
-    float e = Forward[i]; 
-    for (int j(0); j < bins; j++)
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+    std::vector<TH1F*> Not_trk; 
+    std::vector<TH1F*> Not_PSF; 
+    std::vector<TH1F*> Truth_Not;  
+    for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      float f = Backward[j]; 
-      float dif = e + f; 
-      if (dif > low)
+      if (x == trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
+      else
       {
-        low = dif; 
-        shift = j;
-      } 
+        Not_trk.push_back(ntrk_Conv[x]); 
+        Not_PSF.push_back(PSF[x]);
+        Truth_Not.push_back(Truth[x]); 
+      }
     }
-    for (int k(0); k < bins; k++)
-    {
-      G2 -> SetBinContent(k-shift+1, Backward[k]); 
-    }
-
-    std::cout << shift << std::endl;
-    Gaus -> Draw("HIST"); 
-    G2 -> Draw("SAMEHIST"); 
-    can -> Print("debug.pdf");
+    F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
+    Average(Data_Copy); 
+    Average(Data_Copy); 
+    ScaleShape(Data_Copy, F_C);
+    Flush(F_C, Not_trk, true);
     
-    if (shift == 0){symmetric = true;} 
+    PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
+    can -> Print(name); 
+    delete Data_Copy; 
+
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+
+    std::vector<TH1F*> Delta;
+    std::vector<TH1F*> Delta_PSF; 
+    for (int x(0); x < ntrk_Conv.size(); x++)
+    {
+      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      else 
+      {
+        Delta.push_back(ntrk_Conv[x]); 
+        Delta_PSF.push_back(PSF[x]); 
+      }
+    }
+    F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
+    Average(Data_Copy); 
+    ScaleShape(Data_Copy, F_C); 
+    Flush(F_C, Delta, true); 
+
+    delete Data_Copy; 
+
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+    F_C = CloneTH1F(Data_Copy, Names_Dec);
+    for (int x(0); x < F_C.size(); x++){F_C[x] -> Add(ntrk_Conv[x], 1);}
+    ScaleShape(Data_Copy, F_C); 
+    Flush(F_C, ntrk_Conv, true); 
+    delete Data_Copy;
+    
   }
-   
+  std::map<TString, std::vector<TH1F*>> Out; 
+  return Out; 
+}
+
+void AlgorithmMonteCarlo()
+{
+  auto Sum_Hist =[] (std::vector<TH1F*> Hists, TString Name)
+  {
+    TH1F* Hist = (TH1F*)Hists[0] -> Clone(Name); 
+    Hist -> Reset();  
+    Hist -> SetTitle(Name); 
+    for (int i(0); i < Hists.size(); i++)
+    {
+      Hist -> Add(Hists[i]); 
+    }
+    return Hist; 
+  };
+
+  float m = 0.001; 
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-m, -m, -m, -m}; 
+  Params["m_e"] = {m, m, m, m}; 
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
+  Params["x_range"] = {0, 11.}; 
+  Params["iterations"] = {300}; 
+  Params["LR_iterations"] = {100}; 
+  Params["G_Mean"] = {0, 0, 0, 0}; 
+  Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
+  Params["cache"] = {10000}; 
+
+  TString Dir = "Merged.root"; 
+  std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 
+  std::vector<TH1F*> Track1 = MC["Track_1_All"];
+  std::vector<TH1F*> Track2 = MC["Track_2_All"];
+  std::vector<TH1F*> Track3 = MC["Track_3_All"];
+  std::vector<TH1F*> Track4 = MC["Track_4_All"];
   
+  TH1F* Trk1 = Sum_Hist(Track1, "trk1_data"); 
+  TH1F* Trk2 = Sum_Hist(Track2, "trk2_data"); 
+  TH1F* Trk3 = Sum_Hist(Track3, "trk3_data"); 
+  TH1F* Trk4 = Sum_Hist(Track4, "trk4_data"); 
+  std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
+  MainAlgorithm(Data, Params, Track1, 0); 
+  //MainAlgorithm(Data, Params, Track2, 1); 
+  //MainAlgorithm(Data, Params, Track3, 2); 
+  //MainAlgorithm(Data, Params, Track3, 3);  
   
+  //Shifting(Data[0]); 
   
+}
+
+
+void Shifting(TH1F* H)
+{
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+
+  int LucyRichardson = 300; 
+  int bins = H -> GetNbinsX(); 
+  float min = H -> GetXaxis() -> GetXmin(); 
+  float max = H -> GetXaxis() -> GetXmax(); 
+  float width = (max - min) / float(bins); 
+  min += width / 2.; 
+  max += width / 2.; 
   
-  
-   
- 
- 
+  std::vector<TH1F*> PSF; 
+  float m = 0; 
+  float s = 0.05;
+  TH1F* Gaus = Gaussian(m ,s, bins, min, max, "Gaus"); 
+  TH1F* Dec = (TH1F*)H -> Clone("DecP"); 
+  TH1F* Temp = (TH1F*)H -> Clone("Temp"); 
 
+  Gaus -> Draw("HIST"); 
+  can -> Print("Debug.pdf"); 
 
-
-
-
-
+  H -> GetYaxis() -> SetRangeUser(1e-6, 1);
+  for (int i(0); i < 50; i++)
+  {
+    Convolution(Dec, Gaus, Temp); 
+    DeconvolutionExperimental(Temp, Gaus, Dec, LucyRichardson); 
+     
+    
+    
+    //Convolution(Dec, Gaus, Temp); 
+    Normalize(Temp); 
+    Normalize(H); 
+    H -> SetLineStyle(kSolid); 
+    H -> Draw("HIST");
+    Temp -> SetLineColor(kRed);
+    Temp -> SetLineStyle(kDashed); 
+    Temp -> Draw("SAMEHIST"); 
+    can -> Print("Debug.pdf"); 
+  }
 
 }
+
 

@@ -1,5 +1,6 @@
 #include<PostAnalysis/BaseFunctions.h>
 
+
 // Creates Histograms from vector names - Used for bulk generation 
 std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, float max, TString Extension)
 {
@@ -93,56 +94,6 @@ void Shift(TH1F* Hist, int shift)
   for (int i(0); i < Hist -> GetNbinsX(); i++)
   {
     Hist -> SetBinContent(i+1+shift, Content[i]);  
-  }
-}
-
-void Scale(TH1F* Data, std::vector<TH1F*> ntrk)
-{
-  int excess_i = 0;
-  float excess_sum;  
-  for (int i(0); i < Data ->GetNbinsX(); i++)
-  {
-    float e = Data -> GetBinContent(i+1); 
-    float sum(0);  
-    for (int c(0); c < ntrk.size(); c++)
-    {
-      sum += ntrk[c] -> GetBinContent(i+1);  
-    }
-    
-    if ( sum > e && e > 1)
-    {
-      excess_sum += sum/e; 
-      excess_i++;  
-    }
-  }
-   
-  if ( excess_i > 1)
-  {
-    float average = excess_sum / (float)excess_i; 
-    for (int c(0); c < ntrk.size(); c++){ntrk[c] -> Scale((float)1/average);}
-  }
-}
-
-void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
-{
-  for (int i(0); i < Data ->GetNbinsX(); i++)
-  {
-    float e = Data -> GetBinContent(i+1); 
-    float sum(0);  
-    for (int c(0); c < ntrk.size(); c++)
-    {
-      sum += ntrk[c] -> GetBinContent(i+1);  
-    }
-    if (e != 0)
-    {
-      float r = sum/e;
-      
-      for (int c(0); c < ntrk.size(); c++)
-      {
-        float en = ntrk[c] -> GetBinContent(i+1);
-        ntrk[c] -> SetBinContent(i+1, en/r);  
-      }
-    }
   }
 }
 
@@ -254,4 +205,6 @@ void BulkDelete(std::vector<TH1F*> Hist_V)
     delete Hist_V[i]; 
   }
 }
+
+
 

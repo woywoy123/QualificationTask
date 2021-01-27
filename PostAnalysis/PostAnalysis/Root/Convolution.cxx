@@ -2,93 +2,41 @@
 
 
 // =========================== Convolution ================================= //
-std::vector<float> ConvolutionFFT(const std::vector<float> V1, const std::vector<float> V2, int ZeroPointBin)
+std::vector<float> ConvolutionSum(std::vector<float> V1, std::vector<float> V2, int ZeroPointBin)
 {
   int n = V1.size(); 
-  std::vector<float> conv(n, 0); 
+  std::vector<float> conv(2*n, 0); 
 
-  // Create two FFT objects 
-  TVirtualFFT* fft1 = TVirtualFFT::FFT(1, &n, "R2C K P"); 
-  TVirtualFFT* fft2 = TVirtualFFT::FFT(1, &n, "R2C K P"); 
-
-  // Shift the vector such that the convolution vector starts at the zero point on the domain 
-  // First half: Points that are past the Zero point of the domain  
-  for (Int_t i(0); i < n - ZeroPointBin; i++)
+  for (int i(0); i < 2*n; i++)
   {
-    fft1 -> SetPoint(i, V1.at(i+ZeroPointBin), 0);
-    fft2 -> SetPoint(i, V2.at(i+ZeroPointBin), 0);  
+    for (int k(0); i - k >= 0; k++)
+    {
+      if (k >= n || i - k >= n){continue;}
+      conv[i] += V1[i-k] * V2[k]; 
+    }
   }
-
-  // Second half: Points that are below the Zero point of the domain 
-  for (Int_t i(0); i < ZeroPointBin; i++)
-  {
-    fft1 -> SetPoint(n - ZeroPointBin + i, V1.at(i), 0);
-    fft2 -> SetPoint(n - ZeroPointBin + i, V2.at(i), 0);  
-  }
- 
-  // Change points into Frequency domain  
-  fft1 -> Transform(); 
-  fft2 -> Transform(); 
-  
-  // Perform the multiplication of the FFT
-  TVirtualFFT* fft2r =TVirtualFFT::FFT(1, &n, "C2R K P "); 
-  for ( int i(0); i < n/2 +1; i++)
-  {
-    Double_t r1, r2, i1, i2; // Define the real and imaginary points 
-   
-    // Populate the points above  
-    fft1 -> GetPointComplex(i, r1, i1);
-    fft2 -> GetPointComplex(i, r2, i2); 
-
-    // Perform the multiplication A*A = (r1 + i1)*(r2 - i2) = r1*r2 - i1*i2 + i1*r2 - i2*r1
-    Double_t re = r1*r2 - i1*i2; 
-    Double_t im = i1*r2 + i2*r1; 
-    TComplex t(re, im); 
-    fft2r -> SetPointComplex(i, t); 
-  }
-
-  // Change fft to real space
-  fft2r -> Transform(); 
-  for ( int i(0); i < n; i++)
-  {
-    Double_t r1, i1; 
-    fft2r -> GetPointComplex(i, r1, i1); 
-    
-    // Make sure to revert the domain back
-    if (i < n - ZeroPointBin){ conv[i+ZeroPointBin] = r1; }
-    else { conv[i-ZeroPointBin] = r1; }
-  }
-
-  delete fft1; 
-  delete fft2; 
-  delete fft2r;
-
-  return conv; 
+  std::vector<float> result( conv.begin() + ZeroPointBin, conv.begin() + n + ZeroPointBin); 
+  return result; 
 }
 
-void ResidualRemove(TH1F* Hist)
+std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, TString extension)
 {
-  float bin_m = Hist -> GetMaximumBin(); 
-  float T = Hist -> GetBinContent(bin_m); 
-  int iter(0); 
-  int breaker = 0; 
-  for (int i(0); i < bin_m; i++)
+  std::vector<TString> Names;  
+  for (int i(0); i < n; i++)
   {
-    float e = Hist -> GetBinContent(bin_m -1 -i); 
-    if (e < T) 
-    {
-      T = e; 
-      iter = bin_m -i; 
-      breaker = 0; 
-    }
-    else { breaker++; }
-    if (breaker == 4) {break;}
+    TString name = "TRK_"; name +=(i+1); name +=("_"); name += (extension);  
+    Names.push_back(name);  
   }
+  std::vector<TH1F*> Hist_V = CloneTH1F(Start, Names);
+  Hist_V[0] -> Add(Start, 1);  
   
-  for (int i(0); i < iter; i++)
+  for (int i(0); i < n-1; i++)
   {
-    Hist -> SetBinContent(i+1, 0); 
+    Convolution(Hist_V[i], Start, Hist_V[i+1]); 
   }
+
+  Normalize(Hist_V); 
+  return Hist_V; 
 }
 
 void Convolution(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
@@ -111,117 +59,6 @@ void Convolution(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
     conv -> SetBinContent(i+1, Conv.at(Padding+i)); 
   }
 }
-
-
-// ======================== Experimental Branch ======================================= //
-std::vector<float> ConvolutionSum(std::vector<float> V1, std::vector<float> V2, int ZeroPointBin)
-{
-  int n = V1.size(); 
-  std::vector<float> conv(2*n, 0); 
-
-  for (int i(0); i < 2*n; i++)
-  {
-    for (int k(0); i - k >= 0; k++)
-    {
-      if (k >= n || i - k >= n){continue;}
-      conv[i] += V1[i-k] * V2[k]; 
-    }
-  }
-  std::vector<float> result( conv.begin() + ZeroPointBin, conv.begin() + n + ZeroPointBin); 
-  return result; 
-}
-
-void ConvolutionExperimental(TH1F* PDF, TH1F* PSF, TH1F* conv)
-{
-  int pdf_bins = PDF -> GetNbinsX(); 
-  int psf_bins = PSF -> GetNbinsX(); 
-
-  // Domain of PDF and PSF 
-  float pdf_min = PDF -> GetXaxis() -> GetXmin(); 
-  float pdf_max = PDF -> GetXaxis() -> GetXmax(); 
-  float psf_min = PSF -> GetXaxis() -> GetXmin();  
-  float psf_max = PSF -> GetXaxis() -> GetXmax(); 
-
-  // Make sure the bin widths are equal before proceeding 
-  float width_pdf = (pdf_max - pdf_min) / float(pdf_bins);   
-  float width_psf = (psf_max - psf_min) / float(psf_bins); 
-
-  // Unify their domains by finding the max and mins of the two distributions 
-  float domain_min; 
-  float domain_max; 
-  if (pdf_min < psf_min){domain_min = pdf_min;}
-  else { domain_min = psf_min; }
-
-  if (pdf_max > psf_max){domain_max = pdf_max;}
-  else { domain_max = psf_max; }
-
-  // Create the new histograms for the new domain definition 
-  int bins = (domain_max - domain_min)/width_psf; 
-
-  // Create unique names for these hists for multithreading  
-  TString unique = PDF -> GetTitle(); unique += ("_"); unique += (PSF -> GetTitle()); unique += ("_"); 
-  TH1F* H1 = new TH1F(unique + "H1", unique + "H1", bins, domain_min, domain_max); 
-  TH1F* H2 = new TH1F(unique + "H2", unique + "H2", bins, domain_min, domain_max); 
-
-  // Find the zero bin position of both histograms 
-  int psf_0 = PSF -> GetXaxis() -> FindBin(0.) -1;  
-  int pdf_0 = PDF -> GetXaxis() -> FindBin(0.) -1;  
-  int bin_0 = H1 -> GetXaxis() -> FindBin(0.) - 1; 
-
-  // Create iterators 
-  int i_psf = 0; 
-  int i_pdf = 0; 
-  for (int i(0); i < bins; i++)
-  {
-    int d_bin_0 = bin_0 - i; 
-
-    // Fill histogram based on PSF
-    if (d_bin_0 <= psf_0)
-    {
-      H1 -> SetBinContent(i+1, PSF -> GetBinContent(i_psf+1)); 
-      i_psf++;
-    } 
-
-    // Fill histogram based on PDF
-    if (d_bin_0 <= pdf_0)
-    {
-      H2 -> SetBinContent(i+1, PDF -> GetBinContent(i_pdf+1)); 
-      i_pdf++;
-    } 
-  }
-
-  // Convert histograms to vectors
-  std::vector<float> PSF_V = ToVector(H1);
-  std::vector<float> PDF_V = ToVector(H2); 
-  std::vector<float> Conv = ConvolutionSum(PDF_V, PSF_V, bin_0); 
-  
-  for (int i(0); i < pdf_bins; i++)
-  {   
-    conv -> SetBinContent(i+1, Conv.at(psf_0 - pdf_0 + i)); 
-  }
-
-  delete H1; 
-  delete H2; 
-}
-
-std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, TString extension)
-{
-  std::vector<TString> Names;  
-  for (int i(0); i < n; i++)
-  {
-    TString name = "TRK_"; name +=(i+1); name +=("_"); name += (extension);  
-    Names.push_back(name);  
-  }
-  std::vector<TH1F*> Hist_V = CloneTH1F(Start, Names);
-  Hist_V[0] -> Add(Start, 1);  
-  
-  for (int i(0); i < n-1; i++)
-  {
-    Convolution(Hist_V[i], Start, Hist_V[i+1]); 
-  }
-  return Hist_V; 
-}
-
 // ============================ Deconvolution Stuff ======================== //
 std::vector<float> LucyRichardson(std::vector<float> data, std::vector<float> psf, std::vector<float> current, float damp)
 {
@@ -331,11 +168,60 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   return Converge;
 }
 
+void DeconvolutionExperimental(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
+{
+  auto ToVector =[](TH1F* H, int bins)
+  {
+    int bins_H = H -> GetNbinsX(); 
+    int Padding = (bins - bins_H); 
+
+    std::vector<float> Output; 
+    for (int i(0); i < bins_H; i++)
+    {
+      float e = H -> GetBinContent(i+1);
+      Output.push_back(e); 
+    }
+    for (int i(0); i < Padding; i++)
+    {
+      float e = H -> GetBinContent(bins_H - i - 1); 
+      Output.push_back(e); 
+    }
+    return Output; 
+  };
+
+  float r = 1.1; 
+  int bins = Signal -> GetNbinsX(); 
+  int bin_0 = Signal -> GetXaxis() -> FindBin(0.) -1; 
+  std::vector<float> Signal_V = ToVector(Signal, bins*r); 
+  std::vector<float> PSF_V = ToVector(PSF, bins*r); 
+  std::vector<float> Deconv_V = std::vector<float>(bins*r, 0.5); 
+
+  for (int i(0); i < iter; i++)
+  {
+    Deconv_V = LucyRichardson(Signal_V, PSF_V, Deconv_V, 0.75); 
+  }
+
+  int Padding = ((r - 1)*bins)/2; 
+  for (int i(0); i < bins; i++)
+  {
+    Out -> SetBinContent(i+1 + bin_0, Deconv_V[i]);
+  }
+}
+
 void MultiThreadingDeconvolution(std::vector<TH1F*> Data, std::vector<TH1F*> PSF, std::vector<TH1F*> Result, int Iter)
 {
 
   std::vector<std::thread> th; 
-  for (int i(0); i < PSF.size(); i++){th.push_back(std::thread(Deconvolution, Data[i], PSF[i], Result[i], Iter));}
+  for (int i(0); i < Result.size(); i++){th.push_back(std::thread(Deconvolution, Data[i], PSF[i], Result[i], Iter));}
+  for (std::thread &t : th){t.join();}
+
+}
+
+void MultiThreadingDeconvolutionExperimental(std::vector<TH1F*> Data, std::vector<TH1F*> PSF, std::vector<TH1F*> Result, int Iter)
+{
+
+  std::vector<std::thread> th; 
+  for (int i(0); i < Result.size(); i++){th.push_back(std::thread(DeconvolutionExperimental, Data[i], PSF[i], Result[i], Iter));}
   for (std::thread &t : th){t.join();}
 
 }

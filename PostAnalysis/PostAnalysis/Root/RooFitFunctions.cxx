@@ -5,7 +5,7 @@ std::vector<RooRealVar*> RooVariables(std::vector<TString> Names, std::vector<fl
   std::vector<RooRealVar*> Variables; 
   for (int i(0); i < Names.size(); i++)
   {
-    RooRealVar* r = new RooRealVar(Names[i], Names[i], Begin[i], End[i]); 
+    RooRealVar* r = new RooRealVar(Names[i], Names[i], (Begin[i] + End[i])/2., Begin[i], End[i]); 
     Variables.push_back(r); 
   }
   return Variables; 
@@ -45,7 +45,7 @@ std::vector<RooFFTConvPdf*> RooFFTVariables(std::vector<TString> Names, RooRealV
   std::vector<RooFFTConvPdf*> Out; 
   for (int i(0); i < Names.size(); i++)
   {
-    RooFFTConvPdf* p = new RooFFTConvPdf(Names[i] + "pxg", Names[i] + "pxg", *domain, *PDFs[i], *Gaus[i]); 
+    RooFFTConvPdf* p = new RooFFTConvPdf(Names[i] + "pxg", Names[i] + "pxg", *domain, *PDFs[i], *Gaus[i]);
     Out.push_back(p); 
   }
   return Out; 
@@ -152,7 +152,18 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
   int n_vars = PDF_H.size(); 
- 
+
+  Normalize(PDF_H); 
+  for (int j(0); j < bins; j++)
+  {
+    for (int i(0); i < PDF_H.size(); i++)
+    {
+      PDF_H[i] -> SetBinError(j+1, 1e-12); 
+    }
+
+    //Data -> SetBinError(j+1, 1e-12); 
+  }
+
   // Input variables;  
   // Standard Deviation 
   std::vector<float> s_s = Params["s_s"]; 
@@ -166,14 +177,15 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
 
   // Declare the domain using RooVariables 
   RooRealVar* x =  new RooRealVar("x", "x", x_min, x_max);
-  x -> setRange("fit", Params["x_range"][0], Params["x_range"][1]); 
+  x -> setRange("fit", Params["x_range"][0], Params["x_range"][1]);
+  if (cache != 0){ x -> setBins(cache); }
   if (fft_cache != 0){x -> setBins(fft_cache, "fft");}
   if (cache != 0){ x -> setBins(cache, "cache");}
    
   // Declare the gaussian variables used to conduct the fit 
   std::vector<RooRealVar*> s_vars = RooVariables(s_N, s_s, s_e); 
   std::vector<RooRealVar*> m_vars = RooVariables(m_N, m_s, m_e);
-    
+ 
   // Create the names for the Gaussian Objects 
   std::vector<TString> g_N = NameGenerator(n_vars, "_GxT"); 
   std::vector<RooGaussian*> g_vars = RooGaussianVariables(g_N, x,  m_vars, s_vars); 
@@ -181,7 +193,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   // Create the Luminosity variables for the fit
   std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
   std::vector<float> l_s(n_vars, 0); 
-  std::vector<float> l_e(n_vars, 1. * Data -> Integral());  
+  std::vector<float> l_e(n_vars, Data -> Integral());  
   std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
   
   // Convert the PDFs to RooPDFs
@@ -190,6 +202,24 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     
   // Create the Convolution PDFs 
   std::vector<RooFFTConvPdf*> fft_vars = RooFFTVariables(pdf_N, x, pdf_vars, g_vars);
+
+  for (int i(0); i < s_vars.size(); i++)
+  {
+    if (cache != 0){ s_vars[i] -> setBins(cache); }
+    if (fft_cache != 0){s_vars[i] -> setBins(fft_cache, "fft");}
+    if (cache != 0){ s_vars[i] -> setBins(cache, "cache");}
+  
+    if (cache != 0){ m_vars[i] -> setBins(cache); }
+    if (fft_cache != 0){m_vars[i] -> setBins(fft_cache, "fft");}
+    if (cache != 0){ m_vars[i] -> setBins(cache, "cache");}
+
+    if (cache != 0){ l_vars[i] -> setBins(cache); }
+    if (fft_cache != 0){l_vars[i] -> setBins(fft_cache, "fft");}
+    if (cache != 0){ l_vars[i] -> setBins(cache, "cache");}
+
+    fft_vars[i] -> setInterpolationOrder(9);
+    fft_vars[i] -> setBufferFraction(1); 
+  }
 
   // Combine the variables into a single ArgSet and create the model
   RooArgSet Conv;
@@ -203,9 +233,9 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
-  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(4), RooFit::Range("fit")); 
-  //PlotRooFit(model, x, D);  
-
+  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit")); 
+  PlotRooFit(model, x, fft_vars, D);  
+ 
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 
   std::vector<TH1F*> Out_H = CloneTH1F(PDF_H[0], out_N); 
@@ -219,16 +249,17 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     float s_e = s_vars[i] -> getError(); 
     float m_e = m_vars[i] -> getError(); 
     float n_e = l_vars[i] -> getError(); 
-
+    
     std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
 
-    TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
-    Convolution(G, PDF_H[i], Out_H[i]); 
+    TF1 T = TF1(*fft_vars[i] -> asTF(RooArgList(*x))); 
+    T.SetNpx(bins); 
+    TH1* H = T.CreateHistogram(); 
+
+    Out_H[i] -> Add(H, 1); 
     Normalize(Out_H[i]);
     Out_H[i] -> Scale(n); 
-    
     Out.push_back(std::pair<TH1F*, std::vector<float>>(Out_H[i], P)); 
-    delete G; 
   }
  
   // Flush all the variables 
@@ -245,10 +276,6 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   delete D; 
   return Out; 
 }
-
-
-
-
 
 
 

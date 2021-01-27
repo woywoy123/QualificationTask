@@ -36,17 +36,29 @@ void PlotHists(std::vector<TH1F*> Hists, std::vector<TString> Legend_Titles, TCa
 
 void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
 {
+  float m; 
+  for (TH1F* H : Hists)
+  {
+    int b = H -> GetMaximumBin(); 
+    float m_n = H -> GetBinContent(b+1); 
+    if (m_n > m){ m = m_n; }
+  }
+
   gStyle -> SetOptStat(0); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
-  Hists[0] -> GetYaxis() -> SetRangeUser(1e-6, 1e6); 
+  Hists[0] -> GetYaxis() -> SetRangeUser(1e-6, m*2); 
   Populate(Hists, can, len, kSolid); 
 }
 
 void PlotHists(TH1F* Data, std::vector<TH1F*> Hists, TCanvas* can)
 {
+  int bin = Data -> GetMaximumBin(); 
+  float m = Data -> GetBinContent(bin+1); 
+  
+  can -> Clear();
   gStyle -> SetOptStat(0); 
-  Data -> SetLineColor(kBlack); 
-  Data -> GetYaxis() -> SetRangeUser(0.1, Data -> Integral());
+  Data -> GetYaxis() -> SetRangeUser(1e-6, m);  
+  Data -> GetXaxis() -> SetRangeUser(0, 10);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
   Populate(Hists, can, len, kSolid); 
@@ -54,10 +66,36 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> Hists, TCanvas* can)
 
 void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can)
 {
+  int bin = Data -> GetMaximumBin(); 
+  float m = Data -> GetBinContent(bin+1); 
+  
   can -> Clear();
   gStyle -> SetOptStat(0); 
-  Data -> GetYaxis() -> SetRangeUser(1e-9, Data -> Integral());
-  Data -> GetXaxis() -> SetRangeUser(0, 12);
+  Data -> GetYaxis() -> SetRangeUser(1e-6, m*2);
+  Data -> GetXaxis() -> SetRangeUser(0, 13);
+  Data -> Draw("HIST"); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  Populate(truth, can, len, kSolid); 
+  Populate(prediction, can, len, kDashed); 
+}
+
+void PlotHists(std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can)
+{
+  float sum = 0; 
+  for (int i(0); i < prediction.size(); i++)
+  {
+    int bin = prediction[i] -> GetMaximumBin(); 
+    float m = prediction[i] -> GetBinContent(bin+1); 
+    sum += m;  
+  }
+  
+  TH1F* Data = (TH1F*)truth[0] -> Clone("Data"); 
+  Data -> Reset(); 
+
+  can -> Clear();
+  gStyle -> SetOptStat(0); 
+  Data -> GetYaxis() -> SetRangeUser(1e-6, sum*1.5);
+  Data -> GetXaxis() -> SetRangeUser(0, 10);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
   Populate(truth, can, len, kSolid); 
@@ -99,17 +137,23 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
   Ratio -> Draw("epl"); 
 }
 
-void PlotRooFit(RooAddPdf model, RooRealVar* Domain, RooDataHist* Data)
+void PlotRooFit(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data)
 {
   RooPlot* xframe = Domain -> frame(RooFit::Title("Figure")); 
   Data -> plotOn(xframe, RooFit::Name("Data")); 
-  model.plotOn(xframe); 
+  std::vector<Color_t> Colors = {kRed, kGreen, kOrange, kBlue}; 
+  for (int i(0); i < PDFs.size(); i++)
+  {
+    TString name = "trk-"; name += (i+1); 
+    model.plotOn(xframe, RooFit::Name(name), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Colors[i])); 
+  }
   TCanvas* can = new TCanvas(); 
   gPad -> SetLogy(); 
-  xframe -> SetMinimum(1); 
+  xframe -> SetMinimum(1e-8); 
   xframe -> Draw(); 
   can -> Update();
   can -> Print("debug.pdf"); 
+  delete can; 
 }
 
 // ====================== Proper histogram plotting for the presentation ======================== //

@@ -60,9 +60,11 @@ TH1F* Gaussian(float mean, float stdev, int bins, float min, float max, TString 
   // Create a title for the histogram   
   TString name = "Gaussian_M:"; name +=(mean); name +=("_STDEV: "); name += (stdev); name += ("_"); name += (Extension); 
   TH1F* Gaus = new TH1F(name, name, bins, min, max); 
-  
+
+  int mp = Gaus -> GetXaxis() -> FindBin(mean); 
+  float c = Gaus -> GetXaxis() -> GetBinCenter(mp); 
   TF1* g = new TF1("gaus", "gaus", min, max); 
-  g -> SetParameters(1, mean, stdev); 
+  g -> SetParameters(1, c, stdev); 
   Gaus -> Add(g); 
   
   delete g;  

@@ -772,77 +772,75 @@ void PlotOscillationLucyRichardson(TCanvas* can, std::vector<TH1F*> Hist_V, TStr
 }
 
 void PlotAlgorithm(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
-{  
-  for (int i(0); i < 8; i++){ Normalize(Hist_V[i]); }
-
-  TH1F* Empty = (TH1F*)Hist_V[0] -> Clone("Empty Space");
-  Empty -> Reset(); 
-  Empty -> GetYaxis() -> SetRangeUser(1e-6, 2); 
-  
-  // Plot the PDFs and the PSF used for this fit 
-  can -> SetLogy(); 
-  GeneratePlot(Empty, "Original Landau Distributions with the Gaussians", can, kWhite, kSolid, "HIST", 0); 
-  GeneratePlot(Hist_V[0], "Landau 1", can, kRed, kSolid, "SAMEHIST", 0.5); 
-  GeneratePlot(Hist_V[1], "Landau 2", can, kOrange, kSolid, "SAMEHIST", 0.8); 
-  GeneratePlot(Hist_V[2], "Landau 3", can, kViolet, kSolid, "SAMEHIST", 0.8);
-  GeneratePlot(Hist_V[3], "Landau 4", can, kGreen, kSolid, "SAMEHIST", 0.8);
-  GeneratePlot(Hist_V[4], "Gaussian 1", can, kRed,    kDashed, "SAMEHIST", 0.5); 
-  GeneratePlot(Hist_V[5], "Gaussian 2", can, kOrange, kDashed, "SAMEHIST", 0.8); 
-  GeneratePlot(Hist_V[6], "Gaussian 3", can, kViolet, kDashed, "SAMEHIST", 0.8);
-  GeneratePlot(Hist_V[7], "Gaussian 4", can, kGreen,  kDashed, "SAMEHIST", 0.8);
-  GenerateLegend({Hist_V[0],  Hist_V[1], Hist_V[2],  Hist_V[3], Hist_V[4],  Hist_V[5], Hist_V[6],  Hist_V[7] }, can); 
-  can -> Update(); 
-  can -> Print(filename); 
-  can -> Clear(); 
-
-  Empty -> GetYaxis() -> SetRangeUser(1, 1e7); 
-  GeneratePlot(Empty, "Fake Data with Smearing applied", can, kWhite, kSolid, "HIST", 0); 
-  GeneratePlot(Hist_V[12], "", can, kBlack,  kSolid, "SAMEHIST", 0.5);
-  GeneratePlot(Hist_V[8], "", can, kRed, kDashed, "SAMEHIST", 0.5); 
-  GeneratePlot(Hist_V[9], "", can, kOrange, kDashed, "SAMEHIST", 0.8); 
-  GeneratePlot(Hist_V[10], "", can, kViolet, kDashed, "SAMEHIST", 0.8);
-  GeneratePlot(Hist_V[11], "", can, kGreen, kDashed, "SAMEHIST", 0.8);
-  GenerateLegend({Hist_V[12],  Hist_V[8], Hist_V[9],  Hist_V[10], Hist_V[11]}, can); 
-  can -> Update(); 
-  can -> Print(filename); 
-  can -> Clear(); 
-
-  for (int i(13); i < Hist_V.size()-1; i++)
+{
+  auto Packs =[] (std::vector<TH1F*> Tracks, std::vector<TH1F*> MC_Truth, TCanvas* can, TString filename)
   {
-    std::cout << "############ Algorithm Test #################" << std::endl;
-    Statistics(Hist_V[i], Hist_V[8], 1, 16); 
-    Hist_V[i] -> GetYaxis() -> SetRangeUser(1, 1e7); 
-    GenerateRatioPlot(Hist_V[i], Hist_V[8], can, "Ratio Plot of the Truth and Prediction", "LOG"); 
-    can -> Print(filename); 
-    can -> Clear();   
-    i++;
-
-    Statistics(Hist_V[i], Hist_V[9], 1, 16); 
-    Hist_V[i] -> GetYaxis() -> SetRangeUser(1, 1e7); 
-    GenerateRatioPlot(Hist_V[i], Hist_V[9], can, "Ratio Plot of the Truth and Prediction", "LOG"); 
-    can -> Print(filename); 
     can -> Clear(); 
-    i++; 
+    can -> SetLogy(); 
+    PlotHists(MC_Truth, Tracks, can); 
+    can -> Print(filename);
+    
+    for (int i(0); i < Tracks.size(); i++)
+    {
+      can -> Clear(); 
+      TH1F* H1 = Tracks[i]; 
+      TH1F* H2 = MC_Truth[i]; 
+      RatioPlot(H1, H2, can);
+      can -> Print(filename); 
+      Statistics(H1, H2, 0.1, 9.8); 
+    }
+  };
 
-    Statistics(Hist_V[i], Hist_V[10], 1, 16); 
-    Hist_V[i] -> GetYaxis() -> SetRangeUser(1, 1e7); 
-    GenerateRatioPlot(Hist_V[i], Hist_V[10], can, "Ratio Plot of the Truth and Prediction", "LOG"); 
-    can -> Print(filename); 
-    can -> Clear(); 
-    i++; 
-
-    Statistics(Hist_V[i], Hist_V[11], 1, 16); 
-    Hist_V[i] -> GetYaxis() -> SetRangeUser(1, 1e7); 
-    GenerateRatioPlot(Hist_V[i], Hist_V[11], can, "Ratio Plot of the Truth and Prediction", "LOG"); 
-    can -> Print(filename); 
-    can -> Clear();
-    std::cout << std::endl;
+  int trks = 4; 
+  int ntruth = 4; 
+  int itera = 10;
+  
+  std::map<TString, TH1F*> Map; 
+  for (int i(0); i < Hist_V.size(); i++)
+  {
+    TString name = Hist_V[i] -> GetTitle(); 
+    Map[name] = Hist_V[i]; 
   }
-  can -> SetLogy();
-  GeneratePlot(Hist_V[Hist_V.size()-1], "", can, kWhite, kSolid, "HIST*", 1);
-  can -> Print(filename); 
 
+  // Iteration -> Tracks -> ntruth 
+  std::vector<std::vector<std::vector<TH1F*>>> Hists; 
+  for (int v(0); v < itera -1; v++)
+  {
+    std::vector<std::vector<TH1F*>> Tracks; 
+    for (int i(0); i < trks; i++)
+    {
+      std::vector<TH1F*> Truth;  
+      for (int y(0); y < ntruth; y++)
+      {
+        TString name = "TRK_"; name += (y+1); name += ("_C_ntrk_"); name += (i+1); name += ("_iter_"); name += (v+1); 
+        Truth.push_back(Map[name]);  
+      }
+      Tracks.push_back(Truth); 
+    }
+    Hists.push_back(Tracks); 
+  }
+ 
+  TString Dir = "Merged.root"; 
+  std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 
 
+  std::vector<TH1F*> Track1 = MC["Track_1_All"];
+  std::vector<TH1F*> Track2 = MC["Track_2_All"];
+  std::vector<TH1F*> Track3 = MC["Track_3_All"];
+  std::vector<TH1F*> Track4 = MC["Track_4_All"];
+ 
+  for (int i(0); i < Hists.size(); i++)
+  {
+    std::vector<std::vector<TH1F*>> Iteration = Hists[i]; 
+    for (int trk(0); trk < Iteration.size(); trk++)
+    {
+      std::vector<TH1F*> Track = Iteration[trk];
+      if (trk == 0){Packs(Track, Track1, can, filename); }
+      if (trk == 1){Packs(Track, Track2, can, filename); }
+      if (trk == 2){Packs(Track, Track3, can, filename); }
+      if (trk == 3){Packs(Track, Track4, can, filename); }
+    }
+  }
+ 
 }
 
 void PlotTestReadFile(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
@@ -957,10 +955,7 @@ void PlotReadFileTrackEnergy(TCanvas* can, std::vector<TH1F*> Hist_V, TString fi
     GenerateRatioPlot(H_Other_4, H_4, can, "Track 4 compare", "LOG"); 
     can -> Print(filename); 
     can -> Clear(); 
-
   }
-  
-
 }
 
 void PlotMonteCarloMatchConvolution(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename)
@@ -1101,7 +1096,7 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
     for (int i(0); i < I2.size(); i++)
     {
       TString N = Name; N +=(i+1);
-      Hist_V[I1[i]] -> GetYaxis() -> SetRangeUser(1e-9, 10);
+      Hist_V[I1[i]] -> GetYaxis() -> SetRangeUser(1e-1, 100000);
       Hist_V[I1[i]] -> GetXaxis() -> SetRangeUser(0, 10); 
       Hist_V[I2[i]] ->  SetLineStyle(kDashed); 
       GenerateRatioPlot(Hist_V[I1[i]], Hist_V[I2[i]], can, "Ratio Plot of " + N + " Compared to Monte Carlo", "LOG"); 
@@ -1141,7 +1136,7 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
 
   // Original Monte Carlo pure templates 
   can -> SetLogy();  
-  Empty -> GetYaxis() -> SetRangeUser(1e-9, 10);
+  Empty -> GetYaxis() -> SetRangeUser(1e-1, 1e8);
   Empty -> GetXaxis() -> SetRangeUser(-2, 10); 
   GenClosure({0, 1, 2, 3, 16}, Hist_V, Empty, "Track-1 Truth Distribution", can, filename); 
   GenClosure({4, 5, 6, 7, 17}, Hist_V, Empty, "Track-2 Truth Distribution", can, filename); 
@@ -1155,7 +1150,7 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
   GenClosureRatio({12, 13, 14, 15},{44, 45, 46, 47}, Hist_V, "Track-4, Truth-", can, filename);  
 
   // Plot the Gaussian being used for the deconvolution
-  Empty -> GetYaxis() -> SetRangeUser(1e-9, 10);
+  Empty -> GetYaxis() -> SetRangeUser(1e-1, 1e8);
   GeneratePlot(Empty, "The Gaussian + Distributions being used for Deconvolution", can, kWhite, kSolid, "HIST", 0); 
   GeneratePlot(Hist_V[24], "Gaussian", can, kBlack, kDashed, "SAMEHIST", 1); 
   GeneratePlot(Hist_V[20], "Conv 1", can, kRed, kSolid, "SAMEHIST", 1); 
@@ -1167,7 +1162,7 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
   can -> Clear();  
  
   // Plot the Deconvolved Hists
-  Empty -> GetYaxis() -> SetRangeUser(1e-9, 10);
+  Empty -> GetYaxis() -> SetRangeUser(1e-1, 1e10);
   GeneratePlot(Empty, "The Deconvolved Histograms", can, kWhite, kSolid, "HIST", 0); 
   GeneratePlot(Hist_V[28], "Deconv 1", can, kRed, kSolid, "SAMEHIST", 1); 
   GeneratePlot(Hist_V[29], "Deconv 2", can, kOrange, kSolid, "SAMEHIST", 1); 
@@ -1213,6 +1208,4 @@ void PlotMonteCarloFit(TCanvas* can, std::vector<TH1F*> Hist_V, TString filename
   std::cout << std::endl;
 
 }
-
-
 
