@@ -654,20 +654,18 @@ void TestAlgorithm(TFile* F)
     }
   }; 
 
-  float m = 0.0001; 
+  float m = 0.001; 
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.02, 0.02, 0.02, 0.02};  
-  Params["x_range"] = {0.1, 11.}; 
-  Params["iterations"] = {30}; 
-  Params["LR_iterations"] = {300}; 
+  Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
+  Params["x_range"] = {0, 11.}; 
+  Params["iterations"] = {50}; 
+  Params["LR_iterations"] = {100}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.015, 0.015, 0.015, 0.015}; 
+  Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
   Params["cache"] = {10000}; 
-
-
 
   TString Dir = "Merged.root"; 
   std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 

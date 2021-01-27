@@ -34,7 +34,6 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   Flush(F_C, ntrk_Conv, false); 
 
   TString name = Data[trk_Data] -> GetTitle(); name += (".pdf"); 
-
   std::vector<TString> Names_Dec; 
   for (int i(0); i < ntrk_Conv.size(); i++)
   {
@@ -42,15 +41,20 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     Names_Dec.push_back(name);
   }
   
-  can -> SetLogy(); 
-  Data[trk_Data] -> Draw("HIST"); 
-  ntrk_Conv[0] -> Draw("SAMEHIST"); 
-  ntrk_Conv[1] -> Draw("SAMEHIST"); 
-  ntrk_Conv[2] -> Draw("SAMEHIST"); 
-  ntrk_Conv[3] -> Draw("SAMEHIST"); 
- 
-  
-  can -> Print(name); 
+  //can -> SetLogy(); 
+  //Data[trk_Data] -> SetLineColor(kBlack); 
+  //Data[trk_Data] -> Add(F_C[0], -1);
+  //Data[trk_Data] -> Draw("HIST"); 
+  //F_C[0] -> SetLineColor(kRed); 
+  //F_C[0] -> Draw("SAMEHIST"); 
+  //F_C[1] -> SetLineColor(kOrange); 
+  //F_C[1] -> Draw("SAMEHIST"); 
+  //F_C[2] -> SetLineColor(kGreen); 
+  //F_C[2] -> Draw("SAMEHIST"); 
+  //F_C[3] -> SetLineColor(kMagenta); 
+  //F_C[3] -> Draw("SAMEHIST"); 
+  //can -> Print(name); 
+  //Flush(F_C, ntrk_Conv, false); 
 
 
   for (int i(0); i < iterations; i++)
@@ -70,9 +74,11 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
       }
     }
     F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
+    Average(Data_Copy); 
+    Average(Data_Copy); 
+    ScaleShape(Data_Copy, F_C);
     Flush(F_C, Not_trk, true);
-    Average(Data_Copy);  
-
+    
     PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
     can -> Print(name); 
     delete Data_Copy; 
@@ -123,17 +129,17 @@ void AlgorithmMonteCarlo()
     return Hist; 
   };
 
-  float m = 0.0001; 
+  float m = 0.001; 
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
-  Params["x_range"] = {-2, 12.}; 
+  Params["x_range"] = {0, 11.}; 
   Params["iterations"] = {300}; 
-  Params["LR_iterations"] = {150}; 
+  Params["LR_iterations"] = {100}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.015, 0.015, 0.015, 0.015}; 
+  Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
   Params["cache"] = {10000}; 
 
   TString Dir = "Merged.root"; 
@@ -153,7 +159,7 @@ void AlgorithmMonteCarlo()
   //MainAlgorithm(Data, Params, Track3, 2); 
   //MainAlgorithm(Data, Params, Track3, 3);  
   
-  Shifting(Data[0]); 
+  //Shifting(Data[0]); 
   
 }
 

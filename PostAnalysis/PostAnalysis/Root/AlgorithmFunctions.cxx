@@ -7,7 +7,7 @@ void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv)
     float e = trk_Fit -> GetBinContent(z+1); 
     float f = ntrk_Conv -> GetBinContent(z+1); 
 
-    float sig = std::exp(-1 + 1*std::abs(e - f)/f);
+    float sig = std::exp((-1 + std::abs(e - f)/f)*2);
     float log = 1. / (1 + (e/f)*sig); 
     if (f <= 0)
     { 
@@ -126,15 +126,16 @@ void Average(TH1F* Data)
     float y = Data -> GetBinContent(i+1); 
     float sum = 0; 
     int p = 0; 
-    //for (int x(0); x < 1; x++)
-    //{
-    //  float e = Data -> GetBinContent(i + x + 1); 
-    //  sum += e;
-    //  p++; 
-    //}
-    //if ( sum < 0 ){sum = 0;}
+    for (int x(-1); x < 2; x++)
+    {
+      float e = Data -> GetBinContent(i + x + 1); 
+      if (e < 0){ e = 0; }
+      sum += e;
+      p++; 
+    }
+    if ( sum < 0 ){sum = 0;}
     sum = sum / float(p); 
-    //Data -> SetBinContent(i+1, sum); 
+    Data -> SetBinContent(i+1, sum); 
   }
 }
 
@@ -202,25 +203,6 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   for (int i(0); i < iterations; i++)
   {
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-
-    std::vector<TH1F*> Delta;
-    std::vector<TH1F*> Delta_PSF; 
-    for (int x(0); x < ntrk_Conv.size(); x++)
-    {
-      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
-     
-      if ( x == trk_Data )
-      {
-        Delta.push_back(ntrk_Conv[x]); 
-        Delta_PSF.push_back(PSF[x]); 
-      }
-    }
-    F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params);    
-    Flush(F_C, Delta, true); 
-
-    delete Data_Copy; 
-
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
     std::vector<TH1F*> Not_trk; 
     std::vector<TH1F*> Not_PSF; 
     for (int x(0); x < ntrk_Conv.size(); x++)
@@ -233,12 +215,32 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
       }
     }
     F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
-    Flush(F_C, Not_trk, true);
-   
     Average(Data_Copy); 
+    ScaleShape(Data_Copy, F_C);
+    Flush(F_C, Not_trk, true);
+    
     PlotHists(Data_Copy, ntrk_Conv, can); 
     can -> Print(name); 
-    
+    delete Data_Copy; 
+
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+
+    std::vector<TH1F*> Delta;
+    std::vector<TH1F*> Delta_PSF; 
+    for (int x(0); x < ntrk_Conv.size(); x++)
+    {
+      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      else 
+      {
+        Delta.push_back(ntrk_Conv[x]); 
+        Delta_PSF.push_back(PSF[x]); 
+      }
+    }
+    F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
+    Average(Data_Copy); 
+    ScaleShape(Data_Copy, F_C); 
+    Flush(F_C, Delta, true); 
+
     delete Data_Copy; 
 
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
@@ -247,7 +249,6 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     ScaleShape(Data_Copy, F_C); 
     Flush(F_C, ntrk_Conv, true); 
     delete Data_Copy;
-
     TString base = "_ntrk_"; base += (trk_Data+1); base += ("_iter_"); base += (i); 
     TString iter = "Iteration_"; iter += (i); 
     for (int x(0); x < ntrk_Conv.size(); x++)
