@@ -1,12 +1,13 @@
 #include<PostAnalysis/BaseFunctionTest.h>
 #include<PostAnalysis/Experimental.h>
 #include<PostAnalysis/PresentationFigures.h>
+#include<PostAnalysis/AlgorithmTest.h>
 #include<TFile.h>
 
 int main(int argc, char** argv)
 {
-  bool rewrite = false; 
-  int option = -3;
+  bool rewrite = true; 
+  int option = -5;
 
   TFile* F; 
   if (rewrite == true)
@@ -36,12 +37,13 @@ int main(int argc, char** argv)
     //TestDeconvolutionFit(F);  
     //TestComparisonBinCenteringLandauXLandau(F); 
     //TestOscillationLucyRichardson(F); 
-    TestAlgorithm(F); 
-    //TestAlgorithmJetEnergy(F);  
     //TestReadFile(F); 
     //TestReadFileTrackEnergy(F); 
     //TestMonteCarloMatchConvolution(F); 
     //TestMonteCarloFit(F); 
+
+    TestAlgorithmMonteCarlo(); 
+    DataAlgorithm(); 
   }
 
   // Run Experimental
@@ -49,13 +51,20 @@ int main(int argc, char** argv)
   {
     AlgorithmMonteCarlo();
   }
-  else
+  
+  if (option == -4)
   {
     // Compile the figures  
     FigureCompiler(F);   
   } 
   F -> Close();   
-  
+ 
+  if (option == -5)
+  {
+    //ProcessDataResults(); 
+    ProcessMonteCarloResults(); 
+
+  }
   std::cout << "fin" << std::endl;
   return 0; 
 }

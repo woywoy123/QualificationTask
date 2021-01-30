@@ -41,44 +41,25 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     Names_Dec.push_back(name);
   }
   
-  //can -> SetLogy(); 
-  //Data[trk_Data] -> SetLineColor(kBlack); 
-  //Data[trk_Data] -> Add(F_C[0], -1);
-  //Data[trk_Data] -> Draw("HIST"); 
-  //F_C[0] -> SetLineColor(kRed); 
-  //F_C[0] -> Draw("SAMEHIST"); 
-  //F_C[1] -> SetLineColor(kOrange); 
-  //F_C[1] -> Draw("SAMEHIST"); 
-  //F_C[2] -> SetLineColor(kGreen); 
-  //F_C[2] -> Draw("SAMEHIST"); 
-  //F_C[3] -> SetLineColor(kMagenta); 
-  //F_C[3] -> Draw("SAMEHIST"); 
-  //can -> Print(name); 
-  //Flush(F_C, ntrk_Conv, false); 
-
-
   for (int i(0); i < iterations; i++)
   {
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
     std::vector<TH1F*> Not_trk; 
-    std::vector<TH1F*> Not_PSF; 
-    std::vector<TH1F*> Truth_Not;  
+    std::vector<TH1F*> Not_PSF;
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x == trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
+      if (x != trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
       else
       {
         Not_trk.push_back(ntrk_Conv[x]); 
         Not_PSF.push_back(PSF[x]);
-        Truth_Not.push_back(Truth[x]); 
       }
     }
+    //Average(Data_Copy);  
     F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
-    Average(Data_Copy); 
-    Average(Data_Copy); 
-    ScaleShape(Data_Copy, F_C);
+    //ScaleShape(Data_Copy, F_C);  
     Flush(F_C, Not_trk, true);
-    
+
     PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
     can -> Print(name); 
     delete Data_Copy; 
@@ -89,16 +70,16 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     std::vector<TH1F*> Delta_PSF; 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      if (x == trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
       else 
       {
         Delta.push_back(ntrk_Conv[x]); 
         Delta_PSF.push_back(PSF[x]); 
       }
     }
+    //Average(Data_Copy); 
     F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
-    Average(Data_Copy); 
-    ScaleShape(Data_Copy, F_C); 
+    //ScaleShape(Data_Copy, F_C); 
     Flush(F_C, Delta, true); 
 
     delete Data_Copy; 
@@ -106,6 +87,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
     F_C = CloneTH1F(Data_Copy, Names_Dec);
     for (int x(0); x < F_C.size(); x++){F_C[x] -> Add(ntrk_Conv[x], 1);}
+    //Average(Data_Copy); 
     ScaleShape(Data_Copy, F_C); 
     Flush(F_C, ntrk_Conv, true); 
     delete Data_Copy;
@@ -135,11 +117,11 @@ void AlgorithmMonteCarlo()
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
-  Params["x_range"] = {0, 11.}; 
-  Params["iterations"] = {300}; 
-  Params["LR_iterations"] = {100}; 
+  Params["x_range"] = {0.05, 11.5}; 
+  Params["iterations"] = {100}; 
+  Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
+  Params["G_Stdev"] = {0.01, 0.01, 0.01, 0.01}; 
   Params["cache"] = {10000}; 
 
   TString Dir = "Merged.root"; 
@@ -154,12 +136,10 @@ void AlgorithmMonteCarlo()
   TH1F* Trk3 = Sum_Hist(Track3, "trk3_data"); 
   TH1F* Trk4 = Sum_Hist(Track4, "trk4_data"); 
   std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
-  MainAlgorithm(Data, Params, Track1, 0); 
-  //MainAlgorithm(Data, Params, Track2, 1); 
-  //MainAlgorithm(Data, Params, Track3, 2); 
-  //MainAlgorithm(Data, Params, Track3, 3);  
-  
-  //Shifting(Data[0]); 
+  //MainAlgorithm(Data, Params, Track1, 0); 
+  MainAlgorithm(Data, Params, Track2, 1); 
+  MainAlgorithm(Data, Params, Track3, 2); 
+  MainAlgorithm(Data, Params, Track3, 3);  
   
 }
 

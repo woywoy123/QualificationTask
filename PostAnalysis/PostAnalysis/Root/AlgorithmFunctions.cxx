@@ -7,8 +7,8 @@ void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv)
     float e = trk_Fit -> GetBinContent(z+1); 
     float f = ntrk_Conv -> GetBinContent(z+1); 
 
-    float sig = std::exp((-1 + std::abs(e - f)/f)*2);
-    float log = 1. / (1 + (e/f)*sig); 
+    float sig = std::exp((-0.5 + std::abs(e - f)/f)*5);
+    float log = 1. / (1 + sig); 
     if (f <= 0)
     { 
       log = 0; 
@@ -60,7 +60,7 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
     {
       float point = ntrk[z] -> GetBinContent(i+1); 
       float ed = point*(e/sum);  
-      float sig = std::exp(5*(-0.1 + 1*std::pow(std::abs(ed - point) /point, 1)));
+      float sig = std::exp(5*(-1 + 1*std::pow(std::abs(ed - point) /point, 1)));
       float log = 1./ (1 + sig); 
       if (ed <= 0 || sum <= 0)
       {
@@ -121,6 +121,7 @@ void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool sig)
 
 void Average(TH1F* Data)
 {
+  std::vector<float> D; 
   for (int i(0); i < Data -> GetNbinsX(); i++)
   {
     float y = Data -> GetBinContent(i+1); 
@@ -135,7 +136,11 @@ void Average(TH1F* Data)
     }
     if ( sum < 0 ){sum = 0;}
     sum = sum / float(p); 
-    Data -> SetBinContent(i+1, sum); 
+    D.push_back(sum);  
+  }
+  for (int i(0); i < Data -> GetNbinsX(); i++)
+  {
+    Data -> SetBinContent(i+1, D[i]); 
   }
 }
 
@@ -207,7 +212,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     std::vector<TH1F*> Not_PSF; 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x == trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
+      if (x != trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
       else
       {
         Not_trk.push_back(ntrk_Conv[x]); 
@@ -215,8 +220,8 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
       }
     }
     F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
-    Average(Data_Copy); 
     ScaleShape(Data_Copy, F_C);
+    PlotHists(Data_Copy, F_C, can); 
     Flush(F_C, Not_trk, true);
     
     PlotHists(Data_Copy, ntrk_Conv, can); 
@@ -229,7 +234,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     std::vector<TH1F*> Delta_PSF; 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      if (x == trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
       else 
       {
         Delta.push_back(ntrk_Conv[x]); 
@@ -237,7 +242,6 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
       }
     }
     F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
-    Average(Data_Copy); 
     ScaleShape(Data_Copy, F_C); 
     Flush(F_C, Delta, true); 
 
@@ -249,6 +253,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     ScaleShape(Data_Copy, F_C); 
     Flush(F_C, ntrk_Conv, true); 
     delete Data_Copy;
+    
     TString base = "_ntrk_"; base += (trk_Data+1); base += ("_iter_"); base += (i); 
     TString iter = "Iteration_"; iter += (i); 
     for (int x(0); x < ntrk_Conv.size(); x++)
@@ -264,6 +269,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
       Out[iter].push_back(H); 
     }
   }
+  Out["Data"].push_back(Data[trk_Data]);
   BulkDelete(ntrk_Conv);
   BulkDelete(PSF); 
   return Out; 
