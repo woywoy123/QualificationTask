@@ -12,6 +12,7 @@
 // Histogram Generators
 std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, float max, TString Extension = "");
 std::vector<TH1F*> CloneTH1F(TH1F* Hist, std::vector<TString> Names); 
+TH1F* SumHists(std::vector<TH1F*> Hists_V, TString name);
 
 // Histogram manipulation 
 void Normalize(TH1F* Hist); 

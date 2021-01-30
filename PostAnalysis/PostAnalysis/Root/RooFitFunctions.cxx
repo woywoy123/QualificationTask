@@ -160,8 +160,6 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     {
       PDF_H[i] -> SetBinError(j+1, 1e-12); 
     }
-
-    //Data -> SetBinError(j+1, 1e-12); 
   }
 
   // Input variables;  
@@ -249,7 +247,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     float s_e = s_vars[i] -> getError(); 
     float m_e = m_vars[i] -> getError(); 
     float n_e = l_vars[i] -> getError(); 
-    
+
     std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
 
     TF1 T = TF1(*fft_vars[i] -> asTF(RooArgList(*x))); 

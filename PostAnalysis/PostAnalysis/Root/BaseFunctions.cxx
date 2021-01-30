@@ -33,6 +33,19 @@ std::vector<TH1F*> CloneTH1F(TH1F* Hist, std::vector<TString> Names)
   return Output; 
 }
 
+TH1F* SumHists(std::vector<TH1F*> Hists_V, TString name)
+{
+  TH1F* Data = (TH1F*)Hists_V[0] -> Clone(name); 
+  Data -> Reset(); 
+  Data -> SetTitle(name); 
+
+  for (int i(0); i < Hists_V.size(); i++)
+  {
+    Data -> Add(Hists_V[i], 1);
+  }
+  return Data;
+}
+
 // Normalize Histogram
 void Normalize(TH1F* Hist)
 {

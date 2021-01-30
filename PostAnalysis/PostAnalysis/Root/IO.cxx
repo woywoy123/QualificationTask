@@ -292,13 +292,10 @@ std::map<TString, std::vector<TH1F*>> MonteCarloLayerEnergy(TString dir)
       trk3_all = CloneTH1F(t3[0], trk3_n);   
       trk4_all = CloneTH1F(t4[0], trk4_n);   
     }
-    else 
-    {
-      Merge(trk1_all, t1); 
-      Merge(trk2_all, t2); 
-      Merge(trk3_all, t3); 
-      Merge(trk4_all, t4); 
-    }
+    Merge(trk1_all, t1); 
+    Merge(trk2_all, t2); 
+    Merge(trk3_all, t3); 
+    Merge(trk4_all, t4); 
   }
   Map["Track_1_All"] = trk1_all; 
   Map["Track_2_All"] = trk2_all; 
@@ -373,6 +370,73 @@ std::map<TString, std::vector<TH1F*>> MonteCarloLayerEnergy(TString dir)
   return Map; 
 }
 
+std::map<TString, TH1F*> Data(TString dir)
+{
+  std::vector<TString> names = {"dEdx_ntrk_1_NominalWeight_", 
+                                "dEdx_ntrk_2_NominalWeight_", 
+                                "dEdx_ntrk_3_NominalWeight_", 
+                                "dEdx_ntrk_4_NominalWeight_"}; 
+  std::vector<TString> J_Weight; 
+  for (TString n : names){J_Weight.push_back(n+"Jet_NominalWeight_Jet");}
 
+  std::vector<TString> J_Unity; 
+  for (TString n : names){J_Unity.push_back(n+"Jet_WeightUnity_Jet");}
 
+  std::vector<TString> L_W; 
+  for (TString n : names){L_W.push_back(n+"NominalWeight");}
 
+  std::vector<TString> L_U; 
+  for (TString n : names){L_U.push_back(n+"WeightUnity");}
+
+  std::vector<TString> Layers = {"IBL", "Blayer", "layer1", "layer2"}; 
+  std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
+                                    "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
+                                    "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
+                                    "higher_GeV"}; 
+  std::map<TString, std::vector<TString>> Map_U; 
+  std::map<TString, std::vector<TString>> Map_W; 
+  for (int i(0); i < Layers.size(); i++)
+  {
+    TString Layer = Layers[i]; 
+    for (int p(0); p < JetEnergy.size(); p++)
+    {
+      TString Energy = JetEnergy[p]; 
+      TString combined = Layer + "/" + Energy + "/"; 
+      Map_U[combined] = J_Unity;
+      Map_W[combined] = J_Weight;
+    }
+    Map_U[Layer + "/"] = L_U;
+    Map_W[Layer + "/"] = L_W;
+  }
+  
+  std::map<TString, std::vector<TH1F*>> Output_U = GetHist(Map_U, dir); 
+  std::map<TString, std::vector<TH1F*>> Output_W = GetHist(Map_W, dir); 
+  typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
+   
+  std::map<TString, TH1F*> Output;  
+  
+  it U = Output_U.begin(); 
+  it W = Output_W.begin(); 
+  
+  for (; U != Output_U.end(); U++, W++)
+  {
+    TString n = U -> first; 
+    std::vector<TH1F*> u = Output_U[n]; 
+    std::vector<TH1F*> w = Output_W[n];
+    for (int i(0); i < u.size(); i++)
+    {
+      std::cout << "Reading... " << u[i] -> Integral() << " ... " << w[i] -> GetTitle() << std::endl; 
+    }
+
+    Output[n + "Track_1_W"] = w[0]; 
+    Output[n + "Track_2_W"] = w[1]; 
+    Output[n + "Track_3_W"] = w[2];  
+    Output[n + "Track_4_W"] = w[3];  
+ 
+    Output[n + "Track_1_U"] = u[0]; 
+    Output[n + "Track_2_U"] = u[1]; 
+    Output[n + "Track_3_U"] = u[2];  
+    Output[n + "Track_4_U"] = u[3];   
+  } 
+  return Output; 
+}

@@ -102,6 +102,54 @@ void PlotHists(std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas*
   Populate(prediction, can, len, kDashed); 
 }
 
+void PlotHists(TH1F* Data, std::vector<TH1F*> Prediction, std::vector<TH1F*> Truth, TString Title, float FLost_P, float FLost_T, TCanvas* can)
+{
+  can -> SetLogy(); 
+  Data -> SetTitle(Title);
+ 	Data -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^2]");
+  if (Truth.size() == 0){PlotHists(Data, Prediction, can);}
+  else{PlotHists(Data, Prediction, Truth, can);}
+  
+  TPaveText* pt = new TPaveText(.7, .3, 0.9, .5, "NDCNB"); 
+  pt -> AddText("#int TrackN:");
+  pt -> SetFillStyle(4000);
+  for (int i(0); i < Prediction.size(); i++)
+  {
+    float x = Prediction[i] -> Integral(); 
+    std::stringstream stream; 
+    stream << std::fixed << std::setprecision(2) << x; 
+    TString Line = "Track-"; Line += (i+1); Line += (": "); Line += (stream.str()); 
+    pt -> AddText(Line); 
+  }
+  std::stringstream stream; 
+  stream << std::fixed << std::setprecision(4) << FLost_P; 
+  TString l = "FLost: "; l += (stream.str()); 
+  pt -> AddText(l); 
+  pt -> Draw();
+
+  if(FLost_T != 0)
+  {
+    TPaveText* t = new TPaveText(.5, .3, 0.7, .5, "NDCNB"); 
+    t -> AddText("#int TrackN:");
+    t -> SetFillStyle(4000);
+    for (int i(0); i < Truth.size(); i++)
+    {
+      float x = Truth[i] -> Integral(); 
+      std::stringstream stream; 
+      stream << std::fixed << std::setprecision(2) << x; 
+      TString Line = "Track-"; Line += (i+1); Line += (": "); Line += (stream.str()); 
+      t -> AddText(Line); 
+    }
+    std::stringstream stream; 
+    stream << std::fixed << std::setprecision(4) << FLost_T; 
+    TString l = "FLost T: "; l += (stream.str()); 
+    t -> AddText(l); 
+    t -> Draw();
+  }
+  can -> Update(); 
+
+}
+
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 {
   TString name = "Ratio Plot: "; name += (H1 -> GetTitle()); name += ("/"); name += H2 -> GetTitle(); 
