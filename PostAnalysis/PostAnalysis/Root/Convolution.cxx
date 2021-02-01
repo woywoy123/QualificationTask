@@ -219,11 +219,9 @@ void MultiThreadingDeconvolution(std::vector<TH1F*> Data, std::vector<TH1F*> PSF
 
 void MultiThreadingDeconvolutionExperimental(std::vector<TH1F*> Data, std::vector<TH1F*> PSF, std::vector<TH1F*> Result, int Iter)
 {
-
   std::vector<std::thread> th; 
   for (int i(0); i < Result.size(); i++){th.push_back(std::thread(DeconvolutionExperimental, Data[i], PSF[i], Result[i], Iter));}
   for (std::thread &t : th){t.join();}
-
 }
 
 

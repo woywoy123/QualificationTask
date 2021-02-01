@@ -124,7 +124,7 @@ void AlgorithmMonteCarlo()
   Params["G_Stdev"] = {0.01, 0.01, 0.01, 0.01}; 
   Params["cache"] = {10000}; 
 
-  TString Dir = "Merged.root"; 
+  TString Dir = "Merged_MC.root"; 
   std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 
   std::vector<TH1F*> Track1 = MC["Track_1_All"];
   std::vector<TH1F*> Track2 = MC["Track_2_All"];

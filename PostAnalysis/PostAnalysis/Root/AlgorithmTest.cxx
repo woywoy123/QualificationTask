@@ -15,7 +15,7 @@ void TestAlgorithmMonteCarlo()
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
   Params["x_range"] = {0.05, 11.5}; 
-  Params["iterations"] = {3}; 
+  Params["iterations"] = {5}; 
   Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.01, 0.01, 0.01, 0.01}; 
@@ -58,6 +58,7 @@ void TestAlgorithmMonteCarlo()
     typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
     it p = trk1_res.end(); 
     p--; 
+    p--; 
 
     std::vector<TH1F*> trk1_r = trk1_res[p -> first]; 
     std::vector<TH1F*> trk2_r = trk2_res[p -> first]; 
@@ -68,7 +69,21 @@ void TestAlgorithmMonteCarlo()
     BulkWrite(trk2_r); 
     BulkWrite(trk3_r); 
     BulkWrite(trk4_r); 
+    trk1_res["Data"][0] -> Write();
+    trk2_res["Data"][0] -> Write();
+    trk3_res["Data"][0] -> Write();
+    trk4_res["Data"][0] -> Write();
+    
+    BulkDelete(trk1_res); 
+    BulkDelete(trk2_res); 
+    BulkDelete(trk3_res); 
+    BulkDelete(trk4_res); 
 
+    delete trk1_res["Data"][0];
+    delete trk2_res["Data"][0];
+    delete trk3_res["Data"][0];
+    delete trk4_res["Data"][0];
+   
     F -> cd(); 
   }
 
@@ -114,6 +129,7 @@ void TestAlgorithmMonteCarlo()
 
     typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
     it p = trk1_res.end(); 
+    p--;
     p--; 
 
     std::vector<TH1F*> trk1_r = trk1_res[p -> first]; 
@@ -126,8 +142,24 @@ void TestAlgorithmMonteCarlo()
     BulkWrite(trk3_r); 
     BulkWrite(trk4_r); 
 
+    trk1_res["Data"][0] -> Write();
+    trk2_res["Data"][0] -> Write();
+    trk3_res["Data"][0] -> Write();
+    trk4_res["Data"][0] -> Write();
+
+    BulkDelete(trk1_res); 
+    BulkDelete(trk2_res); 
+    BulkDelete(trk3_res); 
+    BulkDelete(trk4_res); 
+    
+    delete trk1_res["Data"][0];
+    delete trk2_res["Data"][0];
+    delete trk3_res["Data"][0];
+    delete trk4_res["Data"][0];
+   
     F -> cd(); 
   }
+  F -> Close(); 
 }
 
 void DataAlgorithm()
@@ -142,7 +174,7 @@ void DataAlgorithm()
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
   Params["x_range"] = {0.05, 11.5}; 
-  Params["iterations"] = {3}; 
+  Params["iterations"] = {2}; 
   Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.01, 0.01, 0.01, 0.01}; 
@@ -157,6 +189,7 @@ void DataAlgorithm()
                                     "higher_GeV"}; 
 
   std::vector<TString> Ext = {"W", "U"}; 
+  typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
   for (TString w : Ext)
   {
     for (int i(0); i < JetEnergy.size(); i++)
@@ -176,7 +209,6 @@ void DataAlgorithm()
             Data.push_back(N); 
           }
           else{Data[x] -> Add(H,1);}
-          std::cout << Data[x] -> Integral() << std::endl;
         }
       }
 
@@ -188,27 +220,28 @@ void DataAlgorithm()
       for (int x(0); x < Names.size(); x++)
       {
         TH1F* H = Data[x]; 
-        if (x == 0 && H -> Integral() == 0){kill = true;}
-        if (H -> Integral() != 0){Data_T.push_back(H);}
-        else{delete H;} 
+        if (H -> GetEntries() < 1000){kill = true;}
+        Data_T.push_back(H);
       }
-      if (kill == true){continue;}
+      if (kill == true)
+      {
+        BulkDelete(Data_T); 
+        continue;
+      }
 
       std::cout << ":::::::::::::: Current -> " << JetEnergy[i] << std::endl; 
       for (int p(0); p < Data_T.size(); p++)
       {
         std::map<TString, std::vector<TH1F*>> trk_res = MainAlgorithm(Data_T, Params, p); 
-        typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
         it x = trk_res.end(); 
         x--; 
-        x--;
         std::vector<TH1F*> trk_r = trk_res[x -> first]; 
         std::vector<TH1F*> D = trk_res["Data"]; 
         BulkWrite(trk_r); 
-        BulkDelete(trk_r);
         D[0] -> Write();
-        delete D[0]; 
+        BulkDelete(trk_res);
       }
+      BulkDelete(Data_T);  
 
       F -> cd(); 
 
@@ -224,33 +257,33 @@ void DataAlgorithm()
       for (int x(0); x < Names.size(); x++)
       {
         TH1F* H = MC_Energy[Layers[i] + "/" + Names[x] + w];
-        if (x == 0 && H -> Integral() == 0){kill = true;}
-        if (H -> Integral() != 0){Data.push_back(H);}
-        else{delete H;} 
+        if (H -> GetEntries() < 1000){kill = true;}
+        Data.push_back(H); 
       }
-      if (kill == true){continue;}
+      if (kill == true)
+      {
+        BulkDelete(Data);
+        continue;
+      }
 
-      std::cout << ":::::::::::::: Current -> " << Layers[i] << std::endl; 
+      std::cout << ":::::::::::::: Current Layer -> " << Layers[i] << std::endl; 
       for (int p(0); p < Data.size(); p++)
       {
         std::map<TString, std::vector<TH1F*>> trk_res = MainAlgorithm(Data, Params, p); 
-        typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
-        it x = trk_res.end(); 
-        x--; 
-        x--;
-        std::vector<TH1F*> trk_r = trk_res[x -> first]; 
+        it k = trk_res.end(); 
+        k--; 
+        std::vector<TH1F*> trk_r = k -> second; 
         std::vector<TH1F*> D = trk_res["Data"]; 
         BulkWrite(trk_r); 
-        BulkDelete(trk_r);
         D[0] -> Write();
-        delete D[0]; 
-
+        BulkDelete(trk_r);
       }
+      BulkDelete(Data);  
 
       F -> cd(); 
     }
   }
-
+  F -> Close(); 
 }
 
 float FLost_Track_1(std::vector<TH1F*> Hists)
@@ -258,7 +291,7 @@ float FLost_Track_1(std::vector<TH1F*> Hists)
   float L1 = Hists[0] -> Integral(); 
   float L2 = Hists[1] -> Integral(); 
   float L3 = Hists[2] -> Integral(); 
-  float L4 = 0; //Hists[3] -> Integral(); 
+  float L4 = Hists[3] -> Integral(); 
 
   float FLost = (L2 + 2*L3 + 3*L4) / (2*L2 + 3*L3 + 4*L4); 
   return FLost;
@@ -268,7 +301,7 @@ float FLost_Track_2(std::vector<TH1F*> Hists)
 {
   float L2 = Hists[1] -> Integral(); 
   float L3 = Hists[2] -> Integral(); 
-  float L4 = 0; //Hists[3] -> Integral(); 
+  float L4 = Hists[3] -> Integral(); 
 
   float FLost = (L3 + 2*L4) / (3*L3 + 4*L4);  
   return FLost; 
@@ -285,11 +318,13 @@ void ProcessDataResults()
     }
   };
 
-  TFile* F = new TFile("Results.root", "READ"); 
+  TFile* F = new TFile("Results_Data.root", "READ"); 
   std::map<TString, std::vector<TH1F*>> Out = ReadEntries(F); 
   typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
   
   TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+  can -> Print("FLost.pdf[");
   for (it p = Out.begin(); p != Out.end(); p++)
   {
     TString name = p -> first; 
@@ -304,9 +339,9 @@ void ProcessDataResults()
       if (histname.Contains("ntrk_2")){trk2.push_back(H);}
       if (histname.Contains("ntrk_3")){trk3.push_back(H);}
     }
-    Rename(trk1); 
-    Rename(trk2);
-    Rename(trk3); 
+    //Rename(trk1); 
+    //Rename(trk2);
+    //Rename(trk3); 
     
     if (trk1.size() != 3){continue;}
     float FLost_1 = FLost_Track_1(trk1); 
@@ -315,11 +350,16 @@ void ProcessDataResults()
     TH1F* Data1 = SumHists(trk1, "DATA");  // <<===== replace afterwards with real data
     Data1 -> SetLineColor(kBlack); 
     PlotHists(Data1, trk1, trk2, "Track-1 Distribution FLost", FLost_1, FLost_2, can); 
-    can -> Print(name + ".pdf");
+    can -> Print("FLost.pdf");
     can -> Clear();
   }
+  can -> Print("FLost.pdf]");
   delete can;
 }
+
+
+
+
 
 void ProcessMonteCarloResults()
 {
@@ -332,48 +372,83 @@ void ProcessMonteCarloResults()
     }
   };
 
-  TFile* F = new TFile("Results.root", "READ"); 
+  TFile* F = new TFile("Results_MC.root", "READ"); 
   std::map<TString, std::vector<TH1F*>> Out = ReadEntries(F); 
-  std::map<TString, std::vector<TH1F*>> MC_J = MonteCarloLayerEnergy("Merged.root");
-  std::map<TString, std::vector<TH1F*>> MC = MonteCarlo("Merged.root"); 
 
   typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
   
   TCanvas* can = new TCanvas(); 
+  can -> Print("FLost_MonteCarlo.pdf["); 
   for (it p = Out.begin(); p != Out.end(); p++)
   {
     TString name = p -> first; 
-    std::cout << name << std::endl;
-
-
-
-    std::vector<TH1F*> Hists_V = Out[p -> first]; 
+    std::vector<TH1F*> Hists_V = Out[name]; 
+   
     std::vector<TH1F*> trk1; 
     std::vector<TH1F*> trk2; 
     std::vector<TH1F*> trk3; 
-    for (TH1F* H : Hists_V)
+    for (int i(0); i < Hists_V.size(); i++)
     {
-      TString histname = H -> GetTitle(); 
-      if (histname.Contains("ntrk_1")){trk1.push_back(H);}
-      if (histname.Contains("ntrk_2")){trk2.push_back(H);}
-      if (histname.Contains("ntrk_3")){trk3.push_back(H);}
+      TString histname = Hists_V[i] -> GetTitle(); 
+      if (histname.Contains("trk_1")){trk1.push_back(Hists_V[i]);} 
+      if (histname.Contains("trk_2")){trk2.push_back(Hists_V[i]);} 
+      if (histname.Contains("trk_3")){trk3.push_back(Hists_V[i]);} 
     }
-    Rename(trk1); 
-    Rename(trk2);
-    Rename(trk3); 
+    
+    std::vector<TH1F*> trk1_MC; 
+    std::vector<TH1F*> trk2_MC; 
+    std::vector<TH1F*> trk3_MC; 
+    std::map<TString, std::vector<TH1F*>> MC; 
+    TString ext; 
+    if (name.Contains("_GeV"))
+    {
+      MC = MonteCarloLayerEnergy("Merged_MC.root");
+      ext = "Track_"; 
+    }
+    else
+    {
+      MC = MonteCarlo("Merged_MC.root");
+      ext = "trk";
+    }
+
+    for (it i = MC.begin(); i != MC.end(); i++)
+    {
+      TString histname = i -> first;
+      if (histname.Contains("dEdx_") || histname.Contains("_eW1")){continue;}
+      if (histname.Contains(name) && histname.Contains(ext+"1")){trk1_MC = MC[histname];}
+      if (histname.Contains(name) && histname.Contains(ext+"2")){trk2_MC = MC[histname];}
+      if (histname.Contains(name) && histname.Contains(ext+"3")){trk3_MC = MC[histname];}
+    }
+    if (trk1.size() != trk1_MC.size()){continue;}
 
     float FLost_1 = FLost_Track_1(trk1); 
     float FLost_2 = FLost_Track_2(trk2);
 
-    TH1F* Data1 = SumHists(trk1, "DATA");  // <<===== replace afterwards with real data
-    Data1 -> SetLineColor(kBlack); 
-    PlotHists(Data1, trk1, trk2, "Track-1 Distribution FLost", FLost_1, FLost_2, can); 
-//    can -> Print("Debug.pdf");
-    can -> Clear();
-    
+    float FLost_1_MC = FLost_Track_1(trk1_MC); 
+    float FLost_2_MC = FLost_Track_1(trk2_MC); 
 
-    break;
+    for (int i(0); i < trk1.size(); i++)
+    {
+      Statistics(trk1[i], trk1_MC[i], 0.1, 10); 
+    }
+    
+    TH1F* Data_trk1 = SumHists(trk1_MC, "Data Track-1 Monte Carlo"); 
+    Data_trk1 -> SetLineColor(kBlack); 
+    PlotHists(Data_trk1, trk1, trk1_MC, "Track-1 Distribution FLost: " + name , FLost_1, FLost_1_MC, can); 
+    can -> Print("FLost_MonteCarlo.pdf");
+
+    std::cout << "======================================" << std::endl;
+    for (int i(0); i < trk1.size(); i++)
+    {
+      Statistics(trk1[i], trk1_MC[i], 0.1, 10); 
+    }
+
+    TH1F* Data_trk2 = SumHists(trk2_MC, "Data Track-2 Monte Carlo"); 
+    Data_trk2 -> SetLineColor(kBlack); 
+    PlotHists(Data_trk2, trk2, trk2_MC, "Track-2 Distribution FLost: " + name , FLost_2, FLost_2_MC, can); 
+    can -> Print("FLost_MonteCarlo.pdf");
   }
+  can -> Print("FLost_MonteCarlo.pdf]");
   delete can;
 } 
 

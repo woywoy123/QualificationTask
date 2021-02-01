@@ -39,5 +39,5 @@ void Statistics(TH1F* H1, TH1F* H2, float x_min = 0, float x_max = 0);
 float GetMaxValue(TH1F* H); 
 void BulkWrite(std::vector<TH1F*> Hist_V); 
 void BulkDelete(std::vector<TH1F*> Hist_V); 
-
+void BulkDelete(std::map<TString, std::vector<TH1F*>> Hists); 
 #endif

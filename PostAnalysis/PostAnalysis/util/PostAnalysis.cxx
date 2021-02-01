@@ -42,7 +42,7 @@ int main(int argc, char** argv)
     //TestMonteCarloMatchConvolution(F); 
     //TestMonteCarloFit(F); 
 
-    TestAlgorithmMonteCarlo(); 
+    //TestAlgorithmMonteCarlo(); 
     DataAlgorithm(); 
   }
 
@@ -61,8 +61,8 @@ int main(int argc, char** argv)
  
   if (option == -5)
   {
-    //ProcessDataResults(); 
-    ProcessMonteCarloResults(); 
+    ProcessDataResults(); 
+    //ProcessMonteCarloResults(); 
 
   }
   std::cout << "fin" << std::endl;
