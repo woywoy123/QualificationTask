@@ -190,7 +190,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   std::map<TString, std::vector<TH1F*>> Out; 
   std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(Data[0], Data.size(), "C"); 
   TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-
+  
   std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
   Flush(F_C, ntrk_Conv, false); 
 
@@ -258,7 +258,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     TString iter = "Iteration_"; iter += (i); 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      TString name = ntrk_Conv[x] -> GetTitle(); name += (base); 
+      TString name = ntrk_Conv[x] -> GetTitle(); name += (base); name += ("_Results_of_"); name += (Data[trk_Data]->GetTitle());  
       TH1F* H = (TH1F*)ntrk_Conv[x] -> Clone(name); 
       H -> SetTitle(name); 
       
@@ -272,6 +272,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   Out["Data"].push_back(Data[trk_Data]);
   BulkDelete(ntrk_Conv);
   BulkDelete(PSF); 
+  delete can;
   return Out; 
 }
 

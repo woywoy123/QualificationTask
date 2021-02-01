@@ -423,10 +423,8 @@ std::map<TString, TH1F*> Data(TString dir)
     TString n = U -> first; 
     std::vector<TH1F*> u = Output_U[n]; 
     std::vector<TH1F*> w = Output_W[n];
-    for (int i(0); i < u.size(); i++)
-    {
-      std::cout << "Reading... " << u[i] -> Integral() << " ... " << w[i] -> GetTitle() << std::endl; 
-    }
+    
+    std::cout << w.size() << " ::::: " << u[0] -> Integral() << " ::: " << n  << std::endl;
 
     Output[n + "Track_1_W"] = w[0]; 
     Output[n + "Track_2_W"] = w[1]; 

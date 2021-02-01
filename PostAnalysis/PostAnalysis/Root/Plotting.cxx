@@ -71,7 +71,7 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> predicti
   
   can -> Clear();
   gStyle -> SetOptStat(0); 
-  Data -> GetYaxis() -> SetRangeUser(1e-6, m*2);
+  Data -> GetYaxis() -> SetRangeUser(1, m*2);
   Data -> GetXaxis() -> SetRangeUser(0, 13);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
@@ -94,7 +94,7 @@ void PlotHists(std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas*
 
   can -> Clear();
   gStyle -> SetOptStat(0); 
-  Data -> GetYaxis() -> SetRangeUser(1e-6, sum*1.5);
+  Data -> GetYaxis() -> SetRangeUser(1, sum*2);
   Data -> GetXaxis() -> SetRangeUser(0, 10);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
@@ -110,7 +110,7 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> Prediction, std::vector<TH1F*> Tru
   if (Truth.size() == 0){PlotHists(Data, Prediction, can);}
   else{PlotHists(Data, Prediction, Truth, can);}
   
-  TPaveText* pt = new TPaveText(.7, .3, 0.9, .5, "NDCNB"); 
+  TPaveText* pt = new TPaveText(.7, .5, 0.9, .7, "NDCNB"); 
   pt -> AddText("#int TrackN:");
   pt -> SetFillStyle(4000);
   for (int i(0); i < Prediction.size(); i++)
@@ -129,7 +129,7 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> Prediction, std::vector<TH1F*> Tru
 
   if(FLost_T != 0)
   {
-    TPaveText* t = new TPaveText(.5, .3, 0.7, .5, "NDCNB"); 
+    TPaveText* t = new TPaveText(.5, .5, 0.7, .7, "NDCNB"); 
     t -> AddText("#int TrackN:");
     t -> SetFillStyle(4000);
     for (int i(0); i < Truth.size(); i++)
