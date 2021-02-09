@@ -13,13 +13,13 @@ void TestAlgorithmMonteCarlo()
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
-  Params["x_range"] = {0.05, 11.5}; 
+  Params["s_e"] = {0.04, 0.04, 0.04, 0.04};  
+  Params["x_range"] = {0.01, 11.5}; 
   Params["iterations"] = {50}; 
-  Params["LR_iterations"] = {50}; 
+  Params["LR_iterations"] = {150}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.01, 0.01, 0.01, 0.01}; 
-  Params["cache"] = {10000};  
+  Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
+  Params["cache"] = {100000};  
   
   for (int i(0); i < layers.size(); i++)
   {

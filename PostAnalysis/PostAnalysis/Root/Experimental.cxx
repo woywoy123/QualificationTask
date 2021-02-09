@@ -44,10 +44,11 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
 
   std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(Data[0], Data.size(), "C"); 
   TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-
+  
   std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
   Flush(F_C, ntrk_Conv, false); 
-
+  delete Data_Copy; 
+  
   TString name = Data[trk_Data] -> GetTitle(); name += ("_Experimental.pdf"); 
   std::vector<TString> Names_Dec; 
   for (int i(0); i < ntrk_Conv.size(); i++)
@@ -58,64 +59,70 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   
   for (int i(0); i < iterations; i++)
   {
-    float s = 0.02*(0.95 - float(i+1) / float (iterations)); 
-    
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");
 
-    std::vector<TH1F*> Not_trk; 
-    std::vector<TH1F*> Not_PSF;
-    if (s > 0){Smear(Data_Copy, s);} 
-    for (int x(0); x < ntrk_Conv.size(); x++)
+    //Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+    //std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
+    //ScaleShape(Data_Copy, F_C);  
+    //Flush(F_C, ntrk_Conv, true); 
+    //
+    //PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
+    //can -> Print(name); 
+    //delete Data_Copy; 
+
+
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    std::vector<TH1F*> not_trk; 
+    std::vector<TH1F*> not_psf;
+    for (int p(0); p < ntrk_Conv.size(); p++)
     {
-      if (x == trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
+      if (p == trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
       else
-      {
-        Not_trk.push_back(ntrk_Conv[x]); 
-        Not_PSF.push_back(PSF[x]);
+      { 
+        not_trk.push_back(ntrk_Conv[p]); 
+        not_psf.push_back(PSF[p]);  
       }
     }
-    //Average(Data_Copy);  
-    F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
-    //ScaleShape(Data_Copy, F_C);  
-    Flush(F_C, Not_trk, true);
+    Smear(Data_Copy, 0.05); 
+    for (int j(0); j < bins; j++){Data_Copy -> SetBinError(j+1, 1e-12);}  
+    F_C = LoopGen(not_trk, not_psf, Data_Copy, Params); 
+    Flush(F_C, not_trk, true); 
+    PlotHists(Data_Copy, {Truth[1], Truth[2],Truth[3]}, not_trk, can); 
+    can -> Print(name); 
+ 
+    delete Data_Copy; 
+
+
+
+
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    std::vector<TH1F*> trk; 
+    std::vector<TH1F*> psf;
+    for (int p(0); p < ntrk_Conv.size(); p++)
+    {
+      if (p != trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
+      else
+      { 
+        trk.push_back(ntrk_Conv[p]); 
+        psf.push_back(PSF[p]);  
+      }
+    }
+    for (int j(0); j < bins; j++){Data_Copy -> SetBinError(j+1, 1e-12);}  
+    Smear(Data_Copy, 0.01); 
+    F_C = LoopGen(trk, psf, Data_Copy, Params); 
+    ScaleShape(Data_Copy, F_C); 
+    Flush(F_C, trk, true); 
 
     PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
     can -> Print(name); 
-    delete Data_Copy; 
-
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-    
-    std::vector<TH1F*> Delta;
-    std::vector<TH1F*> Delta_PSF; 
-    for (int x(0); x < ntrk_Conv.size(); x++)
-    {
-      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
-      else 
-      {
-        Delta.push_back(ntrk_Conv[x]); 
-        Delta_PSF.push_back(PSF[x]); 
-      }
-    }
-   
-    if (s > 0){Smear(Data_Copy, s);} 
-    //Average(Data_Copy); 
-    F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
-    ScaleShape(Data_Copy, F_C); 
-    Flush(F_C, Delta, true); 
-
-    delete Data_Copy; 
-
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-    if (s > 0){Smear(Data_Copy, s);} 
-    
-    F_C = CloneTH1F(Data_Copy, Names_Dec);
-    for (int x(0); x < F_C.size(); x++){F_C[x] -> Add(ntrk_Conv[x], 1);}
-    //Average(Data_Copy); 
-    
-    ScaleShape(Data_Copy, F_C); 
-    Flush(F_C, ntrk_Conv, true); 
-    delete Data_Copy;
-    
+    delete Data_Copy;  
+  
+     
+  
+  
+  
+  
+  
+  
   }
   std::map<TString, std::vector<TH1F*>> Out; 
   return Out; 
@@ -141,9 +148,9 @@ void AlgorithmMonteCarlo()
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.04, 0.04, 0.04, 0.04};  
-  Params["x_range"] = {0.05, 11.5}; 
-  Params["iterations"] = {50}; 
-  Params["LR_iterations"] = {50}; 
+  Params["x_range"] = {0.01, 11.5}; 
+  Params["iterations"] = {30}; 
+  Params["LR_iterations"] = {150}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
   Params["cache"] = {10000}; 

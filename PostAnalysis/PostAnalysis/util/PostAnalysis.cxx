@@ -7,7 +7,7 @@
 int main(int argc, char** argv)
 {
   bool rewrite = true; 
-  int option = -5;
+  int option = -3;
 
   TFile* F; 
   if (rewrite == true)
@@ -42,8 +42,8 @@ int main(int argc, char** argv)
     //TestMonteCarloMatchConvolution(F); 
     //TestMonteCarloFit(F); 
 
-    //TestAlgorithmMonteCarlo(); 
-    DataAlgorithm(); 
+    TestAlgorithmMonteCarlo(); 
+    //DataAlgorithm(); 
   }
 
   // Run Experimental
@@ -59,10 +59,10 @@ int main(int argc, char** argv)
   } 
   F -> Close();   
  
-  if (option == -5)
+  if (option == -2)
   {
-    ProcessDataResults(); 
-    //ProcessMonteCarloResults(); 
+    //ProcessDataResults(); 
+    ProcessMonteCarloResults(); 
 
   }
   std::cout << "fin" << std::endl;
