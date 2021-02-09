@@ -3,6 +3,21 @@
 
 std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth, int trk_Data)
 {
+  auto Smear =[](TH1F* Data, float stdev)
+  {
+    float lumi = Data -> Integral(); 
+    int bins = Data -> GetNbinsX(); 
+    float min = Data -> GetXaxis() -> GetXmin(); 
+    float max = Data -> GetXaxis() -> GetXmax(); 
+    float width = (max - min) / float(bins); 
+    min += width / 2.; 
+    max += width / 2.; 
+    TH1F* Gaus = Gaussian(0 ,stdev , bins, min, max, "Tempo"); 
+    Convolution(Data, Gaus, Data); 
+    Normalize(Data);
+    Data -> Scale(lumi); 
+    delete Gaus;  
+  }; 
 
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
@@ -33,7 +48,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
   Flush(F_C, ntrk_Conv, false); 
 
-  TString name = Data[trk_Data] -> GetTitle(); name += (".pdf"); 
+  TString name = Data[trk_Data] -> GetTitle(); name += ("_Experimental.pdf"); 
   std::vector<TString> Names_Dec; 
   for (int i(0); i < ntrk_Conv.size(); i++)
   {
@@ -43,12 +58,16 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   
   for (int i(0); i < iterations; i++)
   {
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+    float s = 0.02*(0.95 - float(i+1) / float (iterations)); 
+    
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");
+
     std::vector<TH1F*> Not_trk; 
     std::vector<TH1F*> Not_PSF;
+    if (s > 0){Smear(Data_Copy, s);} 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x != trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
+      if (x == trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
       else
       {
         Not_trk.push_back(ntrk_Conv[x]); 
@@ -65,29 +84,34 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     delete Data_Copy; 
 
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-
+    
     std::vector<TH1F*> Delta;
     std::vector<TH1F*> Delta_PSF; 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x == trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
       else 
       {
         Delta.push_back(ntrk_Conv[x]); 
         Delta_PSF.push_back(PSF[x]); 
       }
     }
+   
+    if (s > 0){Smear(Data_Copy, s);} 
     //Average(Data_Copy); 
     F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
-    //ScaleShape(Data_Copy, F_C); 
+    ScaleShape(Data_Copy, F_C); 
     Flush(F_C, Delta, true); 
 
     delete Data_Copy; 
 
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+    if (s > 0){Smear(Data_Copy, s);} 
+    
     F_C = CloneTH1F(Data_Copy, Names_Dec);
     for (int x(0); x < F_C.size(); x++){F_C[x] -> Add(ntrk_Conv[x], 1);}
     //Average(Data_Copy); 
+    
     ScaleShape(Data_Copy, F_C); 
     Flush(F_C, ntrk_Conv, true); 
     delete Data_Copy;
@@ -116,12 +140,12 @@ void AlgorithmMonteCarlo()
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
+  Params["s_e"] = {0.04, 0.04, 0.04, 0.04};  
   Params["x_range"] = {0.05, 11.5}; 
-  Params["iterations"] = {100}; 
+  Params["iterations"] = {50}; 
   Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.01, 0.01, 0.01, 0.01}; 
+  Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
   Params["cache"] = {10000}; 
 
   TString Dir = "Merged_MC.root"; 
@@ -136,7 +160,7 @@ void AlgorithmMonteCarlo()
   TH1F* Trk3 = Sum_Hist(Track3, "trk3_data"); 
   TH1F* Trk4 = Sum_Hist(Track4, "trk4_data"); 
   std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
-  //MainAlgorithm(Data, Params, Track1, 0); 
+  MainAlgorithm(Data, Params, Track1, 0); 
   MainAlgorithm(Data, Params, Track2, 1); 
   MainAlgorithm(Data, Params, Track3, 2); 
   MainAlgorithm(Data, Params, Track3, 3);  

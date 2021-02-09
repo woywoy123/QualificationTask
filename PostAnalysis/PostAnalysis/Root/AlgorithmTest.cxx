@@ -15,7 +15,7 @@ void TestAlgorithmMonteCarlo()
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
   Params["x_range"] = {0.05, 11.5}; 
-  Params["iterations"] = {5}; 
+  Params["iterations"] = {50}; 
   Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.01, 0.01, 0.01, 0.01}; 
@@ -174,7 +174,7 @@ void DataAlgorithm()
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
   Params["x_range"] = {0.05, 11.5}; 
-  Params["iterations"] = {2}; 
+  Params["iterations"] = {50}; 
   Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.01, 0.01, 0.01, 0.01}; 

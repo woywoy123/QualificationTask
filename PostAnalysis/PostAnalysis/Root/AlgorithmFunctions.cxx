@@ -8,7 +8,7 @@ void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv)
     float f = ntrk_Conv -> GetBinContent(z+1); 
 
     float sig = std::exp((-0.5 + std::abs(e - f)/f)*5);
-    float log = 1. / (1 + sig); 
+    float log = 0.9; //1. / (1 + sig); 
     if (f <= 0)
     { 
       log = 0; 
@@ -61,7 +61,7 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
       float point = ntrk[z] -> GetBinContent(i+1); 
       float ed = point*(e/sum);  
       float sig = std::exp(5*(-1 + 1*std::pow(std::abs(ed - point) /point, 1)));
-      float log = 1./ (1 + sig); 
+      float log = 0.9; //1./ (1 + sig); 
       if (ed <= 0 || sum <= 0)
       {
         float total = 0; 
@@ -168,6 +168,21 @@ std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF,
 
 std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data)
 {
+  auto Smear =[](TH1F* Data, float stdev)
+  {
+    float lumi = Data -> Integral(); 
+    int bins = Data -> GetNbinsX(); 
+    float min = Data -> GetXaxis() -> GetXmin(); 
+    float max = Data -> GetXaxis() -> GetXmax(); 
+    float width = (max - min) / float(bins); 
+    min += width / 2.; 
+    max += width / 2.; 
+    TH1F* Gaus = Gaussian(0 ,stdev , bins, min, max, "Tempo"); 
+    Convolution(Data, Gaus, Data); 
+    Normalize(Data);
+    Data -> Scale(lumi); 
+    delete Gaus;  
+  }; 
   
   int iterations = Params["iterations"][0]; 
   int LucyRichardson = Params["LR_iterations"][0]; 
@@ -207,20 +222,26 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
 
   for (int i(0); i < iterations; i++)
   {
+
+   float s = 0.02*(0.95 - float(i+1) / float (iterations)); 
+    
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+   
     std::vector<TH1F*> Not_trk; 
     std::vector<TH1F*> Not_PSF; 
+    if (s > 0){Smear(Data_Copy, s);} 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x != trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
+      if (x == trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
       else
       {
         Not_trk.push_back(ntrk_Conv[x]); 
         Not_PSF.push_back(PSF[x]);
       }
     }
+    
     F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
-    ScaleShape(Data_Copy, F_C);
+    //ScaleShape(Data_Copy, F_C);
     PlotHists(Data_Copy, F_C, can); 
     Flush(F_C, Not_trk, true);
     
@@ -234,13 +255,14 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     std::vector<TH1F*> Delta_PSF; 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      if (x == trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
+      if (x != trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
       else 
       {
         Delta.push_back(ntrk_Conv[x]); 
         Delta_PSF.push_back(PSF[x]); 
       }
     }
+    if (s > 0){Smear(Data_Copy, s);} 
     F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
     ScaleShape(Data_Copy, F_C); 
     Flush(F_C, Delta, true); 
@@ -248,8 +270,11 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     delete Data_Copy; 
 
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+    if (s > 0){Smear(Data_Copy, s);} 
+    
     F_C = CloneTH1F(Data_Copy, Names_Dec);
     for (int x(0); x < F_C.size(); x++){F_C[x] -> Add(ntrk_Conv[x], 1);}
+    
     ScaleShape(Data_Copy, F_C); 
     Flush(F_C, ntrk_Conv, true); 
     delete Data_Copy;

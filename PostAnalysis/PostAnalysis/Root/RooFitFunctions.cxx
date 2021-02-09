@@ -247,6 +247,8 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     float s_e = s_vars[i] -> getError(); 
     float m_e = m_vars[i] -> getError(); 
     float n_e = l_vars[i] -> getError(); 
+    
+    Params["G_Stdev"][i] = s; 
 
     std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
 
