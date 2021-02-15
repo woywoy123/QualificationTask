@@ -438,3 +438,101 @@ std::map<TString, TH1F*> Data(TString dir)
   } 
   return Output; 
 }
+
+std::map<TString, std::vector<TH1F*>> Experimental_MC_Reader(TString Dir)
+{
+  TFile* F = new TFile(Dir, "READ"); 
+  std::vector<TString> Layer = {"IBL", "Blayer", "layer1", "layer2"}; 
+  std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
+                                    "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
+                                    "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
+                                    "higher_GeV"}; 
+
+  int nsdo = 4; 
+  int ntrk = 4; 
+  std::vector<TString> Names; 
+  for (int i(0); i < ntrk; i++)
+  {
+    for (int j(0); j < nsdo; j++)
+    {
+      TString n = "dEdx_ntrk_"; n+=(i+1); n+= ("_ntru_"); n+= (j+1); 
+      Names.push_back(n); 
+    }
+  }
+  
+  std::map<TString, std::vector<TH1F*>> Output; 
+
+  for (int i(0); i < JetEnergy.size(); i++)
+  {
+    TString JE = JetEnergy[i]; 
+    for (int j(0); j < Layer.size(); j++)
+    {
+      TString L = Layer[j]; 
+      TString D = L + "/" + JE + "/"; 
+      F -> cd(D); 
+     
+
+      if (Output[JE].size() == 0)
+      {
+        for (TString name : Names)
+        {
+          TH1F* H = (TH1F*)gDirectory -> Get(name); 
+          TH1F* H_N = (TH1F*)H -> Clone(name+"_N"); 
+          Output[JE].push_back(H_N);  
+          delete H;
+        }
+      }
+      else
+      {
+        for(int n(0); n < Names.size(); n++)
+        {
+          TH1F* H = (TH1F*)gDirectory -> Get(Names[n]); 
+          Output[JE][n] -> Add(H, 1); 
+          delete H; 
+        }
+      }
+
+      if (Output[L].size() == 0)
+      {
+        for (TString name : Names)
+        {
+          TH1F* H = (TH1F*)gDirectory -> Get(name); 
+          TH1F* H_N = (TH1F*)H -> Clone(name+"_N");           
+          Output[L].push_back(H_N);
+          delete H; 
+        }
+      }
+      else
+      {
+        for(int n(0); n < Names.size(); n++)
+        {
+          TH1F* H = (TH1F*)gDirectory -> Get(Names[n]); 
+          Output[L][n] -> Add(H, 1); 
+          delete H; 
+        }
+      }
+
+      if (Output["All"].size() == 0)
+      {
+        for (TString name : Names)
+        {
+          TH1F* H = (TH1F*)gDirectory -> Get(name); 
+          TH1F* H_N = (TH1F*)H -> Clone(name+"_N");           
+          Output["All"].push_back(H_N);  
+          delete H; 
+        }
+      }
+      else
+      {
+        for(int n(0); n < Names.size(); n++)
+        {
+          TH1F* H = (TH1F*)gDirectory -> Get(Names[n]); 
+          Output["All"][n] -> Add(H, 1); 
+          delete H; 
+        }
+      }
+      F -> cd();
+    }
+  }
+  return Output;
+}

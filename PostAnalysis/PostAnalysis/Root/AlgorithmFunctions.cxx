@@ -6,6 +6,7 @@ void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv)
   {
     float e = trk_Fit -> GetBinContent(z+1); 
     float f = ntrk_Conv -> GetBinContent(z+1); 
+<<<<<<< Updated upstream
 
     float sig = std::exp((-0.5 + std::abs(e - f)/f)*5);
     float log = 0.5; //1. / (1 + sig); 
@@ -16,6 +17,13 @@ void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv)
     //} 
     if (std::isinf(sig)){log = 1;}
     ntrk_Conv -> SetBinContent(z+1, e*(1-log)+f*log); 
+=======
+    
+    float log = std::exp((std::log(e)*(0.5)+std::log(f)*(0.5))); 
+    if (std::isnan(log)){log = 0;}
+    if (std::isinf(log)){log = 0;}
+    ntrk_Conv -> SetBinContent(z+1, log); 
+>>>>>>> Stashed changes
   } 
 }
 
@@ -60,25 +68,10 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
     {
       float point = ntrk[z] -> GetBinContent(i+1); 
       float ed = point*(e/sum);  
-      float sig = std::exp(5*(-1 + 1*std::pow(std::abs(ed - point) /point, 1)));
-      float log = 1./ (1 + sig); 
-      if (ed <= 0 || sum <= 0)
-      {
-        float total = 0; 
-        int it = 0; 
-        for (int p(0); p < ntrk.size(); p++)
-        {
-          for (int y(0); y < ntrk[p] -> GetNbinsX(); y++)
-          {
-            total += ntrk[p] -> GetBinContent(y+1); 
-            it++; 
-          }
-        }
-
-        ed = total / float(it);  
-        log = 0; 
-      }
-      ntrk[z] -> SetBinContent(i+1, point*(1-log)+ed*log); 
+      float log = std::exp((std::log(ed)*0.5 + (0.5)*std::log(point))); 
+      if (std::isnan(log)){log = 0;}
+      if (std::isinf(log)){log = 0;}      
+      ntrk[z] -> SetBinContent(i+1, log); 
     }     
   }
 }
@@ -108,8 +101,10 @@ void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool sig)
   {
     if (sig == false)
     {
-      ntrk_Conv[i] -> Reset(); 
-      ntrk_Conv[i] -> Add(F_C[i], 1); 
+      for (int x(0); x < F_C[i] -> GetNbinsX(); x++)
+      {
+        ntrk_Conv[i] -> SetBinContent(x+1, F_C[i] -> GetBinContent(x+1));   
+      }
     }
     else
     {
@@ -127,14 +122,22 @@ void Average(TH1F* Data)
     float y = Data -> GetBinContent(i+1); 
     float sum = 0; 
     int p = 0; 
+<<<<<<< Updated upstream
     for (int x(1); x < 2; x++)
+=======
+<<<<<<< Updated upstream
+    for (int x(-1); x < 2; x++)
+=======
+    for (int x(0); x < 1; x++)
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
     {
       float e = Data -> GetBinContent(i + x + 1); 
       if (e < 0){ e = 0; }
       sum += e;
       p++; 
     }
-    if ( sum < 0 ){sum = 0;}
+    if ( sum < 1e-10 ){sum = 0;}
     sum = sum / float(p); 
     D.push_back(sum);  
   }
@@ -153,6 +156,7 @@ std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF,
   {
     TString name = "Dec_"; name += (ntrk_Conv[i] -> GetTitle()); 
     Names_Dec.push_back(name);
+    std::cout << ntrk_Conv[i] -> GetTitle() << std::endl;
   }
   std::vector<TH1F*> PDF_D = CloneTH1F(Data, Names_Dec);
   MultiThreadingDeconvolutionExperimental(ntrk_Conv, PSF, PDF_D, Params["LR_iterations"][0]); 
@@ -161,37 +165,49 @@ std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF,
  
   std::vector<TH1F*> F_C;
   for (int i(0); i < trk_Fit.size(); i++){F_C.push_back(trk_Fit[i].first); }
-  
+ 
   return F_C; 
 }
 
 
 std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data)
 {
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
   auto Smear =[](TH1F* Data, float stdev)
   {
     float lumi = Data -> Integral(); 
     int bins = Data -> GetNbinsX(); 
     float min = Data -> GetXaxis() -> GetXmin(); 
     float max = Data -> GetXaxis() -> GetXmax(); 
+<<<<<<< Updated upstream
     float width = (max - min) / float(bins); 
     min += width / 2.; 
     max += width / 2.; 
+=======
+>>>>>>> Stashed changes
     TH1F* Gaus = Gaussian(0 ,stdev , bins, min, max, "Tempo"); 
     Convolution(Data, Gaus, Data); 
     Normalize(Data);
     Data -> Scale(lumi); 
     delete Gaus;  
   }; 
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
   
   int iterations = Params["iterations"][0]; 
   int LucyRichardson = Params["LR_iterations"][0]; 
   int bins = Data[0] -> GetNbinsX(); 
   float min = Data[0] -> GetXaxis() -> GetXmin(); 
   float max = Data[0] -> GetXaxis() -> GetXmax(); 
-  float width = (max - min) / float(bins); 
-  min += width / 2.; 
-  max += width / 2.; 
+  //float width = (max - min) / float(bins); 
+  //min += width / 2.; 
+  //max += width / 2.; 
   
   std::vector<TH1F*> PSF; 
   for (int x(0); x < Data.size(); x++)

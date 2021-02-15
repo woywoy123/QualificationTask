@@ -54,8 +54,8 @@ TH1F* Gaussian(float mean, float stdev, int bins, float min, float max, TString 
   float Bin_Width = (max - min)/float(bins); 
    
   // Make sure that the distribution goes through at the centre of the bins. 
-  min -= Bin_Width*0.5; 
-  max -= Bin_Width*0.5; 
+  //min -= Bin_Width*0.5; 
+  //max -= Bin_Width*0.5; 
   
   // Create a title for the histogram   
   TString name = "Gaussian_M:"; name +=(mean); name +=("_STDEV: "); name += (stdev); name += ("_"); name += (Extension); 

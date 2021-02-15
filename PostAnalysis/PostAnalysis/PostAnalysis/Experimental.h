@@ -8,8 +8,11 @@
 #include<PostAnalysis/RooFitFunctions.h>
 #include<PostAnalysis/Plotting.h>
 
+using namespace RooFit;
+
 std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth, int trk_Data); 
 void AlgorithmMonteCarlo(); 
 void Shifting(TH1F* H); 
+std::vector<float> ScalingFit(TH1F* Data, std::vector<TH1F*> PDF_H);
 
 #endif
