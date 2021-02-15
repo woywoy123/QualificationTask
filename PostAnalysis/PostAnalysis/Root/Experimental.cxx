@@ -3,34 +3,19 @@
 
 std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, std::vector<TH1F*> Truth, int trk_Data)
 {
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
   auto Smear =[](TH1F* Data, float stdev)
   {
     float lumi = Data -> Integral(); 
     int bins = Data -> GetNbinsX(); 
     float min = Data -> GetXaxis() -> GetXmin(); 
     float max = Data -> GetXaxis() -> GetXmax(); 
-<<<<<<< Updated upstream
-    float width = (max - min) / float(bins); 
-    min += width / 2.; 
-    max += width / 2.; 
-=======
->>>>>>> Stashed changes
     TH1F* Gaus = Gaussian(0 ,stdev , bins, min, max, "Tempo"); 
     Convolution(Data, Gaus, Data); 
     Normalize(Data);
     Data -> Scale(lumi); 
     delete Gaus;  
   }; 
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
-
+  
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
 
@@ -50,12 +35,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   }
   std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(Data[0], Data.size(), "C"); 
   TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-<<<<<<< Updated upstream
   
-=======
-<<<<<<< Updated upstream
-
->>>>>>> Stashed changes
   std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
   Flush(F_C, ntrk_Conv, false); 
   delete Data_Copy; 
@@ -102,9 +82,6 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
  
     delete Data_Copy; 
 
-
-
-
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
     std::vector<TH1F*> trk; 
     std::vector<TH1F*> psf;
@@ -121,101 +98,11 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     Smear(Data_Copy, 0.01); 
     F_C = LoopGen(trk, psf, Data_Copy, Params); 
     ScaleShape(Data_Copy, F_C); 
-<<<<<<< Updated upstream
     Flush(F_C, trk, true); 
 
     PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
     can -> Print(name); 
     delete Data_Copy;  
-  
-     
-  
-  
-  
-  
-  
-  
-=======
-    Flush(F_C, ntrk_Conv, true); 
-    delete Data_Copy;
-    
-=======
-  //Smear(Data_Copy, 0.05); 
-  std::vector<TH1F*> F_ = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
-  Flush(F_, ntrk_Conv, false); 
-  PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
-  
-  TString name = Data[trk_Data] -> GetTitle(); name += ("_Experimental.pdf"); 
-  can -> Print(name); 
-  
-  delete Data_Copy; 
-  
-  for (int i(0); i < iterations; i++)
-  {
-    //TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-    //std::vector<TH1F*> P = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
-    ////ScaleShape(Data_Copy, P);  
-    //
-    //Flush(P, ntrk_Conv, true); 
-    //
-    //PlotHists(Data_Copy, ntrk_Conv, can); 
-    //can -> Print(name); 
-    //delete Data_Copy; 
-
-
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
-    std::vector<TH1F*> trk; 
-    std::vector<TH1F*> psf;
-    for (int p(0); p < ntrk_Conv.size(); p++)
-    {
-      if (p != trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
-      else
-      { 
-        trk.push_back(ntrk_Conv[p]); 
-        psf.push_back(PSF[p]);  
-      }
-    }
-    for (int j(0); j < bins; j++){Data_Copy -> SetBinError(j+1, 1e-12);}  
-    std::vector<TH1F*> _C = LoopGen(trk, psf, Data_Copy, Params); 
-    ScaleShape(Data_Copy, _C); 
-    PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
-    can -> Print(name); 
-    
-    Flush(_C, trk, true); 
-    delete Data_Copy;  
-
-   
-    
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
-    std::vector<TH1F*> not_trk; 
-    std::vector<TH1F*> not_psf;
-    for (int p(0); p < ntrk_Conv.size(); p++)
-    {
-      if (p == trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
-      else
-      { 
-        not_trk.push_back(ntrk_Conv[p]); 
-        not_psf.push_back(PSF[p]);  
-      }
-    }
-
-    //Smear(Data_Copy, 0.05);
-    //Average(Data_Copy); 
-    //for (int j(0); j < bins; j++){Data_Copy -> SetBinError(j+1, 1e-12);}  
-    std::vector<TH1F*> F_C = LoopGen(not_trk, not_psf, Data_Copy, Params); 
-    PlotHists(Data_Copy, {Truth[1], Truth[2],Truth[3]}, not_trk, can); 
-    can -> Print(name); 
-
-    Flush(F_C, not_trk, true); 
-    delete Data_Copy; 
-
-   
-    
-    
-    
-  
->>>>>>> Stashed changes
->>>>>>> Stashed changes
   }
   std::map<TString, std::vector<TH1F*>> Out; 
   return Out; 
@@ -230,45 +117,12 @@ void AlgorithmMonteCarlo()
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-<<<<<<< Updated upstream
-  Params["s_e"] = {0.04, 0.04, 0.04, 0.04};  
-  Params["x_range"] = {0.01, 11.5}; 
-  Params["iterations"] = {30}; 
-  Params["LR_iterations"] = {150}; 
-=======
-<<<<<<< Updated upstream
   Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
   Params["x_range"] = {0.05, 11.5}; 
   Params["iterations"] = {100}; 
   Params["LR_iterations"] = {50}; 
->>>>>>> Stashed changes
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
-  Params["cache"] = {10000}; 
-
-  TString Dir = "Merged_MC.root"; 
-  std::map<TString, std::vector<TH1F*>> MC = MonteCarloLayerEnergy(Dir); 
-  std::vector<TH1F*> Track1 = MC["Track_1_All"];
-  std::vector<TH1F*> Track2 = MC["Track_2_All"];
-  std::vector<TH1F*> Track3 = MC["Track_3_All"];
-  std::vector<TH1F*> Track4 = MC["Track_4_All"];
-  
-  TH1F* Trk1 = Sum_Hist(Track1, "trk1_data"); 
-  TH1F* Trk2 = Sum_Hist(Track2, "trk2_data"); 
-  TH1F* Trk3 = Sum_Hist(Track3, "trk3_data"); 
-  TH1F* Trk4 = Sum_Hist(Track4, "trk4_data"); 
-  std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
-  MainAlgorithm(Data, Params, Track1, 0); 
-  MainAlgorithm(Data, Params, Track2, 1); 
-  MainAlgorithm(Data, Params, Track3, 2); 
-  MainAlgorithm(Data, Params, Track3, 3);  
-=======
-  Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
-  Params["x_range"] = {0.01, 11.5}; 
-  Params["iterations"] = {30}; 
-  Params["LR_iterations"] = {150}; 
-  Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
   Params["cache"] = {10000}; 
 
   TString Dir = "Merged_MC.root"; 
@@ -293,7 +147,6 @@ void AlgorithmMonteCarlo()
     TH1F* Trk3 = SumHists(T3, x -> first + "Track3");
     TH1F* Trk4 = SumHists(T4, x -> first + "Track4");
     std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
->>>>>>> Stashed changes
   
     bool kill = false; 
     for (TH1F* O : Data)

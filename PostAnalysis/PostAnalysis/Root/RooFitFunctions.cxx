@@ -280,17 +280,6 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     float s_e = s_vars[i] -> getError(); 
     float m_e = m_vars[i] -> getError(); 
     float n_e = l_vars[i] -> getError(); 
-<<<<<<< Updated upstream
-    
-    Params["G_Stdev"][i] = s; 
-=======
-<<<<<<< Updated upstream
-=======
-    
-    //Params["G_Stdev"][i] = s; 
->>>>>>> Stashed changes
->>>>>>> Stashed changes
-
     std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
     
     TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
@@ -320,8 +309,8 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   }
   delete x; 
   delete D; 
-  //delete nll; 
-  //delete pg;
+  delete nll; 
+  delete pg;
   return Out; 
 }
 
@@ -462,18 +451,21 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitWithConstraint(TH1F* Data, 
   }
   // =================================================================================================== //
   
-  RooArgSet Cons; 
+  RooArgSet Parameters; 
+  RooArgSet Con_Function; 
   for (int i(0); i < s_con.size(); i++)
   {
-    Cons.add(*s_con[i]); 
-    Cons.add(*m_con[i]); 
+    Parameters.add(*s_vars[i]); 
+    Parameters.add(*m_vars[i]); 
+    Con_Function.add(*s_con[i]); 
+    Con_Function.add(*m_con[i]); 
   }
   
-  RooProdPdf modelc("modelc", "modelc", RooArgSet(model, Cons)); 
+  RooProdPdf modelc("modelc", "modelc", RooArgSet(model, Con_Function)); 
 
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
-  modelc.fitTo(*D, Constrain(Cons), RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit"), RooFit::Strategy(2)); 
+  modelc.fitTo(*D, Constrain(Parameters), RooFit::SumW2Error(true), RooFit::NumCPU(16), RooFit::Range("fit"), RooFit::Strategy(2)); 
   
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 
@@ -496,12 +488,6 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitWithConstraint(TH1F* Data, 
     TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
     Convolution(G, PDF_H[i], Out_H[i]); 
     
-    
-    //TF1 T = TF1(*fft_vars[i] -> asTF(RooArgList(*x))); 
-    //T.SetNpx(bins); 
-    //TH1* H = T.CreateHistogram(); 
-    //Out_H[i] -> Add(H, 1); 
-
     Normalize(Out_H[i]);
     Out_H[i] -> Scale(n); 
     Out.push_back(std::pair<TH1F*, std::vector<float>>(Out_H[i], P)); 
@@ -522,7 +508,5 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitWithConstraint(TH1F* Data, 
   }
   delete x; 
   delete D; 
-  //delete nll; 
-  //delete pg;
   return Out; 
 }
