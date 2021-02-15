@@ -7,9 +7,10 @@
 
 void Entry()
 {
-  int mode = 1; 
+  int mode = 2; 
 
   if (mode == 1){FitWithConstraint();}
+  if (mode == 2){ExplicitConstrain();}
 }
 
 void FitWithConstraint()
@@ -76,12 +77,42 @@ void FitWithConstraint()
   can -> SetLogy(); 
   PlotHists(Data, Trk2, Result, can); 
   can -> Print("Constraint_Debugging.pdf"); 
-
-
-
-
-
-
 }
 
+void ExplicitConstrain()
+{
+  float m = 0.001; 
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-m, -m, -m, -m}; 
+  Params["m_e"] = {m, m, m, m}; 
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
+  Params["x_range"] = {0.01, 11.5}; 
+  Params["iterations"] = {30}; 
+  Params["LR_iterations"] = {150}; 
+  Params["G_Mean"] = {0, 0, 0, 0}; 
+  Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
+  Params["cache"] = {10000}; 
 
+  std::cout << "Here" << std::endl;
+  std::map<TString, std::vector<TH1F*>> MC = Experimental_MC_Reader("Merged_MC.root"); 
+  std::vector<TH1F*> All = MC["All"]; 
+
+  // Ideal PDF being used 
+  TH1F* trk1 = All[0]; 
+
+  // Empty TH1F used for the deconvolution using the PSF
+  TH1F* trk_D = CloneTH1F(trk1, {"trk_D"})[0]; 
+
+  // Creating the PSF
+  int bins = trk1 -> GetNbinsX(); 
+  float min = trk1 -> GetXaxis() -> GetXmin(); 
+  float max = trk1 -> GetXaxis() -> GetXmax(); 
+  TH1F* Gaus = Gaussian(Params["G_Stdev"][0], Params["G_Stdev"][1], bins, min, max, "psf"); 
+  
+  // Deconvolve the PDF with the PSF 
+  DeconvolutionExperimental(trk1, Gaus, trk_D, Params["LR_iterations"][0]); 
+  
+  TH1F* Output = ExplicitConstraining(trk1, trk_D, Params); 
+
+}
