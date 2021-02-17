@@ -11,6 +11,7 @@ void Entry()
 
   if (mode == 1){FitWithConstraint();}
   if (mode == 2){ExplicitConstrain();}
+  if (mode == 3){ExplicitConstrainExternal();}
 }
 
 void FitWithConstraint()
@@ -57,7 +58,7 @@ void FitWithConstraint()
   std::vector<TH1F*> Trk2 = {All[3], All[4], All[5], All[6]}; 
   TH1F* Data = SumHists(Trk2, "Data_2Trk"); 
   
-  float m = 0.001; 
+  float m = 1; 
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
@@ -114,5 +115,43 @@ void ExplicitConstrain()
   DeconvolutionExperimental(trk1, Gaus, trk_D, Params["LR_iterations"][0]); 
   
   TH1F* Output = ExplicitConstraining(trk1, trk_D, Params); 
+
+}
+
+void ExplicitConstrainExternal()
+{
+  float m = 0.001; 
+  std::map<TString, std::vector<float>> Params; 
+  Params["m_s"] = {-m, -m, -m, -m}; 
+  Params["m_e"] = {m, m, m, m}; 
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
+  Params["x_range"] = {0.01, 11.5}; 
+  Params["iterations"] = {30}; 
+  Params["LR_iterations"] = {150}; 
+  Params["G_Mean"] = {0, 0, 0, 0}; 
+  Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
+  Params["cache"] = {10000}; 
+
+  std::cout << "Here" << std::endl;
+  std::map<TString, std::vector<TH1F*>> MC = Experimental_MC_Reader("Merged_MC.root"); 
+  std::vector<TH1F*> All = MC["All"]; 
+
+  // Ideal PDF being used 
+  TH1F* trk1 = All[0]; 
+
+  // Empty TH1F used for the deconvolution using the PSF
+  TH1F* trk_D = CloneTH1F(trk1, {"trk_D"})[0]; 
+
+  // Creating the PSF
+  int bins = trk1 -> GetNbinsX(); 
+  float min = trk1 -> GetXaxis() -> GetXmin(); 
+  float max = trk1 -> GetXaxis() -> GetXmax(); 
+  TH1F* Gaus = Gaussian(Params["G_Stdev"][0], Params["G_Stdev"][1], bins, min, max, "psf"); 
+  
+  // Deconvolve the PDF with the PSF 
+  DeconvolutionExperimental(trk1, Gaus, trk_D, Params["LR_iterations"][0]); 
+  
+  TH1F* Output = ExplicitConstrainingExternal(trk1, trk_D, Params); 
 
 }

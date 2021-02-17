@@ -4,5 +4,6 @@
 void Entry();
 void FitWithConstraint(); 
 void ExplicitConstrain(); 
+void ExplicitConstrainExternal(); 
 
 #endif

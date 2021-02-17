@@ -539,19 +539,17 @@ TH1F* ExplicitConstraining(TH1F* Data, TH1F* PDF, std::map<TString, std::vector<
   RooFFTConvPdf* PDFxG = new RooFFTConvPdf("PDFxG", "PDFxG", *x, *pdf, *g_); 
 
   // Define the model that will be used 
-  RooAddPdf model("model", "model", RooArgSet(*PDFxG), RooArgSet(*l,*s)); 
-
-
+  RooAddPdf model("model", "model", RooArgSet(*PDFxG), RooArgSet(*l)); 
 
   // ===== Define the contraints of variables ===== //
   RooGaussian* g_s = new RooGaussian("stdev_con", "stdev_con", *s, RooFit::RooConst(0.02), RooFit::RooConst(0.01)); 
 
   // Build the constrained model 
   RooProdPdf modelc("modelc", "modelc", RooArgSet(model, *g_s)); 
-  
+ 
   RooDataHist* D = new RooDataHist("D", "D", *x, RooFit::Import(*Data));
   modelc.fitTo(*D, Constrain(*s)); 
-  
+ 
   TF1 T = TF1(*PDFxG -> asTF(RooArgList(*x))); 
   T.SetNpx(bins); 
   TH1* H = T.CreateHistogram(); 
@@ -571,12 +569,67 @@ TH1F* ExplicitConstraining(TH1F* Data, TH1F* PDF, std::map<TString, std::vector<
   delete PDFxG; 
   delete g_s; 
   delete D; 
-  delete H; 
   
   return PDF; 
 }
 
+TH1F* ExplicitConstrainingExternal(TH1F* Data, TH1F* PDF, std::map<TString, std::vector<float>> Params)
+{
+  float x_min = Data -> GetXaxis() -> GetXmin(); 
+  float x_max = Data -> GetXaxis() -> GetXmax(); 
+  int bins = Data -> GetNbinsX(); 
+  
+  // Create the domain: x -> dE/dx 
+  RooRealVar* x = new RooRealVar("x", "x", x_min, x_max);
+  x -> setRange("fit", Params["x_range"][0], Params["x_range"][1]); 
+  x -> setBins(Params["cache"][0], "cache"); 
+  x -> setBins(Params["cache"][0], "fft"); 
+  
+  // Gaussian Variables for the FFT 
+  RooRealVar* m = new RooRealVar("mean", "mean", Params["G_Mean"][0], Params["m_s"][0], Params["m_e"][0]); 
+  RooRealVar* s = new RooRealVar("stdev", "stdev", Params["G_Stdev"][0], Params["s_s"][0], Params["s_e"][0]); 
+  RooGaussian* g_ = new RooGaussian("gaus", "gaus", *x, *m, *s); 
 
+  // PDF related variables 
+  RooRealVar* l = new RooRealVar("lumi", "lumi", 0, Data -> Integral()); 
+  RooDataHist* pdf_D = new RooDataHist("PDF_D", "PDF_D", *x, RooFit::Import(*PDF)); 
+  RooHistPdf* pdf = new RooHistPdf("PDF", "PDF", *x, *pdf_D); 
+
+  // Perform the Convolution of the PDF with the Gaussian 
+  RooFFTConvPdf* PDFxG = new RooFFTConvPdf("PDFxG", "PDFxG", *x, *pdf, *g_); 
+
+  // Define the model that will be used 
+  RooAddPdf model("model", "model", RooArgSet(*PDFxG), RooArgSet(*l)); 
+
+  // ===== External constraint
+  RooGaussian* g_s_external = new RooGaussian("stdev_con_external", "stdev_con_external", *s, RooFit::RooConst(0.02), RooFit::RooConst(0.01)); 
+  
+  RooDataHist* D = new RooDataHist("D", "D", *x, RooFit::Import(*Data));
+  model.fitTo(*D, ExternalConstraints(*g_s_external)); 
+
+
+  TF1 T = TF1(*PDFxG -> asTF(RooArgList(*x))); 
+  T.SetNpx(bins); 
+  TH1* H = T.CreateHistogram(); 
+  PDF -> Reset(); 
+  PDF -> Add(H, 1); 
+  Normalize(PDF); 
+
+  PDF -> Scale(l -> getVal()); 
+
+  delete x; 
+  delete m; 
+  delete s; 
+  delete g_; 
+  delete l; 
+  delete pdf_D; 
+  delete pdf; 
+  delete PDFxG; 
+  delete g_s_external; 
+  delete D; 
+  
+  return PDF; 
+}
 
 
 
