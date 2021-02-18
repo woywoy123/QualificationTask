@@ -455,7 +455,7 @@ std::map<TString, std::vector<TH1F*>> Experimental_MC_Reader(TString Dir)
   {
     for (int j(0); j < nsdo; j++)
     {
-      TString n = "dEdx_ntrk_"; n+=(i+1); n+= ("_ntru_"); n+= (j+1); 
+      TString n = "dEdx_ntrk_"; n+=(i+1); n+= ("_ntru_"); n+= (j+1); n += ("_EW_1");  
       Names.push_back(n); 
     }
   }

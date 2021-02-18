@@ -149,7 +149,7 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   {
     d_old = d; 
     std::vector<float> Deconv_Vold = Deconv_V; 
-    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 0.95); 
+    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 0.75); 
 
     d = Pythagoras(Deconv_Vold, Deconv_V); 
     Converge.push_back(d);  
@@ -204,7 +204,7 @@ void DeconvolutionExperimental(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
   int Padding = ((r - 1)*bins)/2; 
   for (int i(0); i < bins; i++)
   {
-    Out -> SetBinContent(i+1 + bin_0, Deconv_V[i]);
+    Out -> SetBinContent(i+2 + bin_0, Deconv_V[i]);
   }
 }
 

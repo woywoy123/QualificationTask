@@ -71,15 +71,7 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> predicti
   
   can -> Clear();
   gStyle -> SetOptStat(0); 
-<<<<<<< Updated upstream
   Data -> GetYaxis() -> SetRangeUser(1e-6, m*2);
-=======
-<<<<<<< Updated upstream
-  Data -> GetYaxis() -> SetRangeUser(1, m*2);
-=======
-  Data -> GetYaxis() -> SetRangeUser(1e-8, m*2);
->>>>>>> Stashed changes
->>>>>>> Stashed changes
   Data -> GetXaxis() -> SetRangeUser(0, 13);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 

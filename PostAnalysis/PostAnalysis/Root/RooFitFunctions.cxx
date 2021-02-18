@@ -122,7 +122,7 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
   model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(4), RooFit::Range("fit")); 
-  //PlotRooFit(model, x, D);  
+  PlotRooFit(model, x, fft_vars, D);  
 
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 
@@ -630,6 +630,154 @@ TH1F* ExplicitConstrainingExternal(TH1F* Data, TH1F* PDF, std::map<TString, std:
   
   return PDF; 
 }
+
+std::vector<TH1F*> IterativeFitting(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache, int cache)
+{
+  auto RooRealVarGuess =[] (std::vector<TString> Names, std::vector<float> Begin, std::vector<float> End)
+  {
+    std::vector<RooRealVar*> Output; 
+    for (int i(0); i < Names.size(); i++)
+    {
+      RooRealVar* var = new RooRealVar(Names[i], Names[i], (Begin[i] + End[i])/2, Begin[i], End[i]);  
+      Output.push_back(var); 
+    }
+    return Output; 
+  }; 
+
+  // First we get the domain of the Data histogram we are fitting 
+  float x_min = Data -> GetXaxis() -> GetXmin(); 
+  float x_max = Data -> GetXaxis() -> GetXmax(); 
+  int bins = Data -> GetNbinsX(); 
+  int n_vars = PDF_H.size(); 
+ 
+  // Input variables;  
+  // Standard Deviation 
+  std::vector<float> s_s = Params["s_s"]; 
+  std::vector<float> s_e = Params["s_e"]; 
+  std::vector<TString> s_N = NameGenerator(n_vars, "_s"); 
+  
+  // Mean 
+  std::vector<float> m_s = Params["m_s"]; 
+  std::vector<float> m_e = Params["m_e"]; 
+  std::vector<TString> m_N = NameGenerator(n_vars, "_m"); 
+   
+  // Declare the gaussian variables used to conduct the fit 
+  std::vector<RooRealVar*> s_vars = RooVariables(s_N, s_s, s_e); 
+  std::vector<RooRealVar*> m_vars = RooVariables(m_N, m_s, m_e);
+
+  // Declare the domain using RooVariables 
+  RooRealVar* x =  new RooRealVar("x", "x", x_min, x_max);
+  x -> setRange("fit", Params["x_range"][0], Params["x_range"][1]); 
+  if (fft_cache != 0){x -> setBins(fft_cache, "fft");}
+  if (cache != 0){ x -> setBins(cache, "cache");}
+    
+  // Create the names for the Gaussian Objects 
+  std::vector<TString> g_N = NameGenerator(n_vars, "_GxT"); 
+  std::vector<RooGaussian*> g_vars = RooGaussianVariables(g_N, x,  m_vars, s_vars); 
+  
+  // Create the Luminosity variables for the fit
+  std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
+  std::vector<float> l_s(n_vars, 0); 
+  std::vector<float> l_e(n_vars, 2 * Data -> Integral());  
+  std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
+  
+  // Convert the PDFs to RooPDFs
+  std::vector<TString> pdf_N = NameGenerator(n_vars, "_pdf");   
+  std::vector<RooDataHist*> D_vars = RooDataVariable(pdf_N, x, PDF_H); 
+  std::vector<RooHistPdf*> pdf_vars = RooPDFVariables(pdf_N, x, D_vars); 
+  
+  // Create the Convolution PDFs 
+  std::vector<RooFFTConvPdf*> fft_vars = RooFFTVariables(pdf_N, x, pdf_vars, g_vars);
+
+  for (int i(0); i < s_vars.size(); i++)
+  {
+    fft_vars[i] -> setInterpolationOrder(9);
+    fft_vars[i] -> setBufferFraction(1); 
+  }
+
+  // Combine the variables into a single ArgSet and create the model
+  RooArgSet Conv;
+  RooArgSet N;   
+  for (int i(0); i < n_vars; i++)
+  {
+    Conv.add(*fft_vars[i]); 
+    N.add(*l_vars[i]);  
+    //m_vars[i] -> setConstant(true); 
+    //s_vars[i] -> setConstant(true);
+  }
+  RooAddPdf model("model", "model", Conv, N); 
+  
+  // Call the data 
+  RooDataHist* D = RooDataVariable("data", x, Data); 
+//  model.fitTo(*D, RooFit::NumCPU(16), RooFit::SumW2Error(true), RooFit::Range("fit"), Strategy(2)); 
+ 
+  RooAbsReal* nll = model.createNLL(*D, RooFit::Range("fit"));  
+  RooMinimizer* pg = new RooMinimizer(*nll);   
+  pg -> setMaxIterations(100000); 
+  pg -> setMaxFunctionCalls(100000); 
+  pg -> setEps(1e-15); 
+  pg -> setStrategy(2); 
+  pg -> setMinimizerType("Minuit2"); 
+  pg -> migrad();
+  pg -> minos(N); 
+  pg -> fit("m");  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  PlotRooFit(model, x, fft_vars, D);  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Create a histogram vector to store the solution 
+  for (int i(0); i < n_vars; i++)
+  {
+    float s = s_vars[i] -> getVal(); 
+    float m = m_vars[i] -> getVal(); 
+    float n = l_vars[i] -> getVal(); 
+   
+    TF1 T = TF1(*fft_vars[i] -> asTF(RooArgList(*x))); 
+    T.SetNpx(bins); 
+    TH1* H = T.CreateHistogram(); 
+    PDF_H[i] -> Reset(); 
+    PDF_H[i] -> Add(H, 1); 
+    Normalize(PDF_H[i]); 
+
+    PDF_H[i] -> Scale(n); 
+  }
+ 
+  // Flush all the variables 
+  for (int i(0); i < n_vars; i++)
+  {  
+    delete s_vars[i]; 
+    delete m_vars[i]; 
+    delete g_vars[i]; 
+    delete l_vars[i]; 
+    delete pdf_vars[i]; 
+    delete D_vars[i]; 
+    delete fft_vars[i]; 
+  }
+  delete x; 
+  delete D; 
+  return PDF_H; 
+}
+
 
 
 

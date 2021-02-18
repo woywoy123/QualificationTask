@@ -5,5 +5,5 @@ void Entry();
 void FitWithConstraint(); 
 void ExplicitConstrain(); 
 void ExplicitConstrainExternal(); 
-
+void StepByStepFit(); 
 #endif

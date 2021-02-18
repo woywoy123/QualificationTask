@@ -32,10 +32,10 @@ int main(int argc, char** argv)
     //TestDeconvGausXGaus(F); 
     //TestDeconvLandauXLandau(F); 
     //TestDeconvLandauXGaussian(F); 
-    //TestGaussianDeconvolutionFit(F); 
-    //TestLandauXGausFit(F); 
-    //TestNLandauXNGausFit(F);
-    //TestDeconvolutionFit(F);  
+    TestGaussianDeconvolutionFit(F); 
+    TestLandauXGausFit(F); 
+    TestNLandauXNGausFit(F);
+    TestDeconvolutionFit(F);  
     //TestComparisonBinCenteringLandauXLandau(F); 
     //TestOscillationLucyRichardson(F); 
     //TestReadFile(F); 
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
     //TestMonteCarloMatchConvolution(F); 
     //TestMonteCarloFit(F); 
 
-    TestAlgorithmMonteCarlo(); 
+    //TestAlgorithmMonteCarlo(); 
     //DataAlgorithm(); 
   }
 
@@ -53,7 +53,7 @@ int main(int argc, char** argv)
     AlgorithmMonteCarlo();
   }
   
-  if (option == -4)
+  if (option == -2)
   {
     // Compile the figures  
     FigureCompiler(F);   
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
   if (option == -2)
   {
     //ProcessDataResults(); 
-    ProcessMonteCarloResults(); 
+    //ProcessMonteCarloResults(); 
   }
   
   if (option == -6)

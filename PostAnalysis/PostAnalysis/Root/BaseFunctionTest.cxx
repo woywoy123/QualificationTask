@@ -484,7 +484,7 @@ void TestDeconvolutionFit(TFile* F)
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
   Params["x_range"] = {-0.4, 20}; 
-  std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params, 100000, 1000000);
+  std::vector<TH1F*> Result = FitDeconvolution(Data, D_PDFs, Params, 100000, 100000);
 
   // Write to file
   BulkWrite(Gen_Landau); 
