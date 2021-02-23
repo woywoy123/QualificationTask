@@ -8,7 +8,7 @@
 int main(int argc, char** argv)
 {
   bool rewrite = false; 
-  int option = -6;
+  int option = -3;
 
   TFile* F; 
   if (rewrite == true)
@@ -32,10 +32,10 @@ int main(int argc, char** argv)
     //TestDeconvGausXGaus(F); 
     //TestDeconvLandauXLandau(F); 
     //TestDeconvLandauXGaussian(F); 
-    TestGaussianDeconvolutionFit(F); 
-    TestLandauXGausFit(F); 
-    TestNLandauXNGausFit(F);
-    TestDeconvolutionFit(F);  
+    //TestGaussianDeconvolutionFit(F); 
+    //TestLandauXGausFit(F); 
+    //TestNLandauXNGausFit(F);
+    //TestDeconvolutionFit(F);  
     //TestComparisonBinCenteringLandauXLandau(F); 
     //TestOscillationLucyRichardson(F); 
     //TestReadFile(F); 
@@ -50,7 +50,8 @@ int main(int argc, char** argv)
   // Run Experimental
   if (option == -3 && rewrite == false)
   {
-    AlgorithmMonteCarlo();
+    //AlgorithmMonteCarlo();
+    PlotInsideOutsideJet(); 
   }
   
   if (option == -2)

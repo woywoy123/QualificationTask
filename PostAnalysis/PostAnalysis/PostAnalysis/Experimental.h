@@ -14,5 +14,8 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
 void AlgorithmMonteCarlo(); 
 void Shifting(TH1F* H); 
 std::vector<float> ScalingFit(TH1F* Data, std::vector<TH1F*> PDF_H);
+void PlotInsideOutsideJet(); 
+
+
 
 #endif

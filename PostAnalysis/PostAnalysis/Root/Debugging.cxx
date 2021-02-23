@@ -163,9 +163,11 @@ void StepByStepFit()
   std::vector<TH1F*> All = MC["All"]; 
 
   // Ideal PDF being used 
-  std::vector<TH1F*> trk1 = {All[0], All[1], All[2], All[3]}; 
-  TH1F* Summed_MC = SumHists(trk1, "Data_track_1"); 
- 
+  std::vector<TH1F*> Truth = {All[0], All[1], All[2], All[3]}; 
+  TH1F* Summed_MC = SumHists(Truth, "Data_track_1"); 
+  std::vector<TH1F*> ntrk_C = ConvolveNTimes(Summed_MC, 4, "_C"); 
+  std::vector<TH1F*> trk1 = {ntrk_C[0], ntrk_C[1], ntrk_C[2], ntrk_C[3]}; 
+
   // Creating the PSF
   int bins = trk1[0] -> GetNbinsX(); 
   float min = trk1[0] -> GetXaxis() -> GetXmin(); 
@@ -201,11 +203,8 @@ void StepByStepFit()
 
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
-  PlotHists(Summed_MC, trk1, Output, can); 
+  PlotHists(Summed_MC, Truth, Output, can); 
   can -> Print("debugging.pdf"); 
-
-
-
 
 }
 

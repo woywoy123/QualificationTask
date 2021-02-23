@@ -441,6 +441,31 @@ std::map<TString, TH1F*> Data(TString dir)
 
 std::map<TString, std::vector<TH1F*>> Experimental_MC_Reader(TString Dir)
 {
+  auto FillingMap =[] (TString Key, std::vector<TString> Names, std::map<TString, std::vector<TH1F*>> Output)
+  {
+    if (Output[Key].size() == 0)
+    {
+      for (TString name : Names)
+      {
+        TH1F* H = (TH1F*)gDirectory -> Get(name); 
+        TH1F* H_N = (TH1F*)H -> Clone(name+"_"+Key); 
+        Output[Key].push_back(H_N);  
+        delete H;
+      }
+    }
+    else
+    {
+      for(int n(0); n < Names.size(); n++)
+      {
+        TH1F* H = (TH1F*)gDirectory -> Get(Names[n]); 
+        Output[Key][n] -> Add(H, 1); 
+        delete H; 
+      }
+    }
+    return Output; 
+  };
+
+
   TFile* F = new TFile(Dir, "READ"); 
   std::vector<TString> Layer = {"IBL", "Blayer", "layer1", "layer2"}; 
   std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
@@ -455,9 +480,20 @@ std::map<TString, std::vector<TH1F*>> Experimental_MC_Reader(TString Dir)
   {
     for (int j(0); j < nsdo; j++)
     {
-      TString n = "dEdx_ntrk_"; n+=(i+1); n+= ("_ntru_"); n+= (j+1); n += ("_EW_1");  
+      TString n = "dEdx_ntrk_"; n+=(i+1); n+= ("_ntru_"); n+= (j+1);  
       Names.push_back(n); 
     }
+  }
+
+  std::vector<TString> R_Gre_Names; 
+  std::vector<TString> R_Les_Names; 
+  for (int i(0); i < 4; i++)
+  {
+    TString base = "dEdx_ntrk_1_"; 
+    TString rgre = base + "rgreater_1_ntru_"; rgre += (i+1); 
+    TString rles = base + "rless_005_ntru_"; rles += (i+1); 
+    R_Gre_Names.push_back(rgre); 
+    R_Les_Names.push_back(rles); 
   }
   
   std::map<TString, std::vector<TH1F*>> Output; 
@@ -465,73 +501,31 @@ std::map<TString, std::vector<TH1F*>> Experimental_MC_Reader(TString Dir)
   for (int i(0); i < JetEnergy.size(); i++)
   {
     TString JE = JetEnergy[i]; 
+    TString RE = JE + "_radius";
     for (int j(0); j < Layer.size(); j++)
     {
       TString L = Layer[j]; 
       TString D = L + "/" + JE + "/"; 
       F -> cd(D); 
-     
 
-      if (Output[JE].size() == 0)
-      {
-        for (TString name : Names)
-        {
-          TH1F* H = (TH1F*)gDirectory -> Get(name); 
-          TH1F* H_N = (TH1F*)H -> Clone(name+"_N"); 
-          Output[JE].push_back(H_N);  
-          delete H;
-        }
-      }
-      else
-      {
-        for(int n(0); n < Names.size(); n++)
-        {
-          TH1F* H = (TH1F*)gDirectory -> Get(Names[n]); 
-          Output[JE][n] -> Add(H, 1); 
-          delete H; 
-        }
-      }
+      Output = FillingMap(JE, Names, Output); 
+      Output = FillingMap(L, Names, Output); 
+      Output = FillingMap("All", Names, Output); 
 
-      if (Output[L].size() == 0)
-      {
-        for (TString name : Names)
-        {
-          TH1F* H = (TH1F*)gDirectory -> Get(name); 
-          TH1F* H_N = (TH1F*)H -> Clone(name+"_N");           
-          Output[L].push_back(H_N);
-          delete H; 
-        }
-      }
-      else
-      {
-        for(int n(0); n < Names.size(); n++)
-        {
-          TH1F* H = (TH1F*)gDirectory -> Get(Names[n]); 
-          Output[L][n] -> Add(H, 1); 
-          delete H; 
-        }
-      }
-
-      if (Output["All"].size() == 0)
-      {
-        for (TString name : Names)
-        {
-          TH1F* H = (TH1F*)gDirectory -> Get(name); 
-          TH1F* H_N = (TH1F*)H -> Clone(name+"_N");           
-          Output["All"].push_back(H_N);  
-          delete H; 
-        }
-      }
-      else
-      {
-        for(int n(0); n < Names.size(); n++)
-        {
-          TH1F* H = (TH1F*)gDirectory -> Get(Names[n]); 
-          Output["All"][n] -> Add(H, 1); 
-          delete H; 
-        }
-      }
       F -> cd();
+      
+      F -> cd(L + "/" + RE + "/");  
+      Output = FillingMap(RE + "_Less", R_Les_Names, Output); 
+      Output = FillingMap(RE + "_Greater", R_Gre_Names, Output); 
+  
+      Output = FillingMap(L + "_Less", R_Les_Names, Output); 
+      Output = FillingMap(L + "_Greater", R_Gre_Names, Output); 
+ 
+      Output = FillingMap("All_Less", R_Les_Names, Output); 
+      Output = FillingMap("All_Greater", R_Gre_Names, Output); 
+    
+      F -> cd();
+    
     }
   }
   return Output;

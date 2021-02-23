@@ -168,9 +168,6 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
   int bins = Data[0] -> GetNbinsX(); 
   float min = Data[0] -> GetXaxis() -> GetXmin(); 
   float max = Data[0] -> GetXaxis() -> GetXmax(); 
-  //float width = (max - min) / float(bins); 
-  //min += width / 2.; 
-  //max += width / 2.; 
   
   std::vector<TH1F*> PSF; 
   for (int x(0); x < Data.size(); x++)
