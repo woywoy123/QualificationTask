@@ -148,7 +148,7 @@ std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF,
 }
 
 
-std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data)
+std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data)
 {
   auto Smear =[](TH1F* Data, float stdev)
   {
@@ -163,12 +163,14 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     delete Gaus;  
   }; 
   
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+
   int iterations = Params["iterations"][0]; 
-  int LucyRichardson = Params["LR_iterations"][0]; 
   int bins = Data[0] -> GetNbinsX(); 
   float min = Data[0] -> GetXaxis() -> GetXmin(); 
   float max = Data[0] -> GetXaxis() -> GetXmax(); 
-  
+
   std::vector<TH1F*> PSF; 
   for (int x(0); x < Data.size(); x++)
   {
@@ -178,17 +180,14 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     TH1F* Gaus = Gaussian(m ,s, bins, min, max, name); 
     PSF.push_back(Gaus);
   }
-  std::map<TString, std::vector<TH1F*>> Out; 
-  std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(Data[0], Data.size(), "C"); 
-  TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
   
+  Data[trk_Data] -> SetLineColor(kBlack); 
+  std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(InputTrk1, Data.size(), "C"); 
+  TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
   std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
   Flush(F_C, ntrk_Conv, false); 
-
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy();
-  TString name = Data[trk_Data] -> GetTitle(); name += (".pdf"); 
-
+  
+  TString name = Data[trk_Data] -> GetTitle(); name += ("_Experimental.pdf"); 
   std::vector<TString> Names_Dec; 
   for (int i(0); i < ntrk_Conv.size(); i++)
   {
@@ -196,55 +195,57 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(std::vector<TH1F*> Data, std
     Names_Dec.push_back(name);
   }
 
+  PlotHists(Data_Copy, ntrk_Conv, can); 
+  can -> Print(name); 
+  std::map<TString, std::vector<TH1F*>> Out; 
   for (int i(0); i < iterations; i++)
   {
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-    std::vector<TH1F*> Not_trk; 
-    std::vector<TH1F*> Not_PSF; 
-    for (int x(0); x < ntrk_Conv.size(); x++)
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    std::vector<TH1F*> trk; 
+    std::vector<TH1F*> psf;
+    for (int p(0); p < ntrk_Conv.size(); p++)
     {
-      if (x != trk_Data){ Data_Copy -> Add(ntrk_Conv[x], -1); }
+      if (p != trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
       else
-      {
-        Not_trk.push_back(ntrk_Conv[x]); 
-        Not_PSF.push_back(PSF[x]);
+      { 
+        trk.push_back(ntrk_Conv[p]); 
+        psf.push_back(PSF[p]);  
       }
     }
-    F_C = LoopGen(Not_trk, Not_PSF, Data_Copy, Params);  
-    ScaleShape(Data_Copy, F_C);
-    PlotHists(Data_Copy, F_C, can); 
-    Flush(F_C, Not_trk, true);
-    
-    PlotHists(Data_Copy, ntrk_Conv, can); 
+    F_C = LoopGen(trk, psf, Data_Copy, Params); 
+    ScaleShape(Data_Copy, trk);  
+    Flush(F_C, trk, true); 
+    PlotHists(Data_Copy, trk, can); 
     can -> Print(name); 
-    delete Data_Copy; 
-
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-
-    std::vector<TH1F*> Delta;
-    std::vector<TH1F*> Delta_PSF; 
-    for (int x(0); x < ntrk_Conv.size(); x++)
+    delete Data_Copy;    
+  
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    std::vector<TH1F*> not_trk; 
+    std::vector<TH1F*> not_psf;
+    for (int p(0); p < ntrk_Conv.size(); p++)
     {
-      if (x == trk_Data){Data_Copy -> Add(ntrk_Conv[x], -1);}
-      else 
-      {
-        Delta.push_back(ntrk_Conv[x]); 
-        Delta_PSF.push_back(PSF[x]); 
+      if (p == trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
+      else
+      { 
+        not_trk.push_back(ntrk_Conv[p]); 
+        not_psf.push_back(PSF[p]);  
       }
     }
-    F_C = LoopGen(Delta, Delta_PSF, Data_Copy, Params); 
-    ScaleShape(Data_Copy, F_C); 
-    Flush(F_C, Delta, true); 
-
-    delete Data_Copy; 
-
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-    F_C = CloneTH1F(Data_Copy, Names_Dec);
-    for (int x(0); x < F_C.size(); x++){F_C[x] -> Add(ntrk_Conv[x], 1);}
+    Smear(Data_Copy, 0.05);
+    F_C = LoopGen(not_trk, not_psf, Data_Copy, Params); 
+    Flush(F_C, not_trk, true); 
+    delete Data_Copy;    
+    
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
     ScaleShape(Data_Copy, F_C); 
     Flush(F_C, ntrk_Conv, true); 
-    delete Data_Copy;
-    
+
+    PlotHists(Data_Copy, ntrk_Conv, can); 
+    can -> Print(name); 
+    delete Data_Copy;   
+
+
     TString base = "_ntrk_"; base += (trk_Data+1); base += ("_iter_"); base += (i); 
     TString iter = "Iteration_"; iter += (i); 
     for (int x(0); x < ntrk_Conv.size(); x++)

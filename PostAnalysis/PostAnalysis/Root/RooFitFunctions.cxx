@@ -348,7 +348,7 @@ std::vector<float> ScalingFit(TH1F* Data, std::vector<TH1F*> PDF_H)
   RooMinimizer* pg = new RooMinimizer(*nll);   
   pg -> setMaxIterations(100000); 
   pg -> setMaxFunctionCalls(100000); 
-  pg -> setEps(1e-4); 
+  pg -> setEps(1e-14); 
   pg -> setStrategy(2); 
   pg -> setMinimizerType("Minuit2"); 
   pg -> migrad();

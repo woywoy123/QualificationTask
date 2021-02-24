@@ -51,7 +51,7 @@ void FitWithConstraint()
   };
 
 
-  std::map<TString, std::vector<TH1F*>> MC = Experimental_MC_Reader("Merged_MC.root"); 
+  std::map<TString, std::vector<TH1F*>> MC = MC_Reader("Merged_MC.root"); 
   std::vector<TH1F*> All = MC["All"]; 
   
   TH1F* Trk1_ideal = All[0]; 
@@ -97,7 +97,7 @@ void ExplicitConstrain()
   Params["cache"] = {10000}; 
 
   std::cout << "Here" << std::endl;
-  std::map<TString, std::vector<TH1F*>> MC = Experimental_MC_Reader("Merged_MC.root"); 
+  std::map<TString, std::vector<TH1F*>> MC = MC_Reader("Merged_MC.root"); 
   std::vector<TH1F*> All = MC["All"]; 
 
   // Ideal PDF being used 
@@ -135,7 +135,7 @@ void ExplicitConstrainExternal()
   Params["cache"] = {10000}; 
 
   std::cout << "Here" << std::endl;
-  std::map<TString, std::vector<TH1F*>> MC = Experimental_MC_Reader("Merged_MC.root"); 
+  std::map<TString, std::vector<TH1F*>> MC = MC_Reader("Merged_MC.root"); 
   std::vector<TH1F*> All = MC["All"]; 
 
   // Ideal PDF being used 
@@ -159,7 +159,7 @@ void ExplicitConstrainExternal()
 
 void StepByStepFit()
 {
-  std::map<TString, std::vector<TH1F*>> MC = Experimental_MC_Reader("Merged_MC.root"); 
+  std::map<TString, std::vector<TH1F*>> MC = MC_Reader("Merged_MC.root"); 
   std::vector<TH1F*> All = MC["All"]; 
 
   // Ideal PDF being used 

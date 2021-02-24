@@ -8,10 +8,7 @@
 #include<PostAnalysis/BaseFunctions.h>
 
 std::map<TString, std::vector<TH1F*>> ReadEntries(TFile* F); 
-std::map<TString, std::vector<TH1F*>> MonteCarlo(TString dir);
-std::map<TString, std::vector<TH1F*>> MonteCarloLayerEnergy(TString dir); 
 std::map<TString, std::vector<TH1F*>> GetHist(std::map<TString, std::vector<TString>> Map, TString dir, TString scnd);
-std::map<TString, TH1F*> Data(TString dir); 
-std::map<TString, std::vector<TH1F*>> Experimental_MC_Reader(TString Dir); 
+std::map<TString, std::vector<TH1F*>> MC_Reader(TString Dir); 
 
 #endif 

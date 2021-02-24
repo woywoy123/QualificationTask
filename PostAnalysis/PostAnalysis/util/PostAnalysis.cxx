@@ -7,7 +7,7 @@
 
 int main(int argc, char** argv)
 {
-  bool rewrite = false; 
+  bool rewrite = true; 
   int option = -3;
 
   TFile* F; 
@@ -43,15 +43,15 @@ int main(int argc, char** argv)
     //TestMonteCarloMatchConvolution(F); 
     //TestMonteCarloFit(F); 
 
-    //TestAlgorithmMonteCarlo(); 
+    TestAlgorithmMonteCarlo(); 
     //DataAlgorithm(); 
   }
 
   // Run Experimental
   if (option == -3 && rewrite == false)
   {
-    //AlgorithmMonteCarlo();
-    PlotInsideOutsideJet(); 
+    AlgorithmMonteCarlo();
+    //PlotInsideOutsideJet(); 
   }
   
   if (option == -2)
