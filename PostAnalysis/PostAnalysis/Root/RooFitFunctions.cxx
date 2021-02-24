@@ -235,7 +235,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
  
-  RooAbsReal* nll = model.createNLL(*D, RooFit::Range("fit"), RooFit::NumCPU(16), RooFit::SumW2Error(true));  
+  RooAbsReal* nll = model.createNLL(*D, RooFit::Range("fit"), RooFit::NumCPU(16));  
   RooMinimizer* pg = new RooMinimizer(*nll);   
   pg -> setMaxIterations(100000); 
   pg -> setMaxFunctionCalls(100000); 

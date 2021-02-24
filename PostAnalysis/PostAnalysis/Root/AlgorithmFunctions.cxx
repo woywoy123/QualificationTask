@@ -54,7 +54,7 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
     {
       float point = ntrk[z] -> GetBinContent(i+1); 
       float ed = point*(e/sum);  
-      float log = std::exp((std::log(ed)*0.75 + (0.25)*std::log(point))); 
+      float log = std::exp((std::log(ed)*0.9 + (0.1)*std::log(point))); 
       if (std::isnan(log)){log = 0;}
       if (std::isinf(log)){log = 0;}      
       ntrk[z] -> SetBinContent(i+1, log); 

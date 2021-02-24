@@ -88,13 +88,13 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
     can -> Print(name); 
     delete Data_Copy;    
     
-    //Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
-    //ScalingFit(Data_Copy, ntrk_Conv);  
-    //ScaleShape(Data_Copy, ntrk_Conv); 
-    //PlotHists(Data_Copy, ntrk_Conv, Truth, can); 
-    //can -> Print(name); 
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    ScalingFit(Data_Copy, ntrk_Conv);  
+    ScaleShape(Data_Copy, ntrk_Conv); 
+    PlotHists(Data_Copy, ntrk_Conv, Truth, can); 
+    can -> Print(name); 
 
-    //delete Data_Copy;   
+    delete Data_Copy;   
 
 
   }
@@ -111,14 +111,14 @@ void AlgorithmMonteCarlo()
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
-  Params["s_s"] = {0.06, 0.06, 0.06, 0.06};
-  Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
   Params["iterations"] = {10}; 
   Params["LR_iterations"] = {100}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.08, 0.08, 0.08, 0.08}; 
+  Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
   Params["cache"] = {10000}; 
-  Params["x_range"] = {0.01, 11.5}; 
+  Params["x_range"] = {0.05, 11.5}; 
 
   TString Dir = "Merged_MC.root"; 
  
