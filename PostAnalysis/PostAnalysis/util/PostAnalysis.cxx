@@ -7,7 +7,7 @@
 
 int main(int argc, char** argv)
 {
-  bool rewrite = true; 
+  bool rewrite = false; 
   int option = -3;
 
   TFile* F; 
@@ -61,10 +61,10 @@ int main(int argc, char** argv)
   } 
   F -> Close();   
  
-  if (option == -2)
+  if (option == -4)
   {
     //ProcessDataResults(); 
-    //ProcessMonteCarloResults(); 
+    ProcessMonteCarloResults(); 
   }
   
   if (option == -6)

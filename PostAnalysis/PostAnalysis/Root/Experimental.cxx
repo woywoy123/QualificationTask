@@ -37,6 +37,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
   Data[trk_Data] -> SetLineColor(kBlack); 
   std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(InputTrk1, Data.size(), "C"); 
   TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
+  //Smear(Data_Copy, 0.05);
   std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
   Flush(F_C, ntrk_Conv, false); 
   
@@ -73,32 +74,27 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
     delete Data_Copy;    
   
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    //Smear(Data_Copy, 0.05);
     std::vector<TH1F*> not_trk; 
     std::vector<TH1F*> not_psf;
     for (int p(0); p < ntrk_Conv.size(); p++)
     {
-      if (p == trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
-      else
-      { 
-        not_trk.push_back(ntrk_Conv[p]); 
-        not_psf.push_back(PSF[p]);  
-      }
+      not_trk.push_back(ntrk_Conv[p]); 
+      not_psf.push_back(PSF[p]);  
     }
-    Smear(Data_Copy, 0.05);
     F_C = LoopGen(not_trk, not_psf, Data_Copy, Params); 
     Flush(F_C, not_trk, true); 
     PlotHists(Data_Copy, {Truth[1], Truth[2],Truth[3]}, not_trk, can); 
     can -> Print(name); 
     delete Data_Copy;    
     
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
-    F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
-    ScaleShape(Data_Copy, F_C); 
-    Flush(F_C, ntrk_Conv, true); 
+    //Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    //ScalingFit(Data_Copy, ntrk_Conv);  
+    //ScaleShape(Data_Copy, ntrk_Conv); 
+    //PlotHists(Data_Copy, ntrk_Conv, Truth, can); 
+    //can -> Print(name); 
 
-    PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
-    can -> Print(name); 
-    delete Data_Copy; 
+    //delete Data_Copy;   
 
 
   }
@@ -115,14 +111,14 @@ void AlgorithmMonteCarlo()
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
-  Params["s_s"] = {0.005, 0.005, 0.005, 0.005};
-  Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
-  Params["iterations"] = {5}; 
+  Params["s_s"] = {0.06, 0.06, 0.06, 0.06};
+  Params["s_e"] = {0.1, 0.1, 0.1, 0.1};  
+  Params["iterations"] = {10}; 
   Params["LR_iterations"] = {100}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
+  Params["G_Stdev"] = {0.08, 0.08, 0.08, 0.08}; 
   Params["cache"] = {10000}; 
-  Params["x_range"] = {0.1, 11.5}; 
+  Params["x_range"] = {0.01, 11.5}; 
 
   TString Dir = "Merged_MC.root"; 
  

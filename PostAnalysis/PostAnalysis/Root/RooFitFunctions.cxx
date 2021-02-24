@@ -231,7 +231,6 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     N.add(*l_vars[i]);  
   }
   RooAddPdf model("model", "model", Conv, N); 
-  //for (int i(0); i < s_vars.size(); i++){s_vars[i] -> setConstant(true);}
   
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
@@ -240,10 +239,10 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   RooMinimizer* pg = new RooMinimizer(*nll);   
   pg -> setMaxIterations(100000); 
   pg -> setMaxFunctionCalls(100000); 
-  pg -> setEps(0.01); 
+  pg -> setEps(1e-14); 
   pg -> setStrategy(2); 
   pg -> setMinimizerType("Minuit2");
-  pg -> optimizeConst(1); 
+  //pg -> optimizeConst(1); 
   pg -> migrad();
   pg -> minos(); 
   pg -> fit("h");  
@@ -707,7 +706,7 @@ std::vector<TH1F*> IterativeFitting(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   RooMinimizer* pg = new RooMinimizer(*nll);   
   pg -> setMaxIterations(100000); 
   pg -> setMaxFunctionCalls(100000); 
-  pg -> setEps(1e-20); 
+  pg -> setEps(1e-14); 
   pg -> setStrategy(2); 
   pg -> setMinimizerType("Minuit2"); 
   pg -> migrad();

@@ -64,7 +64,7 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> Hists, TCanvas* can)
   Populate(Hists, can, len, kSolid); 
 }
 
-void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can)
+void PlotHists(TH1F* Data, std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TCanvas* can)
 {
   int bin = Data -> GetMaximumBin(); 
   float m = Data -> GetBinContent(bin+1); 
@@ -79,7 +79,7 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> predicti
   Populate(prediction, can, len, kDashed); 
 }
 
-void PlotHists(std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can)
+void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TCanvas* can)
 {
   float sum = 0; 
   for (int i(0); i < prediction.size(); i++)

@@ -3,23 +3,23 @@
 void TestAlgorithmMonteCarlo()
 {
   float nsdo = 4; 
-  float m = 0.1; 
+  float m = 0.5; 
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.005, 0.005, 0.005, 0.005};
   Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
-  Params["iterations"] = {5}; 
-  Params["LR_iterations"] = {25}; 
+  Params["iterations"] = {2}; 
+  Params["LR_iterations"] = {100}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
-  Params["cache"] = {10000}; 
+  Params["cache"] = {100000}; 
   Params["x_range"] = {0.1, 11.5}; 
   
   TString Dir = "Merged_MC.root"; 
   std::map<TString, std::vector<TH1F*>> Output = MC_Reader(Dir);
  
-  TFile* F = new TFile("Results_MC.root", "RECREATE"); 
+  TFile* F = new TFile("Results_MC_New.root", "RECREATE"); 
   F -> ReOpen("UPDATE"); 
  
   typedef std::map<TString, std::vector<TH1F*>>::iterator M;
@@ -104,6 +104,7 @@ void DataAlgorithm()
 {
   TFile* F = new TFile("Results_Data.root", "RECREATE"); 
   F -> ReOpen("UPDATE"); 
+  
 
 
 
@@ -116,24 +117,11 @@ void DataAlgorithm()
 
 }
 
-float FLost_Track_1(std::vector<TH1F*> Hists)
+float FLost_Track_2(std::vector<std::vector<TH1F*>> Hists)
 {
-  float L1 = Hists[0] -> Integral(); 
-  float L2 = Hists[1] -> Integral(); 
-  float L3 = Hists[2] -> Integral(); 
-  float L4 = Hists[3] -> Integral(); 
-
-  float FLost = (L2 + 2*L3 + 3*L4) / (2*L2 + 3*L3 + 4*L4); 
-  return FLost;
-}
-
-float FLost_Track_2(std::vector<TH1F*> Hists)
-{
-  float L2 = Hists[1] -> Integral(); 
-  float L3 = Hists[2] -> Integral(); 
-  float L4 = Hists[3] -> Integral(); 
-
-  float FLost = (L3 + 2*L4) / (3*L3 + 4*L4);  
+  float L1_2 = Hists[0][1] -> Integral(); // Track-1, Truth-2 
+  float L2_2 = Hists[1][1] -> Integral(); // Track-2, Truth-2  
+  float FLost = L1_2 / (2 * L1_2 + 2 * L2_2); 
   return FLost; 
 }
 
@@ -147,19 +135,82 @@ void ProcessDataResults()
 
 }
 
-
-
-
-
 void ProcessMonteCarloResults()
 {
+  auto ChangeNames =[] (TString Track, std::vector<TH1F*> Hists, TString Layer)
+  {
+    for (int i(0); i < Hists.size(); i++)
+    {
+      TString name = Track + "_ntru_"; name += (i+1); name += ("_"); name+=(Layer); 
+      Hists[i] -> SetTitle(name);
+    }
+  }; 
 
 
+  std::map<TString, std::vector<TH1F*>> Map = Result_Reader("Results_MC.root");
+  std::map<TString, std::vector<TH1F*>> MC = MC_Reader("Merged_MC.root"); 
+  typedef std::map<TString, std::vector<TH1F*>>::iterator it; 
+ 
+  TCanvas* can = new TCanvas(); 
+  can -> Print("Results_MC.pdf["); 
+  for (it p = Map.begin(); p != Map.end(); p++)
+  {
+    
+    std::vector<TH1F*> Truth = MC[p -> first]; 
+    if (Truth.size() == 0){continue;} 
+    
+    std::cout << " :::: " <<  p -> first << std::endl;
+    std::vector<TH1F*> Track1_T = {Truth[0], Truth[1], Truth[2], Truth[3]}; 
+    std::vector<TH1F*> Track2_T = {Truth[0+4], Truth[1+4], Truth[2+4], Truth[3+4]}; 
+    std::vector<TH1F*> Track3_T = {Truth[0+8], Truth[1+8], Truth[2+8], Truth[3+8]}; 
+    std::vector<TH1F*> Track4_T = {Truth[0+12], Truth[1+12], Truth[2+12], Truth[3+12]}; 
+    std::vector<std::vector<TH1F*>> Trk_Truth = {Track1_T, Track2_T, Track3_T, Track4_T}; 
+    float FLost_T = FLost_Track_2(Trk_Truth);
 
+    std::vector<TH1F*> Pred = Map[p -> first]; 
+    std::vector<TH1F*> Track1_P = {Pred[0], Pred[1], Pred[2], Pred[3]}; 
+    std::vector<TH1F*> Track2_P = {Pred[0+4], Pred[1+4], Pred[2+4], Pred[3+4]}; 
+    std::vector<TH1F*> Track3_P = {Pred[0+8], Pred[1+8], Pred[2+8], Pred[3+8]}; 
+    std::vector<TH1F*> Track4_P = {Pred[0+12], Pred[1+12], Pred[2+12], Pred[3+12]}; 
+    ChangeNames("P_trk_1", Track1_P, p -> first); 
+    ChangeNames("P_trk_2", Track2_P, p -> first);    
+    ChangeNames("P_trk_3", Track3_P, p -> first); 
+    ChangeNames("P_trk_4", Track4_P, p -> first); 
+    
+    std::vector<std::vector<TH1F*>> Trk_Pred = {Track1_P, Track2_P, Track3_P, Track4_P}; 
+    float FLost_P = FLost_Track_2(Trk_Pred);   
+    
+    TH1F* Data_trk1 = Map[p -> first + "Track1"][0]; 
+    TH1F* Data_trk2 = Map[p -> first + "Track2"][0]; 
+    TH1F* Data_trk3 = Map[p -> first + "Track3"][0]; 
+    TH1F* Data_trk4 = Map[p -> first + "Track4"][0]; 
+    Data_trk1 -> SetLineColor(kBlack); 
+    Data_trk2 -> SetLineColor(kBlack); 
+    Data_trk3 -> SetLineColor(kBlack); 
+    Data_trk4 -> SetLineColor(kBlack); 
+    std::cout << Data_trk1 -> GetTitle() << std::endl; 
+    std::cout << Data_trk2 -> GetTitle() << std::endl; 
+    std::cout << Data_trk3 -> GetTitle() << std::endl; 
+    std::cout << Data_trk4 -> GetTitle() << std::endl; 
+    
+    PlotHists(Data_trk1, Track1_P, Track1_T, can); 
+    can -> Print("Results_MC.pdf"); 
 
-
+    PlotHists(Data_trk2, Track2_P, Track2_T, p -> first + " Track2", FLost_P, FLost_T, can); 
+    can -> Print("Results_MC.pdf"); 
+   
+    PlotHists(Data_trk3, Track3_P, Track3_T, can); 
+    can -> Print("Results_MC.pdf"); 
+   
+    PlotHists(Data_trk4, Track4_P, Track4_T, can); 
+    can -> Print("Results_MC.pdf"); 
+    
+    std::cout << "__________________" << std::endl;
+  
+  
+  
+  
+  }
+  can -> Print("Results_MC.pdf]"); 
 } 
-
-
-
 

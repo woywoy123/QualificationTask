@@ -10,5 +10,7 @@
 std::map<TString, std::vector<TH1F*>> ReadEntries(TFile* F); 
 std::map<TString, std::vector<TH1F*>> GetHist(std::map<TString, std::vector<TString>> Map, TString dir, TString scnd);
 std::map<TString, std::vector<TH1F*>> MC_Reader(TString Dir); 
+std::map<TString, std::vector<TH1F*>> Result_Reader(TString Dir); 
+
 
 #endif 

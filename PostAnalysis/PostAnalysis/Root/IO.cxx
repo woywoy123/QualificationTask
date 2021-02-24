@@ -138,3 +138,60 @@ std::map<TString, std::vector<TH1F*>> MC_Reader(TString Dir)
   }
   return Output;
 }
+
+std::map<TString, std::vector<TH1F*>> Result_Reader(TString Dir)
+{
+  auto Names =[] (int trk, int tru)
+  {
+    std::vector<TString> Output; 
+    for (int i(0); i < trk; i++)
+    {
+      for (int x(0); x < tru; x++)
+      {
+        TString title = "TRK_"; title += (i+1); title += ("_C_ntrk_"); title += (x+1); title += ("_iter_"); 
+        Output.push_back(title);  
+      }
+    }
+    return Output; 
+  };
+
+  std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
+                                    "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
+                                    "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
+                                    "higher_GeV", "IBL", "Blayer", "layer1", "layer2"}; 
+  std::vector<TString> Tracks = {"Track1", "Track2", "Track3", "Track4"}; 
+
+
+  TFile* F = new TFile(Dir, "READ"); 
+  F -> ReOpen("UPDATE"); 
+  std::map<TString, std::vector<TH1F*>> Files = ReadEntries(F);  
+  
+  int trk = 4; 
+  int tru = 4; 
+
+  typedef std::map<TString, std::vector<TH1F*>>::iterator  it; 
+  for (it p = Files.begin(); p != Files.end(); p++)
+  {
+    TH1F* H = (TH1F*)gDirectory -> Get(p -> first);
+    Files[p -> first][0] = (TH1F*)H -> Clone(p -> first);
+  }
+  
+  std::vector<TString> trkTitles = Names(trk, tru);
+  std::map<TString, std::vector<TH1F*>> Map; 
+  for (TString JE : JetEnergy)
+  {
+    for (TString tracks : Tracks)
+    {
+      for (TString trk : trkTitles)
+      {
+        for (it p = Files.begin(); p != Files.end(); p++)
+        {
+          TString key = p -> first; 
+          if (key.Contains(JE) && key.Contains(trk) && key.Contains(tracks)){Map[JE].push_back(Files[p -> first][0]);}
+          if (key.Contains(JE + tracks) && key.Contains("ntrk") != true){Map[JE+tracks].push_back(Files[p -> first][0]);}
+        }
+      }
+    }
+  }
+  return Map; 
+}

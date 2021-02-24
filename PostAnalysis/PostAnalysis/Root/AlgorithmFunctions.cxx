@@ -54,7 +54,7 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
     {
       float point = ntrk[z] -> GetBinContent(i+1); 
       float ed = point*(e/sum);  
-      float log = std::exp((std::log(ed)*0.5 + (0.5)*std::log(point))); 
+      float log = std::exp((std::log(ed)*0.75 + (0.25)*std::log(point))); 
       if (std::isnan(log)){log = 0;}
       if (std::isinf(log)){log = 0;}      
       ntrk[z] -> SetBinContent(i+1, log); 
@@ -237,12 +237,11 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
     delete Data_Copy;    
     
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
-    F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
-    ScaleShape(Data_Copy, F_C); 
-    Flush(F_C, ntrk_Conv, true); 
-
+    ScalingFit(Data_Copy, ntrk_Conv);  
+    ScaleShape(Data_Copy, ntrk_Conv); 
     PlotHists(Data_Copy, ntrk_Conv, can); 
     can -> Print(name); 
+
     delete Data_Copy;   
 
 
@@ -250,7 +249,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
     TString iter = "Iteration_"; iter += (i); 
     for (int x(0); x < ntrk_Conv.size(); x++)
     {
-      TString name = ntrk_Conv[x] -> GetTitle(); name += (base); name += ("_Results_of_"); name += (Data[trk_Data]->GetTitle());  
+      TString name = ntrk_Conv[x] -> GetTitle(); name += (base); name += (Data[trk_Data]->GetTitle());  
       TH1F* H = (TH1F*)ntrk_Conv[x] -> Clone(name); 
       H -> SetTitle(name); 
       
