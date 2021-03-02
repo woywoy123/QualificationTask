@@ -57,6 +57,7 @@ std::map<TString, std::vector<TH1F*>> MC_Reader(TString Dir)
       {
         TH1F* H = (TH1F*)gDirectory -> Get(name); 
         TH1F* H_N = (TH1F*)H -> Clone(name+"_"+Key); 
+        H_N -> SetTitle(name+"_"+Key); 
         Output[Key].push_back(H_N);  
         delete H;
       }
@@ -92,6 +93,14 @@ std::map<TString, std::vector<TH1F*>> MC_Reader(TString Dir)
       Names.push_back(n); 
     }
   }
+  
+  std::vector<TString> Data_Names; 
+  for (int i(0); i < ntrk; i++)
+  {
+    TString n = "dEdx_ntrk_"; n+=(i+1); 
+    Data_Names.push_back(n);  
+  }
+
 
   std::vector<TString> R_Gre_Names; 
   std::vector<TString> R_Les_Names; 
@@ -119,6 +128,9 @@ std::map<TString, std::vector<TH1F*>> MC_Reader(TString Dir)
       Output = FillingMap(JE, Names, Output); 
       Output = FillingMap(L, Names, Output); 
       Output = FillingMap("All", Names, Output); 
+      Output = FillingMap(JE + "_Data", Data_Names, Output); 
+      Output = FillingMap(L + "_Data", Data_Names, Output); 
+      Output = FillingMap("All_Data", Data_Names, Output); 
 
       F -> cd();
       
@@ -148,7 +160,7 @@ std::map<TString, std::vector<TH1F*>> Result_Reader(TString Dir)
     {
       for (int x(0); x < tru; x++)
       {
-        TString title = "TRK_"; title += (i+1); title += ("_C_ntrk_"); title += (x+1); title += ("_iter_"); 
+        TString title = "dEdx_ntrk_"; title += (i+1); title += ("_ntru_"); title +=(x+1); 
         Output.push_back(title);  
       }
     }
@@ -158,8 +170,8 @@ std::map<TString, std::vector<TH1F*>> Result_Reader(TString Dir)
   std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
                                     "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
                                     "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
-                                    "higher_GeV", "IBL", "Blayer", "layer1", "layer2"}; 
-  std::vector<TString> Tracks = {"Track1", "Track2", "Track3", "Track4"}; 
+                                    "higher_GeV", "IBL", "Blayer", "layer1", "layer2", "All"}; 
+  std::vector<TString> Tracks = {"dEdx_ntrk_1", "dEdx_ntrk_2", "dEdx_ntrk_3", "dEdx_ntrk_4"}; 
 
 
   TFile* F = new TFile(Dir, "READ"); 
@@ -180,18 +192,24 @@ std::map<TString, std::vector<TH1F*>> Result_Reader(TString Dir)
   std::map<TString, std::vector<TH1F*>> Map; 
   for (TString JE : JetEnergy)
   {
-    for (TString tracks : Tracks)
+    for (TString trk : trkTitles)
     {
-      for (TString trk : trkTitles)
+      for (it p = Files.begin(); p != Files.end(); p++)
       {
-        for (it p = Files.begin(); p != Files.end(); p++)
-        {
-          TString key = p -> first; 
-          if (key.Contains(JE) && key.Contains(trk) && key.Contains(tracks)){Map[JE].push_back(Files[p -> first][0]);}
-          if (key.Contains(JE + tracks) && key.Contains("ntrk") != true){Map[JE+tracks].push_back(Files[p -> first][0]);}
-        }
+        TString key = p -> first; 
+        if (key.Contains(JE) && key.Contains(trk)){Map[JE].push_back(Files[p -> first][0]);}
       }
     }
+
+    for (it p = Files.begin(); p != Files.end(); p++)
+    {
+      TString key = p -> first; 
+      if (key.Contains(JE) && key.Contains("_R") == false && key.Contains("ntrk_1")){Map[JE +"_Data"].push_back(Files[p -> first][0]);}
+      if (key.Contains(JE) && key.Contains("_R") == false && key.Contains("ntrk_2")){Map[JE +"_Data"].push_back(Files[p -> first][0]);}
+      if (key.Contains(JE) && key.Contains("_R") == false && key.Contains("ntrk_3")){Map[JE +"_Data"].push_back(Files[p -> first][0]);}
+      if (key.Contains(JE) && key.Contains("_R") == false && key.Contains("ntrk_4")){Map[JE +"_Data"].push_back(Files[p -> first][0]);}
+    }
   }
+  
   return Map; 
 }

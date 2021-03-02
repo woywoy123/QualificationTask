@@ -121,7 +121,7 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
-  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(4), RooFit::Range("fit")); 
+  model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(8), RooFit::Range("fit")); 
   PlotRooFit(model, x, fft_vars, D);  
 
   // Create a histogram vector to store the solution 
@@ -133,6 +133,12 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
     float s = s_vars[i] -> getVal(); 
     float m = m_vars[i] -> getVal(); 
     float n = l_vars[i] -> getVal(); 
+
+    Params["G_Mean"][i] = m; 
+    Params["G_Stdev"][i] = s; 
+
+
+
 
     TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
     Convolution(G, PDF_H[i], Out_H[i]); 
@@ -205,7 +211,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   // Create the Luminosity variables for the fit
   std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
   std::vector<float> l_s(n_vars, 0); 
-  std::vector<float> l_e(n_vars, 2 * Data -> Integral());  
+  std::vector<float> l_e(n_vars, Data -> Integral());  
   std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
   
   // Convert the PDFs to RooPDFs
@@ -218,8 +224,11 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
 
   for (int i(0); i < s_vars.size(); i++)
   {
-    fft_vars[i] -> setInterpolationOrder(9);
+    //fft_vars[i] -> setInterpolationOrder(9);
     fft_vars[i] -> setBufferFraction(1); 
+    l_vars[i] -> setBins(cache, "cache"); 
+    m_vars[i] -> setBins(cache, "cache"); 
+    s_vars[i] -> setBins(cache, "cache");
   }
 
   // Combine the variables into a single ArgSet and create the model
@@ -239,13 +248,13 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   RooMinimizer* pg = new RooMinimizer(*nll);   
   pg -> setMaxIterations(100000); 
   pg -> setMaxFunctionCalls(100000); 
-  pg -> setEps(1e-14); 
+  pg -> setEps(1e-8); 
   pg -> setStrategy(2); 
   pg -> setMinimizerType("Minuit2");
-  //pg -> optimizeConst(1); 
+  pg -> optimizeConst(1); 
   pg -> migrad();
-  pg -> minos(); 
-  pg -> fit("h");  
+  //pg -> minos(); 
+  pg -> fit("m");  
   
   //for (int i(0); i < s_vars.size(); i++){s_vars[i] -> setConstant(false);} 
   //for (int i(0); i < l_vars.size(); i++){l_vars[i] -> setConstant(true);}
@@ -276,7 +285,10 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     float m_e = m_vars[i] -> getError(); 
     float n_e = l_vars[i] -> getError(); 
     std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
-    
+   
+    Params["G_Mean"][i] = m; 
+    Params["G_Stdev"][i] = s; 
+
     TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
     Convolution(G, PDF_H[i], Out_H[i]); 
     

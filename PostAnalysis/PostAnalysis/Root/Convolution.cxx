@@ -173,7 +173,7 @@ void DeconvolutionExperimental(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
   auto ToVector =[](TH1F* H, int bins)
   {
     int bins_H = H -> GetNbinsX(); 
-    int Padding = (bins - bins_H); 
+    int Padding = float((bins - bins_H))/2; 
 
     std::vector<float> Output; 
     for (int i(0); i < bins_H; i++)
@@ -181,30 +181,23 @@ void DeconvolutionExperimental(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
       float e = H -> GetBinContent(i+1);
       Output.push_back(e); 
     }
-    for (int i(0); i < Padding; i++)
-    {
-      float e = H -> GetBinContent(bins_H - i - 1); 
-      Output.push_back(e); 
-    }
     return Output; 
   };
 
-  float r = 1.1; 
   int bins = Signal -> GetNbinsX(); 
-  int bin_0 = Signal -> GetXaxis() -> FindBin(0.) -1; 
-  std::vector<float> Signal_V = ToVector(Signal, bins*r); 
-  std::vector<float> PSF_V = ToVector(PSF, bins*r); 
-  std::vector<float> Deconv_V = std::vector<float>(bins*r, 0.5); 
+  std::vector<float> Signal_V = ToVector(Signal, bins); 
+  std::vector<float> PSF_V = ToVector(PSF, bins); 
+  std::vector<float> Deconv_V = std::vector<float>(bins, 0.5); 
 
   for (int i(0); i < iter; i++)
   {
     Deconv_V = LucyRichardson(Signal_V, PSF_V, Deconv_V, 0.9); 
   }
 
-  int Padding = ((r - 1)*bins)/2; 
+  int bin_0 = Signal -> GetXaxis() -> FindBin(0.) -1; 
   for (int i(0); i < bins; i++)
   {
-    Out -> SetBinContent(i+1 + bin_0, Deconv_V[i]);
+    Out -> SetBinContent(i+bin_0+1, Deconv_V[i]);
   }
 }
 

@@ -2,24 +2,24 @@
 
 void TestAlgorithmMonteCarlo()
 {
-  float nsdo = 4; 
-  float m = 0.5; 
+  int nsdo = 4;
+  float m = 0.0001; 
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
-  Params["s_s"] = {0.005, 0.005, 0.005, 0.005};
-  Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
+  Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
+  Params["s_e"] = {0.04, 0.04, 0.04, 0.04};  
   Params["iterations"] = {2}; 
-  Params["LR_iterations"] = {100}; 
+  Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
-  Params["cache"] = {100000}; 
-  Params["x_range"] = {0.1, 11.5}; 
-  
+  Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
+  Params["cache"] = {10000}; 
+  Params["x_range"] = {0., 10.};  
+
   TString Dir = "Merged_MC.root"; 
   std::map<TString, std::vector<TH1F*>> Output = MC_Reader(Dir);
  
-  TFile* F = new TFile("Results_MC_New.root", "RECREATE"); 
+  TFile* F = new TFile("Results_MC.root", "RECREATE"); 
   F -> ReOpen("UPDATE"); 
  
   typedef std::map<TString, std::vector<TH1F*>>::iterator M;
@@ -27,8 +27,8 @@ void TestAlgorithmMonteCarlo()
   {
     TString name = x -> first; 
     std::vector<TH1F*> Trks = x -> second; 
-    
-    if (name.Contains("_Less") || name.Contains("Greater")){continue;}
+   
+    if (name.Contains("_Less") || name.Contains("Greater") || name.Contains("Data")){continue;}
     std::vector<TH1F*> Outside_Core = Output[name + "_radius_Greater"]; 
     
     std::vector<TH1F*> T1;  
@@ -41,12 +41,12 @@ void TestAlgorithmMonteCarlo()
     for (int i(12); i < nsdo+12; i++){T4.push_back(Trks[i]);} 
     
     TH1F* Outside_JetCore = SumHists(Outside_Core, name + "_Outside_JetCore");  
-    TH1F* Trk1 = SumHists(T1, x -> first + "Track1");
-    TH1F* Trk2 = SumHists(T2, x -> first + "Track2");
-    TH1F* Trk3 = SumHists(T3, x -> first + "Track3");
-    TH1F* Trk4 = SumHists(T4, x -> first + "Track4");
+    TH1F* Trk1 = Output[name + "_Data"][0]; 
+    TH1F* Trk2 = Output[name + "_Data"][1]; 
+    TH1F* Trk3 = Output[name + "_Data"][2]; 
+    TH1F* Trk4 = Output[name + "_Data"][3]; 
     std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
-  
+      
     std::cout << " :::: " << name << std::endl;  
     bool kill = false; 
     for (TH1F* O : Data)
@@ -69,17 +69,20 @@ void TestAlgorithmMonteCarlo()
 
     M p = trk1_res.end(); 
     p--; 
-    p--; 
+    
+    std::vector<TH1F*> trk1_r = trk1_res["Result"]; 
+    std::vector<TH1F*> trk2_r = trk2_res["Result"]; 
+    std::vector<TH1F*> trk3_r = trk3_res["Result"]; 
+    std::vector<TH1F*> trk4_r = trk4_res["Result"];
 
-    std::vector<TH1F*> trk1_r = trk1_res[p -> first]; 
-    std::vector<TH1F*> trk2_r = trk2_res[p -> first]; 
-    std::vector<TH1F*> trk3_r = trk3_res[p -> first]; 
-    std::vector<TH1F*> trk4_r = trk4_res[p -> first]; 
+
+    std::cout << trk1_r[0] -> GetTitle() << std::endl;
       
     BulkWrite(trk1_r); 
     BulkWrite(trk2_r); 
     BulkWrite(trk3_r); 
     BulkWrite(trk4_r); 
+
     trk1_res["Data"][0] -> Write();
     trk2_res["Data"][0] -> Write();
     trk3_res["Data"][0] -> Write();
@@ -97,6 +100,7 @@ void TestAlgorithmMonteCarlo()
    
     F -> cd(); 
   }
+
   F -> Close(); 
 }
 
@@ -153,11 +157,12 @@ void ProcessMonteCarloResults()
  
   TCanvas* can = new TCanvas(); 
   can -> Print("Results_MC.pdf["); 
+  can -> SetLogy();
   for (it p = Map.begin(); p != Map.end(); p++)
   {
-    
+    TString n = p -> first; 
     std::vector<TH1F*> Truth = MC[p -> first]; 
-    if (Truth.size() == 0){continue;} 
+    if (Truth.size() == 0 || n.Contains("_Data")){continue;} 
     
     std::cout << " :::: " <<  p -> first << std::endl;
     std::vector<TH1F*> Track1_T = {Truth[0], Truth[1], Truth[2], Truth[3]}; 
@@ -180,18 +185,14 @@ void ProcessMonteCarloResults()
     std::vector<std::vector<TH1F*>> Trk_Pred = {Track1_P, Track2_P, Track3_P, Track4_P}; 
     float FLost_P = FLost_Track_2(Trk_Pred);   
     
-    TH1F* Data_trk1 = Map[p -> first + "Track1"][0]; 
-    TH1F* Data_trk2 = Map[p -> first + "Track2"][0]; 
-    TH1F* Data_trk3 = Map[p -> first + "Track3"][0]; 
-    TH1F* Data_trk4 = Map[p -> first + "Track4"][0]; 
+    TH1F* Data_trk1 = Map[p -> first + "_Data"][0]; 
+    TH1F* Data_trk2 = Map[p -> first + "_Data"][1]; 
+    TH1F* Data_trk3 = Map[p -> first + "_Data"][2]; 
+    TH1F* Data_trk4 = Map[p -> first + "_Data"][3]; 
     Data_trk1 -> SetLineColor(kBlack); 
     Data_trk2 -> SetLineColor(kBlack); 
     Data_trk3 -> SetLineColor(kBlack); 
     Data_trk4 -> SetLineColor(kBlack); 
-    std::cout << Data_trk1 -> GetTitle() << std::endl; 
-    std::cout << Data_trk2 -> GetTitle() << std::endl; 
-    std::cout << Data_trk3 -> GetTitle() << std::endl; 
-    std::cout << Data_trk4 -> GetTitle() << std::endl; 
     
     PlotHists(Data_trk1, Track1_P, Track1_T, can); 
     can -> Print("Results_MC.pdf"); 
@@ -206,9 +207,6 @@ void ProcessMonteCarloResults()
     can -> Print("Results_MC.pdf"); 
     
     std::cout << "__________________" << std::endl;
-  
-  
-  
   
   }
   can -> Print("Results_MC.pdf]"); 

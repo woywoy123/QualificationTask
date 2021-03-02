@@ -7,8 +7,8 @@
 
 int main(int argc, char** argv)
 {
-  bool rewrite = false; 
-  int option = -3;
+  bool rewrite = true; 
+  int option = -4;
 
   TFile* F; 
   if (rewrite == true)
@@ -47,12 +47,6 @@ int main(int argc, char** argv)
     //DataAlgorithm(); 
   }
 
-  // Run Experimental
-  if (option == -3 && rewrite == false)
-  {
-    AlgorithmMonteCarlo();
-    //PlotInsideOutsideJet(); 
-  }
   
   if (option == -2)
   {
@@ -72,7 +66,12 @@ int main(int argc, char** argv)
     Entry();  
   }
   
-  
+  // Run Experimental
+  if (option == -3 && rewrite == false)
+  {
+    AlgorithmMonteCarlo();
+    //PlotInsideOutsideJet(); 
+  } 
   
   
   

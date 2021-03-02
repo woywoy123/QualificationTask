@@ -20,86 +20,63 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
   can -> SetLogy(); 
 
   int iterations = Params["iterations"][0]; 
-  int bins = Data[0] -> GetNbinsX(); 
-  float min = Data[0] -> GetXaxis() -> GetXmin(); 
-  float max = Data[0] -> GetXaxis() -> GetXmax(); 
 
-  std::vector<TH1F*> PSF; 
-  for (int x(0); x < Data.size(); x++)
-  {
-    TString name = "Gaussian_"; name += (x+1); 
-    float m = Params["G_Mean"][x]; 
-    float s = Params["G_Stdev"][x];
-    TH1F* Gaus = Gaussian(m ,s, bins, min, max, name); 
-    PSF.push_back(Gaus);
-  }
-  
-  Data[trk_Data] -> SetLineColor(kBlack); 
-  std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(InputTrk1, Data.size(), "C"); 
+  std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(InputTrk1, 4, "C"); 
   TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-  //Smear(Data_Copy, 0.05);
-  std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
+  std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, Data_Copy, Params); 
   Flush(F_C, ntrk_Conv, false); 
-  
-  TString name = Data[trk_Data] -> GetTitle(); name += ("_Experimental.pdf"); 
-  std::vector<TString> Names_Dec; 
-  for (int i(0); i < ntrk_Conv.size(); i++)
-  {
-    TString name = "Temp_"; name += (ntrk_Conv[i] -> GetTitle()); 
-    Names_Dec.push_back(name);
-  }
 
+  TString name = Data[trk_Data] -> GetTitle(); name += ("_Experimental.pdf"); 
   PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
   can -> Print(name); 
 
   for (int i(0); i < iterations; i++)
   {
+    
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
     std::vector<TH1F*> trk; 
-    std::vector<TH1F*> psf;
+    for (int p(0); p < ntrk_Conv.size(); p++)
+    {
+      if (p == trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
+      else{ trk.push_back(ntrk_Conv[p]); }
+    }
+    Average(Data_Copy); 
+    Smear(Data_Copy, 0.05); 
+    F_C = LoopGen(trk, Data_Copy, Params); 
+    Flush(F_C, trk, true);
+    
+    PlotHists(Data_Copy, Truth, trk, can); 
+    can -> Print(name); 
+    delete Data_Copy; 
+
+
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    std::vector<TH1F*> not_trk; 
     for (int p(0); p < ntrk_Conv.size(); p++)
     {
       if (p != trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
-      else
-      { 
-        trk.push_back(ntrk_Conv[p]); 
-        psf.push_back(PSF[p]);  
-      }
+      else{ not_trk.push_back(ntrk_Conv[p]); }
     }
-    F_C = LoopGen(trk, psf, Data_Copy, Params); 
-    ScaleShape(Data_Copy, trk);  
-    Flush(F_C, trk, true); 
-    PlotHists(Data_Copy, Truth, trk, can); 
+    F_C = LoopGen(not_trk, Data_Copy, Params); 
+    ScaleShape(Data_Copy, not_trk);  
+    Flush(F_C, not_trk, true); 
+
+    PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
+    can -> Print(name); 
+    delete Data_Copy;    
+
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, Data_Copy, Params); 
+    ScaleShape(Data_Copy, F_C);  
+    Flush(F_C, ntrk_Conv, true); 
+
+    PlotHists(Data_Copy, Truth, ntrk_Conv, can); 
     can -> Print(name); 
     delete Data_Copy;    
   
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
-    //Smear(Data_Copy, 0.05);
-    std::vector<TH1F*> not_trk; 
-    std::vector<TH1F*> not_psf;
-    for (int p(0); p < ntrk_Conv.size(); p++)
-    {
-      not_trk.push_back(ntrk_Conv[p]); 
-      not_psf.push_back(PSF[p]);  
-    }
-    F_C = LoopGen(not_trk, not_psf, Data_Copy, Params); 
-    Flush(F_C, not_trk, true); 
-    PlotHists(Data_Copy, {Truth[1], Truth[2],Truth[3]}, not_trk, can); 
-    can -> Print(name); 
-    delete Data_Copy;    
-    
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
-    ScalingFit(Data_Copy, ntrk_Conv);  
-    ScaleShape(Data_Copy, ntrk_Conv); 
-    PlotHists(Data_Copy, ntrk_Conv, Truth, can); 
-    can -> Print(name); 
-
-    delete Data_Copy;   
-
-
   }
-  BulkDelete(PSF);
-  BulkDelete(ntrk_Conv); 
+  BulkDelete(ntrk_Conv);
+
   std::map<TString, std::vector<TH1F*>> Out; 
   return Out; 
 }
@@ -107,18 +84,18 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
 void AlgorithmMonteCarlo()
 {
   int nsdo = 4;
-  float m = 0.1; 
+  float m = 0.0001; 
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params["s_e"] = {0.03, 0.03, 0.03, 0.03};  
-  Params["iterations"] = {10}; 
-  Params["LR_iterations"] = {100}; 
+  Params["s_e"] = {0.04, 0.04, 0.04, 0.04};  
+  Params["iterations"] = {2}; 
+  Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.02, 0.02, 0.02, 0.02}; 
   Params["cache"] = {10000}; 
-  Params["x_range"] = {0.05, 11.5}; 
+  Params["x_range"] = {0., 10.}; 
 
   TString Dir = "Merged_MC.root"; 
  
@@ -129,8 +106,8 @@ void AlgorithmMonteCarlo()
   {
     TString name = x -> first; 
     std::vector<TH1F*> Trks = x -> second; 
-    
-    if (name.Contains("_Less") || name.Contains("Greater")){continue;}
+   
+    if (name.Contains("_Less") || name.Contains("Greater") || name.Contains("_Data")){continue;}
     std::vector<TH1F*> Outside_Core = Output[name + "_radius_Greater"]; 
     
     std::vector<TH1F*> T1;  
@@ -143,10 +120,10 @@ void AlgorithmMonteCarlo()
     for (int i(12); i < nsdo+12; i++){T4.push_back(Trks[i]);} 
     
     TH1F* Outside_JetCore = SumHists(Outside_Core, name + "_Outside_JetCore");  
-    TH1F* Trk1 = SumHists(T1, x -> first + "Track1");
-    TH1F* Trk2 = SumHists(T2, x -> first + "Track2");
-    TH1F* Trk3 = SumHists(T3, x -> first + "Track3");
-    TH1F* Trk4 = SumHists(T4, x -> first + "Track4");
+    TH1F* Trk1 = Output[name + "_Data"][0]; 
+    TH1F* Trk2 = Output[name + "_Data"][1]; 
+    TH1F* Trk3 = Output[name + "_Data"][2]; 
+    TH1F* Trk4 = Output[name + "_Data"][3]; 
     std::vector<TH1F*> Data = {Trk1, Trk2, Trk3, Trk4}; 
   
     std::cout << " :::: " << name << std::endl;  
@@ -164,11 +141,11 @@ void AlgorithmMonteCarlo()
       continue;
     }
     
+    //Shifting(Outside_JetCore); 
     MainAlgorithm(Outside_JetCore, Data, Params, T1, 0); 
     MainAlgorithm(Outside_JetCore, Data, Params, T2, 1); 
     MainAlgorithm(Outside_JetCore, Data, Params, T3, 2); 
     MainAlgorithm(Outside_JetCore, Data, Params, T3, 3);  
-    break; 
   }
 }
 
@@ -203,32 +180,44 @@ void Shifting(TH1F* H)
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
 
-  int LucyRichardson = 300; 
+  int LucyRichardson = 20; 
   int bins = H -> GetNbinsX(); 
   float min = H -> GetXaxis() -> GetXmin(); 
   float max = H -> GetXaxis() -> GetXmax(); 
   
   std::vector<TH1F*> PSF; 
   float m = 0; 
-  float s = 0.03;
-  TH1F* Gaus = Gaussian(m ,s, bins, min, max, "Gaus"); 
-  TH1F* Dec = (TH1F*)H -> Clone("DecP"); 
-  TH1F* Temp = (TH1F*)H -> Clone("Temp"); 
+  float s = 0.01;
+  float w = (max - min)/float(bins); 
+  
+  float new_min = min - w*120; 
+  float new_max = max + w*120; 
+  
+  TH1F* PDF = new TH1F("PDF", "PDF", bins+2*120, new_min, new_max); 
+  TH1F* Gaus = Gaussian(m ,s, bins+2*120, new_min, new_max, "Gaus"); 
+  
+  for (int i(0); i < bins; i++)
+  {
+    float e = H -> GetBinContent(i+1); 
+    PDF -> SetBinContent(120+i+1, e); 
+  }
+  
+  TH1F* Dec = (TH1F*)PDF -> Clone("DecP"); 
+  TH1F* Temp = (TH1F*)PDF -> Clone("Temp"); 
 
   Gaus -> Draw("HIST"); 
   can -> Print("Debug.pdf"); 
 
-  H -> GetYaxis() -> SetRangeUser(1e-6, 1);
   for (int i(0); i < 50; i++)
   {
-    Convolution(Dec, Gaus, Temp); 
     DeconvolutionExperimental(Temp, Gaus, Dec, LucyRichardson); 
+    Convolution(Dec, Gaus, Temp); 
     
     //Convolution(Dec, Gaus, Temp); 
     Normalize(Temp); 
-    Normalize(H); 
-    H -> SetLineStyle(kSolid); 
-    H -> Draw("HIST");
+    Normalize(PDF); 
+    PDF -> SetLineStyle(kSolid); 
+    PDF -> Draw("HIST");
     Temp -> SetLineColor(kRed);
     Temp -> SetLineStyle(kDashed); 
     Temp -> Draw("SAMEHIST"); 

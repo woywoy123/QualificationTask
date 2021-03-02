@@ -6,7 +6,7 @@ void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv)
   {
     float e = trk_Fit -> GetBinContent(z+1); 
     float f = ntrk_Conv -> GetBinContent(z+1); 
-    float log = std::exp((std::log(e)*(0.5)+std::log(f)*(0.5))); 
+    float log = e; 
     if (std::isnan(log)){log = 0;}
     if (std::isinf(log)){log = 0;}
     ntrk_Conv -> SetBinContent(z+1, log); 
@@ -54,9 +54,9 @@ void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
     {
       float point = ntrk[z] -> GetBinContent(i+1); 
       float ed = point*(e/sum);  
-      float log = std::exp((std::log(ed)*0.9 + (0.1)*std::log(point))); 
+      float log = ed;  
       if (std::isnan(log)){log = 0;}
-      if (std::isinf(log)){log = 0;}      
+      if (std::isinf(log)){log = 0;} 
       ntrk[z] -> SetBinContent(i+1, log); 
     }     
   }
@@ -126,30 +126,70 @@ void Average(TH1F* Data)
 }
 
 
-std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, std::vector<TH1F*> PSF, TH1F* Data, std::map<TString, std::vector<float>> Params)
+std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, TH1F* Data, std::map<TString, std::vector<float>> Params)
 {
   std::vector<TString> Names_Dec; 
-  int index = 0;  
+  float r = 0.1; 
+  int bins = Data -> GetNbinsX(); 
+  float min = Data -> GetXaxis() -> GetXmin(); 
+  float max = Data -> GetXaxis() -> GetXmax(); 
+  float w = (max - min) / float(bins); 
+  float new_min = min - w*bins*r; 
+  float new_max = max + w*bins*r; 
+
+  std::vector<TH1F*> PDF_D;
+  std::vector<TH1F*> PSF;  
+  std::vector<TH1F*> PDF; 
   for (int i(0); i < ntrk_Conv.size(); i++)
   {
+    TString nameG = "Gx_"; nameG+=(i+1); 
+    TH1F* Gaus = Gaussian(Params["G_Mean"][i], Params["G_Stdev"][i], bins+2*bins*r, new_min, new_max, nameG); 
+    PSF.push_back(Gaus);  
+
     TString name = "Dec_"; name += (ntrk_Conv[i] -> GetTitle()); 
-    Names_Dec.push_back(name);
-    std::cout << ntrk_Conv[i] -> GetTitle() << std::endl;
+    TH1F* H = new TH1F(name, name, bins+2*bins*r, new_min, new_max); 
+    PDF_D.push_back(H); 
+  
+    TString name_L = "L_"; name_L += (ntrk_Conv[i] -> GetTitle()); 
+    TH1F* X = new TH1F(name_L, name_L, bins+2*bins*r, new_min, new_max); 
+    PDF.push_back(X); 
+
+    for (int j(0); j < bins; j++)
+    {
+      X -> SetBinContent(j+1+r*bins, ntrk_Conv[i] -> GetBinContent(j+1)); 
+    }
   }
-  std::vector<TH1F*> PDF_D = CloneTH1F(Data, Names_Dec);
-  MultiThreadingDeconvolutionExperimental(ntrk_Conv, PSF, PDF_D, Params["LR_iterations"][0]); 
-  std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data, PDF_D, Params, Params["cache"][0], Params["cache"][0]);
-  for (int i(0); i < Names_Dec.size(); i++){delete PDF_D[i];}
- 
+  MultiThreadingDeconvolutionExperimental(PDF, PSF, PDF_D, Params["LR_iterations"][0]); 
+  
+  std::vector<TH1F*> PDF_D_N; 
+  float bin_min = PDF[0] -> GetXaxis() -> FindBin(min) -1; 
+  for (int i(0); i < ntrk_Conv.size(); i++)
+  {
+    TString name_N = "N_"; name_N += (ntrk_Conv[i] -> GetTitle()); 
+    TH1F* H = new TH1F(name_N, name_N, bins, min, max); 
+    PDF_D_N.push_back(H);  
+   
+    for (int j(0); j < bins; j++)
+    {
+      H -> SetBinContent(j+1, PDF_D[i] -> GetBinContent(j+1 + bin_min)); 
+    }
+  } 
+  
+  std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data, PDF_D_N, Params, Params["cache"][0], Params["cache"][0]);
   std::vector<TH1F*> F_C;
   for (int i(0); i < trk_Fit.size(); i++){F_C.push_back(trk_Fit[i].first); }
- 
+
+  BulkDelete(PDF_D); 
+  BulkDelete(PSF); 
+  BulkDelete(PDF); 
+  BulkDelete(PDF_D_N); 
   return F_C; 
 }
 
 
 std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data)
 {
+  
   auto Smear =[](TH1F* Data, float stdev)
   {
     float lumi = Data -> Integral(); 
@@ -167,103 +207,81 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
   can -> SetLogy(); 
 
   int iterations = Params["iterations"][0]; 
-  int bins = Data[0] -> GetNbinsX(); 
-  float min = Data[0] -> GetXaxis() -> GetXmin(); 
-  float max = Data[0] -> GetXaxis() -> GetXmax(); 
 
-  std::vector<TH1F*> PSF; 
-  for (int x(0); x < Data.size(); x++)
-  {
-    TString name = "Gaussian_"; name += (x+1); 
-    float m = Params["G_Mean"][x]; 
-    float s = Params["G_Stdev"][x];
-    TH1F* Gaus = Gaussian(m ,s, bins, min, max, name); 
-    PSF.push_back(Gaus);
-  }
-  
-  Data[trk_Data] -> SetLineColor(kBlack); 
-  std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(InputTrk1, Data.size(), "C"); 
+  std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(InputTrk1, 4, "C"); 
   TH1F* Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy"); 
-  std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, PSF, Data_Copy, Params); 
+  std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, Data_Copy, Params); 
   Flush(F_C, ntrk_Conv, false); 
-  
-  TString name = Data[trk_Data] -> GetTitle(); name += ("_Experimental.pdf"); 
-  std::vector<TString> Names_Dec; 
-  for (int i(0); i < ntrk_Conv.size(); i++)
-  {
-    TString name = "Temp_"; name += (ntrk_Conv[i] -> GetTitle()); 
-    Names_Dec.push_back(name);
-  }
 
+  TString name = Data[trk_Data] -> GetTitle(); name += (".pdf"); 
   PlotHists(Data_Copy, ntrk_Conv, can); 
   can -> Print(name); 
+
   std::map<TString, std::vector<TH1F*>> Out; 
   for (int i(0); i < iterations; i++)
   {
+    
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
     std::vector<TH1F*> trk; 
-    std::vector<TH1F*> psf;
-    for (int p(0); p < ntrk_Conv.size(); p++)
-    {
-      if (p != trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
-      else
-      { 
-        trk.push_back(ntrk_Conv[p]); 
-        psf.push_back(PSF[p]);  
-      }
-    }
-    F_C = LoopGen(trk, psf, Data_Copy, Params); 
-    ScaleShape(Data_Copy, trk);  
-    Flush(F_C, trk, true); 
-    PlotHists(Data_Copy, trk, can); 
-    can -> Print(name); 
-    delete Data_Copy;    
-  
-    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
-    std::vector<TH1F*> not_trk; 
-    std::vector<TH1F*> not_psf;
     for (int p(0); p < ntrk_Conv.size(); p++)
     {
       if (p == trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
-      else
-      { 
-        not_trk.push_back(ntrk_Conv[p]); 
-        not_psf.push_back(PSF[p]);  
-      }
+      else{ trk.push_back(ntrk_Conv[p]); }
     }
-    Smear(Data_Copy, 0.05);
-    F_C = LoopGen(not_trk, not_psf, Data_Copy, Params); 
-    Flush(F_C, not_trk, true); 
-    delete Data_Copy;    
+    Average(Data_Copy); 
+    Smear(Data_Copy, 0.05); 
+    F_C = LoopGen(trk, Data_Copy, Params); 
+    Flush(F_C, trk, true);
     
+    PlotHists(Data_Copy, trk, can); 
+    can -> Print(name); 
+    delete Data_Copy; 
+
+
     Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
-    ScalingFit(Data_Copy, ntrk_Conv);  
-    ScaleShape(Data_Copy, ntrk_Conv); 
+    std::vector<TH1F*> not_trk; 
+    for (int p(0); p < ntrk_Conv.size(); p++)
+    {
+      if (p != trk_Data){ Data_Copy -> Add(ntrk_Conv[p], -1); }
+      else{ not_trk.push_back(ntrk_Conv[p]); }
+    }
+    F_C = LoopGen(not_trk, Data_Copy, Params); 
+    ScaleShape(Data_Copy, not_trk);  
+    Flush(F_C, not_trk, true); 
+
     PlotHists(Data_Copy, ntrk_Conv, can); 
     can -> Print(name); 
+    delete Data_Copy;    
 
-    delete Data_Copy;   
+    Data_Copy = (TH1F*)Data[trk_Data] -> Clone("Data_Copy");    
+    std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, Data_Copy, Params); 
+    ScaleShape(Data_Copy, F_C);  
+    Flush(F_C, ntrk_Conv, true); 
 
+    PlotHists(Data_Copy, ntrk_Conv, can); 
+    can -> Print(name); 
+    delete Data_Copy;    
+  
 
-    TString base = "_ntrk_"; base += (trk_Data+1); base += ("_iter_"); base += (i); 
-    TString iter = "Iteration_"; iter += (i); 
-    for (int x(0); x < ntrk_Conv.size(); x++)
-    {
-      TString name = ntrk_Conv[x] -> GetTitle(); name += (base); name += (Data[trk_Data]->GetTitle());  
-      TH1F* H = (TH1F*)ntrk_Conv[x] -> Clone(name); 
-      H -> SetTitle(name); 
+  } 
+
+  for (int x(0); x < ntrk_Conv.size(); x++)
+  {
+    TString name2 = Data[trk_Data]->GetTitle();   
+    name2.Remove(name2.Length() - 5, name2.Length()); 
+    name2.Remove(0, 12); 
+    name = "dEdx_ntrk_"; name += (trk_Data+1); name += ("_ntru_"); name += (x+1); name += ("_"); 
+    name2 += ("_R");
+    name = name + name2;
+    TH1F* H = (TH1F*)ntrk_Conv[x] -> Clone(name); 
+    H -> SetTitle(name); 
       
-      for (int p(0); p < H -> GetNbinsX(); p++)
-      {
-        H -> SetBinError(p+1, 1e-9); 
-      }
-      Out[iter].push_back(H); 
-    }
+    Out["Result"].push_back(H); 
   }
   Out["Data"].push_back(Data[trk_Data]);
   BulkDelete(ntrk_Conv);
-  BulkDelete(PSF); 
   delete can;
+
   return Out; 
 }
 

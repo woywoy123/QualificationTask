@@ -57,7 +57,7 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> Hists, TCanvas* can)
   
   can -> Clear();
   gStyle -> SetOptStat(0); 
-  Data -> GetYaxis() -> SetRangeUser(1e-6, m);  
+  Data -> GetYaxis() -> SetRangeUser(1, m);  
   Data -> GetXaxis() -> SetRangeUser(0, 10);
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
