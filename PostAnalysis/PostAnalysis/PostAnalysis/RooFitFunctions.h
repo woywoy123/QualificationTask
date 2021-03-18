@@ -15,6 +15,9 @@
 #include<RooNumConvPdf.h>
 #include<RooConstVar.h>
 #include<RooProdPdf.h>
+#include<PostAnalysis/AlgorithmFunctions.h>
+#include<RooFormulaVar.h>
+#include<RooFitResult.h> 
 
 std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache = 0, int cache = 0); 
 std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache = 0, int cache = 0); 
@@ -23,4 +26,5 @@ TH1F* ExplicitConstraining(TH1F* Data, TH1F* PDF, std::map<TString, std::vector<
 TH1F* ExplicitConstrainingExternal(TH1F* Data, TH1F* PDF, std::map<TString, std::vector<float>> Params); 
 std::vector<TH1F*> IterativeFitting(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache, int cache); 
 std::vector<float> ScalingFit(TH1F* Data, std::vector<TH1F*> PDF_H); 
+void ScalingShift(TH1F* Data, std::vector<TH1F*> ntrk); 
 #endif

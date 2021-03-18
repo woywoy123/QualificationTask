@@ -149,7 +149,7 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
   {
     d_old = d; 
     std::vector<float> Deconv_Vold = Deconv_V; 
-    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 0.75); 
+    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 0.9); 
 
     d = Pythagoras(Deconv_Vold, Deconv_V); 
     Converge.push_back(d);  
@@ -187,7 +187,7 @@ void DeconvolutionExperimental(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
   int bins = Signal -> GetNbinsX(); 
   std::vector<float> Signal_V = ToVector(Signal, bins); 
   std::vector<float> PSF_V = ToVector(PSF, bins); 
-  std::vector<float> Deconv_V = std::vector<float>(bins, 0.5); 
+  std::vector<float> Deconv_V = std::vector<float>(bins, 1.); 
 
   for (int i(0); i < iter; i++)
   {

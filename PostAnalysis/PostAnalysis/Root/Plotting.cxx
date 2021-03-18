@@ -43,7 +43,8 @@ void PlotHists(std::vector<TH1F*> Hists, TCanvas* can)
     float m_n = H -> GetBinContent(b+1); 
     if (m_n > m){ m = m_n; }
   }
-
+  
+  can -> Clear();
   gStyle -> SetOptStat(0); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75);
   Hists[0] -> GetYaxis() -> SetRangeUser(1, m*2); 
@@ -187,7 +188,59 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 
 void PlotRooFit(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data)
 {
-  RooPlot* xframe = Domain -> frame(RooFit::Title("Figure")); 
+  RooPlot* xframe = Domain -> frame(RooFit::Title("Figure"), RooFit::Bins(40)); 
+  Data -> plotOn(xframe); 
+  model.plotOn(xframe);  
+  xframe -> chiSquare();
+
+  RooHist* resid = xframe -> residHist(); 
+  RooHist* pull = xframe -> pullHist(); 
+  
+
+  RooPlot* frame2 = Domain -> frame(RooFit::Title("Residual")); 
+  frame2 -> addPlotable(resid, "P"); 
+
+  RooPlot* frame3 = Domain -> frame(RooFit::Title("Pull")); 
+  frame3 -> addPlotable(pull, "P"); 
+  
+  //Data -> plotOn(xframe, RooFit::Name("Data")); 
+  //std::vector<Color_t> Colors = {kRed, kGreen, kOrange, kBlue}; 
+  //for (int i(0); i < PDFs.size(); i++)
+  //{
+  //  TString name = "trk-"; name += (i+1); 
+  //  model.plotOn(xframe, RooFit::Name(name), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Colors[i])); 
+  //}
+  TCanvas* can = new TCanvas(); 
+  //gPad -> SetLogy(); 
+  //xframe -> SetMinimum(1e-8); 
+  //xframe -> Draw(); 
+  
+  can -> Divide(3); 
+  can -> cd(1); xframe -> Draw(); 
+  can -> cd(2); frame2 -> Draw(); 
+  can -> cd(3); frame3 -> Draw(); 
+  can -> Update();
+  can -> Print("debug.pdf"); 
+  delete can; 
+}
+
+void PlotRooFit(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data)
+{
+  RooPlot* xframe = Domain -> frame(RooFit::Title("Figure"), RooFit::Bins(40)); 
+  Data -> plotOn(xframe); 
+  //model.plotOn(xframe);  
+  //xframe -> chiSquare();
+
+  //RooHist* resid = xframe -> residHist(); 
+  //RooHist* pull = xframe -> pullHist(); 
+  
+
+  //RooPlot* frame2 = Domain -> frame(RooFit::Title("Residual")); 
+  //frame2 -> addPlotable(resid, "P"); 
+
+  //RooPlot* frame3 = Domain -> frame(RooFit::Title("Pull")); 
+  //frame3 -> addPlotable(pull, "P"); 
+  
   Data -> plotOn(xframe, RooFit::Name("Data")); 
   std::vector<Color_t> Colors = {kRed, kGreen, kOrange, kBlue}; 
   for (int i(0); i < PDFs.size(); i++)
@@ -197,8 +250,13 @@ void PlotRooFit(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*>
   }
   TCanvas* can = new TCanvas(); 
   gPad -> SetLogy(); 
-  xframe -> SetMinimum(1e-8); 
+  xframe -> SetMinimum(1e-6); 
   xframe -> Draw(); 
+  
+  //can -> Divide(3); 
+  //can -> cd(1); xframe -> Draw(); 
+  //can -> cd(2); frame2 -> Draw(); 
+  //can -> cd(3); frame3 -> Draw(); 
   can -> Update();
   can -> Print("debug.pdf"); 
   delete can; 

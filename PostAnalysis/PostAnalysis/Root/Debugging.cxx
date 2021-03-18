@@ -173,33 +173,45 @@ void StepByStepFit()
   float min = trk1[0] -> GetXaxis() -> GetXmin(); 
   float max = trk1[0] -> GetXaxis() -> GetXmax(); 
   
-  float m = 0.1; 
+  float m = 0.5; 
   std::map<TString, std::vector<float>> Params; 
   Params["m_s"] = {-m, -m, -m, -m}; 
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.005, 0.005, 0.005, 0.005};
-  Params["s_e"] = {0.05, 0.05, 0.1, 0.1};  
-  Params["iterations"] = {30}; 
-  Params["LR_iterations"] = {400}; 
+  Params["s_e"] = {0.05, 0.05, 0.05, 0.05};  
+  Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
-  Params["G_Stdev"] = {0.025, 0.025, 0.025, 0.025}; 
+  Params["G_Stdev"] = {0.01, 0.01, 0.01, 0.01}; 
   Params["cache"] = {100000}; 
   Params["x_range"] = {0.1, max-1}; 
 
+  // ====== WARNING! REPLACED CONVOLVED HISTS WITH TRUTH!!!! ============= //
+
+
   // Empty TH1F used for the deconvolution using the PSF
-  std::vector<TString> names = NameGenerator(trk1.size(), "_trk_D"); 
-  std::vector<TH1F*> trk_D = CloneTH1F(trk1[0], names); 
+  std::vector<TString> names = NameGenerator(Truth.size(), "_trk_D"); 
+  std::vector<TH1F*> trk_D = CloneTH1F(Truth[0], names); 
 
   TH1F* Gaus = Gaussian(Params["G_Stdev"][0], Params["G_Stdev"][1], bins, min, max, "psf"); 
-  std::vector<TH1F*> psf_vector(trk1.size(), Gaus); 
+  std::vector<TH1F*> psf_vector(Truth.size(), Gaus); 
 
-  MultiThreadingDeconvolutionExperimental(trk1, psf_vector, trk_D, Params["LR_iterations"][0]); 
+  MultiThreadingDeconvolutionExperimental(Truth, psf_vector, trk_D, Params["LR_iterations"][0]); 
   //TH1F* trk = (TH1F*)Summed_MC -> Clone("trk"); 
   //std::vector<TH1F*> trk_1 = {trk}; 
 
 
   // Deconvolve the PDF with the PSF 
-  std::vector<TH1F*> Output = IterativeFitting(Summed_MC, trk_D, Params, Params["LR_iterations"][0], Params["LR_iterations"][0]); 
+  //std::vector<TH1F*> Output = IterativeFitting(Summed_MC, trk_D, Params, Params["LR_iterations"][0], Params["LR_iterations"][0]); 
+  
+  std::vector<std::pair<TH1F*, std::vector<float>>> Tracks_Result = FitDeconvolutionPerformance(Summed_MC, trk_D, Params, Params["cache"][0], Params["cache"][0]);
+
+  std::vector<TH1F*> Output; 
+  for (int p(0); p < Tracks_Result.size(); p++)
+  {
+    TH1F* H = Tracks_Result[p].first;     
+    Output.push_back(H); 
+  }
+
 
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 

@@ -3,8 +3,6 @@
 
 #include<PostAnalysis/BaseFunctions.h>
 
-void ShapeSigmoid(TH1F* trk_Fit, TH1F* ntrk_Conv); 
-void Scale(TH1F* Data, std::vector<TH1F*> ntrk); 
 void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk); 
 void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool sig = true); 
 void Average(TH1F* Data); 
