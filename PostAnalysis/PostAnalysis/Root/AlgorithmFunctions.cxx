@@ -54,37 +54,23 @@ void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool sig)
     {
       float e = F_C[i] -> GetBinContent(x+1); 
       float f = ntrk_Conv[i] -> GetBinContent(x+1); 
-      ntrk_Conv[i] -> SetBinContent(x+1, (e+f)/2.);
+      ntrk_Conv[i] -> SetBinContent(x+1, e);
     }
-    
+    float T = ntrk_Conv[i] -> Integral(); 
+    ntrk_Conv[i] -> Scale(1. / T); 
     F_C[i] -> Scale(HL); 
-    ntrk_Conv[i] -> Scale(HL); 
+    ntrk_Conv[i] -> Scale(OL); 
     delete F_C[i];  
   }
 }
 
 void Average(TH1F* Data)
 {
-  std::vector<float> D; 
   for (int i(0); i < Data -> GetNbinsX(); i++)
   {
     float y = Data -> GetBinContent(i+1); 
-    float sum = 0; 
-    int p = 0; 
-    for (int x(0); x < 1; x++)
-    {
-      float e = Data -> GetBinContent(i + x + 1); 
-      if (e < 0){ e = 0; }
-      sum += e;
-      p++; 
-    }
-    if ( sum < 1e-10 ){sum = 1e-10;}
-    sum = sum / float(p); 
-    D.push_back(sum);  
-  }
-  for (int i(0); i < Data -> GetNbinsX(); i++)
-  {
-    Data -> SetBinContent(i+1, D[i]); 
+    if ( y <= 0){ y = 1e-10; } 
+    Data -> SetBinContent(i+1, y); 
   }
 }
 

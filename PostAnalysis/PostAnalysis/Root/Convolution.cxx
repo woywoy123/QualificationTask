@@ -24,7 +24,7 @@ std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, TString extension)
   std::vector<TString> Names;  
   for (int i(0); i < n; i++)
   {
-    TString name = "TRK_"; name +=(i+1); name +=("_"); name += (extension);  
+    TString name = "NTRU_"; name +=(i+1); name +=("_"); name += (extension);  
     Names.push_back(name);  
   }
   std::vector<TH1F*> Hist_V = CloneTH1F(Start, Names);
@@ -147,12 +147,12 @@ std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Ite
 
   for (int i(0); i < Max_Iter; i++)
   {
-    d_old = d; 
-    std::vector<float> Deconv_Vold = Deconv_V; 
+    //d_old = d; 
+    //std::vector<float> Deconv_Vold = Deconv_V; 
     Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 0.9); 
 
-    d = Pythagoras(Deconv_Vold, Deconv_V); 
-    Converge.push_back(d);  
+    //d = Pythagoras(Deconv_Vold, Deconv_V); 
+    //Converge.push_back(d);  
     //if (d_old - d == 1e-8){break;} 
   }
   

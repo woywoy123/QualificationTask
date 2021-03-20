@@ -47,61 +47,65 @@ std::map<TString, std::vector<TH1F*>> GetHist(std::map<TString, std::vector<TStr
 
 }
 
+std::map<TString, std::vector<TH1F*>> FillingMap(TString Key, std::vector<TString> Names, std::map<TString, std::vector<TH1F*>> Output)
+{
+  if (Output[Key].size() == 0)
+  {
+    for (TString name : Names)
+    {
+      TH1F* H = (TH1F*)gDirectory -> Get(name); 
+      TH1F* H_N = (TH1F*)H -> Clone(name+"_"+Key); 
+      H_N -> SetTitle(name+"_"+Key); 
+      Output[Key].push_back(H_N);  
+      delete H;
+    }
+  }
+  else
+  {
+    for(int n(0); n < Names.size(); n++)
+    {
+      TH1F* H = (TH1F*)gDirectory -> Get(Names[n]); 
+      Output[Key][n] -> Add(H, 1); 
+      delete H; 
+    }
+  }
+  return Output; 
+}
+
+std::vector<TString> NameGenerator(int ntrk, int nsdo, bool tru)
+{
+  std::vector<TString> n_trk_tru;
+  std::vector<TString> n_trk; 
+  for (int i(0); i < ntrk; i++)
+  {
+    TString n = "dEdx_ntrk_"; n+=(i+1); 
+    for (int j(0); j < nsdo; j++)
+    {
+      TString t = n; 
+      t+= ("_ntru_"); t+= (j+1);  
+      n_trk_tru.push_back(t); 
+    }
+    n_trk.push_back(n); 
+  }
+
+  if (tru == true){return n_trk_tru;}
+  else {return n_trk;}
+}
+
+
 std::map<TString, std::vector<TH1F*>> MC_Reader(TString Dir)
 {
-  auto FillingMap =[] (TString Key, std::vector<TString> Names, std::map<TString, std::vector<TH1F*>> Output)
-  {
-    if (Output[Key].size() == 0)
-    {
-      for (TString name : Names)
-      {
-        TH1F* H = (TH1F*)gDirectory -> Get(name); 
-        TH1F* H_N = (TH1F*)H -> Clone(name+"_"+Key); 
-        H_N -> SetTitle(name+"_"+Key); 
-        Output[Key].push_back(H_N);  
-        delete H;
-      }
-    }
-    else
-    {
-      for(int n(0); n < Names.size(); n++)
-      {
-        TH1F* H = (TH1F*)gDirectory -> Get(Names[n]); 
-        Output[Key][n] -> Add(H, 1); 
-        delete H; 
-      }
-    }
-    return Output; 
-  };
-
-
   TFile* F = new TFile(Dir, "READ"); 
   std::vector<TString> Layer = {"IBL", "Blayer", "layer1", "layer2"}; 
   std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
                                     "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
                                     "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
                                     "higher_GeV"}; 
-
   int nsdo = 4; 
   int ntrk = 4; 
-  std::vector<TString> Names; 
-  for (int i(0); i < ntrk; i++)
-  {
-    for (int j(0); j < nsdo; j++)
-    {
-      TString n = "dEdx_ntrk_"; n+=(i+1); n+= ("_ntru_"); n+= (j+1);  
-      Names.push_back(n); 
-    }
-  }
+  std::vector<TString> Names = NameGenerator(ntrk, nsdo, true); 
+  std::vector<TString> Data_Names = NameGenerator(ntrk, nsdo, false); 
   
-  std::vector<TString> Data_Names; 
-  for (int i(0); i < ntrk; i++)
-  {
-    TString n = "dEdx_ntrk_"; n+=(i+1); 
-    Data_Names.push_back(n);  
-  }
-
-
   std::vector<TString> R_Gre_Names; 
   std::vector<TString> R_Les_Names; 
   for (int i(0); i < 4; i++)
@@ -149,6 +153,66 @@ std::map<TString, std::vector<TH1F*>> MC_Reader(TString Dir)
     }
   }
   return Output;
+}
+
+std::map<TString, std::vector<TH1F*>> MC_Reader_All(TString Dir)
+{
+  TFile* F = new TFile(Dir, "READ"); 
+  std::vector<TString> Layer = {"IBL", "Blayer", "layer1", "layer2"}; 
+  std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
+                                    "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
+                                    "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
+                                    "higher_GeV"};  
+   
+  int nsdo = 4; 
+  int ntrk = 4; 
+  std::vector<TString> Names = NameGenerator(ntrk, nsdo, true); 
+  std::vector<TString> Data_Names = NameGenerator(ntrk, nsdo, false); 
+  
+  std::vector<TString> R_Gre_Names_T; 
+  std::vector<TString> R_Les_Names_T; 
+  std::vector<TString> R_Gre_Names; 
+  std::vector<TString> R_Les_Names; 
+  for (int i(0); i < ntrk; i++)
+  {
+    TString base = "dEdx_ntrk_"; base += (i+1); base += ("_"); 
+    for (int j(0); j < nsdo; j++)
+    {
+      TString rgre = base + "rgreater_1_ntru_"; rgre += (i+1); 
+      TString rles = base + "rless_005_ntru_"; rles += (i+1); 
+      R_Gre_Names_T.push_back(rgre); 
+      R_Les_Names_T.push_back(rles); 
+    }
+    TString rg = base + "rgreater_1"; 
+    TString rl = base + "rless_005";
+    R_Gre_Names.push_back(rg); 
+    R_Les_Names.push_back(rl); 
+  }
+  
+  std::map<TString, std::vector<TH1F*>> Output; 
+  for (int i(0); i < Layer.size(); i++)
+  {
+    TString L = Layer[i]; 
+    for (int j(0); j < JetEnergy.size(); j++)
+    {
+      TString J = JetEnergy[j]; 
+      TString LJ = L + "/" + J + "/"; 
+      F -> cd(LJ); 
+      Output = FillingMap(L + "_" + J + "_Truth", Names, Output); 
+      Output = FillingMap(L + "_" + J, Data_Names, Output); 
+      
+      F -> cd(); 
+      TString RE = L + "/" + J + "_radius/"; 
+      F -> cd(RE);
+      Output = FillingMap(L + "_" + J + "_" + "radius_Less", R_Les_Names, Output); 
+      Output = FillingMap(L + "_" + J + "_" + "radius_Greater", R_Gre_Names, Output); 
+      Output = FillingMap(L + "_" + J + "_" + "radius_Less_Truth", R_Les_Names_T, Output); 
+      Output = FillingMap(L + "_" + J + "_" + "radius_Greater_Truth", R_Gre_Names_T, Output); 
+     
+      F -> cd();  
+    }
+  }
+  return Output; 
 }
 
 std::map<TString, std::vector<TH1F*>> Result_Reader(TString Dir)

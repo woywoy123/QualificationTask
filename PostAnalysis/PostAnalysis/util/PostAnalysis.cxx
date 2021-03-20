@@ -4,11 +4,12 @@
 #include<PostAnalysis/AlgorithmTest.h>
 #include<TFile.h>
 #include<PostAnalysis/Debugging.h>
+#include<PostAnalysis/Fits.h>
 
 int main(int argc, char** argv)
 {
   bool rewrite = false; 
-  int option = -3;
+  int option = -5;
 
   TFile* F; 
   if (rewrite == true)
@@ -42,38 +43,35 @@ int main(int argc, char** argv)
     //TestReadFileTrackEnergy(F); 
     //TestMonteCarloMatchConvolution(F); 
     //TestMonteCarloFit(F); 
-
-    TestAlgorithmMonteCarlo(); 
+    //TestAlgorithmMonteCarlo(); 
     //DataAlgorithm(); 
-  }
-
   
-  if (option == -2)
-  {
-    // Compile the figures  
     FigureCompiler(F);   
-  } 
+  }
   F -> Close();   
- 
+
+  // Run Experimental
+  if (option == -3)
+  {
+    AlgorithmMonteCarlo();
+    //PlotInsideOutsideJet(); 
+  } 
   if (option == -4)
   {
     //ProcessDataResults(); 
     ProcessMonteCarloResults(); 
   }
- 
+  if (option == -5)
+  {
+    Evaluation();   
+  }
   // Debugging .cxx 
   if (option == -6)
   {
     Entry();  
   }
   
-  // Run Experimental
-  if (option == -3 && rewrite == false)
-  {
-    AlgorithmMonteCarlo();
-    //PlotInsideOutsideJet(); 
-  } 
-  
+ 
   
   
   std::cout << "fin" << std::endl;

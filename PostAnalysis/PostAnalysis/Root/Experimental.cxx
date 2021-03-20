@@ -35,7 +35,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
       {
         float e = H -> GetBinContent(x+1); 
         float f = O -> GetBinContent(x+1); 
-        O -> SetBinContent(x+1, 0.2*f+0.8*e);
+        O -> SetBinContent(x+1, 0.5*f+0.5*e);
       }
       float T = O -> Integral(); 
       O -> Scale(1. / T); 
@@ -53,7 +53,7 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
     auto FitTrack =[&] (std::vector<TH1F*> ntrk_Conv, TH1F* Data, std::map<TString, std::vector<float>> Params, int trk)
     {
       std::vector<TH1F*> F_C = LoopGen(ntrk_Conv, Data, Params); 
-      //ScaleShape(Data, ntrk_Conv); 
+      ScaleShape(Data, ntrk_Conv); 
       Subtract(F_C, Data, trk);
       Flush(F_C, ntrk_Conv); 
     }; 
@@ -64,25 +64,25 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
     TH1F* trk3 = (TH1F*)Data[2] -> Clone("Trk3_"); 
     TH1F* trk4 = (TH1F*)Data[3] -> Clone("Trk4_"); 
 
-    ScalingFit(trk1, ntrk_Conv1); 
-    ScalingFit(trk2, ntrk_Conv2); 
-    ScalingFit(trk3, ntrk_Conv3); 
-    ScalingFit(trk4, ntrk_Conv4); 
+    //ScalingFit(trk1, ntrk_Conv1); 
+    //ScalingFit(trk2, ntrk_Conv2); 
+    //ScalingFit(trk3, ntrk_Conv3); 
+    //ScalingFit(trk4, ntrk_Conv4); 
     
-    Subtract(ntrk_Conv1, trk1, 1); 
-    Subtract(ntrk_Conv2, trk2, 2); 
-    Subtract(ntrk_Conv3, trk3, 3); 
-    Subtract(ntrk_Conv4, trk4, 4); 
+    //Subtract(ntrk_Conv1, trk1, 1); 
+    //Subtract(ntrk_Conv2, trk2, 2); 
+    //Subtract(ntrk_Conv3, trk3, 3); 
+    //Subtract(ntrk_Conv4, trk4, 4); 
 
-    trk1 = (TH1F*)Data[0] -> Clone("Trk1_"); 
-    trk2 = (TH1F*)Data[1] -> Clone("Trk2_"); 
-    trk3 = (TH1F*)Data[2] -> Clone("Trk3_"); 
-    trk4 = (TH1F*)Data[3] -> Clone("Trk4_"); 
+    //trk1 = (TH1F*)Data[0] -> Clone("Trk1_"); 
+    //trk2 = (TH1F*)Data[1] -> Clone("Trk2_"); 
+    //trk3 = (TH1F*)Data[2] -> Clone("Trk3_"); 
+    //trk4 = (TH1F*)Data[3] -> Clone("Trk4_"); 
 
-    std::vector<TH1F*> ntrk_Conv_temp1 = ConvolveNTimes(ntrk_Conv1[0], 4, "Temp1"); 
-    std::vector<TH1F*> ntrk_Conv_temp2 = ConvolveNTimes(ntrk_Conv1[0], 4, "Temp2"); 
-    std::vector<TH1F*> ntrk_Conv_temp3 = ConvolveNTimes(ntrk_Conv1[0], 4, "Temp3"); 
-    std::vector<TH1F*> ntrk_Conv_temp4 = ConvolveNTimes(ntrk_Conv1[0], 4, "Temp4"); 
+    //std::vector<TH1F*> ntrk_Conv_temp1 = ConvolveNTimes(ntrk_Conv1[0], 4, "Temp1"); 
+    //std::vector<TH1F*> ntrk_Conv_temp2 = ConvolveNTimes(ntrk_Conv1[0], 4, "Temp2"); 
+    //std::vector<TH1F*> ntrk_Conv_temp3 = ConvolveNTimes(ntrk_Conv1[0], 4, "Temp3"); 
+    //std::vector<TH1F*> ntrk_Conv_temp4 = ConvolveNTimes(ntrk_Conv1[0], 4, "Temp4"); 
    
     //for (int x(0); x < ntrk_Conv_temp1.size(); x++)
     //{
@@ -91,21 +91,21 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
     //  Clone(ntrk_Conv_temp3[x], ntrk_Conv3[x]); 
     //  Clone(ntrk_Conv_temp4[x], ntrk_Conv4[x]); 
     //} 
-    
-    BulkDelete(ntrk_Conv_temp1); 
-    BulkDelete(ntrk_Conv_temp2); 
-    BulkDelete(ntrk_Conv_temp3); 
-    BulkDelete(ntrk_Conv_temp4); 
+    //
+    //BulkDelete(ntrk_Conv_temp1); 
+    //BulkDelete(ntrk_Conv_temp2); 
+    //BulkDelete(ntrk_Conv_temp3); 
+    //BulkDelete(ntrk_Conv_temp4); 
     
     ScalingShift(trk1, ntrk_Conv1); 
     ScalingShift(trk2, ntrk_Conv2); 
     ScalingShift(trk3, ntrk_Conv3); 
     ScalingShift(trk4, ntrk_Conv4); 
 
-    delete trk1; 
-    delete trk2; 
-    delete trk3; 
-    delete trk4; 
+    Subtract(ntrk_Conv1, trk1, 1); 
+    Subtract(ntrk_Conv2, trk2, 2); 
+    Subtract(ntrk_Conv3, trk3, 3); 
+    Subtract(ntrk_Conv4, trk4, 4);
 
     if (i < 1)
     {
@@ -124,31 +124,39 @@ std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector
       Clone(ntrk_Conv1[0], ntrk_Conv4[0]); 
       Clone(ntrk_Conv2[1], ntrk_Conv4[1]); 
       Clone(ntrk_Conv3[2], ntrk_Conv4[2]); 
-    } 
-    trk1 = (TH1F*)Data[0] -> Clone("Trk1_"); 
-    trk2 = (TH1F*)Data[1] -> Clone("Trk2_"); 
-    trk3 = (TH1F*)Data[2] -> Clone("Trk3_"); 
-    trk4 = (TH1F*)Data[3] -> Clone("Trk4_");     
+    }
 
-    FitTrack(ntrk_Conv1, trk1, Params, 1); 
-    FitTrack(ntrk_Conv2, trk2, Params, 2); 
-    FitTrack(ntrk_Conv3, trk3, Params, 3); 
-    FitTrack(ntrk_Conv4, trk4, Params, 4); 
 
     //trk1 = (TH1F*)Data[0] -> Clone("Trk1_"); 
     //trk2 = (TH1F*)Data[1] -> Clone("Trk2_"); 
     //trk3 = (TH1F*)Data[2] -> Clone("Trk3_"); 
     //trk4 = (TH1F*)Data[3] -> Clone("Trk4_");     
 
-    //ScalingFit(trk1, ntrk_Conv1); 
-    //ScalingFit(trk2, ntrk_Conv2); 
-    //ScalingFit(trk3, ntrk_Conv3); 
-    //ScalingFit(trk4, ntrk_Conv4);   
 
-    ScalingShift(trk1, ntrk_Conv1); 
-    ScalingShift(trk2, ntrk_Conv2); 
-    ScalingShift(trk3, ntrk_Conv3); 
-    ScalingShift(trk4, ntrk_Conv4); 
+    //FitTrack(ntrk_Conv1, trk1, Params, 1); 
+    //FitTrack(ntrk_Conv2, trk2, Params, 2); 
+    //FitTrack(ntrk_Conv3, trk3, Params, 3); 
+    //FitTrack(ntrk_Conv4, trk4, Params, 4); 
+
+    trk1 = (TH1F*)Data[0] -> Clone("Trk1_"); 
+    trk2 = (TH1F*)Data[1] -> Clone("Trk2_"); 
+    trk3 = (TH1F*)Data[2] -> Clone("Trk3_"); 
+    trk4 = (TH1F*)Data[3] -> Clone("Trk4_");     
+
+    ScalingFit(trk1, ntrk_Conv1); 
+    ScalingFit(trk2, ntrk_Conv2); 
+    ScalingFit(trk3, ntrk_Conv3); 
+    ScalingFit(trk4, ntrk_Conv4);   
+
+    ScaleShape(trk1, ntrk_Conv1);
+    ScaleShape(trk2, ntrk_Conv2);
+    ScaleShape(trk3, ntrk_Conv3);
+    ScaleShape(trk4, ntrk_Conv4);
+
+    delete trk1; 
+    delete trk2; 
+    delete trk3; 
+    delete trk4; 
 
     can -> Print(name + "["); 
     PlotHists(T1, ntrk_Conv1, can);
@@ -181,7 +189,7 @@ void AlgorithmMonteCarlo()
   Params["m_e"] = {m, m, m, m}; 
   Params["s_s"] = {0.005, 0.005, 0.005, 0.005};
   Params["s_e"] = {0.2, 0.2, 0.2, 0.2};  
-  Params["iterations"] = {5}; 
+  Params["iterations"] = {1}; 
   Params["LR_iterations"] = {50}; 
   Params["G_Mean"] = {0, 0, 0, 0}; 
   Params["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
@@ -239,32 +247,6 @@ void AlgorithmMonteCarlo()
     //MainAlgorithm(Outside_JetCore, Data, Params, T3, 3);  
     //break;
   }
-}
-
-void PlotInsideOutsideJet()
-{
-  TString Dir = "Merged_MC.root";
-  std::map<TString, std::vector<TH1F*>> Output = MC_Reader(Dir);
-  
-  std::vector<TH1F*> R_out = Output["All_Greater"]; 
-  std::vector<TH1F*> R_in = Output["All_Less"]; 
-  
-  std::cout << R_out.size() << std::endl;
-
-
-
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-  PlotHists(R_out, can); 
-  can -> Print("Out_jetcore.pdf");
-  delete can; 
-
-  can = new TCanvas(); 
-  can -> SetLogy(); 
-  PlotHists(R_in, can); 
-  can -> Print("In_jetcore.pdf");
-
-  delete can;
 }
 
 void Shifting(TH1F* H)

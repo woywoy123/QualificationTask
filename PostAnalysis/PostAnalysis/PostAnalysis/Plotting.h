@@ -12,6 +12,7 @@
 #include<sstream>
 #include<iomanip>
 #include<RooHist.h>
+#include<PostAnalysis/Statistics.h>
 
 void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style);
 void PlotHists(TH1F* Hist, TCanvas* can); 

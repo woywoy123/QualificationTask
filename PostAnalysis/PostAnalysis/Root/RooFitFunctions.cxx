@@ -13,6 +13,18 @@ std::vector<RooRealVar*> RooVariables(std::vector<TString> Names, std::vector<fl
   return Variables; 
 }
 
+std::vector<RooRealVar*> RooRealVarGuess(std::vector<TString> Names, float Guess, std::vector<float> Begin, std::vector<float> End)
+{
+  std::vector<RooRealVar*> Output; 
+  for (int i(0); i < Names.size(); i++)
+  {
+    RooRealVar* var = new RooRealVar(Names[i], Names[i], Guess, Begin[i], End[i]);  
+    Output.push_back(var); 
+  }
+  return Output; 
+}; 
+
+
 std::vector<RooGaussian*> RooGaussianVariables(std::vector<TString> Names, RooRealVar* domain, std::vector<RooRealVar*> mean, std::vector<RooRealVar*> stdev)
 {
   std::vector<RooGaussian*> Variables; 
@@ -166,16 +178,6 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
 
 std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache, int cache)
 {
-  auto RooRealVarGuess =[] (std::vector<TString> Names, float Guess, std::vector<float> Begin, std::vector<float> End)
-  {
-    std::vector<RooRealVar*> Output; 
-    for (int i(0); i < Names.size(); i++)
-    {
-      RooRealVar* var = new RooRealVar(Names[i], Names[i], Guess, Begin[i], End[i]);  
-      Output.push_back(var); 
-    }
-    return Output; 
-  }; 
   
   // First we get the domain of the Data histogram we are fitting 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
@@ -255,6 +257,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   pg -> migrad();
   //pg -> minos(); 
   pg -> fit("m");  
+  pg -> cleanup(); 
   
   //for (int i(0); i < s_vars.size(); i++){s_vars[i] -> setConstant(false);} 
   //for (int i(0); i < l_vars.size(); i++){l_vars[i] -> setConstant(true);}
@@ -316,7 +319,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   return Out; 
 }
 
-std::vector<float> ScalingFit(TH1F* Data, std::vector<TH1F*> PDF_H)
+std::map<TString, std::vector<float>> ScalingFit(TH1F* Data, std::vector<TH1F*> PDF_H)
 {
   for (int i(0); i < PDF_H.size(); i++){Average(PDF_H[i]);}
   Normalize(PDF_H);
@@ -357,7 +360,7 @@ std::vector<float> ScalingFit(TH1F* Data, std::vector<TH1F*> PDF_H)
 
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
-  model.fitTo(*D, RooFit::Range("fit"), RooFit::Strategy(1), RooFit::SumW2Error(true)); 
+  model.fitTo(*D, RooFit::Range("fit"), RooFit::Strategy(1), RooFit::SumW2Error(true), RooFit::NumCPU(8)); 
   //RooAbsReal* nll = model.createNLL(*D, RooFit::Range("fit"));  
   //RooMinimizer* pg = new RooMinimizer(*nll);   
   //pg -> setMaxIterations(100000); 
@@ -369,12 +372,16 @@ std::vector<float> ScalingFit(TH1F* Data, std::vector<TH1F*> PDF_H)
   ////pg -> minos(N); 
   //pg -> fit("m"); 
 
-  std::vector<float> Out;  
+  std::map<TString, std::vector<float>> Out;  
   Normalize(PDF_H); 
   for (int i(0); i < l_vars.size(); i++)
   {
     float n = l_vars[i] -> getVal(); 
-    Out.push_back(n); 
+    float n_e = l_vars[i] -> getError(); 
+    std::vector<float> Temp = {n, n_e};
+    TString Name = "L"; Name += (i+1); 
+    Out[Name] = Temp; 
+
     PDF_H[i] -> Scale(n*L);   
     delete l_vars[i]; 
     delete pdf_vars[i]; 
@@ -387,18 +394,9 @@ std::vector<float> ScalingFit(TH1F* Data, std::vector<TH1F*> PDF_H)
   return Out;
 }
 
-void ScalingShift(TH1F* Data, std::vector<TH1F*> PDF_H)
+std::map<TString, std::vector<float>> ScalingShift(TH1F* Data, std::vector<TH1F*> PDF_H)
 {
-  auto RooRealVarGuess =[] (std::vector<TString> Names, float Guess, std::vector<float> Begin, std::vector<float> End)
-  {
-    std::vector<RooRealVar*> Output; 
-    for (int i(0); i < Names.size(); i++)
-    {
-      RooRealVar* var = new RooRealVar(Names[i], Names[i], Guess, Begin[i], End[i]);  
-      Output.push_back(var); 
-    }
-    return Output; 
-  }; 
+
 
 
   for (int i(0); i < PDF_H.size(); i++){Average(PDF_H[i]);}
@@ -415,7 +413,7 @@ void ScalingShift(TH1F* Data, std::vector<TH1F*> PDF_H)
     
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
   //x -> setBins(100000, "cache"); 
-  x -> setRange("fit", x_min+1, x_max-1); 
+  x -> setRange("fit", x_min+0.1, x_max-0.1); 
   std::vector<TString> L_N = NameGenerator(PDF_H.size(), "_L"); 
   std::vector<float> L_S(PDF_H.size(), 0); 
   std::vector<float> L_E(PDF_H.size(), 2*Data -> Integral()); 
@@ -452,7 +450,7 @@ void ScalingShift(TH1F* Data, std::vector<TH1F*> PDF_H)
   
   RooDataHist* Dat = RooDataVariable("data", x, Data); 
   //model.fitTo(*Dat, RooFit::Strategy(1), RooFit::SumW2Error(true), Minimizer("Minuit2")); 
-  RooAbsReal* nll = model.createNLL(*Dat); //. RooFit::Range(x_min +1, x_max-1));  
+  RooAbsReal* nll = model.createNLL(*Dat, RooFit::NumCPU(8)); //, RooFit::Range("fit")); 
   RooMinimizer* pg = new RooMinimizer(*nll);   
   pg -> setMaxIterations(100000); 
   pg -> setMaxFunctionCalls(100000); 
@@ -467,10 +465,16 @@ void ScalingShift(TH1F* Data, std::vector<TH1F*> PDF_H)
   pg -> fit("m");
   pg -> cleanup();
   
-  PlotRooFit(model, x, PDF_Var, Dat);
+  //PlotRooFit(model, x, PDF_Var, Dat);
+  std::map<TString, std::vector<float>> Out;  
   for (int i(0); i < PDF_H.size(); i++)
   {
     float l = Lp[i] -> getVal(); 
+    float l_e = Lp[i] -> getError(); 
+    
+    std::vector<float> Temp = {l, l_e};
+    TString Name = "L"; Name += (i+1); 
+    Out[Name] = Temp; 
 
     TF1 T = TF1(*PDF_Var[i] -> asTF(RooArgList(*x))); 
     T.SetNpx(Data -> GetNbinsX()); 
@@ -483,7 +487,7 @@ void ScalingShift(TH1F* Data, std::vector<TH1F*> PDF_H)
     PDF_H[i] -> Scale(l*L); 
   }
 
-
+  Data -> Scale(L);
   delete x; 
   delete Dat; 
   for (int i(0); i < PDF_H.size(); i++)
@@ -496,10 +500,7 @@ void ScalingShift(TH1F* Data, std::vector<TH1F*> PDF_H)
   }
   delete nll;
   delete pg;
-
-
-
-
+  return Out; 
 }
 
 
@@ -760,16 +761,6 @@ TH1F* ExplicitConstrainingExternal(TH1F* Data, TH1F* PDF, std::map<TString, std:
 
 std::vector<TH1F*> IterativeFitting(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, int fft_cache, int cache)
 {
-  auto RooRealVarGuess =[] (std::vector<TString> Names, std::vector<float> Begin, std::vector<float> End)
-  {
-    std::vector<RooRealVar*> Output; 
-    for (int i(0); i < Names.size(); i++)
-    {
-      RooRealVar* var = new RooRealVar(Names[i], Names[i], (Begin[i] + End[i])/2, Begin[i], End[i]);  
-      Output.push_back(var); 
-    }
-    return Output; 
-  }; 
 
   // First we get the domain of the Data histogram we are fitting 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
