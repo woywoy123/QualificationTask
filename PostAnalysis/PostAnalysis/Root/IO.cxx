@@ -178,8 +178,8 @@ std::map<TString, std::vector<TH1F*>> MC_Reader_All(TString Dir)
     TString base = "dEdx_ntrk_"; base += (i+1); base += ("_"); 
     for (int j(0); j < nsdo; j++)
     {
-      TString rgre = base + "rgreater_1_ntru_"; rgre += (i+1); 
-      TString rles = base + "rless_005_ntru_"; rles += (i+1); 
+      TString rgre = base + "rgreater_1_ntru_"; rgre += (j+1); 
+      TString rles = base + "rless_005_ntru_"; rles += (j+1); 
       R_Gre_Names_T.push_back(rgre); 
       R_Les_Names_T.push_back(rles); 
     }

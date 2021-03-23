@@ -59,7 +59,7 @@ void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool sig)
     float T = ntrk_Conv[i] -> Integral(); 
     ntrk_Conv[i] -> Scale(1. / T); 
     F_C[i] -> Scale(HL); 
-    ntrk_Conv[i] -> Scale(OL); 
+    ntrk_Conv[i] -> Scale(HL); 
     delete F_C[i];  
   }
 }
@@ -74,8 +74,19 @@ void Average(TH1F* Data)
   }
 }
 
-
 std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, TH1F* Data, std::map<TString, std::vector<float>> Params)
+{
+  std::vector<std::pair<TH1F*, std::vector<float>>> trks = LoopGenAll(ntrk_Conv, Data, Params);  
+  
+  std::vector<TH1F*> F_C; 
+  for (int i(0); i < trks.size(); i++)
+  {
+    F_C.push_back(trks[i].first); 
+  }
+  return F_C;
+}
+
+std::vector<std::pair<TH1F*, std::vector<float>>> LoopGenAll(std::vector<TH1F*> ntrk_Conv, TH1F* Data, std::map<TString, std::vector<float>> Params)
 {
   std::vector<TString> Names_Dec; 
   float r = 0.2; 
@@ -120,18 +131,20 @@ std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, TH1F* Data, std::map<TS
 
   std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data_D, PDF_D, Params, Params["cache"][0], Params["cache"][0]);
   delete Data_D; 
-  std::vector<TH1F*> F_C;
+  std::vector<std::pair<TH1F*, std::vector<float>>> F_C;
+
   float bin_min = PDF[0] -> GetXaxis() -> FindBin(min) -1; 
   for (int i(0); i < trk_Fit.size(); i++)
   {
     TString name_N = "N_"; name_N += (ntrk_Conv[i] -> GetTitle()); 
     TH1F* H = new TH1F(name_N, name_N, bins, min, max); 
-    F_C.push_back(H);  
    
     for (int j(0); j < bins; j++)
     {
       H -> SetBinContent(j+1, trk_Fit[i].first -> GetBinContent(j+1 + bin_min)); 
     }
+    
+    F_C.push_back(std::pair<TH1F*, std::vector<float>>(H, trk_Fit[i].second));
     delete trk_Fit[i].first;
   } 
   

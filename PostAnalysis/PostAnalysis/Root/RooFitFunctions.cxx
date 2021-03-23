@@ -134,7 +134,9 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
   model.fitTo(*D, RooFit::SumW2Error(true), RooFit::NumCPU(8), RooFit::Range("fit")); 
-  PlotRooFit(model, x, fft_vars, D);  
+  
+  TString plot_t = Data -> GetTitle(); plot_t += ("_FitDeconvolution.pdf"); 
+  RooFitPullPlot(model, x, fft_vars, D, plot_t);  
 
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 
@@ -272,7 +274,8 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   //for (int i(0); i < l_vars.size(); i++){l_vars[i] -> setConstant(false);}
   //pg -> fit("h"); 
 
-  PlotRooFit(model, x, fft_vars, D);  
+  TString plot_t = Data -> GetTitle(); plot_t += ("_FitDeconvolution.pdf"); 
+  RooFitPullPlot(model, x, fft_vars, D, plot_t);  
 
   // Create a histogram vector to store the solution 
   std::vector<TString> out_N = NameGenerator(n_vars, "_GxT"); 
@@ -289,9 +292,6 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     float n_e = l_vars[i] -> getError(); 
     std::vector<float> P = {m, s, n, m_e, s_e, n_e}; 
     
-    //Params["G_Mean"][i] = -1*m; // <<<< CAREFUL!!!! I ADDED A -1*!!!!!!
-    //Params["G_Stdev"][i] = s;
-
     TF1 T = TF1(*fft_vars[i] -> asTF(RooArgList(*x))); 
     T.SetNpx(bins); 
     TH1* H = T.CreateHistogram(); 
@@ -372,6 +372,9 @@ std::map<TString, std::vector<float>> ScalingFit(TH1F* Data, std::vector<TH1F*> 
   ////pg -> minos(N); 
   //pg -> fit("m"); 
 
+  TString plot_t = Data -> GetTitle(); plot_t += ("_Normal.pdf"); 
+  RooFitPullPlot(model, x, pdf_vars, D, plot_t);  
+
   std::map<TString, std::vector<float>> Out;  
   Normalize(PDF_H); 
   for (int i(0); i < l_vars.size(); i++)
@@ -396,9 +399,6 @@ std::map<TString, std::vector<float>> ScalingFit(TH1F* Data, std::vector<TH1F*> 
 
 std::map<TString, std::vector<float>> ScalingShift(TH1F* Data, std::vector<TH1F*> PDF_H)
 {
-
-
-
   for (int i(0); i < PDF_H.size(); i++){Average(PDF_H[i]);}
   Normalize(PDF_H);
 
@@ -464,8 +464,10 @@ std::map<TString, std::vector<float>> ScalingShift(TH1F* Data, std::vector<TH1F*
   pg -> minos(); 
   pg -> fit("m");
   pg -> cleanup();
-  
-  //PlotRooFit(model, x, PDF_Var, Dat);
+ 
+  TString plot_t = Data -> GetTitle(); plot_t += ("_ScalingShift.pdf"); 
+  RooFitPullPlot(model, x, PDF_Var, Dat, plot_t);  
+
   std::map<TString, std::vector<float>> Out;  
   for (int i(0); i < PDF_H.size(); i++)
   {
@@ -837,8 +839,6 @@ std::vector<TH1F*> IterativeFitting(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   pg -> minos(N); 
   pg -> fit("m");  
   
-  PlotRooFit(model, x, fft_vars, D);  
-
   // Create a histogram vector to store the solution 
   for (int i(0); i < n_vars; i++)
   {
