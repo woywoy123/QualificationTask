@@ -13,6 +13,10 @@
 #include<iomanip>
 #include<RooHist.h>
 #include<PostAnalysis/Statistics.h>
+#include<RooMinimizer.h>
+#include<RooRealVar.h>
+#include<RooFit.h>
+#include<RooProfileLL.h>
 
 void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style);
 void PlotHists(TH1F* Hist, TCanvas* can); 
@@ -32,5 +36,5 @@ void GeneratePlot(TH1F* H, TString Title, TCanvas* can, Color_t color, ELineStyl
 TLegend* GenerateLegend(std::vector<TH1F*> Hist_V, TCanvas* can); 
 void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString Xaxis);
 
-
+void PlotLikelyHood(RooAbsReal* nll, RooRealVar* var, TString name); 
 

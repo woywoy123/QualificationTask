@@ -109,10 +109,46 @@ std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<TH1F
   float E_2_2 = Error[1][1];  
   float E_3_2 = Error[2][1];  
   
-  float E_flost2 = (1./(2*std::pow(n_1_2 + n_2_2 + n_3_2, 2))) * 
-      std::pow(std::pow(n_2_2 - n_1_2 - n_3_2, 2)*(std::pow(E_1_2, 2) + std::pow(E_3_2, 2)) + std::pow(2*(n_1_2 + n_3_2), 2)*std::pow(E_2_2, 2), 0.5); 
+  float E_flost2 = (1./(2*std::pow(n_1_2 + n_2_2 + n_3_2, 2))) * std::pow(std::pow(n_2_2 - n_1_2 - n_3_2, 2)*(std::pow(E_1_2, 2) + std::pow(E_3_2, 2)) + std::pow(2*(n_1_2 + n_3_2), 2)*std::pow(E_2_2, 2), 0.5); 
 
   return {FLost2, E_flost2};
+}
+
+std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<TH1F*>Err)
+{
+  std::vector<float> fi = {0, 0, 0, 0}; 
+  for (int i(0); i < ntrk.size(); i++)
+  {
+    if (ntrk[i].size() > 2 && i < fi.size())
+    {  
+      fi[i] = ntrk[i][2] -> Integral(); 
+    }
+  }
+
+  // Convention: n_trk_tru
+  float n_1_3 = fi[0];
+  float n_2_3 = fi[1];
+  float n_3_3 = fi[2];
+  float n_4_3 = fi[3]; 
+  float FLost3 = float(2*n_1_3 + n_2_3 + n_4_3) / float(3.*(n_1_3 + n_2_3 + n_3_3 + n_4_3)); 
+  
+  std::vector<std::vector<float>> Error = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+  for (int i(0); i < Err.size(); i++)
+  {
+    for (int x(0); x < Err[i] -> GetNbinsX(); x++)
+    {
+      if (x < Error[i].size() && i < Error.size()){Error[i][x] = Err[i] -> GetBinContent(x+1);}
+    }
+  }
+
+  float E_1_3 = Error[0][2];  
+  float E_2_3 = Error[1][2];  
+  float E_3_3 = Error[2][2];  
+  float E_4_3 = Error[3][2]; 
+  
+  float E_flost3 = float( float(1.) / float( 3. * std::pow(n_1_3 + n_2_3 + n_3_3 + n_4_3, 2)) ) * std::sqrt( std::pow(n_2_3 + 2*n_3_3 + n_4_3, 2) * std::pow(E_1_3, 2 ) + std::pow(n_3_3 - n_1_3, 2) * (std::pow(E_4_3, 2) + std::pow(E_2_3, 2)) + std::pow( 2*n_1_3 + n_2_3 + n_4_3, 2 ) * std::pow(E_3_3, 2));
+
+  return {FLost3, E_flost3};
 }
 
 std::map<TString, std::vector<float>> AnalysisOutput(std::map<TString, std::vector<TH1F*>> Map, TString Name)
@@ -147,6 +183,8 @@ std::map<TString, std::vector<float>> AnalysisOutput(std::map<TString, std::vect
         Error_H.push_back(All_em[i][p]); 
         continue;
       }
+
+      if (std::isnan(std::abs(All_em[i][p] -> Integral()))){continue;}
       
       T.push_back(All_Tem[i][p]); 
       P.push_back(All_em[i][p]); 
@@ -164,15 +202,22 @@ std::map<TString, std::vector<float>> AnalysisOutput(std::map<TString, std::vect
   for (int i(0); i < All.size(); i++)
   {
     PlotHists(All_T[i], All[i], can); 
+    for (int p(0); p < All.size(); p++)
+    {
+      float e = All_T[i][p] -> Chi2Test(All[i][p]); 
+      std::cout << e << "  " << All_T[i][p] -> GetTitle() << "  " << All[i][p] -> GetTitle() << std::endl;
+    }
     can -> Print(Name +".pdf"); 
   } 
   can -> Print(Name + ".pdf]"); 
-  
+  delete can; 
   std::vector<TH1F*> Error_T = {}; 
   std::vector<float> Flost2_P = Flost2(All, Error_H); 
   std::vector<float> Flost2_T = Flost2(All_T, Error_T); 
 
-  std::cout << std::endl;
+  std::vector<float> Flost3_P = Flost3(All, Error_H); 
+  std::vector<float> Flost3_T = Flost3(All_T, Error_T); 
+  
 
   std::vector<std::vector<float>> KS; 
   std::vector<std::vector<float>> Er_by_Int; 
@@ -190,7 +235,6 @@ std::map<TString, std::vector<float>> AnalysisOutput(std::map<TString, std::vect
 
       float ks = H_t -> KolmogorovTest(H_p); 
       float Err_Int = ErrorByIntegral(H_p, H_t); 
-      
       ks_temp.push_back(ks); 
       int_temp.push_back(Err_Int); 
     }
@@ -209,6 +253,9 @@ std::map<TString, std::vector<float>> AnalysisOutput(std::map<TString, std::vect
   
   Output["FLost2_P"] = Flost2_P; 
   Output["FLost2_T"] = Flost2_T; 
+  
+  Output["FLost3_P"] = Flost3_P; 
+  Output["FLost3_T"] = Flost3_T; 
 
   return Output;
 }

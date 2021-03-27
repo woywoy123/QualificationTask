@@ -213,6 +213,28 @@ void RooFitPullPlot(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvP
   delete can; 
 }
 
+void PlotLikelyHood(RooAbsReal* nll, RooRealVar* var, TString name)
+{
+  // Define the frame 
+  RooPlot* frame1 = var -> frame(RooFit::Bins(1000), RooFit::Range(-1, 1), RooFit::Title(name)); 
+  nll -> plotOn(frame1, RooFit::ShiftToZero());
+
+  RooAbsReal* pll_var = nll -> createProfile(*var); 
+  pll_var -> plotOn(frame1, RooFit::LineColor(kRed)); 
+  
+  frame1 -> SetMinimum(-5); 
+  frame1 -> SetMaximum(5); 
+  TCanvas* can = new TCanvas();   
+  frame1 -> Draw(); 
+  can -> Update(); 
+  can -> Print(name); 
+  delete can;
+  //delete pll_var; 
+  //delete frame1; 
+
+}
+
+
 void RooFitPullPlot(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data, TString Name)
 {
   RooPlot* xframe = Domain -> frame(RooFit::Title("Figure")); 
