@@ -247,9 +247,9 @@ void AnalysisLoop()
 
     // Doing the different fit techniques 
     // Normalization fit 
-    //std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Normal = OnlyNormal(Inside_Using, Outside, Params, Name); 
-    //AnalysisPlots(Normal, Inside_Using_Truth, Name + "_Normal");  
-    //WriteToFile(F, Normal, Name + "_Normal"); 
+    std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Normal = OnlyNormal(Inside_Using, Outside, Params, Name); 
+    AnalysisPlots(Normal, Inside_Using_Truth, Name + "_Normal");  
+    WriteToFile(F, Normal, Name + "_Normal"); 
 
     // Shifting with Normalization
     std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> ShiftNormal = NormalShift(Inside_Using, Outside, Params, Name);
@@ -258,15 +258,14 @@ void AnalysisLoop()
 
 
     // Shifting Normalization with FFT 
-    //std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalShiftFFT = ShiftNormalFFT(Inside_Using, Outside, Params_SmallWidth, Name); 
-    //AnalysisPlots(NormalShiftFFT, Inside_Using_Truth, Name + "_NormalShiftFFT");  
-    //WriteToFile(F, NormalShiftFFT, Name + "_ShiftNormalFFT"); 
+    std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalShiftFFT = ShiftNormalFFT(Inside_Using, Outside, Params_SmallWidth, Name); 
+    AnalysisPlots(NormalShiftFFT, Inside_Using_Truth, Name + "_NormalShiftFFT");  
+    WriteToFile(F, NormalShiftFFT, Name + "_ShiftNormalFFT"); 
 
     // Shifting, Normalization, Width with FFT 
-    //std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalShiftWidthFFT = NormalWidthDeconvShiftFFT(Inside_Using, Outside, Params_NormalWidth, Name);
-    //AnalysisPlots(NormalShiftFFT, Inside_Using_Truth, Name + "_NormalShiftWidthFFT");  
-    //WriteToFile(F, NormalShiftWidthFFT, Name + "_NormalShiftWidthFFT"); 
-    break; 
+    std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalShiftWidthFFT = NormalWidthDeconvShiftFFT(Inside_Using, Outside, Params_NormalWidth, Name);
+    AnalysisPlots(NormalShiftFFT, Inside_Using_Truth, Name + "_NormalShiftWidthFFT");  
+    WriteToFile(F, NormalShiftWidthFFT, Name + "_NormalShiftWidthFFT"); 
   }
   F -> Close(); 
   delete F;
@@ -364,7 +363,7 @@ std::map<TString, int> Determine_Best_Fit(std::map<TString, std::map<TString, st
       TString na = p -> first; 
       std::vector<float> ta = p -> second; 
       if (na.Contains("_KS")){ ks = ta[0]; }
-      if (na.Contains("_IntegralError")){for (float f : ta){ sum += f;}}
+      if (na.Contains("_IntegralError")){sum = ta[0];}
     }
 
     // Capture the individual errors for each algo
@@ -466,7 +465,7 @@ std::map<TString, int> Determine_Best_Fit(std::map<TString, std::map<TString, st
         else 
         {
           TString com; 
-          TString sub1 = "   KS   "; 
+          TString sub1 = "   CS   "; 
           TString sub2 = "|"; 
           TString sub3 = "   IE   "; 
           int q = (wp - 2*sub2.Sizeof() - sub1.Sizeof() - sub3.Sizeof())/4;
@@ -508,16 +507,7 @@ std::map<TString, int> Determine_Best_Fit(std::map<TString, std::map<TString, st
     std::cout << std::endl;    
     PL++; 
 
-
   }
-
-
-
-
-
-
-
-
   
   return Output; 
 }
@@ -733,6 +723,7 @@ void AnalysisLoop1TrackOnly()
   {
     TString Name = i -> first; 
 
+    std::cout << Name << std::endl;
     std::vector<TH1F*> Hist = i -> second; 
     if (Name.Contains("radius") || Name.Contains("Truth")){continue;}
     
@@ -768,9 +759,9 @@ void AnalysisLoop1TrackOnly()
 
     // Doing the different fit techniques 
     // Normalization fit 
-    //std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Normal = OnlyNormal(Inside_Using, Outside, Params, Name); 
-    //AnalysisPlots(Normal, Inside_Using_Truth, Name + "_Normal");  
-    //WriteToFile(F, Normal, Name + "_Normal"); 
+    std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Normal = OnlyNormal(Inside_Using, Outside, Params, Name); 
+    AnalysisPlots(Normal, Inside_Using_Truth, Name + "_Normal");  
+    WriteToFile(F, Normal, Name + "_Normal"); 
 
     // Shifting with Normalization
     std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> ShiftNormal = NormalShift(Inside_Using, Outside, Params, Name);
@@ -787,7 +778,6 @@ void AnalysisLoop1TrackOnly()
     std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalShiftWidthFFT = NormalWidthDeconvShiftFFT(Inside_Using, Outside, Params_NormalWidth, Name);
     AnalysisPlots(NormalShiftFFT, Inside_Using_Truth, Name + "_NormalShiftWidthFFT");  
     WriteToFile(F, NormalShiftWidthFFT, Name + "_NormalShiftWidthFFT"); 
-    break;
    
   }
   F -> Close(); 
@@ -796,7 +786,7 @@ void AnalysisLoop1TrackOnly()
 
 void Evaluation()
 {
-  AnalysisLoop1TrackOnly();
+  //AnalysisLoop1TrackOnly();
   //AnalysisLoop();  
   Reading_Stats(); 
 }

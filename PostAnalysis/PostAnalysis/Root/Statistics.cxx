@@ -55,7 +55,9 @@ float ErrorByIntegral(TH1F* Hist1, TH1F* Hist2, float x_min, float x_max)
     sum += std::abs(h1 - h2);
   } 
   float A = Hist2 -> Integral(bin_min, bin_max); 
-  return sum/A; 
+  float r = sum / A; 
+  if (std::isinf(r)){r = 0;}
+  return r; 
 
 }
 
@@ -196,21 +198,21 @@ std::map<TString, std::vector<float>> AnalysisOutput(std::map<TString, std::vect
     }
   }
 
-  TCanvas* can = new TCanvas(); 
-  can -> Print(Name + ".pdf["); 
-  can -> SetLogy(); 
-  for (int i(0); i < All.size(); i++)
-  {
-    PlotHists(All_T[i], All[i], can); 
-    for (int p(0); p < All.size(); p++)
-    {
-      float e = All_T[i][p] -> Chi2Test(All[i][p]); 
-      std::cout << e << "  " << All_T[i][p] -> GetTitle() << "  " << All[i][p] -> GetTitle() << std::endl;
-    }
-    can -> Print(Name +".pdf"); 
-  } 
-  can -> Print(Name + ".pdf]"); 
-  delete can; 
+  //TCanvas* can = new TCanvas(); 
+  //can -> Print(Name + ".pdf["); 
+  //can -> SetLogy(); 
+  //for (int i(0); i < All.size(); i++)
+  //{
+  //  PlotHists(All_T[i], All[i], can); 
+  //  //for (int p(0); p < All.size(); p++)
+  //  //{
+  //  //  float e = All_T[i][p] -> KolmogorovTest(All[i][p]); 
+  //  //  std::cout << e << "  " << All_T[i][p] -> GetTitle() << "  " << All[i][p] -> GetTitle() << std::endl;
+  //  //}
+  //  can -> Print(Name +".pdf"); 
+  //} 
+  //can -> Print(Name + ".pdf]"); 
+  //delete can; 
   std::vector<TH1F*> Error_T = {}; 
   std::vector<float> Flost2_P = Flost2(All, Error_H); 
   std::vector<float> Flost2_T = Flost2(All_T, Error_T); 
@@ -233,7 +235,7 @@ std::map<TString, std::vector<float>> AnalysisOutput(std::map<TString, std::vect
       TH1F* H_p = trk_p[j]; 
       TH1F* H_t = trk_t[j]; 
 
-      float ks = H_t -> KolmogorovTest(H_p); 
+      float ks = H_t -> Chi2Test(H_p, "UU"); 
       float Err_Int = ErrorByIntegral(H_p, H_t); 
       ks_temp.push_back(ks); 
       int_temp.push_back(Err_Int); 

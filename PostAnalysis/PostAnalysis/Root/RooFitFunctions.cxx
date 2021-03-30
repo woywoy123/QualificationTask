@@ -234,7 +234,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     fft_vars[i] -> setBufferFraction(1); 
     l_vars[i] -> setBins(cache, "cache"); 
     m_vars[i] -> setBins(cache, "cache"); 
-    s_vars[i] -> setBins(cache, "cache");
+    s_vars[i] -> setBins(cache, "cache"); 
   }
 
   // Combine the variables into a single ArgSet and create the model
@@ -417,6 +417,8 @@ std::map<TString, std::vector<float>> ScalingShift(TH1F* Data, std::vector<TH1F*
   int n_vars = PDF_H.size();  
     
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
+  x -> setRange("fit", x_min, x_max);  
+
   std::vector<TString> L_N = NameGenerator(PDF_H.size(), "_L"); 
   std::vector<float> L_S(PDF_H.size(), 0); 
   std::vector<float> L_E(PDF_H.size(), Data -> Integral()); 
@@ -462,6 +464,7 @@ std::map<TString, std::vector<float>> ScalingShift(TH1F* Data, std::vector<TH1F*
   {
     float l = Lp[i] -> getVal(); 
     float l_e = Lp[i] -> getError(); 
+    float d = D[i] -> getVal(); 
     
     std::vector<float> Temp = {l, l_e};
     TString Name = "L"; Name += (i+1); 
