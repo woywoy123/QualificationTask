@@ -14,7 +14,6 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> OnlyNormal(
 std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalShift(std::vector<TH1F*> Inside_Using, TH1F* Outside, std::map<TString, std::vector<float>> Params, TString Name);
 std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> ShiftNormalFFT(std::vector<TH1F*> Data, TH1F* trk1, std::map<TString, std::vector<float>> Params, TString Name);
 std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalWidthDeconvShiftFFT(std::vector<TH1F*> Data, TH1F* trk1, std::map<TString, std::vector<float>> Params, TString Name);
-void AnalysisLoop(); 
 void Evaluation(); 
 
 #endif

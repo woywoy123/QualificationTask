@@ -122,8 +122,9 @@ std::vector<std::pair<TH1F*, std::vector<float>>> LoopGenAll(std::vector<TH1F*> 
   Normalize(PDF); 
   Normalize(PSF); 
   MultiThreadingDeconvolutionExperimental(PDF, PSF, PDF_D, Params["LR_iterations"][0]); 
-
-  TH1F* Data_D = new TH1F("DATA_D", "DATA_D", bins+2*bins*r, new_min, new_max); 
+  
+  TString t_ = Data -> GetTitle(); 
+  TH1F* Data_D = new TH1F(t_ +"D", t_ +"D", bins+2*bins*r, new_min, new_max); 
   for (int j(0); j < bins; j++)
   {
     Data_D -> SetBinContent(j+1+r*bins, Data -> GetBinContent(j+1)); 

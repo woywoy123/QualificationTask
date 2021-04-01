@@ -12,6 +12,6 @@ std::map<TString, std::vector<TH1F*>> GetHist(std::map<TString, std::vector<TStr
 std::map<TString, std::vector<TH1F*>> MC_Reader(TString Dir); 
 std::map<TString, std::vector<TH1F*>> MC_Reader_All(TString Dir); 
 std::map<TString, std::vector<TH1F*>> Result_Reader(TString Dir); 
-
+std::map<TString, std::vector<std::pair<TString, std::vector<TH1F*>>>> ReadResults(TString File_Name);
 
 #endif 

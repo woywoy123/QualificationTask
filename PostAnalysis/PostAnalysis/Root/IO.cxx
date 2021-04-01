@@ -277,3 +277,52 @@ std::map<TString, std::vector<TH1F*>> Result_Reader(TString Dir)
   
   return Map; 
 }
+
+std::map<TString, std::vector<std::pair<TString, std::vector<TH1F*>>>> ReadResults(TString File_Name)
+{
+  TFile* F = new TFile(File_Name, "READ");
+  
+  std::map<TString, std::vector<std::pair<TString, std::vector<TH1F*>>>> Maps; 
+  for (TObject* key : *F -> GetListOfKeys())
+  {
+    auto k = dynamic_cast<TKey*>(key); 
+    TString dir = (TString)k -> GetName();
+    F -> cd(dir); 
+    TDirectory* subdir = gDirectory;  
+    
+    std::vector<std::pair<TString, std::vector<TH1F*>>> M; 
+    for (TObject* subkey : *subdir -> GetListOfKeys())
+    {
+      auto k_sub = dynamic_cast<TKey*>(subkey); 
+      TString sub_dir = (TString)k_sub -> GetName(); 
+      
+      F -> cd(dir + "/" + sub_dir); 
+      TDirectory* hist_dir = gDirectory;
+      
+      std::vector<TH1F*> Hi; 
+      for (TObject* hists : *hist_dir -> GetListOfKeys())
+      {
+        auto h = dynamic_cast<TKey*>(hists); 
+        TString H_name = (TString)h -> GetName(); 
+        TH1F* h_temp = (TH1F*)gDirectory -> Get(H_name); 
+        TString n = h_temp -> GetTitle(); 
+        
+        TH1F* H_Copy; 
+        if (n.Contains("Error"))
+        { 
+          H_Copy = (TH1F*)h_temp -> Clone(H_name + "_" + dir); 
+          H_Copy -> SetTitle(H_name + "_" + dir);
+        } 
+        else
+        {
+          H_Copy = (TH1F*)h_temp -> Clone(H_name); 
+        }
+        Hi.push_back(H_Copy); 
+      }
+      M.push_back(std::pair<TString, std::vector<TH1F*>>(sub_dir, Hi)); 
+    }
+    Maps[dir] = M;
+    F -> cd(); 
+  }
+  return Maps; 
+}
