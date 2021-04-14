@@ -37,7 +37,7 @@ TString PrecisionString(float number, int precision)
   TString out; 
   std::ostringstream o; 
   o.precision(precision); 
-  o << std::scientific << number; 
+  o << std::fixed << number; 
   out += (o.str()); 
   return out; 
 }
@@ -501,10 +501,408 @@ void Evaluate_Fits(TString Filename)
     COUT_String.push_back(out); 
   }
 
+  std::ofstream myfile; 
+  myfile.open("results.txt");  
   for (int x(0); x < COUT_String.size(); x++)
   {
     std::cout << COUT_String[x] << std::endl;
+    
+    myfile << COUT_String[x] << "\n"; 
   }
+  myfile.close();
+
+}
+
+void EvaluateErrorImpact(TString Filename)
+{
+  std::vector<TString> Layer_H = {"IBL", "Blayer", "layer1", "layer2"}; 
+  std::vector<TString> JetEnergy_H = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
+                                  "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
+                                  "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV", "2600_2800_GeV", "2800_3000_GeV", 
+                                  "higher_GeV"};  
+  
+  std::vector<TString> Algorithms = {"Normal", "ShiftNormal", "ShiftNormalFFT", "NormalShiftWidthFFT", "ExperimentalShift"};  
+  std::map<TString, std::vector<std::pair<TString, std::vector<TH1F*>>>> Results = ReadResults(Filename);
+  std::map<TString, std::vector<TH1F*>> Truth = MC_Reader_All("Merged_MC.root"); 
+  
+  std::map<TString, std::vector<std::pair<TString, std::map<TString, std::vector<float>>>>> Comparison; 
+  for (it i = Results.begin(); i != Results.end(); i++)
+  {
+    TString LJEA_Name = i -> first; 
+    
+    // Check the jet energy, Algorithm, layer 
+    TString Alg; 
+    TString Je; 
+    TString L; 
+    for (int x(0); x < Layer_H.size(); x++)
+    {
+      if (!LJEA_Name.Contains(Layer_H.at(x))){ continue; }
+      for (int j(0); j < JetEnergy_H.size(); j++)
+      {
+        if (!LJEA_Name.Contains(JetEnergy_H.at(j))){ continue; }
+        for (int p(0); p < Algorithms.size(); p++)
+        {
+          if (!LJEA_Name.Contains(Algorithms.at(p))){ continue; }
+          
+          Alg = Algorithms.at(p); 
+          Je = JetEnergy_H.at(j); 
+          L = Layer_H.at(x); 
+
+        }
+      }
+    }
+    //std::cout << LJEA_Name << " ::: "  << L << " " << Je << " " << Alg << std::endl;
+    
+    // Get the truth histograms 
+    std::vector<TH1F*> Truth_H = Truth[L + "_" + Je + "_radius_Less_Truth"]; 
+    std::vector<std::pair<TString, std::vector<TH1F*>>>  Result_H = Results[LJEA_Name]; 
+ 
+    std::map<TString, std::vector<float>> Fits; 
+    for (int x(0); x < Result_H.size(); x++)
+    {
+      TString ntrk = "dEdx_ntrk_"; ntrk += (x+1); 
+      std::pair<TString, std::vector<TH1F*>> Result_trk = Result_H[x]; 
+      
+      std::vector<TH1F*> Temp_R; 
+      std::vector<TH1F*> Temp_T; 
+      for (TH1F* H_R : Result_trk.second)
+      {
+        for (TH1F* H_T : Truth_H)
+        {
+          bool cap = TruthLinker(H_T, H_R); 
+          if (cap == true)
+          {
+            Temp_R.push_back(H_R); 
+            Temp_T.push_back(H_T); 
+          }
+        }
+      }
+
+      // Fit comparison 
+      TH1F* Truth_Sum = SumHists(Temp_T, "Truth_Sum"); 
+      TH1F* Recon_Sum = SumHists(Temp_R, "Recon_Sum"); 
+      float inte_T = Truth_Sum -> Integral(); 
+      float inte_R = Recon_Sum -> Integral(); 
+      float r = inte_R / inte_T; 
+      float diff = std::abs(inte_T - inte_R) / inte_T;  
+
+      Fits[ntrk + "_Integral"].push_back(inte_T);
+      Fits[ntrk + "_Integral"].push_back(inte_R);
+      Fits[ntrk + "_Integral"].push_back(r);
+      Fits[ntrk + "_Integral"].push_back(diff); 
+      Fits[ntrk + "_Integral"].push_back(ErrorByIntegral(Recon_Sum, Truth_Sum)); 
+      delete Truth_Sum; 
+      delete Recon_Sum; 
+
+      for (int j(0); j < Temp_T.size(); j++)
+      {
+        TString trk_tru = ntrk + "_ntru_"; trk_tru += (j+1); 
+        float integ_R = Temp_R[j] -> Integral(); 
+        float integ_T = Temp_T[j] -> Integral(); 
+        float diff = std::abs(integ_T - integ_R) / inte_T; 
+        
+        Fits[trk_tru + "_Integral"].push_back(integ_R); 
+        Fits[trk_tru + "_Integral"].push_back(integ_T); 
+        Fits[trk_tru + "_Integral"].push_back(diff); 
+      }
+    }
+
+    std::pair<TString, std::map<TString, std::vector<float>>> Alg_Comp_Pair; 
+    Alg_Comp_Pair.first = Alg; 
+    Alg_Comp_Pair.second = Fits; 
+    Comparison[L + "_" + Je].push_back(Alg_Comp_Pair); 
+  }
+
+
+  std::map<TString, std::vector<int>> Perform_Matrix;  
+  for (TString alg : Algorithms)
+  {
+    std::vector<int> trk_S; 
+    for (int t(0); t < 4; t++)
+    {
+      trk_S.push_back(0); 
+    }
+    Perform_Matrix[alg] = trk_S; 
+  }
+
+
+  for (xi z = Comparison.begin(); z != Comparison.end(); z++)
+  {
+    std::vector<std::pair<TString, std::map<TString, std::vector<float>>>> Algs_Result = z -> second; 
+
+    std::vector<float> error_V = {100, 100, 100, 100, 100}; 
+    std::vector<TString> Alg = {"", "", "", "", ""}; 
+    for (std::pair<TString, std::map<TString, std::vector<float>>> u : Algs_Result)
+    {
+      std::map<TString, std::vector<float>> Error_Map = u.second; 
+     
+      int p = 0; 
+      for (ix h = Error_Map.begin(); h != Error_Map.end(); h++)
+      {
+        float error = error_V[p]; 
+        TString ntrk_Int = h -> first; 
+        std::vector<float> g = Error_Map[ntrk_Int]; 
+        
+        if (ntrk_Int.Contains("tru")){ continue; }
+        //std::cout << g[4] << "  " << g[3] << "  " << ntrk_Int << std::endl;
+        
+        if (error > g[4])
+        { 
+          error_V[p] = g[4]; 
+          Alg[p] = u.first;  
+        }
+        p++; 
+      }
+    }
+    
+    // Update the Performance matrix
+    for (int o(0); o < Alg.size(); o++)
+    {
+      TString alg = Alg[o]; 
+      float er = error_V[o]; 
+      if (er == 100){continue;} 
+
+      std::vector<int> vec = Perform_Matrix[alg]; 
+      vec[o]++; 
+      Perform_Matrix[alg] = vec; 
+    }
+  }
+
+  for (ui u = Perform_Matrix.begin(); u != Perform_Matrix.end(); u++)
+  {
+    std::cout << u -> first << "    "; 
+    for (int t : u -> second)
+    {
+      std::cout << t << "   "; 
+    }
+    
+    std::cout << std::endl;
+  }
+}
+
+
+void Evaluate_nTrackFits(TString Filename)
+{
+  auto ReturnCurrentDirs =[] ()
+  {
+    std::vector<TString> Output; 
+    TDirectory* dir = gDirectory; 
+    for (TObject* key : *dir -> GetListOfKeys())
+    {
+      auto k = dynamic_cast<TKey*>(key);
+      TString dir = (TString)k -> GetName(); 
+      Output.push_back(dir); 
+    }
+    return Output; 
+  };
+  
+  std::map<TString, std::vector<std::pair<TString, std::vector<TH1F*>>>> Map; 
+  std::map<TString, std::vector<TH1F*>> Truth_Map; 
+
+  TFile* F = new TFile(Filename); 
+  std::vector<TString> Dir_Roots = ReturnCurrentDirs(); 
+  for (TString H : Dir_Roots)
+  {
+    F -> cd(H); 
+    std::vector<TString> Algos = ReturnCurrentDirs(); 
+    std::vector<std::pair<TString, std::vector<TH1F*>>> Temp2; 
+    for (TString H2 : Algos)
+    {
+      F -> cd(H + "/" + H2); 
+
+      std::vector<TString> Dir_Next_Next = ReturnCurrentDirs(); 
+      for (TString H3 : Dir_Next_Next)
+      {
+        F -> cd(H + "/" + H2 + "/" + H3); 
+       
+
+        std::vector<TString> Hists = ReturnCurrentDirs(); 
+        std::vector<TH1F*> Temp; 
+        for (TString Hist : Hists)
+        {
+          TH1F* Hp = (TH1F*)gDirectory -> Get(Hist); 
+          Temp.push_back(Hp);           
+        }
+
+        if (H3.Contains("Truth"))
+        {
+          Truth_Map[H] = Temp; 
+          continue;
+        }
+
+        Temp2.push_back(std::pair<TString, std::vector<TH1F*>>(H2, Temp)); 
+      }
+    }
+    Map[H] = Temp2;  
+    
+    F -> cd(); 
+  }
+
+  std::vector<TString> Layer_Energy; 
+  std::vector<std::map<TString, std::vector<float>>> Stat_Results; 
+  std::vector<std::map<TString, std::vector<float>>> KS_Results;
+  std::vector<TString> Algos_S; 
+  for (it i = Map.begin(); i != Map.end(); i++)
+  {
+    TString layer_energy = i -> first; 
+
+    std::vector<TH1F*> Truth = Truth_Map[layer_energy]; 
+    std::vector<std::pair<TString, std::vector<TH1F*>>> Algos = i -> second; 
+    
+    std::map<TString, std::vector<float>> Stats_Map; 
+    std::map<TString, std::vector<float>> KS; 
+    
+    //TCanvas* can = new TCanvas(); 
+    //can -> Print("./Temp/" + layer_energy + ".pdf["); 
+    for (std::pair<TString, std::vector<TH1F*>> Alg_Res : Algos)
+    {
+      std::vector<TH1F*> Algs_V = Alg_Res.second; 
+      for (int x(0); x < Algs_V.size(); x++)
+      {
+        TH1F* H_R = Algs_V[x]; 
+        TH1F* H_T = Truth[x]; 
+
+        Stats_Map[Alg_Res.first].push_back(ErrorByIntegral(H_R, H_T) * 100); 
+        KS[Alg_Res.first].push_back(H_T -> KolmogorovTest(H_R));
+        
+        //RatioPlot(H_R, H_T, can); 
+        //if (layer_energy.Contains("Blayer_600_800_GeV") || layer_energy.Contains("IBL_2200_2400_GeV")){continue;}
+        //can -> Print("./Temp/" + layer_energy + ".pdf"); 
+        
+        if (i == Map.begin() && x == 0){Algos_S.push_back(Alg_Res.first);}
+      }
+    }
+    //can -> Print("./Temp/" + layer_energy + ".pdf]"); 
+    //delete can;
+    
+    Stat_Results.push_back(Stats_Map); 
+    KS_Results.push_back(KS); 
+    Layer_Energy.push_back(layer_energy); 
+  }
+  std::map<TString, std::vector<int>> BestFit; 
+
+  std::vector<TString> couting; 
+  std::vector<int> col; 
+  int Margin = 25; 
+  int Col_Margin = 25; 
+  TString sym = " | "; 
+  TString out = ""; 
+  CoutText(&out, Margin -1, " "); 
+  out += (sym); 
+  for (int i(0); i < Algos_S.size(); i++)
+  {
+    col.push_back(out.Sizeof());  
+    TString Al = Algos_S[i]; 
+    TString out2 = ""; 
+    out2 += Al;  
+    CoutText(&out2, Col_Margin - Al.Sizeof(), " "); 
+    out += out2; 
+    out += (sym); 
+    BestFit[Al] = {0, 0, 0, 0};
+  }
+  couting.push_back(out); 
+  
+  for (int i(0); i < Stat_Results.size(); i++)
+  {
+    TString LJE = Layer_Energy[i]; 
+    std::map<TString, std::vector<float>> Stats = Stat_Results[i]; 
+    std::map<TString, std::vector<float>> KS = KS_Results[i]; 
+    
+    out = "";
+    CoutText(&out, Margin - LJE.Sizeof(), " ");
+    out += (LJE);
+    out += (sym);
+    couting.push_back(out);  
+    out = ""; 
+    std::vector<TString> Temp; 
+    std::vector<float> err; 
+    std::vector<TString> Algo_err;  
+    for (int p(0); p < Algos_S.size(); p++)
+    {
+      TString Alg = Algos_S[p]; 
+      std::vector<float> IE = Stats[Alg]; 
+      std::vector<float> ks = KS[Alg]; 
+     
+      if(p == 0)
+      {
+        for (int k(0); k < ks.size(); k++)
+        {
+          TString dk = " -> dEdx_ntrk_"; dk+=(k+1); dk += ("_ntru_"); dk += (k+1); 
+          TString dk_s = ""; 
+          CoutText(&dk_s, Margin - dk.Sizeof(), " "); 
+          dk_s += dk; 
+          dk_s += (sym); 
+          Temp.push_back(dk_s); 
+          err.push_back(100); 
+          Algo_err.push_back("NAN"); 
+        }
+      }
+
+      for (int trk(0); trk < ks.size(); trk++)
+      {
+        int l = col[p];
+        TString T = ""; 
+        TString g = PrecisionString(IE[trk], 4); 
+        CoutText(&T, Margin - g.Sizeof(), " "); 
+        T += (g); 
+        
+        Temp[trk] += T; 
+        Temp[trk] += (sym);
+
+        if(err[trk] > IE[trk])
+        {
+          Algo_err[trk] = Alg; 
+          err[trk] = IE[trk]; 
+        }
+      }
+    }
+
+    for (int e(0); e < err.size(); e++)
+    {
+      BestFit[Algo_err[e]][e]++; 
+    }
+
+    for (TString k : Temp)
+    {
+      couting.push_back(k); 
+    }
+    
+    couting.push_back(out); 
+
+  }
+
+  couting.push_back(""); 
+  couting.push_back(""); 
+  couting.push_back(""); 
+  couting.push_back(""); 
+
+  std::vector<TString> Temp; 
+  for (ui ki = BestFit.begin(); ki != BestFit.end(); ki++)
+  {
+    TString alg = ""; 
+    TString g = ki -> first; 
+    CoutText(&alg, Margin -g.Sizeof(), " "); 
+    alg +=(g); 
+    std::vector<int> res = ki -> second; 
+    for (int f(0); f < res.size(); f++)
+    {
+      alg += (sym); alg+=(res[f]);  
+    }
+    couting.push_back(alg); 
+  
+  }
+ 
+  std::ofstream myfile; 
+  myfile.open("results.txt");  
+  for (int x(0); x < couting.size(); x++)
+  {
+    std::cout << couting[x] << std::endl;
+    
+    myfile << couting[x] << "\n"; 
+  }
+  myfile.close();
+
+
 
 
 }

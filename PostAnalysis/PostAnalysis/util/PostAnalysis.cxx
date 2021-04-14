@@ -64,6 +64,7 @@ int main(int argc, char** argv)
   if (option == -5)
   {
     Evaluation();   
+    //EvaluatePureNTracksIndividually(); 
   }
   // Debugging .cxx 
   if (option == -6)

@@ -38,11 +38,9 @@ float FitError(TH1F* Data, std::vector<TH1F*> ntrk)
   return sum_E;
 }
 
-
-
 void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool sig)
 {
-  if (F_C.size() != ntrk_Conv.size()) {std::cout << "!!!!!!!!!!!!!!!!!" << std::endl; }
+  if (F_C.size() != ntrk_Conv.size()) {std::cout << "!!!!!!!!!!!!!!!!!" << std::endl; return;}
   for (int i(0); i < F_C.size(); i++)
   {
     float HL = F_C[i] -> Integral(); 
@@ -128,6 +126,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> LoopGenAll(std::vector<TH1F*> 
   for (int j(0); j < bins; j++)
   {
     Data_D -> SetBinContent(j+1+r*bins, Data -> GetBinContent(j+1)); 
+    Data_D -> SetBinError(j+1+r*bins, Data -> GetBinError(j+1)); 
   }
 
   std::vector<std::pair<TH1F*, std::vector<float>>> trk_Fit = FitDeconvolutionPerformance(Data_D, PDF_D, Params, Params["cache"][0], Params["cache"][0]);

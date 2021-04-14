@@ -110,7 +110,7 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
   // Create the Luminosity variables for the fit
   std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
   std::vector<float> l_s(n_vars, 0); 
-  std::vector<float> l_e(n_vars, 1.1 * Data -> Integral());  
+  std::vector<float> l_e(n_vars, 2.0 * Data -> Integral());  
   std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
   
   // Convert the PDFs to RooPDFs
@@ -151,9 +151,6 @@ std::vector<TH1F*> FitDeconvolution(TH1F* Data, std::vector<TH1F*> PDF_H, std::m
     Params["G_Mean"][i] = m; 
     Params["G_Stdev"][i] = s; 
 
-
-
-
     TH1F* G = Gaussian(m, s, bins, x_min, x_max);  
     Convolution(G, PDF_H[i], Out_H[i]); 
     Normalize(Out_H[i]);
@@ -182,7 +179,8 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
 {
  
   for (int i(0); i < PDF_H.size(); i++){Average(PDF_H[i]);}
-  
+  Normalize(PDF_H); 
+
   // First we get the domain of the Data histogram we are fitting 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
@@ -233,12 +231,12 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     //fft_vars[i] -> setInterpolationOrder(9);
     fft_vars[i] -> setBufferFraction(1); 
     l_vars[i] -> setBins(cache, "cache"); 
-   
-    //if (Params["m_e"][i] == -1){m_vars[i] -> setConstant(true); }
-    //if (Params["s_s"][i] == -1){s_vars[i] -> setConstant(true); }
-    
     s_vars[i] -> setBins(cache, "cache"); 
     m_vars[i] -> setBins(cache, "cache"); 
+  
+    if (Params["m_e"][i] < 0){m_vars[i] -> setConstant(true); }
+    if (Params["s_s"][i] < 0){s_vars[i] -> setConstant(true); }
+    
   }
 
   // Combine the variables into a single ArgSet and create the model
@@ -253,17 +251,17 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
   
   // Call the data 
   RooDataHist* D = RooDataVariable("data", x, Data); 
-  model.fitTo(*D, RooFit::SumW2Error(true), Minimizer("Minuit"), NumCPU(8)); 
-  RooAbsReal* nll = model.createNLL(*D, RooFit::Range("fit"), RooFit::NumCPU(8), RooFit::SumW2Error(true));  
+  //model.fitTo(*D, RooFit::SumW2Error(true), Minimizer("Minuit"), NumCPU(8), RooFit::Range("fit")); 
+  RooAbsReal* nll = model.createNLL(*D, RooFit::NumCPU(8), RooFit::Range("fit"), RooFit::SumW2Error(true));  
   RooMinimizer* pg = new RooMinimizer(*nll);   
-  pg -> setMaxIterations(1000); 
-  pg -> setMaxFunctionCalls(1000); 
-  pg -> setStrategy(2); 
-  pg -> setMinimizerType("Minuit2");
+  pg -> setMaxIterations(10000); 
+  pg -> setMaxFunctionCalls(10000); 
+  //pg -> setStrategy(2); 
+  pg -> setMinimizerType("Minuit");
   pg -> optimizeConst(1); 
-  pg -> setEps(1e-1); 
+  //pg -> setEps(1e-1); 
   pg -> migrad();
-  pg -> fit("m");  
+  pg -> fit("h");  
   pg -> cleanup(); 
  
   TString plot_t = Data -> GetTitle(); plot_t += ("_trks_"); plot_t += (PDF_H.size());  plot_t += ("_FitDeconvolution_PULL.pdf"); 
@@ -293,6 +291,7 @@ std::vector<std::pair<TH1F*, std::vector<float>>> FitDeconvolutionPerformance(TH
     Out_H[i] -> Scale(n); 
     Out.push_back(std::pair<TH1F*, std::vector<float>>(Out_H[i], P));
   }
+
   // Flush all the variables 
   for (int i(0); i < n_vars; i++)
   {  
@@ -332,7 +331,7 @@ std::map<TString, std::vector<float>> ScalingFit(TH1F* Data, std::vector<TH1F*> 
   // Create the Luminosity variables for the fit
   std::vector<TString> l_N = NameGenerator(n_vars, "_L");  
   std::vector<float> l_s(n_vars, 0); 
-  std::vector<float> l_e(n_vars, 1.2*Data -> Integral());  
+  std::vector<float> l_e(n_vars, 2.0*Data -> Integral());  
   std::vector<RooRealVar*> l_vars = RooVariables(l_N, l_s, l_e); 
 
   // Convert the PDFs to RooPDFs
@@ -373,8 +372,6 @@ std::map<TString, std::vector<float>> ScalingFit(TH1F* Data, std::vector<TH1F*> 
     delete D_vars[i]; 
   }
   Data -> Scale(L); 
-  //delete nll; 
-  //delete pg; 
   delete x; 
   return Out;
 }
@@ -390,7 +387,7 @@ std::map<TString, std::vector<float>> ScalingShift(TH1F* Data, std::vector<TH1F*
   int n_vars = PDF_H.size();  
     
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  x -> setRange("fit", x_min, x_max);  
+  //x -> setRange("fit", x_min, x_max);  
 
   std::vector<TString> L_N = NameGenerator(PDF_H.size(), "_L"); 
   std::vector<float> L_S(PDF_H.size(), 0); 
@@ -398,8 +395,8 @@ std::map<TString, std::vector<float>> ScalingShift(TH1F* Data, std::vector<TH1F*
   std::vector<RooRealVar*> Lp = RooVariables(L_N, L_S, L_E); 
   
   std::vector<TString> D_N = NameGenerator(PDF_H.size(), "_D"); 
-  std::vector<float> D_S(PDF_H.size(), -0.25); 
-  std::vector<float> D_E(PDF_H.size(), 0.25); 
+  std::vector<float> D_S(PDF_H.size(), -0.5); 
+  std::vector<float> D_E(PDF_H.size(), 0.5); 
   std::vector<RooRealVar*> D = RooVariables(D_N, D_S, D_E);  
 
   std::vector<TString> df = NameGenerator(PDF_H.size(), "_d"); 
@@ -427,7 +424,21 @@ std::map<TString, std::vector<float>> ScalingShift(TH1F* Data, std::vector<TH1F*
  
   RooDataHist Dat("Data", "Data", *x, Data);
   RooAddPdf model("model", "model", PDF, Lumi); 
-  model.fitTo(Dat, RooFit::SumW2Error(true), Minimizer("Minuit"), NumCPU(8)); 
+  //model.fitTo(Dat, NumCPU(8), RooFit::SumW2Error(true)); 
+  RooAbsReal* nll = model.createNLL(Dat, RooFit::NumCPU(8), RooFit::SumW2Error(true));  
+  RooMinimizer* pg = new RooMinimizer(*nll);   
+  pg -> setMaxIterations(100000); 
+  pg -> setMaxFunctionCalls(100000); 
+  //pg -> setStrategy(2); 
+  pg -> setMinimizerType("Minuit");
+  //pg -> optimizeConst(1); 
+  //pg -> setEps(1e-6); 
+  //pg -> migrad();
+  pg -> fit("h");  
+  pg -> cleanup(); 
+  delete nll; 
+  delete pg; 
+
 
   TString plot_t = Data -> GetTitle(); plot_t += ("_trks_"); plot_t += (PDF_H.size());  plot_t += ("_ScalingShift_PULL.pdf"); 
   RooFitPullPlot(model, x, PDF_Var, &Dat, plot_t);  

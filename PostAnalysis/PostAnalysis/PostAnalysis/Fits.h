@@ -15,5 +15,6 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalShift
 std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> ShiftNormalFFT(std::vector<TH1F*> Data, TH1F* trk1, std::map<TString, std::vector<float>> Params, TString Name);
 std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalWidthDeconvShiftFFT(std::vector<TH1F*> Data, TH1F* trk1, std::map<TString, std::vector<float>> Params, TString Name);
 void Evaluation(); 
+void EvaluatePureNTracksIndividually(); 
 
 #endif
