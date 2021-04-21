@@ -23,25 +23,6 @@ bool TruthLinker(TH1F* H, TH1F* V)
   return Link; 
 }
 
-void CoutText(TString *Input, int v, TString Text = "")
-{
-  
-  for (int c(0); c < v; c++)
-  {
-    *Input += (Text); 
-  }
-}
-
-TString PrecisionString(float number, int precision)
-{
-  TString out; 
-  std::ostringstream o; 
-  o.precision(precision); 
-  o << std::fixed << number; 
-  out += (o.str()); 
-  return out; 
-}
-
 void Plotting_Fits(std::map<TString, std::vector<TH1F*>> Maps, std::map<TString, std::vector<TH1F*>> truth, TString name)
 {
   TCanvas* can = new TCanvas(); 
@@ -551,7 +532,6 @@ void EvaluateErrorImpact(TString Filename)
         }
       }
     }
-    //std::cout << LJEA_Name << " ::: "  << L << " " << Je << " " << Alg << std::endl;
     
     // Get the truth histograms 
     std::vector<TH1F*> Truth_H = Truth[L + "_" + Je + "_radius_Less_Truth"]; 
@@ -644,7 +624,6 @@ void EvaluateErrorImpact(TString Filename)
         std::vector<float> g = Error_Map[ntrk_Int]; 
         
         if (ntrk_Int.Contains("tru")){ continue; }
-        //std::cout << g[4] << "  " << g[3] << "  " << ntrk_Int << std::endl;
         
         if (error > g[4])
         { 
@@ -752,8 +731,8 @@ void Evaluate_nTrackFits(TString Filename)
     std::map<TString, std::vector<float>> Stats_Map; 
     std::map<TString, std::vector<float>> KS; 
     
-    //TCanvas* can = new TCanvas(); 
-    //can -> Print("./Temp/" + layer_energy + ".pdf["); 
+    TCanvas* can = new TCanvas(); 
+    can -> Print("./Temp/" + layer_energy + ".pdf["); 
     for (std::pair<TString, std::vector<TH1F*>> Alg_Res : Algos)
     {
       std::vector<TH1F*> Algs_V = Alg_Res.second; 
@@ -765,15 +744,14 @@ void Evaluate_nTrackFits(TString Filename)
         Stats_Map[Alg_Res.first].push_back(ErrorByIntegral(H_R, H_T) * 100); 
         KS[Alg_Res.first].push_back(H_T -> KolmogorovTest(H_R));
         
-        //RatioPlot(H_R, H_T, can); 
-        //if (layer_energy.Contains("Blayer_600_800_GeV") || layer_energy.Contains("IBL_2200_2400_GeV")){continue;}
-        //can -> Print("./Temp/" + layer_energy + ".pdf"); 
+        RatioPlot(H_R, H_T, can); 
+        can -> Print("./Temp/" + layer_energy + ".pdf"); 
         
         if (i == Map.begin() && x == 0){Algos_S.push_back(Alg_Res.first);}
       }
     }
-    //can -> Print("./Temp/" + layer_energy + ".pdf]"); 
-    //delete can;
+    can -> Print("./Temp/" + layer_energy + ".pdf]"); 
+    delete can;
     
     Stat_Results.push_back(Stats_Map); 
     KS_Results.push_back(KS); 
@@ -833,7 +811,7 @@ void Evaluate_nTrackFits(TString Filename)
           dk_s += dk; 
           dk_s += (sym); 
           Temp.push_back(dk_s); 
-          err.push_back(100); 
+          err.push_back(1000000); 
           Algo_err.push_back("NAN"); 
         }
       }
@@ -901,8 +879,4 @@ void Evaluate_nTrackFits(TString Filename)
     myfile << couting[x] << "\n"; 
   }
   myfile.close();
-
-
-
-
 }

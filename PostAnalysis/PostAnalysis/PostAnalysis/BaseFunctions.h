@@ -34,4 +34,16 @@ float GetMaxValue(TH1F* H);
 void BulkWrite(std::vector<TH1F*> Hist_V); 
 void BulkDelete(std::vector<TH1F*> Hist_V); 
 void BulkDelete(std::map<TString, std::vector<TH1F*>> Hists); 
+
+// Others
+void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool DeletePointer = false);
+void Average(TH1F* Data); 
+
+// Cout text based stuff 
+void CoutText(TString *Input, int v, TString Text = "");
+TString PrecisionString(float number, int precision, bool sci = false);
+
+
+
+
 #endif

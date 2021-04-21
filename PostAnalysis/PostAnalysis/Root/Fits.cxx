@@ -56,7 +56,6 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> NormalShift
       std::vector<float> R = p -> second; 
       Error.push_back(R[1]);  
     }
-    
 
     Output[trk -> GetTitle()] = std::pair<std::vector<float>, std::vector<TH1F*>>(Error, ntrk_Conv); 
   }
@@ -151,8 +150,6 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Experimenta
       float f = O -> GetBinContent(x+1); 
       O -> SetBinContent(x+1, e);
     }
-    float T = O -> Integral(); 
-    O -> Scale(1. / T); 
     H -> Scale(HL); 
     O -> Scale(OL); 
   };
@@ -169,15 +166,22 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Experimenta
   
   for (int x(0); x < Params["iterations"][0]; x++)
   {
+
+    for (int t(0); t < Conv.size(); t++)
+    {
+      TH1F* pure = Conv[t][t]; 
+      for (int z(0); z < Conv.size(); z++){Clone(pure, Conv[z][t]);}
+    }
+    
     for (int t(0); t < Data.size(); t++)
     {
-      std::vector<TH1F*> conv_trks = ConvolveNTimes(Conv[0][0], Data.size(), "_Con"); 
+      //std::vector<TH1F*> conv_trks = ConvolveNTimes(Conv[0][0], Data.size(), "_Con"); 
       
       TString name_D = Data[t] -> GetTitle(); 
       TH1F* trk_Data = (TH1F*)Data[t] -> Clone(name_D + "_C"); 
       
       std::vector<std::pair<TH1F*, std::vector<float>>> F_C = LoopGenAll(Conv[t], trk_Data, Params); 
-      BulkDelete(conv_trks);  
+      //BulkDelete(conv_trks);  
 
       std::vector<TH1F*> ntrk_Conv; 
       for (int p(0); p < F_C.size(); p++){ntrk_Conv.push_back(F_C[p].first);}
@@ -193,15 +197,6 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Experimenta
       }
       Output[Data[t] -> GetTitle()] = std::pair<std::vector<float>, std::vector<TH1F*>>(Error, Conv[t]); 
     }
-    
-    if (x <= Params["iterations"][0] -2)
-    {
-      for (int t(0); t < Conv.size(); t++)
-      {
-        TH1F* pure = Conv[t][t]; 
-        for (int z(0); z < Conv.size(); z++){Clone(pure, Conv[z][t]);}
-      }
-    }
   }
 
   return Output; 
@@ -209,13 +204,6 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Experimenta
 
 std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Experimental_Shift(std::vector<TH1F*> Data, TH1F* trk1, std::map<TString, std::vector<float>> Params, TString Name)
 {
-  auto Subtract =[&] (std::vector<TH1F*> ntrk_Conv, TH1F* Data, int trk)
-  {
-    for (int i(0); i < ntrk_Conv.size(); i++){ if (i != trk){ Data -> Add(ntrk_Conv[i], -1); } }
-    Average(Data); 
-    Flush({Data}, {ntrk_Conv[trk]});  
-  };
-
   auto Clone =[&] (TH1F* H, TH1F* O)
   {
     float HL = H -> Integral(); 
@@ -229,11 +217,18 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Experimenta
       float f = O -> GetBinContent(x+1); 
       O -> SetBinContent(x+1, e);
     }
-    float T = O -> Integral(); 
-    O -> Scale(1. / T); 
     H -> Scale(HL); 
     O -> Scale(OL); 
   };
+
+  auto Subtract =[&] (std::vector<TH1F*> ntrk_Conv, TH1F* Data, int trk)
+  {
+    for (int i(0); i < ntrk_Conv.size(); i++){ if (i != trk){ Data -> Add(ntrk_Conv[i], -1); } }
+    Clone(Data, ntrk_Conv[trk]); 
+    delete Data;
+  };
+
+
 
   std::vector<std::vector<TH1F*>> Conv; 
   for (int i(0); i < Data.size(); i++)
@@ -248,6 +243,17 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Experimenta
   for (int i(0); i < Params["iterations"][0]; i++)
   {
 
+    for (int x(0); x < Conv.size(); x++)
+    {
+      TH1F* Template = Conv[x][x]; 
+
+      for (int p(0); p < Conv.size(); p++)
+      {
+        if (x == p) { continue; }
+        Clone(Template, Conv[p][x]);  
+      }
+    }
+    
     // Clone the data 
     std::vector<std::vector<float>> Errors; 
     for (int x(0); x < Data.size(); x++)
@@ -271,18 +277,6 @@ std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Experimenta
       Errors.push_back(Temp); 
     }
       
-    
-    for (int x(0); x < Conv.size(); x++)
-    {
-      TH1F* Template = Conv[x][x]; 
-
-      for (int p(0); p < Conv.size(); p++)
-      {
-        if (x == p) { continue; }
-        Clone(Template, Conv[p][x]);  
-      }
-    }
-   
     if (i < Params["iterations"][0] -1){continue;}
     for (int x(0); x < Data.size(); x++)
     {
@@ -343,7 +337,7 @@ void WriteToFile(TFile* F, std::map<TString, std::pair<std::vector<float>, std::
 void AnalysisLoop(int sdo, TString SaveName)
 {
 
-  float m = 0.25;
+  float m = 0.2;
   std::map<TString, std::vector<float>> Params_SmallWidth; 
   Params_SmallWidth["m_s"] = {-m, -m, -m, -m}; 
   Params_SmallWidth["m_e"] = {m, m, m, m}; 
@@ -359,14 +353,14 @@ void AnalysisLoop(int sdo, TString SaveName)
   std::map<TString, std::vector<float>> Params_NormalWidth; 
   Params_NormalWidth["m_s"] = {-m, -m, -m, -m}; 
   Params_NormalWidth["m_e"] = {m, m, m, m}; 
-  Params_NormalWidth["s_s"] = {0.005, 0.005, 0.005, 0.005};
-  Params_NormalWidth["s_e"] = {0.05, 0.05, 0.05, 0.05};  
+  Params_NormalWidth["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
+  Params_NormalWidth["s_e"] = {0.1, 0.1, 0.1, 0.1};  
   Params_NormalWidth["iterations"] = {3}; 
   Params_NormalWidth["LR_iterations"] = {50}; 
   Params_NormalWidth["G_Mean"] = {0, 0, 0, 0}; 
   Params_NormalWidth["G_Stdev"] = {0.025, 0.025, 0.025, 0.025}; 
   Params_NormalWidth["cache"] = {10000}; 
-  Params_NormalWidth["x_range"] = {0., 7.0}; 
+  Params_NormalWidth["x_range"] = {0.01, 9.0}; 
 
   
   std::map<TString, std::vector<float>> Params;
@@ -418,16 +412,28 @@ void AnalysisLoop(int sdo, TString SaveName)
 
     // ====== Experimental Stuff ======== //
 
-    // Shifting, Normalization, Width with FFT 
-    std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> ExperimentalShift = Experimental_FFT(Inside_Using, Outside, Params_NormalWidth, Name);
-    AnalysisPlots(ExperimentalShift, Inside_Using_Truth, Name + "_AlgorithmExperimental");  
-    WriteToFile(F, ExperimentalShift, Name + "_ExperimentalAlgorithm"); 
+    //// Shifting, Normalization, Width with FFT 
+    //std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> ExperimentalShift = Experimental_Shift(Inside_Using, Outside, Params_NormalWidth, Name);
+    //AnalysisPlots(ExperimentalShift, Inside_Using_Truth, Name + "_AlgorithmExperimentalShift");  
+    //WriteToFile(F, ExperimentalShift, Name + "_ExperimentalAlgorithmShift"); 
  
-    for (ix x = ExperimentalShift.begin(); x != ExperimentalShift.end(); x++)
-    {
-      std::pair<std::vector<float>, std::vector<TH1F*>> p = x -> second; 
-      BulkDelete(p.second); 
-    }   
+    //for (ix x = ExperimentalShift.begin(); x != ExperimentalShift.end(); x++)
+    //{
+    //  std::pair<std::vector<float>, std::vector<TH1F*>> p = x -> second; 
+    //  BulkDelete(p.second); 
+    //}   
+
+    //// Shifting, Normalization, Width with FFT 
+    //std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> ExperimentalShiftFFT = Experimental_FFT(Inside_Using, Outside, Params_NormalWidth, Name);
+    //AnalysisPlots(ExperimentalShift, Inside_Using_Truth, Name + "_AlgorithmExperimentalFFT");  
+    //WriteToFile(F, ExperimentalShift, Name + "_ExperimentalAlgorithmFFT"); 
+ 
+    //for (ix x = ExperimentalShift.begin(); x != ExperimentalShift.end(); x++)
+    //{
+    //  std::pair<std::vector<float>, std::vector<TH1F*>> p = x -> second; 
+    //  BulkDelete(p.second); 
+    //}   
+
     // ====== End Experimental Stuff ======== //
 
     // Doing the different fit techniques 
@@ -525,22 +531,22 @@ void SimpleNTrackPlot()
   Params_SmallWidth["m_e"] = {m, m, m, m}; 
   Params_SmallWidth["s_s"] = {-0.0005, -0.0005, -0.0005, -0.0005}; // the minus sign disables the width 
   Params_SmallWidth["s_e"] = {0.001, 0.006, 0.006, 0.006};  
-  Params_SmallWidth["LR_iterations"] = {50}; 
+  Params_SmallWidth["LR_iterations"] = {100}; 
   Params_SmallWidth["G_Mean"] = {0, 0, 0, 0}; 
   Params_SmallWidth["G_Stdev"] = {0.001, 0.001, 0.001, 0.001}; 
   Params_SmallWidth["cache"] = {10000}; 
-  Params_SmallWidth["x_range"] = {0., 7.0}; 
+  Params_SmallWidth["x_range"] = {0.01, 9.0}; 
 
   std::map<TString, std::vector<float>> Params_NormalWidth; 
   Params_NormalWidth["m_s"] = {-m, -m, -m, -m}; 
   Params_NormalWidth["m_e"] = {m, m, m, m}; 
   Params_NormalWidth["s_s"] = {0.005, 0.005, 0.005, 0.005};
   Params_NormalWidth["s_e"] = {0.1, 0.1, 0.1, 0.1};  
-  Params_NormalWidth["LR_iterations"] = {50}; 
+  Params_NormalWidth["LR_iterations"] = {100}; 
   Params_NormalWidth["G_Mean"] = {0, 0, 0, 0}; 
   Params_NormalWidth["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
-  Params_NormalWidth["cache"] = {10000}; 
-  Params_NormalWidth["x_range"] = {0., 6.0}; 
+  Params_NormalWidth["cache"] = {50000}; 
+  Params_NormalWidth["x_range"] = {0.01, 9.0}; 
 
   std::map<TString, std::vector<float>> Params;
  
@@ -658,20 +664,20 @@ void SimpleNTrackPlot()
 
 void Evaluation()
 {
-  //AnalysisLoop(1, "1_trk_1_tru.root"); 
   //AnalysisLoop(4, "All_Fits.root");
+  //AnalysisLoop(1, "1_trk_1_tru.root"); 
   //Evaluate_Fits("1_trk_1_tru.root");  
   //Evaluate_Fits("All_Fits.root");  
   //EvaluateErrorImpact("1_trk_1_tru.root"); 
   
-  //EvaluatePureNTracksIndividually(); 
-  //Evaluate_nTrackFits("Individual_Ntracks.root"); 
-  SimpleNTrackPlot(); 
+  EvaluatePureNTracksIndividually(); 
+  Evaluate_nTrackFits("Individual_Ntracks.root"); 
+  //SimpleNTrackPlot(); 
 }
 
 void EvaluatePureNTracksIndividually()
 {
-  float m = 0.5;
+  float m = 0.2;
   std::map<TString, std::vector<float>> Params_SmallWidth; 
   Params_SmallWidth["m_s"] = {-m, -m, -m, -m}; 
   Params_SmallWidth["m_e"] = {m, m, m, m}; 
@@ -681,7 +687,7 @@ void EvaluatePureNTracksIndividually()
   Params_SmallWidth["G_Mean"] = {0, 0, 0, 0}; 
   Params_SmallWidth["G_Stdev"] = {0.001, 0.001, 0.001, 0.001}; 
   Params_SmallWidth["cache"] = {10000}; 
-  Params_SmallWidth["x_range"] = {0.01, 9.0}; 
+  Params_SmallWidth["x_range"] = {0.2, 8.0}; 
 
   std::map<TString, std::vector<float>> Params_NormalWidth; 
   Params_NormalWidth["m_s"] = {-m, -m, -m, -m}; 
@@ -692,7 +698,7 @@ void EvaluatePureNTracksIndividually()
   Params_NormalWidth["G_Mean"] = {0, 0, 0, 0}; 
   Params_NormalWidth["G_Stdev"] = {0.05, 0.05, 0.05, 0.05}; 
   Params_NormalWidth["cache"] = {10000}; 
-  Params_NormalWidth["x_range"] = {0.01, 9.0}; 
+  Params_NormalWidth["x_range"] = {0.2, 8.0}; 
 
   std::map<TString, std::vector<float>> Params;
   

@@ -123,6 +123,40 @@ std::vector<TString> NameGenerator(int number, TString shorty)
   return Output; 
 }
 
+void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool DeletePointer)
+{
+  if (F_C.size() != ntrk_Conv.size()) {std::cout << "!!!!!!!!!!!!!!!!!" << std::endl; return;}
+  for (int i(0); i < F_C.size(); i++)
+  {
+    float HL = F_C[i] -> Integral(); 
+    float OL = ntrk_Conv[i] -> Integral(); 
+    
+    F_C[i] -> Scale(1. / HL); 
+    ntrk_Conv[i] -> Scale(1. / OL); 
+    for (int x(0); x < F_C[i] -> GetNbinsX(); x++)
+    {
+      float e = F_C[i] -> GetBinContent(x+1); 
+      float f = ntrk_Conv[i] -> GetBinContent(x+1); 
+      ntrk_Conv[i] -> SetBinContent(x+1, e);
+    }
+    F_C[i] -> Scale(HL); 
+    ntrk_Conv[i] -> Scale(OL); 
+    
+    
+    if (DeletePointer){delete F_C[i];}
+  }
+}
+
+void Average(TH1F* Data)
+{
+  for (int i(0); i < Data -> GetNbinsX(); i++)
+  {
+    float y = Data -> GetBinContent(i+1); 
+    if ( y <= 0){ y = 1e-10; } 
+    Data -> SetBinContent(i+1, y); 
+  }
+}
+
 float GetMaxValue(TH1F* H)
 {
   int bin_m = H -> GetMaximumBin(); 
@@ -153,6 +187,27 @@ void BulkDelete(std::map<TString, std::vector<TH1F*>> Hists)
     std::vector<TH1F*> Hists_V = Hists[n]; 
     for (TH1F* H : Hists_V){ delete H; }
   }
+}
+
+void CoutText(TString *Input, int v, TString Text)
+{
+  
+  for (int c(0); c < v; c++)
+  {
+    *Input += (Text); 
+  }
+}
+
+TString PrecisionString(float number, int precision, bool sci)
+{
+  TString out; 
+  std::ostringstream o; 
+  o.precision(precision); 
+  
+  if (sci){o << std::scientific << number;}
+  else {o << std::fixed << number;}
+  out += (o.str()); 
+  return out; 
 }
 
 

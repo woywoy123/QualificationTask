@@ -1,7 +1,6 @@
 #include<PostAnalysis/BaseFunctionTest.h>
 #include<PostAnalysis/Experimental.h>
 #include<PostAnalysis/PresentationFigures.h>
-#include<PostAnalysis/AlgorithmTest.h>
 #include<TFile.h>
 #include<PostAnalysis/Debugging.h>
 #include<PostAnalysis/Fits.h>
@@ -42,10 +41,6 @@ int main(int argc, char** argv)
     //TestReadFile(F); 
     //TestReadFileTrackEnergy(F); 
     //TestMonteCarloMatchConvolution(F); 
-    //TestMonteCarloFit(F); 
-    //TestAlgorithmMonteCarlo(); 
-    //DataAlgorithm(); 
-  
     FigureCompiler(F);   
   }
   F -> Close();   
@@ -56,15 +51,9 @@ int main(int argc, char** argv)
     AlgorithmMonteCarlo();
     //PlotInsideOutsideJet(); 
   } 
-  if (option == -4)
-  {
-    //ProcessDataResults(); 
-    ProcessMonteCarloResults(); 
-  }
   if (option == -5)
   {
     Evaluation();   
-    //EvaluatePureNTracksIndividually(); 
   }
   // Debugging .cxx 
   if (option == -6)

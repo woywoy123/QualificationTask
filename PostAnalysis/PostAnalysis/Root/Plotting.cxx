@@ -94,7 +94,7 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TCanvas*
   can -> Clear();
   gStyle -> SetOptStat(0); 
   truth[0] -> GetYaxis() -> SetRangeUser(1, sum*2);
-  //truth[0] -> GetXaxis() -> SetRangeUser(0, 10);
+  truth[0] -> GetXaxis() -> SetRangeUser(0, 10);
   truth[0] -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
   Populate(truth, can, len, kDashed); 
@@ -154,13 +154,20 @@ void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can)
 {
   can -> Clear(); 
   
-  H1 -> GetXaxis() -> SetRangeUser(0, 6); 
-  H2 -> GetXaxis() -> SetRangeUser(0, 6); 
-
   TString name = "Ratio Plot: "; name += (H1 -> GetTitle()); name += ("/"); name += H2 -> GetTitle(); 
   TH1F* Ratio = (TH1F*)H1 -> Clone(name);
   Ratio -> SetTitle(name);
   Ratio -> Divide(H2); 
+  
+  for (int i(0); i < Ratio -> GetNbinsX(); i++)
+  {
+    if (std::isnan(Ratio -> GetBinContent(i+1)) || std::isnan(H1 -> GetBinContent(i+1)))
+    {
+      Ratio -> SetBinContent(i+1, 1e-10);
+      H1 -> SetBinContent(i+1, 1e-10); 
+    }
+  }
+  
   gStyle -> SetOptStat(0); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
 	H1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^2]");
@@ -324,6 +331,7 @@ void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString 
   TH1F* Ratio = (TH1F*)H1 -> Clone(name);
   Ratio -> SetTitle(name);
   Ratio -> Divide(H2); 
+
   gStyle -> SetOptStat(0); 
   TLegend* len = new TLegend(0.9, 0.9, 0.5, 0.8); 
 

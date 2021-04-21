@@ -1,77 +1,5 @@
 #include<PostAnalysis/AlgorithmFunctions.h>
 
-void ScaleShape(TH1F* Data, std::vector<TH1F*> ntrk)
-{
-  for (int i(0); i < Data ->GetNbinsX(); i++)
-  {
-    float e = Data -> GetBinContent(i+1); 
-    float sum(0);  
-    for (int c(0); c < ntrk.size(); c++)
-    {
-      sum += ntrk[c] -> GetBinContent(i+1);  
-    }
-    for (int z(0); z < ntrk.size(); z++)
-    {
-      float point = ntrk[z] -> GetBinContent(i+1); 
-      float ed = point*(e/sum);  
-      float log = ed;  
-      if (std::isnan(log)){log = 0;}
-      if (std::isinf(log)){log = 0;} 
-      ntrk[z] -> SetBinContent(i+1, log); 
-    }     
-  }
-}
-
-float FitError(TH1F* Data, std::vector<TH1F*> ntrk)
-{
-  int bins = Data -> GetNbinsX(); 
-  float sum_D = 0; 
-  float sum_E = 0;  
-  for (int i(0); i < bins; i++)
-  {
-    float e = Data -> GetBinContent(i+1); 
-    float sum_H = 0; 
-    for (int p(0); p < ntrk.size(); p++){sum_H += std::abs(ntrk[p] -> GetBinContent(i+1));}
-    sum_E += std::abs(sum_H - e);  
-  }
-  sum_E = sum_E/Data -> Integral();
-  return sum_E;
-}
-
-void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool sig)
-{
-  if (F_C.size() != ntrk_Conv.size()) {std::cout << "!!!!!!!!!!!!!!!!!" << std::endl; return;}
-  for (int i(0); i < F_C.size(); i++)
-  {
-    float HL = F_C[i] -> Integral(); 
-    float OL = ntrk_Conv[i] -> Integral(); 
-    
-    F_C[i] -> Scale(1. / HL); 
-    ntrk_Conv[i] -> Scale(1. / OL); 
-    for (int x(0); x < F_C[i] -> GetNbinsX(); x++)
-    {
-      float e = F_C[i] -> GetBinContent(x+1); 
-      float f = ntrk_Conv[i] -> GetBinContent(x+1); 
-      ntrk_Conv[i] -> SetBinContent(x+1, e);
-    }
-    float T = ntrk_Conv[i] -> Integral(); 
-    ntrk_Conv[i] -> Scale(1. / T); 
-    F_C[i] -> Scale(HL); 
-    ntrk_Conv[i] -> Scale(HL); 
-    delete F_C[i];  
-  }
-}
-
-void Average(TH1F* Data)
-{
-  for (int i(0); i < Data -> GetNbinsX(); i++)
-  {
-    float y = Data -> GetBinContent(i+1); 
-    if ( y <= 0){ y = 1e-10; } 
-    Data -> SetBinContent(i+1, y); 
-  }
-}
-
 std::vector<TH1F*> LoopGen(std::vector<TH1F*> ntrk_Conv, TH1F* Data, std::map<TString, std::vector<float>> Params)
 {
   std::vector<std::pair<TH1F*, std::vector<float>>> trks = LoopGenAll(ntrk_Conv, Data, Params);  
@@ -154,167 +82,68 @@ std::vector<std::pair<TH1F*, std::vector<float>>> LoopGenAll(std::vector<TH1F*> 
   return F_C; 
 }
 
-
-std::map<TString, std::vector<TH1F*>> MainAlgorithm(TH1F* InputTrk1, std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, int trk_Data)
+std::vector<std::vector<TH1F*>> BaseTemplates(TH1F* trk1, int ntrks, TString Name_Algo)
 {
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-
-  int iterations = Params["iterations"][0]; 
-  std::vector<TH1F*> ntrk_Conv1 = ConvolveNTimes(InputTrk1, trk_Data, "C1"); 
-  std::vector<TH1F*> ntrk_Conv2 = ConvolveNTimes(InputTrk1, trk_Data, "C2"); 
-  std::vector<TH1F*> ntrk_Conv3 = ConvolveNTimes(InputTrk1, trk_Data, "C3"); 
-  TString name = Data[0] -> GetTitle(); name += ("_Experimental.pdf"); 
-
-  for (int i(0); i < iterations; i++)
+  std::vector<std::vector<TH1F*>> Conv; 
+  for (int i(0); i < ntrks; i++)
   {
-    auto Clone =[&] (TH1F* H, TH1F* O)
-    {
-      float HL = H -> Integral(); 
-      float OL = O -> Integral(); 
-    
-      H -> Scale(1. / HL); 
-      O -> Scale(1. / OL); 
-      for (int x(0); x < H -> GetNbinsX(); x++)
-      {
-        float e = H -> GetBinContent(x+1); 
-        float f = O -> GetBinContent(x+1); 
-        O -> SetBinContent(x+1, (e+f)/2.);
-      }
-      
-      H -> Scale(HL); 
-      O -> Scale(OL); 
-    };
-
-
-    Clone(ntrk_Conv2[1], ntrk_Conv1[1]); 
-    Clone(ntrk_Conv3[2], ntrk_Conv1[2]); 
-
-    Clone(ntrk_Conv1[0], ntrk_Conv2[0]); 
-    Clone(ntrk_Conv3[2], ntrk_Conv2[2]); 
-
-    Clone(ntrk_Conv1[0], ntrk_Conv3[0]); 
-    Clone(ntrk_Conv2[1], ntrk_Conv3[1]); 
-
-    for (int c(0); c < ntrk_Conv1.size(); c++)
-    {
-      Average(ntrk_Conv1[c]); 
-      Average(ntrk_Conv2[c]); 
-      Average(ntrk_Conv3[c]); 
-    }
- 
-    TH1F* trk1_D = (TH1F*)Data[0] -> Clone("Trk1_temp"); 
-    ScalingFit(trk1_D, ntrk_Conv1); 
-    trk1_D -> Add(ntrk_Conv1[1], -1); 
-    trk1_D -> Add(ntrk_Conv1[2], -1); 
-    std::vector<TH1F*> ntrk_Conv_temp = ConvolveNTimes(trk1_D, 3, "Temp1"); 
-    delete trk1_D; 
-
-    Clone(ntrk_Conv_temp[0], ntrk_Conv1[0]); 
-    Clone(ntrk_Conv_temp[1], ntrk_Conv2[1]); 
-    Clone(ntrk_Conv_temp[2], ntrk_Conv3[2]); 
-    BulkDelete(ntrk_Conv_temp); 
-    
-    Normalize(ntrk_Conv1); 
-    Normalize(ntrk_Conv2);
-    Normalize(ntrk_Conv3); 
-
-    TH1F* trk1 = (TH1F*)Data[0] -> Clone("Trk1_D"); 
-    TH1F* trk2 = (TH1F*)Data[1] -> Clone("Trk2_D"); 
-    TH1F* trk3 = (TH1F*)Data[2] -> Clone("Trk3_D"); 
-    
-    std::vector<TH1F*> F_C1 = LoopGen(ntrk_Conv1, trk1, Params); 
-    ScaleShape(trk1, F_C1); 
-    trk1 -> Add(F_C1[1], -1);  
-    trk1 -> Add(F_C1[2], -1); 
-    Average(trk1); 
-    Flush(F_C1, ntrk_Conv1, true); 
-    Flush({trk1}, {ntrk_Conv1[0]}); 
-    
-    std::vector<TH1F*> F_C2 = LoopGen(ntrk_Conv2, trk2, Params); 
-    ScaleShape(trk2, F_C2); 
-    trk2 -> Add(F_C2[0], -1);  
-    trk2 -> Add(F_C2[2], -1); 
-    Average(trk2); 
-    Flush(F_C2, ntrk_Conv2, true); 
-    Flush({trk2}, {ntrk_Conv2[1]}); 
-    
-    std::vector<TH1F*> F_C3 = LoopGen(ntrk_Conv3, trk3, Params); 
-    ScaleShape(trk3, F_C3); 
-    trk3 -> Add(F_C3[0], -1);  
-    trk3 -> Add(F_C3[1], -1); 
-    Average(trk3); 
-    Flush(F_C3, ntrk_Conv3, true); 
-    Flush({trk3}, {ntrk_Conv3[2]}); 
-
-    Clone(ntrk_Conv2[1], ntrk_Conv1[1]); 
-    Clone(ntrk_Conv3[2], ntrk_Conv1[2]); 
-
-    Clone(ntrk_Conv1[0], ntrk_Conv2[0]); 
-    Clone(ntrk_Conv3[2], ntrk_Conv2[2]); 
-
-    Clone(ntrk_Conv1[0], ntrk_Conv3[0]); 
-    Clone(ntrk_Conv2[1], ntrk_Conv3[1]); 
-
-    for (int c(0); c < ntrk_Conv1.size(); c++)
-    {
-      Average(ntrk_Conv1[c]); 
-      Average(ntrk_Conv2[c]); 
-      Average(ntrk_Conv3[c]); 
-    }
-  
-    Normalize(ntrk_Conv1); 
-    Normalize(ntrk_Conv2);
-    Normalize(ntrk_Conv3);  
- 
-    trk1 = (TH1F*)Data[0] -> Clone("Trk1_D"); 
-    trk2 = (TH1F*)Data[1] -> Clone("Trk2_D"); 
-    trk3 = (TH1F*)Data[2] -> Clone("Trk3_D");  
-    ScalingFit(trk1, ntrk_Conv1); 
-    ScalingFit(trk2, ntrk_Conv2); 
-    ScalingFit(trk3, ntrk_Conv3); 
- 
-    can -> Print("t.pdf["); 
-    PlotHists(trk1, ntrk_Conv1, can);
-    can -> Print("t.pdf"); 
-    PlotHists(trk2, ntrk_Conv2, can);
-    can -> Print("t.pdf"); 
-    PlotHists(trk3, ntrk_Conv3, can);
-    can -> Print("t.pdf"); 
-    can -> Print("t.pdf]"); 
-
-    delete trk1; 
-    delete trk2; 
-    delete trk3; 
+    TString N = "NTRK"; N +=(i+1); N += ("_"); 
+    std::vector<TH1F*> ntrk_Conv = ConvolveNTimes(trk1, ntrks, N + Name_Algo); 
+    Conv.push_back(ntrk_Conv);
   }
-
-  std::map<TString, std::vector<TH1F*>> Out; 
-  std::vector<std::vector<TH1F*>> All = {ntrk_Conv1, ntrk_Conv2, ntrk_Conv3}; 
-  for (int d(0); d < trk_Data; d++)
-  {
-    std::vector<TH1F*> ntrk_Conv = All[d]; 
-    for (int x(0); x < ntrk_Conv.size(); x++)
-    {
-      TString name2 = Data[d]->GetTitle();   
-      name2.Remove(name2.Length() - 5, name2.Length()); 
-      name2.Remove(0, 12); 
-      name = "dEdx_ntrk_"; name += (d+1); name += ("_ntru_"); name += (x+1); name += ("_"); 
-      name2 += ("_R");
-      name = name + name2;
-      TH1F* H = (TH1F*)ntrk_Conv[x] -> Clone(name); 
-      H -> SetTitle(name); 
-       
-      TString OutName = "Result"; OutName += (d+1); 
-      Out[OutName].push_back(H); 
-    }
-  }
-
-  Out["Data"] = Data;
-  
-  for (int i(0); i < All.size(); i++){BulkDelete(All[i]);}
-  delete can;
-
-  return Out; 
+  return Conv; 
 }
+
+std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Normalization(std::vector<TH1F*> Data, TH1F* trk1, std::map<TString, std::vector<float>> Params, TString Name)
+{
+  std::vector<std::vector<TH1F*>> Conv = BaseTemplates(trk1, Data.size(), Name); 
+
+  std::map<TString, std::pair<std::vector<float>, std::vector<TH1F*>>> Output; 
+  for (int i(0); i < Data.size(); i++)
+  {
+    TH1F* trk = Data[i]; 
+    std::map<TString, std::vector<float>> Result = ScalingFit(trk, Conv[i]); 
+
+    std::vector<float> Error;  
+    for (it p = Result.begin(); p != Result.end(); p++)
+    {
+      std::vector<float> R = p -> second; 
+      Error.push_back(R[1]);  
+    }
+    Output[trk -> GetTitle()] = std::pair<std::vector<float>, std::vector<TH1F*>>(Error, Conv[i]); 
+  }
+  return Output; 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
