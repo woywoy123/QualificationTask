@@ -1,6 +1,5 @@
 #include<PostAnalysis/Plotting.h>
 
-
 void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style)
 {
   std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kViolet, kOrange, kCoffee, kAurora}; 
@@ -242,9 +241,6 @@ void PlotLikelyHood(RooAbsReal* nll, RooRealVar* var, TString name)
   can -> Update(); 
   can -> Print(name); 
   delete can;
-  //delete pll_var; 
-  //delete frame1; 
-
 }
 
 
@@ -273,6 +269,9 @@ void RooFitPullPlot(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*
   can -> Update();
   can -> Print(Name); 
   delete can; 
+  delete xframe; 
+  delete frame2; 
+  delete frame3; 
 }
 
 void PlotRooFit(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data)

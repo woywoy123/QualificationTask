@@ -1,69 +1,15 @@
-#include<PostAnalysis/BaseFunctionTest.h>
-#include<PostAnalysis/Experimental.h>
-#include<PostAnalysis/PresentationFigures.h>
-#include<TFile.h>
-#include<PostAnalysis/Debugging.h>
-#include<PostAnalysis/Fits.h>
+#include<PostAnalysis/BaseFunctions.h>
+#include<PostAnalysis/ExperimentalBench.h>
 
 int main(int argc, char** argv)
 {
-  bool rewrite = false; 
-  int option = -5;
+  //IOTest(); 
+  //RooFitBaseFunctionTest();  
+  TestFits_NTruth_NTrack();  
 
-  TFile* F; 
-  if (rewrite == true)
-  {
-    F = new TFile("output.root", "RECREATE");
-    option = -2; 
-  }
-  else 
-  {
-    F = new TFile("output.root", "READ");
-  }
 
-  // Run Tests 
-  if (option == -2)
-  {
-    //TestLandau(F); 
-    //TestGaussian(F); 
-    //TestGaussianXGaussian(F);
-    //TestLandauXLandau(F); 
-    //TestLandauXGaussian(F); 
-    //TestDeconvGausXGaus(F); 
-    //TestDeconvLandauXLandau(F); 
-    //TestDeconvLandauXGaussian(F); 
-    //TestGaussianDeconvolutionFit(F); 
-    //TestLandauXGausFit(F); 
-    //TestNLandauXNGausFit(F);
-    //TestDeconvolutionFit(F);  
-    //TestComparisonBinCenteringLandauXLandau(F); 
-    //TestOscillationLucyRichardson(F); 
-    //TestReadFile(F); 
-    //TestReadFileTrackEnergy(F); 
-    //TestMonteCarloMatchConvolution(F); 
-    FigureCompiler(F);   
-  }
-  F -> Close();   
 
-  // Run Experimental
-  if (option == -3)
-  {
-    AlgorithmMonteCarlo();
-    //PlotInsideOutsideJet(); 
-  } 
-  if (option == -5)
-  {
-    Evaluation();   
-  }
-  // Debugging .cxx 
-  if (option == -6)
-  {
-    Entry();  
-  }
-  
- 
-  
-  
+
   std::cout << "fin" << std::endl;
   return 0; 
 }

@@ -12,7 +12,6 @@
 #include<sstream>
 #include<iomanip>
 #include<RooHist.h>
-#include<PostAnalysis/Statistics.h>
 #include<RooMinimizer.h>
 #include<RooRealVar.h>
 #include<RooFit.h>

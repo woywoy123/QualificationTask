@@ -123,6 +123,30 @@ std::vector<TString> NameGenerator(int number, TString shorty)
   return Output; 
 }
 
+std::vector<TString> NameGenerator(std::vector<TH1F*> Hists, TString append)
+{
+  std::vector<TString> Output; 
+  for ( TH1F* H : Hists )
+  {
+    TString name = H -> GetTitle(); name += ("_" + append); 
+    Output.push_back(name); 
+  }
+  return Output;  
+}
+
+std::vector<TH1F*> BulkClone(std::vector<TH1F*> Hists, std::vector<TString> Name)
+{
+  std::vector<TH1F*> Output; 
+  for (int i(0); i < Hists.size(); i++)
+  {
+    TH1F* H = (TH1F*)Hists[i] -> Clone(Name[i]);
+    H -> SetTitle(Name[i]); 
+    Output.push_back(H);  
+  }
+  return Output; 
+}
+
+
 void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool DeletePointer)
 {
   if (F_C.size() != ntrk_Conv.size()) {std::cout << "!!!!!!!!!!!!!!!!!" << std::endl; return;}
@@ -156,6 +180,8 @@ void Average(TH1F* Data)
     Data -> SetBinContent(i+1, y); 
   }
 }
+
+void Average(std::vector<TH1F*> Data){for (TH1F* H : Data){ Average(H); }}
 
 float GetMaxValue(TH1F* H)
 {
