@@ -101,6 +101,29 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TCanvas*
 
 }
 
+void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString title, TCanvas* can)
+{
+  float sum = 0; 
+  for (int i(0); i < prediction.size(); i++)
+  {
+    int bin = prediction[i] -> GetMaximumBin(); 
+    float m = prediction[i] -> GetBinContent(bin+1); 
+    sum += m;  
+  }
+
+  can -> Clear();
+  gStyle -> SetOptStat(0); 
+  TH1F* empty = (TH1F*)truth[0] -> Clone(title); 
+  empty -> SetTitle(title); 
+
+  empty -> GetYaxis() -> SetRangeUser(1, sum*2);
+  empty -> GetXaxis() -> SetRangeUser(0, 10);
+  empty -> Draw("HIST"); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  Populate(truth, can, len, kDashed); 
+  Populate(prediction, can, len, kSolid); 
+}
+
 void PlotHists(TH1F* Data, std::vector<TH1F*> Prediction, std::vector<TH1F*> Truth, TString Title, float FLost_P, float FLost_T, TCanvas* can)
 {
   can -> SetLogy(); 

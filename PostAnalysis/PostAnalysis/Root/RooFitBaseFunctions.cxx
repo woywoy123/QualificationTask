@@ -2,7 +2,6 @@
 
 std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
-  Average(PDF_H); 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
@@ -69,7 +68,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
-  Average(PDF_H); 
+  Average(PDF_H);
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
@@ -144,10 +143,11 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     Output["l_e"].push_back(n_e); 
     Output["dx"].push_back(d); 
     Output["dx_e"].push_back(d_e); 
+    
+    CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
+    //Normalize(PDF_H[i]); 
+    //PDF_H[i] -> Scale(n); 
 
-    CopyPDFToTH1F(pdf_P[i], x, PDF_H[i]); 
-    Normalize(PDF_H[i]); 
-    PDF_H[i] -> Scale(n); 
   }
   int rx = re -> status(); 
   Output["r"].push_back(rx); 
@@ -164,7 +164,6 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
 
 std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
-  Average(PDF_H); 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
@@ -215,7 +214,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
     s_e[i] = Params["s_e"][i];
   }
   std::vector<RooRealVar*> s_vars; 
-  if (Params["s_G"].size() != 0){m_vars = RooRealVariable(s_N, Params["s_G"], s_s, s_e);}
+  if (Params["s_G"].size() != 0){s_vars = RooRealVariable(s_N, Params["s_G"], s_s, s_e);}
   else {s_vars = RooRealVariable(s_N, s_s, s_e);}
   if (setconst){ for (int i(0); i < s_vars.size(); i++){ s_vars[i] -> setConstant(true); } }
 
@@ -262,6 +261,8 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
     pg -> migrad(); 
     pg -> fit("h"); 
     pg -> cleanup(); 
+    delete pg; 
+    delete nll;
   }
 
   if (Name != "")
@@ -287,9 +288,9 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
     Output["s"].push_back(s); 
     Output["s_e"].push_back(s_er); 
 
-    CopyPDFToTH1F(PxG_vars[i], x, PDF_H[i]); 
-    Normalize(PDF_H[i]); 
-    PDF_H[i] -> Scale(n); 
+    CopyPDFToTH1F(PxG_vars[i], x, PDF_H[i], Data); 
+    //Normalize(PDF_H[i]); 
+    //PDF_H[i] -> Scale(n); 
   }
   BulkDelete(l_vars); 
   BulkDelete(m_vars); 

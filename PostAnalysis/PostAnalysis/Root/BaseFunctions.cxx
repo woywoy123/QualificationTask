@@ -176,7 +176,7 @@ void Average(TH1F* Data)
   for (int i(0); i < Data -> GetNbinsX(); i++)
   {
     float y = Data -> GetBinContent(i+1); 
-    if ( y <= 0){ y = 1e-10; } 
+    if ( y <= 0){ y = 1e-19; } 
     Data -> SetBinContent(i+1, y); 
   }
 }

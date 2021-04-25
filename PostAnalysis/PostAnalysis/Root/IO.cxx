@@ -25,7 +25,6 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
 
       F -> cd(L1 + "/" + E1 + "_radius");  
       std::vector<TString> Folders = ReturnCurrentDirs(); 
-      std::vector<TString> CollectHists; 
       for (TString x : Folders)
       {
         TH1F* H = (TH1F*)gDirectory -> Get(x); 
@@ -88,12 +87,73 @@ void TestReadCTIDE(TString dir)
 }
 
 
+void WriteHistsToFile(std::vector<TH1F*> ntrk_ntru, TString dir)
+{
+  gDirectory -> mkdir(dir); 
+  gDirectory -> cd(dir); 
+
+  BulkWrite(ntrk_ntru); 
+  
+  gDirectory -> cd("../"); 
+}
+
+
+std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TString dir)
+{
+  std::map<TString, std::map<TString, std::vector<TH1F*>>> Output; 
+  TFile* F = new TFile(dir, "READ");
+  std::vector<TString> JetEnergy_Layer_Folder = ReturnCurrentDirs(); 
+  
+  for (TString Folder : JetEnergy_Layer_Folder)
+  {
+    F -> cd(Folder);
+    std::map<TString, std::vector<TH1F*>> Algorithms_Map;  
+    
+    std::vector<TString> Algorithm_Folder = ReturnCurrentDirs(); 
+    for (TString Alg_Folder : Algorithm_Folder)
+    {
+      F -> cd(Folder + "/" + Alg_Folder); 
+      
+      std::vector<TString> Alg_V = ReturnCurrentDirs(); 
+      for (TString H_TS : Alg_V)
+      {
+        TH1F* H = (TH1F*)gDirectory -> Get(H_TS);
+
+        // Truth inside the jet core. 
+        if (H_TS.Contains("ntrk_1")){ Algorithms_Map[Alg_Folder + "_ntrk_1"].push_back(H); }
+        if (H_TS.Contains("ntrk_2")){ Algorithms_Map[Alg_Folder + "_ntrk_2"].push_back(H); }
+        if (H_TS.Contains("ntrk_3")){ Algorithms_Map[Alg_Folder + "_ntrk_3"].push_back(H); }
+        if (H_TS.Contains("ntrk_4")){ Algorithms_Map[Alg_Folder + "_ntrk_4"].push_back(H); }
+      }
+    }
+    Output[Folder] = Algorithms_Map; 
+    F -> cd(); 
+  }
+
+  return Output;  
+}
 
 
 
-
-
-
+void TestReadAlgorithm()
+{
+  std::map<TString, std::map<TString, std::vector<TH1F*>>> Map = ReadAlgorithmResults();
+  for (MMVi x = Map.begin(); x != Map.end(); x++)
+  {
+    TString current = x -> first; 
+    std::map<TString, std::vector<TH1F*>> Algs = x -> second; 
+    
+    for ( MVi p = Algs.begin(); p != Algs.end(); p++)
+    {
+      std::cout << current << "/" << p -> first << std::endl; 
+      std::vector<TH1F*> Hists = Algs[p -> first]; 
+      for (TH1F* J : Hists)
+      {
+        std::cout << "----- " << J -> GetTitle() << std::endl;
+      }
+    }
+  }
+}
 
 
 

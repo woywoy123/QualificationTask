@@ -25,6 +25,7 @@ void PlotHists(std::vector<TH1F*> Hists, std::vector<TString> Legend_Titles, TCa
 void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TCanvas* can); 
 void PlotHists(TH1F* Data, std::vector<TH1F*> truth, TCanvas* can); 
 void PlotHists(TH1F* Data, std::vector<TH1F*> Prediction, std::vector<TH1F*> Truth, TString Title, float FLost_P, float FLost_T, TCanvas* can);
+void PlotHists(std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TString title, TCanvas* can); 
 
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can); 
 void RooFitPullPlot(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data, TString Name);

@@ -49,6 +49,9 @@ TString PrecisionString(float number, int precision, bool sci = false);
 // Iterators that are used throughout the package 
 typedef std::map<TString, std::map<TString, std::vector<TH1F*>>>::iterator MMVi; 
 typedef std::map<TString, std::vector<TH1F*>>::iterator MVi; 
+typedef std::map<TString, std::vector<float>>::iterator MVFi; 
+typedef std::map<TString, std::map<TString, std::vector<float>>>::iterator MMVFi; 
+
 
 
 #endif

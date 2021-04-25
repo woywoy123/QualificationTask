@@ -4,5 +4,6 @@
 void IOTest(); 
 void RooFitBaseFunctionTest(); 
 void TestFits_NTruth_NTrack(); 
+void TestRead(); 
 
 #endif
