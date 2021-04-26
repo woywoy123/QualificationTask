@@ -7,7 +7,7 @@ int main(int argc, char** argv)
 {
   //IOTest(); 
   //RooFitBaseFunctionTest();  
-  //TestFits_NTruth_NTrack();  
+  TestFits_NTruth_NTrack();  
   //TestRead(); 
   CompareToTruth("ntrk_ntru.root");  
 

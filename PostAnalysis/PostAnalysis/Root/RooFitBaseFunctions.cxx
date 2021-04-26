@@ -2,6 +2,7 @@
 
 std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
+  Average(PDF_H);
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
@@ -55,6 +56,8 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
     Output["l_e"].push_back(n_e); 
 
     PDF_H[i] -> Scale(n); 
+
+    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, n_e);}
   }
 
   BulkDelete(l_vars); 
@@ -123,15 +126,32 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Data); 
   RooAddPdf model("model", "model", PDFs, N); 
-  RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(8), Extended(true), Save()); 
-
+  std::map<TString, std::vector<float>> Output;  
+  if (Params["Minimizer"].size() == 0)
+  {
+    RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(8), Extended(true), Save()); 
+    int rx = re -> status(); 
+    Output["r"].push_back(rx); 
+  }
+  else
+  {
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), SumW2Error(true), NumCPU(8)); 
+    RooMinimizer* pg = new RooMinimizer(*nll); 
+    pg -> setMaxIterations(Params["Minimizer"][0]); 
+    pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
+    pg -> migrad(); 
+    pg -> fit("h"); 
+    pg -> cleanup(); 
+    delete pg; 
+    delete nll;
+  }
+  
   if (Name != "")
   {
     TString plot_t = Name + "PULL.pdf"; 
     RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
   }
 
-  std::map<TString, std::vector<float>> Output;  
   for (int i(0); i < l_N.size(); i++)
   {
     float n = l_vars[i] -> getVal(); 
@@ -143,14 +163,13 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     Output["l_e"].push_back(n_e); 
     Output["dx"].push_back(d); 
     Output["dx_e"].push_back(d_e); 
-    
+   
     CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
-    //Normalize(PDF_H[i]); 
-    //PDF_H[i] -> Scale(n); 
-
+    Normalize(PDF_H[i]); 
+    PDF_H[i] -> Scale(n); 
+    
+    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, n_e);}
   }
-  int rx = re -> status(); 
-  Output["r"].push_back(rx); 
 
   BulkDelete(l_vars); 
   BulkDelete(d_vars); 
@@ -289,8 +308,9 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
     Output["s_e"].push_back(s_er); 
 
     CopyPDFToTH1F(PxG_vars[i], x, PDF_H[i], Data); 
-    //Normalize(PDF_H[i]); 
-    //PDF_H[i] -> Scale(n); 
+    Normalize(PDF_H[i]); 
+    PDF_H[i] -> Scale(n); 
+    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, n_er);}
   }
   BulkDelete(l_vars); 
   BulkDelete(m_vars); 

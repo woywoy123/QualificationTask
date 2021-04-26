@@ -93,8 +93,6 @@ void CompareToTruth(TString dir)
     }
     JetEnergy.push_back(current); 
     Collector.push_back(Fit_Stats); 
-
-    break; //delkete
   }
 
   CompileCout(JetEnergy, Algo_Strings, Collector); 

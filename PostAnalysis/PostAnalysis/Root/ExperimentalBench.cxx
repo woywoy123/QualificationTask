@@ -19,19 +19,19 @@ void RooFitBaseFunctionTest()
 
     //// Test the Normalization function out
     std::vector<TString> ntrk1_Name = NameGenerator(ntrk_1_T.size(), "dEdx_ntrk_1_tru_"); 
-    //std::vector<TH1F*> PDF_H = BulkClone(ntrk_1_T, ntrk1_Name); 
-    //
-    //std::map<TString, std::vector<float>> Params_N; 
-    //Params_N["Range"] = {1, 8}; 
+    std::vector<TH1F*> PDF_H = BulkClone(ntrk_1_T, ntrk1_Name); 
+    
+    std::map<TString, std::vector<float>> Params_N; 
+    //Params_N["Range"] = {0, 10}; 
     //Params_N["r_value"] = {1.1};
-    //
-    //Normalization(ntrk_1_M, PDF_H, Params_N, "Normal"); 
+    
+    Normalization(ntrk_1_M, PDF_H, Params_N, "Normal"); 
   
-    //TCanvas* can = new TCanvas(); 
-    //can -> SetLogy();
-    //PlotHists(ntrk_1_T, PDF_H, can); 
-    //can -> Print("Example.pdf"); 
-    //delete can; 
+    TCanvas* can = new TCanvas(); 
+    can -> SetLogy();
+    PlotHists(ntrk_1_T, PDF_H, can); 
+    can -> Print("Example.pdf"); 
+    delete can; 
 
     //std::map<TString, std::vector<float>> Params_NS; 
     //Params_NS["Range"] = {1, 8}; 
@@ -62,12 +62,12 @@ void RooFitBaseFunctionTest()
     Params_FFT["fft_cache"] = {10000}; 
     Params_FFT["Minimizer"] = {100000}; 
 
-    ConvolutionFFT(ntrk_1_M, PDF_H_FFT, Params_FFT, "NormalShiftFFT"); 
-    TCanvas* can2 = new TCanvas(); 
-    can2 -> SetLogy();
-    PlotHists(ntrk_1_T, PDF_H_FFT, can2); 
-    can2 -> Print("ExampleSFFT.pdf"); 
-    delete can2; 
+    //ConvolutionFFT(ntrk_1_M, PDF_H_FFT, Params_FFT, "NormalShiftFFT"); 
+    //TCanvas* can2 = new TCanvas(); 
+    //can2 -> SetLogy();
+    //PlotHists(ntrk_1_T, PDF_H_FFT, can2); 
+    //can2 -> Print("ExampleSFFT.pdf"); 
+    //delete can2; 
 
     //TCanvas* can3 = new TCanvas(); 
     //can3-> SetLogy();
@@ -98,15 +98,16 @@ void TestFits_NTruth_NTrack()
 
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
-  Params_NS["Range"] = {1, 8}; 
+  Params_NS["Range"] = {0.2, 8}; 
   Params_NS["r_value"] = {1.1};
-  Params_NS["Range_ntrk_1"] = {0, 4}; 
+  Params_NS["Range_ntrk_1"] = {0, 6}; 
   Params_NS["Range_ntrk_2"] = {1, 6}; 
   Params_NS["Range_ntrk_3"] = {2.5, 7}; 
   Params_NS["Range_ntrk_4"] = {4, 8}; 
-  Params_NS["dx"] = {0.4, 0.4, 0.4, 0.4}; 
+  Params_NS["dx"] = {0.5, 0.5, 0.5, 0.5}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
-
+  //Params_NS["Minimizer"] = {100000}; 
+  
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
   Params_FFT["Range"] = {0.2, 8}; 
@@ -115,7 +116,7 @@ void TestFits_NTruth_NTrack()
   Params_FFT["Range_ntrk_2"] = {1, 6}; 
   Params_FFT["Range_ntrk_3"] = {2.5, 7}; 
   Params_FFT["Range_ntrk_4"] = {4, 8}; 
-  Params_FFT["m"] = {0.4, 0.4, 0.4, 0.4};
+  Params_FFT["m"] = {0.5, 0.5, 0.5, 0.5};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["s_s"] = {0, 0, 0, 0};
   Params_FFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
@@ -130,7 +131,7 @@ void TestFits_NTruth_NTrack()
   Params_WidthFFT["Range_ntrk_2"] = {1, 6}; 
   Params_WidthFFT["Range_ntrk_3"] = {2.5, 7}; 
   Params_WidthFFT["Range_ntrk_4"] = {4, 8}; 
-  Params_WidthFFT["m"] = {0.4, 0.4, 0.4, 0.4};
+  Params_WidthFFT["m"] = {0.5, 0.5, 0.5, 0.5};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
   Params_WidthFFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
@@ -138,12 +139,10 @@ void TestFits_NTruth_NTrack()
   Params_WidthFFT["Minimizer"] = {100000}; 
 
   TFile* X = new TFile("ntrk_ntru.root", "RECREATE"); 
+  int p = 0;
   for (MMVi x = F.begin(); x != F.end(); x++)
   {
     TString current = x -> first;  
-    X -> mkdir(current); 
-    X -> cd(current); 
-
     std::map<TString, std::vector<TH1F*>> M = F[x -> first]; 
     
     TH1F* ntrk_1_T = M["ntrk_1_T_I"][0]; 
@@ -161,21 +160,44 @@ void TestFits_NTruth_NTrack()
       ToBeUsed.push_back(Proposed[i]); 
     }
     if (ToBeUsed.size() == 0){continue;}
-
+    X -> mkdir(current); 
+    X -> cd(current); 
 
     std::vector<TH1F*> Normal_Fits = Normalization_Fit(ToBeUsed, trk1_start, Params_N, current); 
     std::vector<TH1F*> ShiftNormal_Fits = NormalizationShift_Fit(ToBeUsed, trk1_start, Params_NS, current); 
     std::vector<TH1F*> ShiftNormalFFT_Fits = NormalizationShiftFFT_Fit(ToBeUsed, trk1_start, Params_FFT, current); 
     std::vector<TH1F*> ShiftNormalWidthFFT_Fits = NormalizationShiftWidthFFT_Fit(ToBeUsed, trk1_start, Params_WidthFFT, current); 
+   
+    TCanvas* can = new TCanvas(); 
+    can -> SetLogy(); 
+    can -> Print(current + ".pdf["); 
+    PlotHists(Normal_Fits, ToBeUsed, can); 
+    can -> Print(current + ".pdf"); 
+
+    PlotHists(ShiftNormal_Fits, ToBeUsed, can); 
+    can -> Print(current + ".pdf"); 
     
+    PlotHists(ShiftNormalFFT_Fits, ToBeUsed, can); 
+    can -> Print(current + ".pdf"); 
+
+    PlotHists(ShiftNormalWidthFFT_Fits, ToBeUsed, can); 
+    can -> Print(current + ".pdf"); 
+    can -> Print(current + ".pdf]"); 
+
+
     BulkDelete(Normal_Fits); 
     BulkDelete(ShiftNormal_Fits); 
     BulkDelete(ShiftNormalFFT_Fits); 
     BulkDelete(ShiftNormalWidthFFT_Fits); 
     
     X -> cd(); 
+    if (p == 0)
+    {
+      X -> Close(); 
+      break; 
+    }
+    p++;
   }
   
-  X -> Close(); 
 }
 

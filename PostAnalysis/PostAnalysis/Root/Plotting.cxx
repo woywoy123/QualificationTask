@@ -115,6 +115,7 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString 
   gStyle -> SetOptStat(0); 
   TH1F* empty = (TH1F*)truth[0] -> Clone(title); 
   empty -> SetTitle(title); 
+  empty -> Reset();
 
   empty -> GetYaxis() -> SetRangeUser(1, sum*2);
   empty -> GetXaxis() -> SetRangeUser(0, 10);

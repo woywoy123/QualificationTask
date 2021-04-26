@@ -88,23 +88,23 @@ static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, Roo
 
 static void CopyPDFToTH1F(RooHistPdf* pdf, RooRealVar* domain, TH1F* Out, TH1F* Data)
 {
-  auto T = pdf -> generateBinned(*domain, Data -> GetEntries(), true); 
-  auto H = T -> createHistogram("temp", *domain, RooFit::Binning(Data -> GetNbinsX(), Data -> GetXaxis() -> GetXmin(), Data -> GetXaxis() -> GetXmax())); 
+  TF1 D = TF1(*pdf -> asTF(RooArgList(*domain))); 
+  D.SetNpx(Data -> GetNbinsX()); 
+  TH1* H = D.CreateHistogram(); 
 
   Out -> Reset(); 
   Out -> Add(H, 1); 
-  delete H;
+  
 }
 
 static void CopyPDFToTH1F(RooFFTConvPdf* pdf, RooRealVar* domain, TH1F* Out, TH1F* Data)
 {
-
-  auto T = pdf -> generateBinned(*domain, Data -> GetEntries(), true); 
-  auto H = T -> createHistogram("temp", *domain, RooFit::Binning(Data -> GetNbinsX(), Data -> GetXaxis() -> GetXmin(), Data -> GetXaxis() -> GetXmax())); 
+  TF1 D = TF1(*pdf -> asTF(RooArgList(*domain))); 
+  D.SetNpx(Data -> GetNbinsX()); 
+  TH1* H = D.CreateHistogram(); 
 
   Out -> Reset(); 
   Out -> Add(H, 1);  
-  delete H; 
 }
 
 static void BulkDelete(std::vector<RooDataHist*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
