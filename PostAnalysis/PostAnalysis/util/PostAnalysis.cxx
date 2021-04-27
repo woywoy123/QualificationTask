@@ -7,10 +7,10 @@ int main(int argc, char** argv)
 {
   //IOTest(); 
   //RooFitBaseFunctionTest();  
-  TestFits_NTruth_NTrack();  
+  //TestFits_NTruth_NTrack();  
   //TestRead(); 
-  CompareToTruth("ntrk_ntru.root");  
-
+  //CompareToTruth("ntrk_ntru.root");  
+  TestFits_AllTruth_ToTrack();  
 
   std::cout << "fin" << std::endl;
   return 0; 

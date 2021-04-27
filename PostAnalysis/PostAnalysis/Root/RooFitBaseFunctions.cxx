@@ -57,7 +57,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
     PDF_H[i] -> Scale(n); 
 
-    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, n_e);}
+    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
   }
 
   BulkDelete(l_vars); 
@@ -168,7 +168,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     Normalize(PDF_H[i]); 
     PDF_H[i] -> Scale(n); 
     
-    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, n_e);}
+    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
   }
 
   BulkDelete(l_vars); 
@@ -310,7 +310,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
     CopyPDFToTH1F(PxG_vars[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 
     PDF_H[i] -> Scale(n); 
-    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, n_er);}
+    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
   }
   BulkDelete(l_vars); 
   BulkDelete(m_vars); 

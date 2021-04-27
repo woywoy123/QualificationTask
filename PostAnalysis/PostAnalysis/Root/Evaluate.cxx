@@ -8,6 +8,8 @@ void CompareToTruth(TString dir)
   std::vector<std::map<TString, std::map<TString, std::vector<float>>>> Collector; 
   std::vector<TString> JetEnergy; 
   std::vector<TString> Algo_Strings; 
+
+  int index = 0; 
   for (MMVi r = Fits.begin(); r != Fits.end(); r++)
   {
     TString current = r -> first; 
@@ -55,8 +57,8 @@ void CompareToTruth(TString dir)
       {
         can -> SetLogy();
         
-        PlotHists(All_R[trk], All_T[trk], current + "_" + Algo, can); 
-        can -> Print(Fname); 
+        //PlotHists(All_R[trk], All_T[trk], current + "_" + Algo, can); 
+        //can -> Print(Fname); 
         
         for (int tru(0); tru < All_R[trk].size(); tru++)
         {
@@ -71,8 +73,8 @@ void CompareToTruth(TString dir)
 
           if (trk == n_tru)
           {
-            RatioPlot(All_R[trk][tru], All_T[trk][n_tru], can); 
-            can -> Print(Fname); 
+            //RatioPlot(All_R[trk][tru], All_T[trk][n_tru], can); 
+            //can -> Print(Fname); 
             
             // Do the stats: 
             TString dEdx_S = "dEdx_ntrk_"; dEdx_S += (trk+1); dEdx_S += ("_ntru_"); dEdx_S += (n_tru+1);  
@@ -93,6 +95,13 @@ void CompareToTruth(TString dir)
     }
     JetEnergy.push_back(current); 
     Collector.push_back(Fit_Stats); 
+
+
+    //if (index == 3)
+    //{
+    //  break; 
+    //}
+    //index++;
   }
 
   CompileCout(JetEnergy, Algo_Strings, Collector); 
@@ -184,18 +193,113 @@ void CompileCout(std::vector<TString> JetEnergy, std::vector<TString> Algo_Strin
     cout_V.push_back(" "); 
   }
 
+  std::vector<int> ScoreOverall(Algo_Strings.size(), 0); 
+  std::map<TString, std::vector<float>> ScorePerTrack; 
+  for (int j(0); j < JetEnergy.size(); j++)
+  {
+    std::map<TString, std::map<TString, std::vector<float>>> E = Collector[j]; 
+    
+    std::vector<float> temp_E(4, 100); 
+    std::vector<int> temp_id(4, -1);  
+    std::vector<float> temp(Algo_Strings.size(), -1);  
+    for (int k(0); k < Algo_Strings.size(); k++)
+    {
+      std::map<TString, std::vector<float>> re = E[Algo_Strings[k]]; 
+      
+      int id = 0; 
+      for (MVFi x = re.begin(); x != re.end(); x++)
+      {
+        if (ScorePerTrack[x -> first].size() == 0)
+        {
+          ScorePerTrack[x -> first] = std::vector<float>(Algo_Strings.size(), 0);  
+        }
+        
+        float IE = (x -> second)[4]; // Return Integral Error
+        temp[k] += IE; 
+        
+        if (temp_E[id] > IE)
+        { 
+          temp_E[id] = IE; 
+          temp_id[id] = k;
+        }
+        id++; 
+      }
+    }
+    
+    // Update the score 
+    int id = 0; 
+    for (MVFi sc = ScorePerTrack.begin(); sc != ScorePerTrack.end(); sc++)
+    {
+      int id_s = temp_id[id]; 
+      if (id_s == -1){ continue; }
+      ScorePerTrack[sc -> first][id_s]++; 
+      id++;
+    }
+
+    int ind = -1; 
+    float err_t = 1000; 
+    for (int k(0); k < temp.size(); k++)
+    {
+      if (temp[k] < err_t)
+      {
+        err_t = temp[k]; 
+        ind = k; 
+      }
+    }
+    ScoreOverall[ind]++; 
+  }
+  
+  
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+
+  out.Clear(); 
+  CoutText(&out, 18, " "); 
+  out += (sep);  
+
+  for (TString Alg : Algo_Strings)
+  {
+    out += (Alg); 
+    out += (sep); 
+  }
+  cout_V.push_back(out); 
+
+  for (MVFi sc = ScorePerTrack.begin(); sc != ScorePerTrack.end(); sc++)
+  {
+    out.Clear(); 
+    out += (sc -> first); 
+    out += (sep); 
+    for (int res(0); res < (sc -> second).size(); res++)
+    {
+      TString out2 = ""; 
+      out2 += (sc -> second)[res]; 
+      CoutText(&out2, Algo_Strings[res].Sizeof() - out2.Sizeof(), " "); 
+      out += ( out2 ); 
+      out += (sep); 
+    }
+    cout_V.push_back(out); 
+  }
+  out.Clear(); 
+  
+  CoutText(&out, 18, " "); 
+  out += (sep); 
+  for (int sc(0); sc < ScoreOverall.size(); sc++)
+  {
+    TString out2 = ""; 
+    TString xout = ""; 
+    xout += (ScoreOverall[sc]);  
+    CoutText(&out2, Algo_Strings[sc].Sizeof()-xout.Sizeof(), " "); 
+    
+    out += (xout); 
+    out += (out2);  
+    out += (sep); 
+  }
+  cout_V.push_back(out); 
+
   for (TString S : cout_V)
   {
     std::cout << S << std::endl;
   }
-
-
-
-
-
-
-
-
 
 
 }

@@ -97,3 +97,151 @@ std::vector<TH1F*> NormalizationShiftWidthFFT_Fit(std::vector<TH1F*> Data, TH1F*
   return ntrk_ntru_H; 
 }
 
+std::vector<std::vector<TH1F*>> BuildNtrkMtru(int n, TH1F* trk1_start, TString extension)
+{
+  std::vector<std::vector<TString>> ntrk_ntru_names; 
+  for (int i(0); i < n; i++)
+  {
+    std::vector<TString> ntrk_ntru_n; 
+    for (int j(0); j < n; j++)
+    {
+      TString base = "dEdx_ntrk_"; base += (i+1); base += ("_ntru_"); base += (j+1); 
+      ntrk_ntru_n.push_back(base); 
+    }
+    ntrk_ntru_names.push_back(ntrk_ntru_n); 
+  }
+  
+  std::vector<std::vector<TH1F*>> ntrk_ntru_templates; 
+  for (int i(0); i < n; i++)
+  {
+    std::vector<TH1F*> ntrk_ntru_H = ConvolveNTimes(trk1_start, ntrk_ntru_names[i].size(), ntrk_ntru_names[i], extension); 
+    ntrk_ntru_templates.push_back(ntrk_ntru_H); 
+  }
+  return ntrk_ntru_templates; 
+}
+
+std::vector<std::vector<TH1F*>> Normalization_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
+{
+  TString ext = "_" + JE + "_Normal_NtrkMtru"; 
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+
+  for (int i(0); i < ntrk_mtru_H.size(); i++)
+  {
+    TString r_name = "Range_ntrk_"; r_name += (i+1); 
+    Params["Range"] = Params[r_name]; 
+    std::vector<TH1F*> ntrk_Template = ntrk_mtru_H[i]; 
+    TH1F* ntrk_Measure = Data[i]; 
+    
+    TString base = "Fit_"; base += (i+1); base += (ext); 
+    Normalization(ntrk_Measure, ntrk_Template, Params, base); 
+    
+    WriteHistsToFile(ntrk_Template, "Normal"); 
+  }
+  
+  return ntrk_mtru_H; 
+}
+
+std::vector<std::vector<TH1F*>> NormalizationShift_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
+{
+  TString ext = "_" + JE + "_ShiftNormal_NtrkMtru"; 
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+
+  for (int i(0); i < ntrk_mtru_H.size(); i++)
+  {
+    TString r_name = "Range_ntrk_"; r_name += (i+1); 
+    Params["Range"] = Params[r_name]; 
+    std::vector<TH1F*> ntrk_Template = ntrk_mtru_H[i]; 
+    TH1F* ntrk_Measure = Data[i]; 
+    
+    TString base = "Fit_"; base += (i+1); base += (ext); 
+    NormalizationShift(ntrk_Measure, ntrk_Template, Params, base); 
+    
+    WriteHistsToFile(ntrk_Template, "ShiftNormal"); 
+  }
+  
+  return ntrk_mtru_H; 
+}
+
+std::vector<std::vector<TH1F*>> NormalizationShiftFFT_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
+{
+  TString ext = "_" + JE + "_ShiftNormalFFT_NtrkMtru"; 
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+
+  for (int i(0); i < ntrk_mtru_H.size(); i++)
+  {
+    TString r_name = "Range_ntrk_"; r_name += (i+1); 
+    Params["Range"] = Params[r_name]; 
+    std::vector<TH1F*> ntrk_Template = ntrk_mtru_H[i]; 
+    TH1F* ntrk_Measure = Data[i]; 
+    
+    TString base = "Fit_"; base += (i+1); base += (ext); 
+    NormalizationShift(ntrk_Measure, ntrk_Template, Params, base); 
+    
+    WriteHistsToFile(ntrk_Template, "ShiftNormalFFT"); 
+  }
+  
+  return ntrk_mtru_H; 
+}
+
+std::vector<std::vector<TH1F*>> NormalizationShiftWidthFFT_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
+{
+  TString ext = "_" + JE + "_ShiftNormalWidthFFT_NtrkMtru"; 
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+
+  for (int i(0); i < ntrk_mtru_H.size(); i++)
+  {
+    TString r_name = "Range_ntrk_"; r_name += (i+1); 
+    Params["Range"] = Params[r_name]; 
+    std::vector<TH1F*> ntrk_Template = ntrk_mtru_H[i]; 
+    TH1F* ntrk_Measure = Data[i]; 
+    
+    TString base = "Fit_"; base += (i+1); base += (ext); 
+    NormalizationShift(ntrk_Measure, ntrk_Template, Params, base); 
+    
+    WriteHistsToFile(ntrk_Template, "ShiftNormalWidthFFT"); 
+  }
+  
+  return ntrk_mtru_H; 
+}
+
+std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
+{
+  TString ext = "_" + JE + "_Experimental_NtrkMtru"; 
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+
+  for (int x(0); x < 3; x++)
+  {
+    if (x > 0)
+    {
+      for (int t(0); t < ntrk_mtru_H.size(); t++)
+      {
+        TH1F* ntrk_ntru = ntrk_mtru_H[t][t]; 
+        
+        for (int t_u(0); t_u < ntrk_mtru_H.size(); t_u++)
+        {
+          if (t_u == t){continue;}
+
+          TH1F* ntrk_mtru_update = ntrk_mtru_H[t_u][t]; 
+          Flush({ntrk_ntru}, {ntrk_mtru_update}); 
+        }
+      }
+    }
+    
+    for (int i(0); i < ntrk_mtru_H.size(); i++)
+    {
+      TString r_name = "Range_ntrk_"; r_name += (i+1); 
+      Params["Range"] = Params[r_name]; 
+      std::vector<TH1F*> ntrk_Template = ntrk_mtru_H[i]; 
+      TH1F* ntrk_Measure = Data[i]; 
+      
+      TString base = "Fit_"; base += (i+1); base += (ext); 
+      
+      ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
+    }
+  }
+
+  for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], "Experimental"); }
+
+
+  return ntrk_mtru_H; 
+}
