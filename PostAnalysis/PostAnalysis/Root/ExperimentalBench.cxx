@@ -195,12 +195,12 @@ void TestFits_NTruth_NTrack()
   }
 }
 
-void TestFits_AllTruth_ToTrack()
+void TestFits_AllTruth_ToTrack(TString JE)
 {
 
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE("Merged_MC.root"); 
  
-  std::vector<std::vector<float>> Ranges = {{0, 8}, {0.5, 8}, {2, 9}, {2, 9}}; 
+  std::vector<std::vector<float>> Ranges = {{0.2, 8}, {0.5, 8}, {2, 9}, {2, 9}}; 
 
 
   // Normalization parameters
@@ -220,9 +220,9 @@ void TestFits_AllTruth_ToTrack()
   Params_NS["Range_ntrk_2"] = Ranges[1]; 
   Params_NS["Range_ntrk_3"] = Ranges[2];   
   Params_NS["Range_ntrk_4"] = Ranges[3]; 
-  Params_NS["dx"] = {0.5, 0.5, 0.5, 0.5}; 
+  Params_NS["dx"] = {0.2, 0.2, 0.2, 0.2}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
-  //Params_NS["Minimizer"] = {100000}; 
+  Params_NS["Minimizer"] = {100000}; 
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
@@ -232,12 +232,12 @@ void TestFits_AllTruth_ToTrack()
   Params_FFT["Range_ntrk_2"] = Ranges[1]; 
   Params_FFT["Range_ntrk_3"] = Ranges[2];   
   Params_FFT["Range_ntrk_4"] = Ranges[3]; 
-  Params_FFT["m"] = {0.5, 0.5, 0.5, 0.5};
+  Params_FFT["m"] = {0.2, 0.2, 0.2, 0.2};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["s_s"] = {0, 0, 0, 0};
   Params_FFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
   Params_FFT["fft_cache"] = {10000}; 
-  //Params_FFT["Minimizer"] = {100000}; 
+  Params_FFT["Minimizer"] = {100000}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
@@ -247,7 +247,7 @@ void TestFits_AllTruth_ToTrack()
   Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
   Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
   Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
-  Params_WidthFFT["m"] = {0.5, 0.5, 0.5, 0.5};
+  Params_WidthFFT["m"] = {0.2, 0.2, 0.2, 0.2};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
   Params_WidthFFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
@@ -258,8 +258,9 @@ void TestFits_AllTruth_ToTrack()
   for (MMVi x = F.begin(); x != F.end(); x++)
   {
     TString current = x -> first;  
+    if (JE != ""){if (JE != current){continue;}} // This is for parallel computing capabilities on a cluster
+ 
     std::map<TString, std::vector<TH1F*>> M = F[x -> first]; 
-    
     std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 
     std::vector<TH1F*> ntrk_2_T = M["ntrk_2_T_I"]; 
     std::vector<TH1F*> ntrk_3_T = M["ntrk_3_T_I"]; 
@@ -279,7 +280,7 @@ void TestFits_AllTruth_ToTrack()
       if (Proposed[i] -> GetEntries() < 5000){continue;}
       ToBeUsed.push_back(Proposed[i]); 
     }
-
+    
     if (ToBeUsed.size() == 0){continue;}
     X -> mkdir(current); 
     X -> cd(current); 

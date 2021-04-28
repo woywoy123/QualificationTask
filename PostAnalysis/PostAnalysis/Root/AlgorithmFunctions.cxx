@@ -215,8 +215,18 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
     {
       for (int t(0); t < ntrk_mtru_H.size(); t++)
       {
-        TH1F* ntrk_ntru = ntrk_mtru_H[t][t]; 
+        TString name_temp = Data[t] -> GetTitle(); 
+        TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
         
+        for (int i(0); i < ntrk_mtru_H[t].size(); i++)
+        {
+          if (i == t){continue;}
+          ntrk_Data -> Add(ntrk_mtru_H[t][i], -1); 
+        }
+        Average(ntrk_Data); 
+        TH1F* ntrk_ntru = ntrk_mtru_H[t][t]; 
+        Flush({ntrk_Data}, {ntrk_ntru}); 
+
         for (int t_u(0); t_u < ntrk_mtru_H.size(); t_u++)
         {
           if (t_u == t){continue;}
