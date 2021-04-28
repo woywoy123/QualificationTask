@@ -11,16 +11,17 @@ function CreateBatches
   echo "cd build" >> Spawn.sh
   echo "cp $2/Merged_MC.root ." >> Spawn.sh
   echo "cd $1 && asetup --restore" >> Spawn.sh
-  echo "cd $PWD/build" >> Spawn.sh
+  echo "cd $3/build" >> Spawn.sh
   echo "cmake $1" >> Spawn.sh
   echo "make -j 12" >> Spawn.sh
   echo "source ./x86_64-centos7-gcc62-opt/setup.sh" >> Spawn.sh
-  echo "PostAnalysis $Line" >> Spawn.sh
+  echo "PostAnalysis $4 $5" >> Spawn.sh
 }
 
 #Constants that we need to generate the names 
 Layer=("IBL" "Blayer" "layer1" "layer2") 
 JetEnergy=("200_up_GeV" "200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
+Mode=("Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Experimental")
 
 oper="x86_64-centos7-gcc62-opt"
 #oper="x86_64-slc6-gcc62-opt"
@@ -43,19 +44,25 @@ do
   for E in ${JetEnergy[@]}
   do
 
-    Line=$L"_"$E
-    
-    rm -rf $Line
-    
-    echo $Line
-    mkdir $Line
+    for M in ${Mode[@]}
+    do
 
-    cd $Line 
-    
-    CreateBatches $PostAnalysis_root_dir $root_dir $Line $oper
-    bash Spawn.sh
-    sleep 15
+      Line=$L"_"$E"_"$M
+      
+      rm -rf $Line
+      
+      echo $Line
+      mkdir $Line
 
-    cd ../
+      cd $Line 
+      
+      LJE=$L"_"$E
+      CreateBatches $PostAnalysis_root_dir $root_dir $PWD $LJE $M
+      bash Spawn.sh
+      sleep 15
+
+      cd ../
+    
+    done
   done 
 done 

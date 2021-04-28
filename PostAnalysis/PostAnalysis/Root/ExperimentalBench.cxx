@@ -195,7 +195,7 @@ void TestFits_NTruth_NTrack()
   }
 }
 
-void TestFits_AllTruth_ToTrack(TString JE)
+void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
 {
 
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE("Merged_MC.root"); 
@@ -284,43 +284,144 @@ void TestFits_AllTruth_ToTrack(TString JE)
     if (ToBeUsed.size() == 0){continue;}
     X -> mkdir(current); 
     X -> cd(current); 
-  
-    std::vector<std::vector<TH1F*>> Normal_Fits = Normalization_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_N, current);
-    std::vector<std::vector<TH1F*>> ShiftNormal_Fits = NormalizationShift_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_NS, current);   
-    std::vector<std::vector<TH1F*>> ShiftNormalFFT_Fits = NormalizationShiftFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_FFT, current);
-    std::vector<std::vector<TH1F*>> ShiftNormalWidthFFT_Fits = NormalizationShiftWidthFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
-    std::vector<std::vector<TH1F*>> Experimental_Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
 
-    TCanvas* can = new TCanvas(); 
-    can -> SetLogy(); 
-    can -> Print(current + ".pdf["); 
-    
-    
-    for (int i(0); i < ToBeUsed.size(); i++)
+    if (Mode == "")
     {
-      PlotHists(Normal_Fits[i], TruthVector[i], can); 
-      can -> Print(current + ".pdf"); 
+      std::vector<std::vector<TH1F*>> Normal_Fits = Normalization_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_N, current);
+      std::vector<std::vector<TH1F*>> ShiftNormal_Fits = NormalizationShift_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_NS, current);   
+      std::vector<std::vector<TH1F*>> ShiftNormalFFT_Fits = NormalizationShiftFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_FFT, current);
+      std::vector<std::vector<TH1F*>> ShiftNormalWidthFFT_Fits = NormalizationShiftWidthFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
+      std::vector<std::vector<TH1F*>> Experimental_Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
 
-      PlotHists(ShiftNormal_Fits[i], TruthVector[i], can); 
-      can -> Print(current + ".pdf"); 
+      TCanvas* can = new TCanvas(); 
+      can -> SetLogy(); 
+      can -> Print(current + ".pdf["); 
       
-      PlotHists(ShiftNormalFFT_Fits[i], TruthVector[i], can); 
-      can -> Print(current + ".pdf"); 
+      
+      for (int i(0); i < ToBeUsed.size(); i++)
+      {
+        PlotHists(Normal_Fits[i], TruthVector[i], can); 
+        can -> Print(current + ".pdf"); 
 
-      PlotHists(ShiftNormalWidthFFT_Fits[i], TruthVector[i], can); 
-      can -> Print(current + ".pdf"); 
+        PlotHists(ShiftNormal_Fits[i], TruthVector[i], can); 
+        can -> Print(current + ".pdf"); 
+        
+        PlotHists(ShiftNormalFFT_Fits[i], TruthVector[i], can); 
+        can -> Print(current + ".pdf"); 
 
-      PlotHists(Experimental_Fits[i], TruthVector[i], can); 
-      can -> Print(current + ".pdf"); 
+        PlotHists(ShiftNormalWidthFFT_Fits[i], TruthVector[i], can); 
+        can -> Print(current + ".pdf"); 
 
-      BulkDelete(Normal_Fits[i]); 
-      BulkDelete(ShiftNormal_Fits[i]); 
-      BulkDelete(ShiftNormalFFT_Fits[i]); 
-      BulkDelete(ShiftNormalWidthFFT_Fits[i]); 
-      BulkDelete(Experimental_Fits[i]); 
+        PlotHists(Experimental_Fits[i], TruthVector[i], can); 
+        can -> Print(current + ".pdf"); 
+
+        BulkDelete(Normal_Fits[i]); 
+        BulkDelete(ShiftNormal_Fits[i]); 
+        BulkDelete(ShiftNormalFFT_Fits[i]); 
+        BulkDelete(ShiftNormalWidthFFT_Fits[i]); 
+        BulkDelete(Experimental_Fits[i]); 
+      }
+      can -> Print(current + ".pdf]"); 
     }
-    can -> Print(current + ".pdf]"); 
     
+
+    if (Mode == "Normal")
+    {
+      TString name = current + "_" + Mode + ".pdf"; 
+      std::vector<std::vector<TH1F*>> Fits = Normalization_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_N, current);
+      TCanvas* can = new TCanvas(); 
+      can -> SetLogy(); 
+      can -> Print(name + "["); 
+      
+      for (int i(0); i < ToBeUsed.size(); i++)
+      {
+        PlotHists(Fits[i], TruthVector[i], can); 
+        can -> Print(name); 
+      }
+      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
+    }
+
+    if (Mode == "ShiftNormal")
+    {
+      TString name = current + "_" + Mode + ".pdf"; 
+      std::vector<std::vector<TH1F*>> Fits = NormalizationShift_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_NS, current);
+      TCanvas* can = new TCanvas(); 
+      can -> SetLogy(); 
+      can -> Print(name + "["); 
+      
+      for (int i(0); i < ToBeUsed.size(); i++)
+      {
+        PlotHists(Fits[i], TruthVector[i], can); 
+        can -> Print(name); 
+      }
+      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
+    }
+
+
+    if (Mode == "ShiftNormalFFT")
+    {
+      TString name = current + "_" + Mode + ".pdf"; 
+      std::vector<std::vector<TH1F*>> Fits = NormalizationShiftFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_FFT, current);
+      TCanvas* can = new TCanvas(); 
+      can -> SetLogy(); 
+      can -> Print(name + "["); 
+      
+      for (int i(0); i < ToBeUsed.size(); i++)
+      {
+        PlotHists(Fits[i], TruthVector[i], can); 
+        can -> Print(name); 
+      }
+      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
+    }
+
+
+
+    if (Mode == "ShiftNormalWidthFFT")
+    {
+      TString name = current + "_" + Mode + ".pdf"; 
+      std::vector<std::vector<TH1F*>> Fits = NormalizationShiftWidthFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
+      TCanvas* can = new TCanvas(); 
+      can -> SetLogy(); 
+      can -> Print(name + "["); 
+      
+      for (int i(0); i < ToBeUsed.size(); i++)
+      {
+        PlotHists(Fits[i], TruthVector[i], can); 
+        can -> Print(name); 
+      }
+      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
+    }
+
+    if (Mode == "Experimental")
+    {
+      TString name = current + "_" + Mode + ".pdf"; 
+      std::vector<std::vector<TH1F*>> Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
+      TCanvas* can = new TCanvas(); 
+      can -> SetLogy(); 
+      can -> Print(name + "["); 
+      
+      for (int i(0); i < ToBeUsed.size(); i++)
+      {
+        PlotHists(Fits[i], TruthVector[i], can); 
+        can -> Print(name); 
+      }
+      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     X -> cd(); 
   }
 

@@ -129,13 +129,13 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   std::map<TString, std::vector<float>> Output;  
   if (Params["Minimizer"].size() == 0)
   {
-    RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(8), Extended(true), Save()); 
+    RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(12), Extended(true), Save()); 
     int rx = re -> status(); 
     Output["r"].push_back(rx); 
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Range("fit"), SumW2Error(true), NumCPU(8)); 
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), SumW2Error(true), NumCPU(12)); 
     RooMinimizer* pg = new RooMinimizer(*nll); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
@@ -267,13 +267,13 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
   std::map<TString, std::vector<float>> Output;  
   if (Params["Minimizer"].size() == 0)
   {
-    RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(8), Extended(true), Save()); 
+    RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(12), Extended(true), Save()); 
     int rx = re -> status(); 
     Output["r"].push_back(rx); 
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Range("fit"), SumW2Error(true), NumCPU(8)); 
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), SumW2Error(true), NumCPU(12)); 
     RooMinimizer* pg = new RooMinimizer(*nll); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
