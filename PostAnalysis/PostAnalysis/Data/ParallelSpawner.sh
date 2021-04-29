@@ -14,6 +14,11 @@ function CreateBatches_Local
   echo "make" >> Spawn.sh
   echo "source ./x86_64-centos7-gcc62-opt/setup.sh" >> Spawn.sh
   echo "PostAnalysis $1 $2" >> Spawn.sh
+  echo "mv Fit_Tracks.root ../Fit_Tracks.root" >> Spawn.sh
+  echo "mv *.pdf ../" >> Spawn.sh
+  echo "mv *results.*" >> Spawn.sh
+  echo "cd ../ && rm -rf build" >> Spawn.sh
+  echo "rm -rf PostAnalysis" >> Spawn.sh
 }
 
 function CondorBuild
@@ -26,16 +31,11 @@ function CondorBuild
   echo "Request_Memory = 4GB" >> example.submit
   echo "+RequestRunTime= 43200"  >> example.submit
   echo "queue 1"  >> example.submit
-
-
-
-
-
 }
 
 
 #Constants that we need to generate the names 
-Layer=("IBL" "Blayer" "layer1" "layer2") 
+Layer=("IBL") # "Blayer" "layer1" "layer2") 
 JetEnergy=("200_up_GeV" "200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
 Mode=("Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Experimental")
 
@@ -47,9 +47,9 @@ PostAnalysis_root_dir=$PWD
 echo $PostAnalysis_root_dir
 
 cd $HOME
-mkdir PostAnalysisCompiler2
+mkdir PostAnalysisCompiler
 
-cd PostAnalysisCompiler2
+cd PostAnalysisCompiler
 
 for L in ${Layer[@]}
 do
