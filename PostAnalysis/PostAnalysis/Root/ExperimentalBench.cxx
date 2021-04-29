@@ -338,6 +338,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
         PlotHists(Fits[i], TruthVector[i], can); 
         can -> Print(name); 
       }
+      can -> Print(name + "]"); 
       for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
     }
 
@@ -354,6 +355,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
         PlotHists(Fits[i], TruthVector[i], can); 
         can -> Print(name); 
       }
+      can -> Print(name + "]"); 
       for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
     }
 
@@ -371,6 +373,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
         PlotHists(Fits[i], TruthVector[i], can); 
         can -> Print(name); 
       }
+      can -> Print(name + "]"); 
       for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
     }
 
@@ -389,6 +392,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
         PlotHists(Fits[i], TruthVector[i], can); 
         can -> Print(name); 
       }
+      can -> Print(name + "]"); 
       for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
     }
 
@@ -405,6 +409,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
         PlotHists(Fits[i], TruthVector[i], can); 
         can -> Print(name); 
       }
+      can -> Print(name + "]"); 
       for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
     }
 
