@@ -200,7 +200,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
 
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE("Merged_MC.root"); 
  
-  std::vector<std::vector<float>> Ranges = {{0.2, 8}, {0.5, 8}, {2, 9}, {2, 9}}; 
+  std::vector<std::vector<float>> Ranges = {{0.2, 6}, {0.5, 8}, {2, 8}, {2, 8}}; 
 
 
   // Normalization parameters
@@ -220,9 +220,9 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
   Params_NS["Range_ntrk_2"] = Ranges[1]; 
   Params_NS["Range_ntrk_3"] = Ranges[2];   
   Params_NS["Range_ntrk_4"] = Ranges[3]; 
-  Params_NS["dx"] = {0.2, 0.2, 0.2, 0.2}; 
+  Params_NS["dx"] = {0.4, 0.4, 0.2, 0.2}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
-  Params_NS["Minimizer"] = {100000}; 
+  //Params_NS["Minimizer"] = {100000}; 
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
@@ -232,7 +232,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
   Params_FFT["Range_ntrk_2"] = Ranges[1]; 
   Params_FFT["Range_ntrk_3"] = Ranges[2];   
   Params_FFT["Range_ntrk_4"] = Ranges[3]; 
-  Params_FFT["m"] = {0.2, 0.2, 0.2, 0.2};
+  Params_FFT["m"] = {0.4, 0.4, 0.4, 0.4};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["s_s"] = {0, 0, 0, 0};
   Params_FFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
@@ -247,7 +247,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
   Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
   Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
   Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
-  Params_WidthFFT["m"] = {0.2, 0.2, 0.2, 0.2};
+  Params_WidthFFT["m"] = {0.4, 0.4, 0.4, 0.4};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
   Params_WidthFFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
@@ -296,7 +296,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
       TCanvas* can = new TCanvas(); 
       can -> SetLogy(); 
       can -> Print(current + ".pdf["); 
-      
       
       for (int i(0); i < ToBeUsed.size(); i++)
       {
@@ -413,20 +412,9 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
       for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    X -> Write();
+    X -> Close(); 
+    break;
     X -> cd(); 
   }
 

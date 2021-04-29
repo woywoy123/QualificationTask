@@ -12,9 +12,10 @@
 #include<RooFFTConvPdf.h>
 #include<PostAnalysis/BaseFunctions.h>
 #include<PostAnalysis/Plotting.h>
-
+#include<TMatrixDSym.h>
 #include<RooAbsReal.h>
 #include<RooMinimizer.h>
+
 
 using namespace RooFit;
 
@@ -106,6 +107,24 @@ static void CopyPDFToTH1F(RooFFTConvPdf* pdf, RooRealVar* domain, TH1F* Out, TH1
   Out -> Reset(); 
   Out -> Add(H, 1);  
 }
+
+static void CaptureResults(RooFitResult* Re, std::map<TString, std::vector<float>>* Output)
+{
+  TMatrixDSym M = Re -> covarianceMatrix(); 
+  
+  for (int i(0); i < M.GetNcols(); i++)
+  {
+    std::vector<float> row;
+    for (int j(0); j < M.GetNcols(); j++){row.push_back(M[j][i]);}
+    TString R = "Covar_M_i"; R += (i+1); 
+    Output -> insert({R, row}); 
+  }
+
+  float res = Re -> status(); 
+  Output -> insert({"fit_status", {res}}); 
+  delete Re; 
+}
+
 
 static void BulkDelete(std::vector<RooDataHist*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 static void BulkDelete(std::vector<RooRealVar*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}

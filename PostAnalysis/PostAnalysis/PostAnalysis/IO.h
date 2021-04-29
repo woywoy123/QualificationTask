@@ -3,6 +3,7 @@
 #include<PostAnalysis/BaseFunctions.h>
 #include<TFile.h>
 #include<TKey.h>
+#include<TTree.h>
 
 const std::vector<TString> Layer = {"IBL", "Blayer", "layer1", "layer2"}; 
 const std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
@@ -15,4 +16,9 @@ void TestReadCTIDE(TString dir = "Merged_MC.root");
 void WriteHistsToFile(std::vector<TH1F*> ntrk_ntru, TString dir); 
 std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TString dir = "ntrk_ntru.root"); 
 void TestReadAlgorithm(); 
+
+void WriteOutputMapToFile(std::map<TString, std::vector<float>> Map, TString dir, TString name);
+std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> ReadOutputFileToMap(TString dir);
+
+
 #endif 

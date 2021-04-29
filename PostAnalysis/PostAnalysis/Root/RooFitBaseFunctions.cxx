@@ -38,22 +38,24 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Import(*Data)); 
-  model.fitTo(D, Range("fit"), SumW2Error(true)); 
-
+  RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), Save()); 
+  
+  std::map<TString, std::vector<float>> Output;  
+  CaptureResults(re, &Output);  
+ 
   if (Name != "")
   {
     TString plot_t = Name + "PULL.pdf"; 
     RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
   }
 
-  std::map<TString, std::vector<float>> Output;  
   Normalize(PDF_H); 
   for (int i(0); i < l_N.size(); i++)
   {
     float n = l_vars[i] -> getVal(); 
     float n_e = l_vars[i] -> getError(); 
-    Output["l"].push_back(n); 
-    Output["l_e"].push_back(n_e); 
+    Output["Normalization"].push_back(n); 
+    Output["Normalization_Error"].push_back(n_e); 
 
     PDF_H[i] -> Scale(n); 
 
@@ -127,11 +129,10 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   RooDataHist D("data", "data", *x, Data); 
   RooAddPdf model("model", "model", PDFs, N); 
   std::map<TString, std::vector<float>> Output;  
+  RooFitResult* re; 
   if (Params["Minimizer"].size() == 0)
   {
-    RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(12), Extended(true), Save()); 
-    int rx = re -> status(); 
-    Output["r"].push_back(rx); 
+    re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(12), Extended(true), Save()); 
   }
   else
   {
@@ -140,11 +141,12 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
-    pg -> fit("h"); 
+    re = pg -> fit("h"); 
     pg -> cleanup(); 
     delete pg; 
     delete nll;
   }
+  CaptureResults(re, &Output);
   
   if (Name != "")
   {
@@ -159,10 +161,10 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     float d = d_vars[i] -> getVal(); 
     float d_e = d_vars[i] -> getError(); 
 
-    Output["l"].push_back(n); 
-    Output["l_e"].push_back(n_e); 
-    Output["dx"].push_back(d); 
-    Output["dx_e"].push_back(d_e); 
+    Output["Normalization"].push_back(n); 
+    Output["Normalization_Error"].push_back(n_e); 
+    Output["Shift"].push_back(d); 
+    Output["Shift_Error"].push_back(d_e); 
    
     CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 
@@ -265,24 +267,24 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
   RooAddPdf model("model", "model", PxG, L); 
   
   std::map<TString, std::vector<float>> Output;  
+  RooFitResult* re; 
   if (Params["Minimizer"].size() == 0)
   {
-    RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(12), Extended(true), Save()); 
-    int rx = re -> status(); 
-    Output["r"].push_back(rx); 
+    re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(12), Extended(true), Save()); 
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Range("fit"), SumW2Error(true), NumCPU(12)); 
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), SumW2Error(true), NumCPU(12), Save()); 
     RooMinimizer* pg = new RooMinimizer(*nll); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
-    pg -> fit("h"); 
+    re = pg -> fit("h"); 
     pg -> cleanup(); 
     delete pg; 
     delete nll;
   }
+  CaptureResults(re, &Output); 
 
   if (Name != "")
   {
@@ -300,12 +302,12 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
     float s_er = s_vars[i] -> getError(); 
 
     
-    Output["l"].push_back(n); 
-    Output["l_e"].push_back(n_er); 
-    Output["m"].push_back(m); 
-    Output["m_e"].push_back(m_er); 
-    Output["s"].push_back(s); 
-    Output["s_e"].push_back(s_er); 
+    Output["Normalization"].push_back(n); 
+    Output["Normalization_Error"].push_back(n_er); 
+    Output["Mean"].push_back(m); 
+    Output["Mean_Error"].push_back(m_er); 
+    Output["Stdev"].push_back(s); 
+    Output["Stdev_Error"].push_back(s_er); 
 
     CopyPDFToTH1F(PxG_vars[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 

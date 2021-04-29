@@ -13,16 +13,10 @@ int main(int argc, char* argv[])
   //TestRead(); 
   //CompareToTruth("ntrk_ntru.root");  
   TestFits_AllTruth_ToTrack(JE, Mode);  
- 
+
+  //ReadOutputFileToMap("Fit_Tracks.root"); 
 
 
-
-
-
-
-
-
-
-  std::cout << "fin" << std::endl;
-  return 0; 
+  //std::cout << "fin" << std::endl;
+  //return 0; 
 }

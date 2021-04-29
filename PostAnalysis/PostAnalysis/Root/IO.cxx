@@ -156,6 +156,78 @@ void TestReadAlgorithm()
   }
 }
 
+void WriteOutputMapToFile(std::map<TString, std::vector<float>> Map, TString dir, TString name)
+{
+  gDirectory -> cd(dir); 
+
+  TTree* tree = new TTree(name, name); 
+  for(MVFi x = Map.begin(); x != Map.end(); x++)
+  {
+    TString key = name + "_" + (x -> first); 
+    tree -> Branch(key, &Map[x -> first]);
+  }
+  tree -> Fill(); 
+  tree -> Write();
+
+  delete tree;
+
+  gDirectory -> cd("../"); 
+}
+
+std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> ReadOutputFileToMap(TString dir) 
+{
+  std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> Output; 
+  TFile* F = new TFile(dir, "READ");
+  std::vector<TString> JetEnergy_Layer_Folder = ReturnCurrentDirs(); 
+  
+  for (TString Folder : JetEnergy_Layer_Folder)
+  {
+    F -> cd(Folder);
+    std::map<TString, std::map<TString, std::vector<float>>> Algorithms_Map;  
+    
+    std::vector<TString> Algorithm_Folder = ReturnCurrentDirs(); 
+    for (TString Alg_Folder : Algorithm_Folder)
+    {
+      F -> cd(Folder + "/" + Alg_Folder); 
+      
+      std::vector<TString> Alg_V = ReturnCurrentDirs(); 
+      std::map<TString, std::vector<float>> key_map; 
+      for (TString H_TS : Alg_V)
+      {
+        if (H_TS.Contains("_error")) 
+        {
+          TTree* T = (TTree*)F -> Get(Folder + "/" + Alg_Folder + "/" + H_TS); 
+         
+          std::vector<TString> keys; 
+          TObjArray* List = T -> GetListOfBranches(); 
+          for (int i(0); i < List -> GetEntries(); i++){keys.push_back( (List -> At(i)) -> GetName() );}
+          
+          for (TString k : keys)
+          {
+            std::vector<float>* v = 0; 
+            T -> SetBranchAddress(k, &v); 
+            for (int t(0); t < (int)T -> GetEntries(); t++)
+            {
+              T -> GetEntry(t); 
+              key_map[k] = *v; 
+
+              std::cout << k << std::endl;
+            }
+            delete v;  
+          }
+        }
+      }
+      Algorithms_Map[Alg_Folder] = key_map; 
+    }
+    Output[Folder] = Algorithms_Map; 
+    F -> cd(); 
+  }
+
+  return Output;  
+}
+  
+
+
 
 
 
