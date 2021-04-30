@@ -195,10 +195,10 @@ void TestFits_NTruth_NTrack()
   }
 }
 
-void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
+void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
 {
-
-  std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE("Merged_MC.root"); 
+  if (MCFile == ""){ MCFile = "Merged_MC.root"; }
+  std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
  
   std::vector<std::vector<float>> Ranges = {{0.2, 6}, {0.5, 8}, {2, 8}, {2, 8}}; 
 
@@ -260,6 +260,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
     TString current = x -> first;  
     if (JE != ""){if (JE != current){continue;}} // This is for parallel computing capabilities on a cluster
  
+    
     std::map<TString, std::vector<TH1F*>> M = F[x -> first]; 
     std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 
     std::vector<TH1F*> ntrk_2_T = M["ntrk_2_T_I"]; 
@@ -284,6 +285,18 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
     if (ToBeUsed.size() == 0){continue;}
     X -> mkdir(current); 
     X -> cd(current); 
+    
+    std::vector<TString> ntrk_String_T = {"ntrk_1_T", "ntrk_2_T", "ntrk_3_T", "ntrk_4_T"};  
+    for (int p(0); p < TruthVector.size(); p++)
+    {
+      X -> mkdir(ntrk_String_T[p]); 
+      X -> cd(ntrk_String_T[p]); 
+      BulkWrite(TruthVector[p]); 
+      X -> cd("../"); 
+    }
+
+    std::cout << "++++++++" << current << " " << Mode << std::endl;
+
 
     if (Mode == "")
     {
@@ -361,6 +374,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
 
     if (Mode == "ShiftNormalFFT")
     {
+
       TString name = current + "_" + Mode + ".pdf"; 
       std::vector<std::vector<TH1F*>> Fits = NormalizationShiftFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_FFT, current);
       TCanvas* can = new TCanvas(); 
@@ -413,11 +427,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode)
     }
 
     X -> Write();
-    X -> Close(); 
-    break;
     X -> cd(); 
   }
 
+  X -> Close(); 
 
 
 

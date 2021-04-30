@@ -6,6 +6,6 @@ void IOTest();
 void RooFitBaseFunctionTest(); 
 void TestFits_NTruth_NTrack(); 
 void TestRead(); 
-void TestFits_AllTruth_ToTrack(TString JE = "", TString Mode = ""); 
+void TestFits_AllTruth_ToTrack(TString JE = "", TString Mode = "", TString MCFile = ""); 
 
 #endif
