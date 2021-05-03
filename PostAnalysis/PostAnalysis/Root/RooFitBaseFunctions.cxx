@@ -85,7 +85,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   float r = 1; 
   if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
   std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
-  std::vector<float> l_s(l_N.size(), 0.1); 
+  std::vector<float> l_s(l_N.size(), 0); 
   std::vector<float> l_e(l_N.size(), r*Data -> Integral()); 
   std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_s, l_e); 
 
@@ -141,7 +141,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
-    re = pg -> fit("h"); 
+    re = pg -> fit("hr"); 
     pg -> cleanup(); 
     delete pg; 
     delete nll;
@@ -201,7 +201,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
   float r = 1; 
   if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
   std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
-  std::vector<float> l_s(l_N.size(), 0.1); 
+  std::vector<float> l_s(l_N.size(), 0); 
   std::vector<float> l_e(l_N.size(), r*Data -> Integral()); 
   std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_s, l_e); 
 
@@ -279,7 +279,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
-    re = pg -> fit("h"); 
+    re = pg -> fit("hr"); 
     pg -> cleanup(); 
     delete pg; 
     delete nll;

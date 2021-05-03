@@ -158,6 +158,7 @@ void TestReadAlgorithm()
 
 void WriteOutputMapToFile(std::map<TString, std::vector<float>> Map, TString dir, TString name)
 {
+  gDirectory -> mkdir(dir);
   gDirectory -> cd(dir); 
 
   TTree* tree = new TTree(name, name); 

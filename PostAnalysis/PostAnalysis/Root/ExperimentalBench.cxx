@@ -202,11 +202,11 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
  
   std::vector<std::vector<float>> Ranges = {{0.2, 6}, {0.5, 8}, {2, 8}, {2, 8}}; 
 
-
+  float m = 0.1; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Range"] = {0, 10}; 
-  Params_N["r_value"] = {1.2};
+  Params_N["r_value"] = {1.5};
   Params_N["Range_ntrk_1"] = Ranges[0]; 
   Params_N["Range_ntrk_2"] = Ranges[1]; 
   Params_N["Range_ntrk_3"] = Ranges[2]; 
@@ -215,44 +215,45 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
   Params_NS["Range"] = {0.2, 8}; 
-  Params_NS["r_value"] = {1.2};
+  Params_NS["r_value"] = {1.5};
   Params_NS["Range_ntrk_1"] = Ranges[0]; 
   Params_NS["Range_ntrk_2"] = Ranges[1]; 
   Params_NS["Range_ntrk_3"] = Ranges[2];   
   Params_NS["Range_ntrk_4"] = Ranges[3]; 
-  Params_NS["dx"] = {0.4, 0.4, 0.2, 0.2}; 
+  Params_NS["dx"] = {m, m, m, m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
-  //Params_NS["Minimizer"] = {100000}; 
+  Params_NS["Minimizer"] = {1000000}; 
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
   Params_FFT["Range"] = {0.2, 8}; 
-  Params_FFT["r_value"] = {1.2};
+  Params_FFT["r_value"] = {1.5};
   Params_FFT["Range_ntrk_1"] = Ranges[0]; 
   Params_FFT["Range_ntrk_2"] = Ranges[1]; 
   Params_FFT["Range_ntrk_3"] = Ranges[2];   
   Params_FFT["Range_ntrk_4"] = Ranges[3]; 
-  Params_FFT["m"] = {0.4, 0.4, 0.4, 0.4};
+  Params_FFT["m"] = {m, m, m, m};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["s_s"] = {0, 0, 0, 0};
   Params_FFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
-  Params_FFT["fft_cache"] = {10000}; 
-  Params_FFT["Minimizer"] = {100000}; 
+  Params_FFT["fft_cache"] = {50000}; 
+  Params_FFT["Minimizer"] = {1000000}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
   Params_WidthFFT["Range"] = {0.2, 8}; 
-  Params_WidthFFT["r_value"] = {1.2};
+  Params_WidthFFT["r_value"] = {1.5};
   Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
   Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
   Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
   Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
-  Params_WidthFFT["m"] = {0.4, 0.4, 0.4, 0.4};
+  Params_WidthFFT["m"] = {m, m, m, m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
   Params_WidthFFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
-  Params_WidthFFT["fft_cache"] = {10000}; 
-  Params_WidthFFT["Minimizer"] = {100000}; 
+  Params_WidthFFT["s_G"] = {0.001, 0.001, 0.001, 0.001};
+  Params_WidthFFT["fft_cache"] = {50000}; 
+  Params_WidthFFT["Minimizer"] = {1000000}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   for (MMVi x = F.begin(); x != F.end(); x++)
