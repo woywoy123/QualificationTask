@@ -202,7 +202,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
  
   std::vector<std::vector<float>> Ranges = {{0.2, 6}, {0.5, 8}, {2, 8}, {2, 8}}; 
 
-  float m = 0.1; 
+  float m = 0.2; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Range"] = {0, 10}; 
@@ -222,7 +222,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_NS["Range_ntrk_4"] = Ranges[3]; 
   Params_NS["dx"] = {m, m, m, m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
-  Params_NS["Minimizer"] = {1000000}; 
+  Params_NS["Minimizer"] = {100000}; 
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
@@ -237,7 +237,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["s_s"] = {0, 0, 0, 0};
   Params_FFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
   Params_FFT["fft_cache"] = {50000}; 
-  Params_FFT["Minimizer"] = {1000000}; 
+  Params_FFT["Minimizer"] = {100000}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
@@ -253,7 +253,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
   Params_WidthFFT["s_G"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["fft_cache"] = {50000}; 
-  Params_WidthFFT["Minimizer"] = {1000000}; 
+  Params_WidthFFT["Minimizer"] = {100000}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   for (MMVi x = F.begin(); x != F.end(); x++)
