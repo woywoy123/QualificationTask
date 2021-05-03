@@ -76,10 +76,6 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
             TString temp = (*out)[k] -> GetTitle();
             if (temp.Contains(In[i] -> GetTitle()))
             {
-
-
-
-              std::cout << temp << "   " << In[i] -> GetTitle() << std::endl;
               (*out)[k] -> Add(In[i], 1); 
             }
           }
@@ -240,7 +236,7 @@ void TestReadCTIDE(TString dir)
 
 void WriteHistsToFile(std::vector<TH1F*> ntrk_ntru, TString dir)
 {
-  gDirectory -> cd();
+  gDirectory -> cd("/");
   gDirectory -> cd(dir); 
 
   BulkWrite(ntrk_ntru); 
@@ -306,8 +302,7 @@ void TestReadAlgorithm()
 
 void WriteOutputMapToFile(std::map<TString, std::vector<float>> Map, TString dir, TString name)
 {
-  gDirectory -> cd();
-  gDirectory -> mkdir(dir);
+  gDirectory -> cd("/");
   gDirectory -> cd(dir); 
 
   TTree* tree = new TTree(name, name); 
@@ -320,8 +315,6 @@ void WriteOutputMapToFile(std::map<TString, std::vector<float>> Map, TString dir
   tree -> Write();
 
   delete tree;
-
-  //gDirectory -> cd("../"); 
 }
 
 std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> ReadOutputFileToMap(TString dir) 

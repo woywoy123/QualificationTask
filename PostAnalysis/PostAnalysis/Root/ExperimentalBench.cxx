@@ -292,11 +292,11 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       gDirectory -> mkdir(ntrk_String_T[p]); 
       gDirectory -> cd(ntrk_String_T[p]); 
       BulkWrite(TruthVector[p]); 
-      gDirectory -> cd("../");
+      gDirectory -> cd("/");
+      gDirectory -> cd(current); 
     }
 
     std::cout << "++++++++" << current << " " << Mode << std::endl;
-
 
     if (Mode == "")
     {
@@ -334,6 +334,16 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
         BulkDelete(Experimental_Fits[i]); 
       }
       can -> Print(current + ".pdf]"); 
+     
+
+      for (int t(0); t < Normal_Fits.size(); t++)
+      {
+        BulkDelete(Normal_Fits[t]);
+        BulkDelete(ShiftNormal_Fits[t]);
+        BulkDelete(ShiftNormalFFT_Fits[t]);
+        BulkDelete(ShiftNormalWidthFFT_Fits[t]);
+        BulkDelete(Experimental_Fits[t]);
+      }
     }
     
 
@@ -425,9 +435,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       can -> Print(name + "]"); 
       for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
     }
-    X -> cd(current); 
     X -> Write();
-    X -> cd(); 
   }
 
   X -> Close(); 

@@ -124,6 +124,9 @@ std::vector<std::vector<TH1F*>> Normalization_Fit_NtrkMtru(std::vector<TH1F*> Da
 {
   TString ext = "_" + JE + "_Normal_NtrkMtru"; 
   std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+  
+  gDirectory -> cd("/"); 
+  gDirectory -> mkdir(JE + "/Normal"); 
 
   for (int i(0); i < ntrk_mtru_H.size(); i++)
   {
@@ -137,7 +140,7 @@ std::vector<std::vector<TH1F*>> Normalization_Fit_NtrkMtru(std::vector<TH1F*> Da
     WriteHistsToFile(ntrk_Template, JE + "/Normal");
     
     TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
-    //WriteOutputMapToFile(Map, JE + "/Normal", trk_n); 
+    WriteOutputMapToFile(Map, JE + "/Normal", trk_n); 
   }
   
   return ntrk_mtru_H; 
@@ -147,6 +150,9 @@ std::vector<std::vector<TH1F*>> NormalizationShift_Fit_NtrkMtru(std::vector<TH1F
 {
   TString ext = "_" + JE + "_ShiftNormal_NtrkMtru"; 
   std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+
+  gDirectory -> cd("/"); 
+  gDirectory -> mkdir(JE + "/ShiftNormal"); 
 
   for (int i(0); i < ntrk_mtru_H.size(); i++)
   {
@@ -172,6 +178,9 @@ std::vector<std::vector<TH1F*>> NormalizationShiftFFT_Fit_NtrkMtru(std::vector<T
   TString ext = "_" + JE + "_ShiftNormalFFT_NtrkMtru"; 
   std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
 
+  gDirectory -> cd("/"); 
+  gDirectory -> mkdir(JE + "/ShiftNormalFFT"); 
+
   for (int i(0); i < ntrk_mtru_H.size(); i++)
   {
     TString r_name = "Range_ntrk_"; r_name += (i+1); 
@@ -195,6 +204,9 @@ std::vector<std::vector<TH1F*>> NormalizationShiftWidthFFT_Fit_NtrkMtru(std::vec
 {
   TString ext = "_" + JE + "_ShiftNormalWidthFFT_NtrkMtru"; 
   std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+
+  gDirectory -> cd("/"); 
+  gDirectory -> mkdir(JE + "/ShiftNormalWidthFFT"); 
 
   for (int i(0); i < ntrk_mtru_H.size(); i++)
   {
@@ -220,6 +232,9 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
 {
   TString ext = "_" + JE + "_Experimental_NtrkMtru"; 
   std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+
+  gDirectory -> cd("/"); 
+  gDirectory -> mkdir(JE + "/Experimental"); 
 
   for (int x(0); x < 3; x++)
   {
