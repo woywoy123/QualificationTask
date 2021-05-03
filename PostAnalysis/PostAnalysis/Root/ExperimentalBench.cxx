@@ -286,14 +286,13 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     if (ToBeUsed.size() == 0){continue;}
     X -> mkdir(current); 
     X -> cd(current); 
-    
     std::vector<TString> ntrk_String_T = {"ntrk_1_T", "ntrk_2_T", "ntrk_3_T", "ntrk_4_T"};  
     for (int p(0); p < TruthVector.size(); p++)
     {
-      X -> mkdir(ntrk_String_T[p]); 
-      X -> cd(ntrk_String_T[p]); 
+      gDirectory -> mkdir(ntrk_String_T[p]); 
+      gDirectory -> cd(ntrk_String_T[p]); 
       BulkWrite(TruthVector[p]); 
-      X -> cd("../"); 
+      gDirectory -> cd("../");
     }
 
     std::cout << "++++++++" << current << " " << Mode << std::endl;
@@ -426,7 +425,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       can -> Print(name + "]"); 
       for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
     }
-
+    X -> cd(current); 
     X -> Write();
     X -> cd(); 
   }

@@ -57,8 +57,8 @@ void CompareToTruth(TString dir)
       {
         can -> SetLogy();
         
-        //PlotHists(All_R[trk], All_T[trk], current + "_" + Algo, can); 
-        //can -> Print(Fname); 
+        PlotHists(All_R[trk], All_T[trk], current + "_" + Algo, can); 
+        can -> Print(Fname); 
         
         for (int tru(0); tru < All_R[trk].size(); tru++)
         {
@@ -73,8 +73,8 @@ void CompareToTruth(TString dir)
 
           if (trk == n_tru)
           {
-            //RatioPlot(All_R[trk][tru], All_T[trk][n_tru], can); 
-            //can -> Print(Fname); 
+            RatioPlot(All_R[trk][tru], All_T[trk][n_tru], can); 
+            can -> Print(Fname); 
             
             // Do the stats: 
             TString dEdx_S = "dEdx_ntrk_"; dEdx_S += (trk+1); dEdx_S += ("_ntru_"); dEdx_S += (n_tru+1);  
@@ -95,13 +95,7 @@ void CompareToTruth(TString dir)
     }
     JetEnergy.push_back(current); 
     Collector.push_back(Fit_Stats); 
-
-
-    //if (index == 3)
-    //{
-    //  break; 
-    //}
-    //index++;
+  
   }
 
   CompileCout(JetEnergy, Algo_Strings, Collector); 
@@ -296,11 +290,15 @@ void CompileCout(std::vector<TString> JetEnergy, std::vector<TString> Algo_Strin
   }
   cout_V.push_back(out); 
 
+  std::ofstream myfile; 
+  myfile.open("Results.txt"); 
   for (TString S : cout_V)
   {
     std::cout << S << std::endl;
-  }
 
+    myfile << S << "\n"; 
+  }
+  myfile.close(); 
 
 }
 

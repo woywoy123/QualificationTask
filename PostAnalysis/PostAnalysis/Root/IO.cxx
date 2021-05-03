@@ -44,11 +44,161 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
 
         // Outside jetcore measurement 
         if (x.Contains("ntrk_1") && x.Contains("rgreater") && !x.Contains("ntru")){ Trk_Tru["ntrk_1_M_O"].push_back(H); }
-      }
       
+      }
       Output[L1 + "_" + E1] = Trk_Tru; 
       F -> cd(); 
     }
+  }
+
+  std::map<TString, std::vector<TH1F*>> All_Hists; 
+  for (MMVi x = Output.begin(); x != Output.end(); x++)
+  {
+    auto Merging =[] (std::vector<TH1F*> In, std::vector<TH1F*>* out, std::vector<TString> Names)
+    {
+      
+      if (out -> size() == 0)
+      {
+        for (int j(0); j < Names.size(); j++)
+        {
+          TH1F* H = (TH1F*)In[0] -> Clone(Names[j]); 
+          H -> Reset();
+          H -> SetTitle(Names[j]); 
+          out -> push_back(H); 
+        }
+      }
+      else 
+      {
+        for (int i(0); i < In.size(); i++)
+        {
+          for (int k(0); k < out -> size(); k++)
+          {
+            TString temp = (*out)[k] -> GetTitle();
+            if (temp.Contains(In[i] -> GetTitle()))
+            {
+
+
+
+              std::cout << temp << "   " << In[i] -> GetTitle() << std::endl;
+              (*out)[k] -> Add(In[i], 1); 
+            }
+          }
+        }
+      }
+    }; 
+
+
+
+    TString title = x -> first; 
+    std::map<TString, std::vector<TH1F*>> Trk_Tru = x -> second; 
+
+    for (TString L : Layer)
+    {
+      if ( title.Contains(L) )
+      {
+        std::vector<std::vector<TString>> Names_T; 
+        std::vector<std::vector<TString>> Names_M; 
+        for (int t(0); t < 4; t++)
+        {
+          std::vector<TString> Temp_T;  
+          for (int v(0); v < 4; v++)
+          {
+            // Inside truth
+            TString na = "dEdx_ntrk_"; na +=(t+1); na +=("_rless_005_ntru_"); na +=(v+1); na+=("_"+L); 
+            Temp_T.push_back(na); 
+          }
+          Names_T.push_back(Temp_T);
+          Temp_T.clear();
+          
+          TString nam = "dEdx_ntrk_"; nam +=(t+1); nam +=("_rless_005"); nam+=("_"+L); 
+          Temp_T.push_back(nam);  
+          Names_M.push_back(Temp_T);
+        }
+
+        Merging(Trk_Tru["ntrk_1_T_I"], &Output[L]["ntrk_1_T_I"], Names_T[0]); 
+        Merging(Trk_Tru["ntrk_2_T_I"], &Output[L]["ntrk_2_T_I"], Names_T[1]); 
+        Merging(Trk_Tru["ntrk_3_T_I"], &Output[L]["ntrk_3_T_I"], Names_T[2]); 
+        Merging(Trk_Tru["ntrk_4_T_I"], &Output[L]["ntrk_4_T_I"], Names_T[3]); 
+
+        Merging(Trk_Tru["ntrk_1_M_I"], &Output[L]["ntrk_1_M_I"], Names_M[0]); 
+        Merging(Trk_Tru["ntrk_2_M_I"], &Output[L]["ntrk_2_M_I"], Names_M[1]); 
+        Merging(Trk_Tru["ntrk_3_M_I"], &Output[L]["ntrk_3_M_I"], Names_M[2]); 
+        Merging(Trk_Tru["ntrk_4_M_I"], &Output[L]["ntrk_4_M_I"], Names_M[3]); 
+       
+        TString na = "dEdx_ntrk_1_rgreater_1_" + L; 
+        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], {na});      
+      }
+    }
+
+    for (TString L : JetEnergy)
+    {
+      if ( title.Contains(L) )
+      {
+        std::vector<std::vector<TString>> Names_T; 
+        std::vector<std::vector<TString>> Names_M; 
+        for (int t(0); t < 4; t++)
+        {
+          std::vector<TString> Temp_T;  
+          for (int v(0); v < 4; v++)
+          {
+            // Inside truth
+            TString na = "dEdx_ntrk_"; na +=(t+1); na +=("_rless_005_ntru_"); na +=(v+1); na+=("_"+L); 
+            Temp_T.push_back(na); 
+          }
+          Names_T.push_back(Temp_T);
+          Temp_T.clear(); 
+          
+          TString nam = "dEdx_ntrk_"; nam +=(t+1); nam +=("_rless_005"); nam+=("_"+L); 
+          Temp_T.push_back(nam);  
+          Names_M.push_back(Temp_T);
+        }
+
+        Merging(Trk_Tru["ntrk_1_T_I"], &Output[L]["ntrk_1_T_I"], Names_T[0]); 
+        Merging(Trk_Tru["ntrk_2_T_I"], &Output[L]["ntrk_2_T_I"], Names_T[1]); 
+        Merging(Trk_Tru["ntrk_3_T_I"], &Output[L]["ntrk_3_T_I"], Names_T[2]); 
+        Merging(Trk_Tru["ntrk_4_T_I"], &Output[L]["ntrk_4_T_I"], Names_T[3]); 
+
+        Merging(Trk_Tru["ntrk_1_M_I"], &Output[L]["ntrk_1_M_I"], Names_M[0]); 
+        Merging(Trk_Tru["ntrk_2_M_I"], &Output[L]["ntrk_2_M_I"], Names_M[1]); 
+        Merging(Trk_Tru["ntrk_3_M_I"], &Output[L]["ntrk_3_M_I"], Names_M[2]); 
+        Merging(Trk_Tru["ntrk_4_M_I"], &Output[L]["ntrk_4_M_I"], Names_M[3]); 
+        
+        TString na = "dEdx_ntrk_1_rgreater_1_" + L; 
+        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], {na});      
+      }
+    }  
+
+    std::vector<std::vector<TString>> Names_AT; 
+    std::vector<std::vector<TString>> Names_AM; 
+    for (int t(0); t < 4; t++)
+    {
+      std::vector<TString> Temp_T;  
+      for (int v(0); v < 4; v++)
+      {
+        // Inside truth
+        TString na = "dEdx_ntrk_"; na +=(t+1); na +=("_rless_005_ntru_"); na +=(v+1); na+=("_All"); 
+        Temp_T.push_back(na); 
+      }
+      Names_AT.push_back(Temp_T);
+      Temp_T.clear(); 
+      
+      TString nam = "dEdx_ntrk_"; nam +=(t+1); nam +=("_rless_005"); nam+=("_All"); 
+      Temp_T.push_back(nam);  
+      Names_AM.push_back(Temp_T);
+    }
+
+    Merging(Trk_Tru["ntrk_1_T_I"], &Output["All"]["ntrk_1_T_I"], Names_AT[0]); 
+    Merging(Trk_Tru["ntrk_2_T_I"], &Output["All"]["ntrk_2_T_I"], Names_AT[1]); 
+    Merging(Trk_Tru["ntrk_3_T_I"], &Output["All"]["ntrk_3_T_I"], Names_AT[2]); 
+    Merging(Trk_Tru["ntrk_4_T_I"], &Output["All"]["ntrk_4_T_I"], Names_AT[3]); 
+  
+    Merging(Trk_Tru["ntrk_1_M_I"], &Output["All"]["ntrk_1_M_I"], Names_AM[0]); 
+    Merging(Trk_Tru["ntrk_2_M_I"], &Output["All"]["ntrk_2_M_I"], Names_AM[1]); 
+    Merging(Trk_Tru["ntrk_3_M_I"], &Output["All"]["ntrk_3_M_I"], Names_AM[2]); 
+    Merging(Trk_Tru["ntrk_4_M_I"], &Output["All"]["ntrk_4_M_I"], Names_AM[3]); 
+    
+    TString na = "dEdx_ntrk_1_rgreater_1_All"; 
+    Merging(Trk_Tru["ntrk_1_M_O"], &Output["All"]["ntrk_1_M_O"], {na});      
   }
 
   return Output; 
@@ -90,12 +240,10 @@ void TestReadCTIDE(TString dir)
 
 void WriteHistsToFile(std::vector<TH1F*> ntrk_ntru, TString dir)
 {
-  gDirectory -> mkdir(dir); 
+  gDirectory -> cd();
   gDirectory -> cd(dir); 
 
   BulkWrite(ntrk_ntru); 
-  
-  gDirectory -> cd("../"); 
 }
 
 
@@ -158,6 +306,7 @@ void TestReadAlgorithm()
 
 void WriteOutputMapToFile(std::map<TString, std::vector<float>> Map, TString dir, TString name)
 {
+  gDirectory -> cd();
   gDirectory -> mkdir(dir);
   gDirectory -> cd(dir); 
 
@@ -172,7 +321,7 @@ void WriteOutputMapToFile(std::map<TString, std::vector<float>> Map, TString dir
 
   delete tree;
 
-  gDirectory -> cd("../"); 
+  //gDirectory -> cd("../"); 
 }
 
 std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> ReadOutputFileToMap(TString dir) 
@@ -211,8 +360,6 @@ std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> Read
             {
               T -> GetEntry(t); 
               key_map[k] = *v; 
-
-              std::cout << k << std::endl;
             }
             delete v;  
           }
@@ -223,6 +370,7 @@ std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> Read
     Output[Folder] = Algorithms_Map; 
     F -> cd(); 
   }
+  delete F;
 
   return Output;  
 }

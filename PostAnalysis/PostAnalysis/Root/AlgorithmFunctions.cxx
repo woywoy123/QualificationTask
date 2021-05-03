@@ -134,10 +134,10 @@ std::vector<std::vector<TH1F*>> Normalization_Fit_NtrkMtru(std::vector<TH1F*> Da
     
     TString base = "Fit_"; base += (i+1); base += (ext); 
     std::map<TString, std::vector<float>> Map = Normalization(ntrk_Measure, ntrk_Template, Params, base); 
-    WriteHistsToFile(ntrk_Template, "Normal");
+    WriteHistsToFile(ntrk_Template, JE + "/Normal");
     
     TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
-    WriteOutputMapToFile(Map, "Normal", trk_n); 
+    //WriteOutputMapToFile(Map, JE + "/Normal", trk_n); 
   }
   
   return ntrk_mtru_H; 
@@ -158,10 +158,10 @@ std::vector<std::vector<TH1F*>> NormalizationShift_Fit_NtrkMtru(std::vector<TH1F
     TString base = "Fit_"; base += (i+1); base += (ext); 
     std::map<TString, std::vector<float>> Map = NormalizationShift(ntrk_Measure, ntrk_Template, Params, base); 
     
-    WriteHistsToFile(ntrk_Template, "ShiftNormal"); 
+    WriteHistsToFile(ntrk_Template, JE + "/ShiftNormal"); 
 
     TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
-    WriteOutputMapToFile(Map, "ShiftNormal", trk_n); 
+    WriteOutputMapToFile(Map, JE + "/ShiftNormal", trk_n); 
   }
   
   return ntrk_mtru_H; 
@@ -182,10 +182,10 @@ std::vector<std::vector<TH1F*>> NormalizationShiftFFT_Fit_NtrkMtru(std::vector<T
     TString base = "Fit_"; base += (i+1); base += (ext); 
     std::map<TString, std::vector<float>> Map = NormalizationShift(ntrk_Measure, ntrk_Template, Params, base); 
     
-    WriteHistsToFile(ntrk_Template, "ShiftNormalFFT"); 
+    WriteHistsToFile(ntrk_Template, JE + "/ShiftNormalFFT"); 
  
     TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
-    WriteOutputMapToFile(Map, "ShiftNormalFFT", trk_n);  
+    WriteOutputMapToFile(Map, JE + "/ShiftNormalFFT", trk_n);  
   }
   
   return ntrk_mtru_H; 
@@ -206,10 +206,10 @@ std::vector<std::vector<TH1F*>> NormalizationShiftWidthFFT_Fit_NtrkMtru(std::vec
     TString base = "Fit_"; base += (i+1); base += (ext); 
     std::map<TString, std::vector<float>> Map = NormalizationShift(ntrk_Measure, ntrk_Template, Params, base); 
     
-    WriteHistsToFile(ntrk_Template, "ShiftNormalWidthFFT"); 
+    WriteHistsToFile(ntrk_Template, JE + "/ShiftNormalWidthFFT"); 
    
     TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
-    WriteOutputMapToFile(Map, "ShiftNormalWidthFFT", trk_n);  
+    WriteOutputMapToFile(Map, JE + "/ShiftNormalWidthFFT", trk_n);  
   
   }
   
@@ -265,12 +265,12 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       if (x == 2)
       {
         TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
-        WriteOutputMapToFile(Map, "Experimental", trk_n);  
+        WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
       }
     }
   }
 
-  for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], "Experimental"); }
+  for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], JE + "/Experimental"); }
 
 
   return ntrk_mtru_H; 
