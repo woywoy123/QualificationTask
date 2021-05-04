@@ -36,8 +36,9 @@ function CondorBuild
 #Constants that we need to generate the names 
 Layer=("IBL" "Blayer" "layer1" "layer2") 
 JetEnergy=("200_up_GeV" "200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
-Mode=("Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Experimental")
+#Mode=("Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Experimental")
 #Mode=("ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Experimental")
+Mode=("")
 root_dir=$PWD
 echo $root_dir
 
@@ -46,7 +47,7 @@ PostAnalysis_root_dir=$PWD
 echo $PostAnalysis_root_dir
 
 cd $HOME
-#rm -r PostAnalysisCompiler
+rm -r PostAnalysisCompiler
 mkdir PostAnalysisCompiler
 
 cd PostAnalysisCompiler
@@ -67,29 +68,72 @@ do
 
   for E in ${JetEnergy[@]}
   do
+    Line=$L"_"$E"_"$M
+   
+    M="All" 
+    echo $Line
+    mkdir $Line
 
-    for M in ${Mode[@]}
-    do
+    cd $Line 
 
-      Line=$L"_"$E"_"$M
-      
-      echo $Line
-      mkdir $Line
-
-      cd $Line 
-
-      mkdir build
-      LJE=$L"_"$E
-      
-      CreateBatches_Local $LJE $M $File
-      
-      CondorBuild
-      chmod +x Spawn.sh
-      condor_submit example.submit 
-      
-      #bash Spawn.sh
-      cd ../
+    mkdir build
+    LJE=$L"_"$E
     
-    done
+    CreateBatches_Local $LJE $M $File
+    
+    CondorBuild
+    chmod +x Spawn.sh
+    condor_submit example.submit 
+    
+    #bash Spawn.sh
+    cd ../
+   
   done 
+done
+
+for L in ${Layer[@]}
+do
+  Line=$L"_"$M
+  
+  echo $Line
+  mkdir $Line
+
+  cd $Line 
+
+  mkdir build
+  LJE=$L
+  
+  CreateBatches_Local $LJE $M $File
+  
+  CondorBuild
+  chmod +x Spawn.sh
+  condor_submit example.submit 
+  
+  cd ../
+
 done 
+
+for L in ${JetEnergy[@]}
+do
+
+  Line=$L"_"$M
+  
+  echo $Line
+  mkdir $Line
+
+  cd $Line 
+
+  mkdir build
+  LJE=$L
+  
+  CreateBatches_Local $LJE $M $File
+  
+  CondorBuild
+  chmod +x Spawn.sh
+  condor_submit example.submit 
+  
+  cd ../
+
+done
+
+

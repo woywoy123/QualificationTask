@@ -14,6 +14,8 @@ int main(int argc, char* argv[])
   //TestFits_NTruth_NTrack();  
   //TestRead(); 
   //CompareToTruth("ntrk_ntru.root");  
+ 
+  if (Mode == "All"){Mode="";} 
   TestFits_AllTruth_ToTrack(JE, Mode, File);  
 
   //ReadOutputFileToMap("Fit_Tracks.root"); 
