@@ -287,18 +287,20 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     X -> mkdir(current); 
     X -> cd(current); 
     std::vector<TString> ntrk_String_T = {"ntrk_1_T", "ntrk_2_T", "ntrk_3_T", "ntrk_4_T"};  
-    for (int p(0); p < TruthVector.size(); p++)
-    {
-      gDirectory -> mkdir(ntrk_String_T[p]); 
-      gDirectory -> cd(ntrk_String_T[p]); 
-      BulkWrite(TruthVector[p]); 
-      gDirectory -> cd("/");
-      gDirectory -> cd(current); 
+    if (Mode == "Truth")
+    { 
+      for (int p(0); p < TruthVector.size(); p++)
+      {
+        gDirectory -> mkdir(ntrk_String_T[p]); 
+        gDirectory -> cd(ntrk_String_T[p]); 
+        BulkWrite(TruthVector[p]); 
+        gDirectory -> cd("/");
+        gDirectory -> cd(current); 
+      }
     }
-
     std::cout << "++++++++" << current << " " << Mode << std::endl;
 
-    if (Mode == "")
+    if (Mode == "All")
     {
       std::vector<std::vector<TH1F*>> Normal_Fits = Normalization_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_N, current);
       std::vector<std::vector<TH1F*>> ShiftNormal_Fits = NormalizationShift_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_NS, current);   
@@ -334,16 +336,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
         BulkDelete(Experimental_Fits[i]); 
       }
       can -> Print(current + ".pdf]"); 
-     
-
-      for (int t(0); t < Normal_Fits.size(); t++)
-      {
-        BulkDelete(Normal_Fits[t]);
-        BulkDelete(ShiftNormal_Fits[t]);
-        BulkDelete(ShiftNormalFFT_Fits[t]);
-        BulkDelete(ShiftNormalWidthFFT_Fits[t]);
-        BulkDelete(Experimental_Fits[t]);
-      }
     }
     
 
@@ -439,17 +431,5 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   }
 
   X -> Close(); 
-
-
-
-
-
-
-
-
-
-
-
-
 
 }

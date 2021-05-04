@@ -140,14 +140,6 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
 std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = "");
 std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = "");
 
-
-
-
-
-
-
-
-
-
+const int n_cpu = 4; 
 
 #endif

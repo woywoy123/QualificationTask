@@ -236,15 +236,16 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Experimental"); 
 
-  for (int x(0); x < 3; x++)
+  for (int x(0); x < 2; x++)
   {
-    if (x > 1)
+    if (x == 1)
     {
       for (int t(0); t < ntrk_mtru_H.size(); t++)
       {
         TString name_temp = Data[t] -> GetTitle(); 
         TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
-        
+       	
+        Normalization(ntrk_Data, ntrk_mtru_H[t], Params);       
         for (int i(0); i < ntrk_mtru_H[t].size(); i++)
         {
           if (i == t){continue;}
@@ -261,10 +262,28 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
           TH1F* ntrk_mtru_update = ntrk_mtru_H[t_u][t]; 
           Flush({ntrk_ntru}, {ntrk_mtru_update}); 
         }
-
         delete ntrk_Data;
       }
-    }
+   
+      for (int t(0); t < ntrk_mtru_H.size(); t++)
+      {
+        TString name_temp = Data[t] -> GetTitle(); 
+        TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
+        Normalization(ntrk_Data, ntrk_mtru_H[t], Params); 
+        delete ntrk_Data;  
+        for (int j(0); j < ntrk_mtru_H[t].size(); j++)
+        {
+          TH1F* ntrk2_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C2");         
+          for (int k(0); k < ntrk_mtru_H[t].size(); k++)
+          {
+            if (k == j){continue;}
+            ntrk2_Data -> Add(ntrk_mtru_H[t][k], -1); 
+          }
+          Flush({ntrk2_Data}, {ntrk_mtru_H[t][j]});  
+          delete ntrk2_Data; 
+        }
+      }
+    }   
     
     for (int i(0); i < ntrk_mtru_H.size(); i++)
     {
