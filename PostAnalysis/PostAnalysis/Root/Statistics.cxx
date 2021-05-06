@@ -23,7 +23,8 @@ float ErrorByIntegral(TH1F* Hist1, TH1F* Hist2, float x_min, float x_max)
   } 
   float A = Hist2 -> Integral(bin_min, bin_max); 
   float r = sum / A; 
-  if (std::isinf(r)){r = 0;}
+  if (std::isinf(r)){r = 100;}
+  if (std::isnan(r)){r = 100; }
   return r; 
 
 }

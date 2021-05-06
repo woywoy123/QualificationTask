@@ -160,8 +160,8 @@ void TestFits_NTruth_NTrack()
       ToBeUsed.push_back(Proposed[i]); 
     }
     if (ToBeUsed.size() == 0){continue;}
-    X -> mkdir(current); 
-    X -> cd(current); 
+    gDirectory -> cd("/"); 
+    gDirectory -> mkdir(current); 
 
     std::vector<TH1F*> Normal_Fits = Normalization_Fit(ToBeUsed, trk1_start, Params_N, current); 
     std::vector<TH1F*> ShiftNormal_Fits = NormalizationShift_Fit(ToBeUsed, trk1_start, Params_NS, current); 
@@ -184,15 +184,14 @@ void TestFits_NTruth_NTrack()
     can -> Print(current + ".pdf"); 
     can -> Print(current + ".pdf]"); 
 
-
     BulkDelete(Normal_Fits); 
     BulkDelete(ShiftNormal_Fits); 
     BulkDelete(ShiftNormalFFT_Fits); 
     BulkDelete(ShiftNormalWidthFFT_Fits); 
-    
-    X -> cd(); 
+   
     p++;
   }
+  X -> Close(); 
 }
 
 void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
@@ -200,13 +199,13 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   if (MCFile == ""){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
  
-  std::vector<std::vector<float>> Ranges = {{0.2, 6}, {0.5, 8}, {2, 8}, {2, 8}}; 
+  std::vector<std::vector<float>> Ranges = {{0.2, 6}, {0.2, 8}, {1.5, 8.6}, {2, 8.6}}; 
 
-  float m = 0.2; 
+  float m = 0.4; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
-  Params_N["Range"] = {0, 10}; 
-  Params_N["r_value"] = {1.5};
+  Params_N["Range"] = {0, 8}; 
+  Params_N["r_value"] = {1.2};
   Params_N["Range_ntrk_1"] = Ranges[0]; 
   Params_N["Range_ntrk_2"] = Ranges[1]; 
   Params_N["Range_ntrk_3"] = Ranges[2]; 
@@ -215,19 +214,19 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
   Params_NS["Range"] = {0.2, 8}; 
-  Params_NS["r_value"] = {1.5};
+  Params_NS["r_value"] = {1.2};
   Params_NS["Range_ntrk_1"] = Ranges[0]; 
   Params_NS["Range_ntrk_2"] = Ranges[1]; 
   Params_NS["Range_ntrk_3"] = Ranges[2];   
   Params_NS["Range_ntrk_4"] = Ranges[3]; 
   Params_NS["dx"] = {m, m, m, m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
-  Params_NS["Minimizer"] = {100000}; 
+  //Params_NS["Minimizer"] = {100000}; 
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
   Params_FFT["Range"] = {0.2, 8}; 
-  Params_FFT["r_value"] = {1.5};
+  Params_FFT["r_value"] = {1.2};
   Params_FFT["Range_ntrk_1"] = Ranges[0]; 
   Params_FFT["Range_ntrk_2"] = Ranges[1]; 
   Params_FFT["Range_ntrk_3"] = Ranges[2];   
@@ -236,13 +235,13 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["s_s"] = {0, 0, 0, 0};
   Params_FFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
-  Params_FFT["fft_cache"] = {50000}; 
+  Params_FFT["fft_cache"] = {10000}; 
   Params_FFT["Minimizer"] = {100000}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
   Params_WidthFFT["Range"] = {0.2, 8}; 
-  Params_WidthFFT["r_value"] = {1.5};
+  Params_WidthFFT["r_value"] = {1.2};
   Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
   Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
   Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
@@ -250,14 +249,29 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["m"] = {m, m, m, m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
-  Params_WidthFFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
-  Params_WidthFFT["s_G"] = {0.001, 0.001, 0.001, 0.001};
-  Params_WidthFFT["fft_cache"] = {50000}; 
+  Params_WidthFFT["s_e"] = {0.5, 0.5, 0.5, 0.5};
+  Params_WidthFFT["s_G"] = {0.005, 0.005, 0.005, 0.005};
+  Params_WidthFFT["fft_cache"] = {10000}; 
   Params_WidthFFT["Minimizer"] = {100000}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   for (MMVi x = F.begin(); x != F.end(); x++)
   {
+    auto Plotter =[&] (std::vector<std::vector<TH1F*>> Fits, std::vector<std::vector<TH1F*>> Truth, TString current, TString Mode)
+    {
+      TString name = current + "_" + Mode + ".pdf"; 
+      TCanvas* can = new TCanvas(); 
+      can -> SetLogy(); 
+      can -> Print(name + "["); 
+      for (int i(0); i < Fits.size(); i++)
+      {
+        PlotHists(Fits[i], Truth[i], can); 
+        can -> Print(name); 
+      }
+      can -> Print(name + "]"); 
+      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
+    };
+
     TString current = x -> first;  
     if (JE != ""){if (JE != current){continue;}} // This is for parallel computing capabilities on a cluster
  
@@ -300,133 +314,30 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     }
     std::cout << "++++++++" << current << " " << Mode << std::endl;
 
-    if (Mode == "All")
-    {
-      std::vector<std::vector<TH1F*>> Normal_Fits = Normalization_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_N, current);
-      std::vector<std::vector<TH1F*>> ShiftNormal_Fits = NormalizationShift_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_NS, current);   
-      std::vector<std::vector<TH1F*>> ShiftNormalFFT_Fits = NormalizationShiftFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_FFT, current);
-      std::vector<std::vector<TH1F*>> ShiftNormalWidthFFT_Fits = NormalizationShiftWidthFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
-      std::vector<std::vector<TH1F*>> Experimental_Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
+    std::vector<std::vector<TH1F*>> Fits; 
+    bool All = false; 
+    if (Mode == "All"){All = true;}
 
-      TCanvas* can = new TCanvas(); 
-      can -> SetLogy(); 
-      can -> Print(current + ".pdf["); 
-      
-      for (int i(0); i < ToBeUsed.size(); i++)
-      {
-        PlotHists(Normal_Fits[i], TruthVector[i], can); 
-        can -> Print(current + ".pdf"); 
-
-        PlotHists(ShiftNormal_Fits[i], TruthVector[i], can); 
-        can -> Print(current + ".pdf"); 
-        
-        PlotHists(ShiftNormalFFT_Fits[i], TruthVector[i], can); 
-        can -> Print(current + ".pdf"); 
-
-        PlotHists(ShiftNormalWidthFFT_Fits[i], TruthVector[i], can); 
-        can -> Print(current + ".pdf"); 
-
-        PlotHists(Experimental_Fits[i], TruthVector[i], can); 
-        can -> Print(current + ".pdf"); 
-
-        BulkDelete(Normal_Fits[i]); 
-        BulkDelete(ShiftNormal_Fits[i]); 
-        BulkDelete(ShiftNormalFFT_Fits[i]); 
-        BulkDelete(ShiftNormalWidthFFT_Fits[i]); 
-        BulkDelete(Experimental_Fits[i]); 
-      }
-      can -> Print(current + ".pdf]"); 
-    }
+    if (All){Mode = "Normal"; }
+    if (Mode == "Normal"){Fits = Normalization_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_N, current);}
+    Plotter(Fits, TruthVector, current, Mode); 
     
-
-    if (Mode == "Normal")
-    {
-      TString name = current + "_" + Mode + ".pdf"; 
-      std::vector<std::vector<TH1F*>> Fits = Normalization_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_N, current);
-      TCanvas* can = new TCanvas(); 
-      can -> SetLogy(); 
-      can -> Print(name + "["); 
-      
-      for (int i(0); i < ToBeUsed.size(); i++)
-      {
-        PlotHists(Fits[i], TruthVector[i], can); 
-        can -> Print(name); 
-      }
-      can -> Print(name + "]"); 
-      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
-    }
-
-    if (Mode == "ShiftNormal")
-    {
-      TString name = current + "_" + Mode + ".pdf"; 
-      std::vector<std::vector<TH1F*>> Fits = NormalizationShift_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_NS, current);
-      TCanvas* can = new TCanvas(); 
-      can -> SetLogy(); 
-      can -> Print(name + "["); 
-      
-      for (int i(0); i < ToBeUsed.size(); i++)
-      {
-        PlotHists(Fits[i], TruthVector[i], can); 
-        can -> Print(name); 
-      }
-      can -> Print(name + "]"); 
-      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
-    }
-
-
-    if (Mode == "ShiftNormalFFT")
-    {
-
-      TString name = current + "_" + Mode + ".pdf"; 
-      std::vector<std::vector<TH1F*>> Fits = NormalizationShiftFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_FFT, current);
-      TCanvas* can = new TCanvas(); 
-      can -> SetLogy(); 
-      can -> Print(name + "["); 
-      
-      for (int i(0); i < ToBeUsed.size(); i++)
-      {
-        PlotHists(Fits[i], TruthVector[i], can); 
-        can -> Print(name); 
-      }
-      can -> Print(name + "]"); 
-      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
-    }
-
-
-
-    if (Mode == "ShiftNormalWidthFFT")
-    {
-      TString name = current + "_" + Mode + ".pdf"; 
-      std::vector<std::vector<TH1F*>> Fits = NormalizationShiftWidthFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
-      TCanvas* can = new TCanvas(); 
-      can -> SetLogy(); 
-      can -> Print(name + "["); 
-      
-      for (int i(0); i < ToBeUsed.size(); i++)
-      {
-        PlotHists(Fits[i], TruthVector[i], can); 
-        can -> Print(name); 
-      }
-      can -> Print(name + "]"); 
-      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
-    }
-
-    if (Mode == "Experimental")
-    {
-      TString name = current + "_" + Mode + ".pdf"; 
-      std::vector<std::vector<TH1F*>> Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
-      TCanvas* can = new TCanvas(); 
-      can -> SetLogy(); 
-      can -> Print(name + "["); 
-      
-      for (int i(0); i < ToBeUsed.size(); i++)
-      {
-        PlotHists(Fits[i], TruthVector[i], can); 
-        can -> Print(name); 
-      }
-      can -> Print(name + "]"); 
-      for (int i(0); i < Fits.size(); i++){BulkDelete(Fits[i]);}
-    }
+    if (All){Mode = "ShiftNormal"; }
+    if (Mode == "ShiftNormal"){Fits = NormalizationShift_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_NS, current);}
+    Plotter(Fits, TruthVector, current, Mode); 
+    
+    if (All){Mode = "ShiftNormalFFT"; }
+    if (Mode == "ShiftNormalFFT"){Fits = NormalizationShiftFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_FFT, current);}
+    Plotter(Fits, TruthVector, current, Mode); 
+    
+    if (All){Mode = "ShiftNormalWidthFFT"; }
+    if (Mode == "ShiftNormalWidthFFT"){Fits = NormalizationShiftWidthFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);}
+    Plotter(Fits, TruthVector, current, Mode); 
+    
+    if (All){Mode = "Experimental"; }
+    if (Mode == "Experimental"){Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);}
+    Plotter(Fits, TruthVector, current, Mode); 
+    
     X -> Write();
   }
 

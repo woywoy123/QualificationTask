@@ -237,9 +237,10 @@ void TestReadCTIDE(TString dir)
 void WriteHistsToFile(std::vector<TH1F*> ntrk_ntru, TString dir)
 {
   gDirectory -> cd("/");
+  gDirectory -> mkdir(dir); 
   gDirectory -> cd(dir); 
-
   BulkWrite(ntrk_ntru); 
+  gDirectory -> cd("/"); 
 }
 
 
@@ -262,13 +263,18 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TS
       std::vector<TString> Alg_V = ReturnCurrentDirs(); 
       for (TString H_TS : Alg_V)
       {
+        if (H_TS.Contains("_error")){continue;}
         TH1F* H = (TH1F*)gDirectory -> Get(H_TS);
 
         // Truth inside the jet core. 
-        if (H_TS.Contains("ntrk_1")){ Algorithms_Map[Alg_Folder + "_ntrk_1"].push_back(H); }
-        if (H_TS.Contains("ntrk_2")){ Algorithms_Map[Alg_Folder + "_ntrk_2"].push_back(H); }
-        if (H_TS.Contains("ntrk_3")){ Algorithms_Map[Alg_Folder + "_ntrk_3"].push_back(H); }
-        if (H_TS.Contains("ntrk_4")){ Algorithms_Map[Alg_Folder + "_ntrk_4"].push_back(H); }
+        if (!Alg_Folder.Contains("ntrk_1_T") && H_TS.Contains("ntrk_1")){ Algorithms_Map[Alg_Folder + "_ntrk_1"].push_back(H); }
+        if (!Alg_Folder.Contains("ntrk_2_T") && H_TS.Contains("ntrk_2")){ Algorithms_Map[Alg_Folder + "_ntrk_2"].push_back(H); }
+        if (!Alg_Folder.Contains("ntrk_3_T") && H_TS.Contains("ntrk_3")){ Algorithms_Map[Alg_Folder + "_ntrk_3"].push_back(H); }
+        if (!Alg_Folder.Contains("ntrk_4_T") && H_TS.Contains("ntrk_4")){ Algorithms_Map[Alg_Folder + "_ntrk_4"].push_back(H); }
+        
+        
+        // Truth for multitrack fit:
+        if (Alg_Folder.Contains("ntrk_")){ Algorithms_Map[Alg_Folder + "ruth"].push_back(H); }
       }
     }
     Output[Folder] = Algorithms_Map; 
@@ -277,8 +283,6 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TS
 
   return Output;  
 }
-
-
 
 void TestReadAlgorithm()
 {

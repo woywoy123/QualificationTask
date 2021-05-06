@@ -11,16 +11,14 @@ int main(int argc, char* argv[])
   std::cout << File << std::endl;
   //IOTest(); 
   //RooFitBaseFunctionTest();  
-  TestFits_NTruth_NTrack();  
+  //TestFits_NTruth_NTrack();  
   //TestRead(); 
   //CompareToTruth("ntrk_ntru.root");  
- 
-  //TestFits_AllTruth_ToTrack(JE, Mode, File);  
-
+  TestFits_AllTruth_ToTrack(JE, Mode, File);  
   //ReadOutputFileToMap("Fit_Tracks.root"); 
 
   //MultiTrackTruthComparison("MultiTrackFit.root"); 
-
+  //CompareToTruth("MultiTrackFit.root"); 
 
 
 

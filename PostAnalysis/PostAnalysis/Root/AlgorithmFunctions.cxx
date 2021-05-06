@@ -28,8 +28,8 @@ std::vector<TH1F*> Normalization_Fit(std::vector<TH1F*> Data, TH1F* trk1_Start, 
     TString base = "Fit_"; base += (i+1); base += (ext); 
     Normalization(ntrk_ntru_T, {ntrk}, Params, base); 
   }
-  
-  WriteHistsToFile(ntrk_ntru_H, "Normal"); 
+ 
+  WriteHistsToFile(ntrk_ntru_H, JE + "/Normal"); 
   return ntrk_ntru_H; 
 }
 
@@ -49,7 +49,7 @@ std::vector<TH1F*> NormalizationShift_Fit(std::vector<TH1F*> Data, TH1F* trk1_st
     TString base = "Fit_"; base += (i+1); base += (ext); 
     NormalizationShift(ntrk_ntru_T, {ntrk}, Params, base); 
   }
-  WriteHistsToFile(ntrk_ntru_H, "ShiftNormal"); 
+  WriteHistsToFile(ntrk_ntru_H, JE + "/ShiftNormal"); 
 
   return ntrk_ntru_H; 
 }
@@ -70,7 +70,8 @@ std::vector<TH1F*> NormalizationShiftFFT_Fit(std::vector<TH1F*> Data, TH1F* trk1
     TString base = "Fit_"; base += (i+1); base += (ext); 
     ConvolutionFFT(ntrk_ntru_T, {ntrk}, Params, base); 
   }
-  WriteHistsToFile(ntrk_ntru_H, "ShiftNormalFFT"); 
+  
+  WriteHistsToFile(ntrk_ntru_H, JE + "/ShiftNormalFFT"); 
 
   return ntrk_ntru_H; 
 }
@@ -92,7 +93,8 @@ std::vector<TH1F*> NormalizationShiftWidthFFT_Fit(std::vector<TH1F*> Data, TH1F*
     TString base = "Fit_"; base += (i+1); base += (ext); 
     ConvolutionFFT(ntrk_ntru_T, {ntrk}, Params, base); 
   }
-  WriteHistsToFile(ntrk_ntru_H, "ShiftNormalWidthFFT"); 
+  
+  WriteHistsToFile(ntrk_ntru_H, JE + "/ShiftNormalWidthFFT"); 
 
   return ntrk_ntru_H; 
 }
@@ -103,7 +105,7 @@ std::vector<std::vector<TH1F*>> BuildNtrkMtru(int n, TH1F* trk1_start, TString e
   for (int i(0); i < n; i++)
   {
     std::vector<TString> ntrk_ntru_n; 
-    for (int j(0); j < n; j++)
+    for (int j(0); j < 4; j++)
     {
       TString base = "dEdx_ntrk_"; base += (i+1); base += ("_ntru_"); base += (j+1); 
       ntrk_ntru_n.push_back(base); 
@@ -128,7 +130,7 @@ std::vector<std::vector<TH1F*>> Normalization_Fit_NtrkMtru(std::vector<TH1F*> Da
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Normal"); 
 
-  for (int i(0); i < ntrk_mtru_H.size(); i++)
+  for (int i(0); i < Data.size(); i++)
   {
     TString r_name = "Range_ntrk_"; r_name += (i+1); 
     Params["Range"] = Params[r_name]; 
@@ -154,7 +156,7 @@ std::vector<std::vector<TH1F*>> NormalizationShift_Fit_NtrkMtru(std::vector<TH1F
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/ShiftNormal"); 
 
-  for (int i(0); i < ntrk_mtru_H.size(); i++)
+  for (int i(0); i < Data.size(); i++)
   {
     TString r_name = "Range_ntrk_"; r_name += (i+1); 
     Params["Range"] = Params[r_name]; 
@@ -181,7 +183,7 @@ std::vector<std::vector<TH1F*>> NormalizationShiftFFT_Fit_NtrkMtru(std::vector<T
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/ShiftNormalFFT"); 
 
-  for (int i(0); i < ntrk_mtru_H.size(); i++)
+  for (int i(0); i < Data.size(); i++)
   {
     TString r_name = "Range_ntrk_"; r_name += (i+1); 
     Params["Range"] = Params[r_name]; 
@@ -189,7 +191,7 @@ std::vector<std::vector<TH1F*>> NormalizationShiftFFT_Fit_NtrkMtru(std::vector<T
     TH1F* ntrk_Measure = Data[i]; 
     
     TString base = "Fit_"; base += (i+1); base += (ext); 
-    std::map<TString, std::vector<float>> Map = NormalizationShift(ntrk_Measure, ntrk_Template, Params, base); 
+    std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
     
     WriteHistsToFile(ntrk_Template, JE + "/ShiftNormalFFT"); 
  
@@ -208,7 +210,7 @@ std::vector<std::vector<TH1F*>> NormalizationShiftWidthFFT_Fit_NtrkMtru(std::vec
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/ShiftNormalWidthFFT"); 
 
-  for (int i(0); i < ntrk_mtru_H.size(); i++)
+  for (int i(0); i < Data.size(); i++)
   {
     TString r_name = "Range_ntrk_"; r_name += (i+1); 
     Params["Range"] = Params[r_name]; 
@@ -216,7 +218,7 @@ std::vector<std::vector<TH1F*>> NormalizationShiftWidthFFT_Fit_NtrkMtru(std::vec
     TH1F* ntrk_Measure = Data[i]; 
     
     TString base = "Fit_"; base += (i+1); base += (ext); 
-    std::map<TString, std::vector<float>> Map = NormalizationShift(ntrk_Measure, ntrk_Template, Params, base); 
+    std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
     
     WriteHistsToFile(ntrk_Template, JE + "/ShiftNormalWidthFFT"); 
    
@@ -232,60 +234,37 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
 {
   TString ext = "_" + JE + "_Experimental_NtrkMtru"; 
   std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
-
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Experimental"); 
 
-  for (int x(0); x < 2; x++)
+  for (int x(0); x < 3; x++)
   {
-    if (x == 1)
-    {
-      for (int t(0); t < ntrk_mtru_H.size(); t++)
-      {
-        TString name_temp = Data[t] -> GetTitle(); 
-        TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
-       	
-        Normalization(ntrk_Data, ntrk_mtru_H[t], Params);       
-        for (int i(0); i < ntrk_mtru_H[t].size(); i++)
-        {
-          if (i == t){continue;}
-          ntrk_Data -> Add(ntrk_mtru_H[t][i], -1); 
-        }
-        Average(ntrk_Data); 
-        TH1F* ntrk_ntru = ntrk_mtru_H[t][t]; 
-        Flush({ntrk_Data}, {ntrk_ntru}); 
+    //if (x == 1)
+    //{
+    //  for (int t(0); t < Data.size(); t++)
+    //  {
+    //    TString name_temp = Data[t] -> GetTitle(); 
+    //    TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
+    //    for (int j(0); j < ntrk_mtru_H[t].size(); j++)
+    //    {
+    //      if (j != t){ ntrk_Data -> Add(ntrk_mtru_H[t][j], -1); }
+    //    }
+    //    
+    //    Flush({ntrk_Data}, {ntrk_mtru_H[t][t]}); 
+    //    delete ntrk_Data;  
+    //  }
 
-        for (int t_u(0); t_u < ntrk_mtru_H.size(); t_u++)
-        {
-          if (t_u == t){continue;}
-
-          TH1F* ntrk_mtru_update = ntrk_mtru_H[t_u][t]; 
-          Flush({ntrk_ntru}, {ntrk_mtru_update}); 
-        }
-        delete ntrk_Data;
-      }
-   
-      for (int t(0); t < ntrk_mtru_H.size(); t++)
-      {
-        TString name_temp = Data[t] -> GetTitle(); 
-        TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
-        Normalization(ntrk_Data, ntrk_mtru_H[t], Params); 
-        delete ntrk_Data;  
-        for (int j(0); j < ntrk_mtru_H[t].size(); j++)
-        {
-          TH1F* ntrk2_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C2");         
-          for (int k(0); k < ntrk_mtru_H[t].size(); k++)
-          {
-            if (k == j){continue;}
-            ntrk2_Data -> Add(ntrk_mtru_H[t][k], -1); 
-          }
-          Flush({ntrk2_Data}, {ntrk_mtru_H[t][j]});  
-          delete ntrk2_Data; 
-        }
-      }
-    }   
+    //  for (int t(0); t < Data.size(); t++)
+    //  {
+    //    for (int j(0); j < Data.size(); j++)
+    //    {
+    //      Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]}); 
+    //    }
+    //    Normalize(ntrk_mtru_H[t]);
+    //  }
+    //}   
     
-    for (int i(0); i < ntrk_mtru_H.size(); i++)
+    for (int i(0); i < Data.size(); i++)
     {
       TString r_name = "Range_ntrk_"; r_name += (i+1); 
       Params["Range"] = Params[r_name]; 
@@ -296,7 +275,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       
       std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
 
-      if (x == 2)
+      if (x == 1)
       {
         TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
