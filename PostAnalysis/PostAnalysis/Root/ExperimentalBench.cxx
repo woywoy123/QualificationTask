@@ -121,7 +121,7 @@ void TestFits_NTruth_NTrack()
   Params_FFT["s_s"] = {0, 0, 0, 0};
   Params_FFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
   Params_FFT["fft_cache"] = {10000}; 
-  //Params_FFT["Minimizer"] = {100000}; 
+  Params_FFT["Minimizer"] = {100000}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
@@ -196,12 +196,12 @@ void TestFits_NTruth_NTrack()
 
 void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
 {
-  if (MCFile == ""){ MCFile = "Merged_MC.root"; }
+  if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
  
-  std::vector<std::vector<float>> Ranges = {{0.2, 6}, {0.2, 8}, {1.5, 8.6}, {2, 8.6}}; 
+  std::vector<std::vector<float>> Ranges = {{0.1, 6}, {0.2, 8}, {1.5, 8.6}, {2, 8.6}}; 
 
-  float m = 0.2; 
+  float m = 0.3; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Range"] = {0, 8}; 
@@ -221,7 +221,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_NS["Range_ntrk_4"] = Ranges[3]; 
   Params_NS["dx"] = {m, m, m, m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
-  //Params_NS["Minimizer"] = {100000}; 
+  //Params_NS["Minimizer"] = {1000}; 
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
@@ -233,8 +233,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["Range_ntrk_4"] = Ranges[3]; 
   Params_FFT["m"] = {m, m, m, m};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
-  Params_FFT["s_s"] = {0, 0, 0, 0};
-  Params_FFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
   Params_FFT["fft_cache"] = {10000}; 
   Params_FFT["Minimizer"] = {100000}; 
 
@@ -251,8 +249,23 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
   Params_WidthFFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_WidthFFT["s_G"] = {0.005, 0.005, 0.005, 0.005};
-  Params_WidthFFT["fft_cache"] = {50000}; 
-  //Params_WidthFFT["Minimizer"] = {100000}; 
+  Params_WidthFFT["fft_cache"] = {10000}; 
+  Params_WidthFFT["Minimizer"] = {500000}; 
+
+  // Normalization Shift Width FFT parameters
+  std::map<TString, std::vector<float>> Params_Exp; 
+  Params_Exp["Range"] = {0.2, 8}; 
+  Params_Exp["r_value"] = {1.1};
+  Params_Exp["Range_ntrk_1"] = Ranges[0]; 
+  Params_Exp["Range_ntrk_2"] = Ranges[1];   
+  Params_Exp["Range_ntrk_3"] = Ranges[2];  
+  Params_Exp["Range_ntrk_4"] = Ranges[3]; 
+  Params_Exp["m"] = {m, m, m, m};
+  Params_Exp["m_G"] = {0, 0, 0, 0}; 
+  Params_Exp["s_s"] = {0, 0, 0, 0};
+  Params_Exp["s_e"] = {0.01, 0.01, 0.01, 0.01};
+  Params_Exp["fft_cache"] = {10000}; 
+  Params_Exp["Minimizer"] = {500000}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   for (MMVi x = F.begin(); x != F.end(); x++)
@@ -273,8 +286,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     };
 
     TString current = x -> first;  
-    if (JE != ""){if (JE != current){continue;}} // This is for parallel computing capabilities on a cluster
- 
+    if (!JE.Contains("x")){if (JE != current){continue;}} // This is for parallel computing capabilities on a cluster
     
     std::map<TString, std::vector<TH1F*>> M = F[x -> first]; 
     std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 
@@ -349,7 +361,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     if (All){Mode = "Experimental"; }
     if (Mode == "Experimental")
     {
-      Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
+      Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_Exp, current);
       Plotter(Fits, TruthVector, current, Mode); 
     }   
     X -> Write();

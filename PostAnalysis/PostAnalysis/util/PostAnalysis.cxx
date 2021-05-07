@@ -5,15 +5,16 @@
 
 int main(int argc, char* argv[])
 {
-  TString JE = argv[1]; 
-  TString Mode = argv[2];  
-  TString File = argv[3]; 
-  std::cout << File << std::endl;
+  TString JE = "x"; //argv[1]; 
+  TString Mode = "Experimental"; //argv[2];  
+  TString File = "x"; //argv[3]; 
+  //std::cout << File << std::endl;
   //IOTest(); 
   //RooFitBaseFunctionTest();  
   //TestFits_NTruth_NTrack();  
   //TestRead(); 
-  //CompareToTruth("ntrk_ntru.root");  
+  //CompareToTruth("ntrk_ntru.root"); 
+  std::cout << "+++" << JE << " " << Mode << std::endl;
   TestFits_AllTruth_ToTrack(JE, Mode, File);  
   //ReadOutputFileToMap("Fit_Tracks.root"); 
 

@@ -136,12 +136,13 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Range("fit"), SumW2Error(true), NumCPU(n_cpu)); 
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true), NumCPU(n_cpu)); 
     RooMinimizer* pg = new RooMinimizer(*nll); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
-    re = pg -> fit("hr"); 
+    pg -> optimizeConst(true); 
+    re = pg -> fit("r"); 
     pg -> cleanup(); 
     delete pg; 
     delete nll;
@@ -230,7 +231,16 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
   for (int i(0); i < Params["s_s"].size(); i++)
   {
     if (i >= PDF_H.size()){continue;}
-    if (Params["s_s"][i] == 0){setconst = true;}
+    if (Params["s_s"].size() == 0)
+    {
+      setconst = true;
+      continue;
+    }
+    if (Params["s_s"][i] == 0)
+    {
+      setconst = true;
+    }
+    
     s_s[i] = Params["s_s"][i]; 
     s_e[i] = Params["s_e"][i];
   }
@@ -274,11 +284,12 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Range("fit"), SumW2Error(true), NumCPU(n_cpu), Save()); 
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), NumCPU(n_cpu), Extended(true)); 
     RooMinimizer* pg = new RooMinimizer(*nll); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
+    pg -> minos(); 
     re = pg -> fit("hr"); 
     pg -> cleanup(); 
     delete pg; 

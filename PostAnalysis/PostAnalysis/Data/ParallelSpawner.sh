@@ -7,17 +7,12 @@ function CreateBatches_Local
   echo "#!/bin/bash" >> Spawn.sh
   echo "export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase" >> Spawn.sh
   echo "source $""{ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh" >> Spawn.sh
-  echo "cd build" >> Spawn.sh
   echo "cur=$""PWD" >> Spawn.sh
-  echo "cd ../../PostAnalysis && asetup --restore" >> Spawn.sh
+  echo "cd ../PostAnalysis && asetup --restore" >> Spawn.sh
   echo "cd ../build/" >> Spawn.sh
   echo "source x86_64-centos7-gcc62-opt/setup.sh" >> Spawn.sh
   echo "cd $""cur" >> Spawn.sh
   echo "PostAnalysis $1 $2 $3/Merged_MC.root" >> Spawn.sh
-  echo "mv Fit_Tracks.root ../Fit_Tracks.root" >> Spawn.sh
-  echo "mv *.pdf ../" >> Spawn.sh
-  echo "mv *results.* ../" >> Spawn.sh
-  echo "cd ../ && rm -rf build" >> Spawn.sh
 }
 
 function CondorBuild
@@ -34,10 +29,11 @@ function CondorBuild
 
 
 #Constants that we need to generate the names 
+Condor_active=true
 Layer=("IBL" "Blayer" "layer1" "layer2") 
-JetEnergy=("200_up_GeV" "200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
-Mode=("ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Experimental")
-#Mode=("Experimental"); 
+JetEnergy=("200_up_GeV" "200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV" "All")
+Mode=("ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Experimental" "Normal" "Truth")
+#Mode=("Normal" "Truth"); 
 root_dir=$PWD
 echo $root_dir
 
@@ -73,19 +69,20 @@ do
      
       echo $Line
       mkdir $Line
-  
       cd $Line 
-  
-      mkdir build
       LJE=$L"_"$E
       
       CreateBatches_Local $LJE $M $File
-      
       CondorBuild
       chmod +x Spawn.sh
-      #condor_submit example.submit 
       
-      bash Spawn.sh
+      if [[ $Condor_active == true ]]
+      then 
+        condor_submit example.submit 
+      else
+        bash Spawn.sh
+      fi 
+      
       cd ../
     done 
   done 
@@ -99,19 +96,20 @@ do
    
     echo $Line
     mkdir $Line
-
     cd $Line 
 
-    mkdir build
-    LJE=$L"_"$M
-    
-    CreateBatches_Local $LJE $M $File
-    
+    CreateBatches_Local $L $M $File
     CondorBuild
     chmod +x Spawn.sh
-    condor_submit example.submit 
+
+    if [[ $Condor_active == true ]]
+    then 
+      condor_submit example.submit 
+    else
+      bash Spawn.sh
+    fi 
+
     
-    #bash Spawn.sh
     cd ../
   done 
 done 
@@ -124,19 +122,20 @@ do
    
     echo $Line
     mkdir $Line
-
     cd $Line 
 
-    mkdir build
-    LJE=$L"_"$M
-    
-    CreateBatches_Local $LJE $M $File
-    
+    CreateBatches_Local $L $M $File
     CondorBuild
     chmod +x Spawn.sh
-    condor_submit example.submit 
-    
-    #bash Spawn.sh
+
+    if [[ $Condor_active == true ]]
+    then 
+      condor_submit example.submit 
+    else
+      bash Spawn.sh
+    fi 
+
+
     cd ../
   done 
 done 

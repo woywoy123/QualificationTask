@@ -239,31 +239,31 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
 
   for (int x(0); x < 3; x++)
   {
-    //if (x == 1)
-    //{
-    //  for (int t(0); t < Data.size(); t++)
-    //  {
-    //    TString name_temp = Data[t] -> GetTitle(); 
-    //    TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
-    //    for (int j(0); j < ntrk_mtru_H[t].size(); j++)
-    //    {
-    //      if (j != t){ ntrk_Data -> Add(ntrk_mtru_H[t][j], -1); }
-    //    }
-    //    
-    //    Flush({ntrk_Data}, {ntrk_mtru_H[t][t]}); 
-    //    delete ntrk_Data;  
-    //  }
+    if (x == 1)
+    {
+      for (int t(0); t < Data.size(); t++)
+      {
+        TString name_temp = Data[t] -> GetTitle(); 
+        TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
+        for (int j(0); j < ntrk_mtru_H[t].size(); j++)
+        {
+          if (j != t){ ntrk_Data -> Add(ntrk_mtru_H[t][j], -1); }
+        }
+        
+        Average(ntrk_Data); 
+        Flush({ntrk_Data}, {ntrk_mtru_H[t][t]}); 
+        delete ntrk_Data;  
+      }
 
-    //  for (int t(0); t < Data.size(); t++)
-    //  {
-    //    for (int j(0); j < Data.size(); j++)
-    //    {
-    //      Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]}); 
-    //    }
-    //    Normalize(ntrk_mtru_H[t]);
-    //  }
-    //}   
-    
+      for (int t(0); t < Data.size(); t++)
+      {
+        for (int j(0); j < Data.size(); j++)
+        {
+          Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]}); 
+        }
+      }
+    }   
+     
     for (int i(0); i < Data.size(); i++)
     {
       TString r_name = "Range_ntrk_"; r_name += (i+1); 
