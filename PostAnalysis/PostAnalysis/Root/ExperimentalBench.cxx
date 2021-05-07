@@ -201,7 +201,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
  
   std::vector<std::vector<float>> Ranges = {{0.2, 6}, {0.2, 8}, {1.5, 8.6}, {2, 8.6}}; 
 
-  float m = 0.4; 
+  float m = 0.2; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Range"] = {0, 8}; 
@@ -249,10 +249,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["m"] = {m, m, m, m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
-  Params_WidthFFT["s_e"] = {0.5, 0.5, 0.5, 0.5};
+  Params_WidthFFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_WidthFFT["s_G"] = {0.005, 0.005, 0.005, 0.005};
-  Params_WidthFFT["fft_cache"] = {10000}; 
-  Params_WidthFFT["Minimizer"] = {100000}; 
+  Params_WidthFFT["fft_cache"] = {50000}; 
+  //Params_WidthFFT["Minimizer"] = {100000}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   for (MMVi x = F.begin(); x != F.end(); x++)
@@ -319,25 +319,39 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     if (Mode == "All"){All = true;}
 
     if (All){Mode = "Normal"; }
-    if (Mode == "Normal"){Fits = Normalization_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_N, current);}
-    Plotter(Fits, TruthVector, current, Mode); 
+    if (Mode == "Normal")
+    {
+      Fits = Normalization_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_N, current);
+      Plotter(Fits, TruthVector, current, Mode); 
+    } 
     
     if (All){Mode = "ShiftNormal"; }
-    if (Mode == "ShiftNormal"){Fits = NormalizationShift_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_NS, current);}
-    Plotter(Fits, TruthVector, current, Mode); 
-    
+    if (Mode == "ShiftNormal")
+    {
+      Fits = NormalizationShift_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_NS, current);
+      Plotter(Fits, TruthVector, current, Mode); 
+    }
+
     if (All){Mode = "ShiftNormalFFT"; }
-    if (Mode == "ShiftNormalFFT"){Fits = NormalizationShiftFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_FFT, current);}
-    Plotter(Fits, TruthVector, current, Mode); 
+    if (Mode == "ShiftNormalFFT")
+    {
+      Fits = NormalizationShiftFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_FFT, current);
+      Plotter(Fits, TruthVector, current, Mode); 
+    }   
     
     if (All){Mode = "ShiftNormalWidthFFT"; }
-    if (Mode == "ShiftNormalWidthFFT"){Fits = NormalizationShiftWidthFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);}
-    Plotter(Fits, TruthVector, current, Mode); 
+    if (Mode == "ShiftNormalWidthFFT")
+    {
+      Fits = NormalizationShiftWidthFFT_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
+      Plotter(Fits, TruthVector, current, Mode); 
+    } 
     
     if (All){Mode = "Experimental"; }
-    if (Mode == "Experimental"){Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);}
-    Plotter(Fits, TruthVector, current, Mode); 
-    
+    if (Mode == "Experimental")
+    {
+      Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
+      Plotter(Fits, TruthVector, current, Mode); 
+    }   
     X -> Write();
   }
 

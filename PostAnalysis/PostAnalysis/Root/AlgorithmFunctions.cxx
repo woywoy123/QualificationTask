@@ -275,7 +275,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       
       std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
 
-      if (x == 1)
+      if (x == 2)
       {
         TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
