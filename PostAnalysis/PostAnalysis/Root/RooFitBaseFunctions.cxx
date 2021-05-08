@@ -73,7 +73,12 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
+  float Lum = Data -> Integral(); 
+  TH1F* Copy_D = (TH1F*)Data -> Clone("Temp");  
+
+  Normalize(PDF_H); 
   Average(PDF_H);
+  Normalize(Copy_D); 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
@@ -86,7 +91,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
   std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
   std::vector<float> l_s(l_N.size(), 0); 
-  std::vector<float> l_e(l_N.size(), r*Data -> Integral()); 
+  std::vector<float> l_e(l_N.size(), r*Copy_D -> Integral()); 
   std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_s, l_e); 
 
   // Shift variables
@@ -122,11 +127,11 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     pdf_F.push_back(dx); 
 
     PDFs.add(*PH); 
-    N.add(*l_vars[i]); 
+    N.add(*l_vars[i]);
   }
 
   // Fitting the PDFs to the Data 
-  RooDataHist D("data", "data", *x, Data); 
+  RooDataHist D("data", "data", *x, Copy_D); 
   RooAddPdf model("model", "model", PDFs, N); 
   std::map<TString, std::vector<float>> Output;  
   RooFitResult* re; 
@@ -136,12 +141,18 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true), NumCPU(n_cpu)); 
-    RooMinimizer* pg = new RooMinimizer(*nll); 
+    RooAbsReal* nll = model.createNLL(D, Extended(true)); //, NumCPU(n_cpu)); 
+    RooMinimizer* pg = new RooMinimizer(*nll);
+    pg -> minimize("Minuit2", "migrad"); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
-    pg -> optimizeConst(true); 
+    pg -> improve(); 
+    pg -> hesse();  
+    pg -> minos();
+    pg -> setEvalErrorWall(true); 
+    //pg -> setEps(0.000001); 
+    //pg -> optimizeConst(true); 
     re = pg -> fit("r"); 
     pg -> cleanup(); 
     delete pg; 
@@ -169,11 +180,12 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
    
     CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 
-    PDF_H[i] -> Scale(n); 
+    PDF_H[i] -> Scale(n*Lum); 
     
     for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
   }
 
+  delete Copy_D; 
   BulkDelete(l_vars); 
   BulkDelete(d_vars); 
   BulkDelete(pdf_D); 
@@ -231,14 +243,10 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
   for (int i(0); i < Params["s_s"].size(); i++)
   {
     if (i >= PDF_H.size()){continue;}
-    if (Params["s_s"].size() == 0)
-    {
-      setconst = true;
-      continue;
-    }
     if (Params["s_s"][i] == 0)
     {
       setconst = true;
+      continue;
     }
     
     s_s[i] = Params["s_s"][i]; 

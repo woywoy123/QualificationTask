@@ -7,6 +7,7 @@ function CreateBatches_Local
   echo "#!/bin/bash" >> Spawn.sh
   echo "export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase" >> Spawn.sh
   echo "source $""{ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh" >> Spawn.sh
+  echo "cd $4" >> Spawn.sh
   echo "cur=$""PWD" >> Spawn.sh
   echo "cd ../PostAnalysis && asetup --restore" >> Spawn.sh
   echo "cd ../build/" >> Spawn.sh
@@ -18,7 +19,7 @@ function CreateBatches_Local
 function CondorBuild
 {
   echo "executable = Spawn.sh" >> example.submit
-  #echo "output = ./results.output.$""(ClusterID)"  >> example.submit
+  echo "output = ./results.output.$""(ClusterID)"  >> example.submit
   echo "error =  ./results.error.$""(ClusterID)"  >> example.submit
   #echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
   echo "Request_Cpus = 4"  >> example.submit
@@ -72,7 +73,7 @@ do
       cd $Line 
       LJE=$L"_"$E
       
-      CreateBatches_Local $LJE $M $File
+      CreateBatches_Local $LJE $M $File $PWD
       CondorBuild
       chmod +x Spawn.sh
       
@@ -98,7 +99,7 @@ do
     mkdir $Line
     cd $Line 
 
-    CreateBatches_Local $L $M $File
+    CreateBatches_Local $L $M $File $PWD
     CondorBuild
     chmod +x Spawn.sh
 
@@ -124,7 +125,7 @@ do
     mkdir $Line
     cd $Line 
 
-    CreateBatches_Local $L $M $File
+    CreateBatches_Local $L $M $File $PWD
     CondorBuild
     chmod +x Spawn.sh
 
