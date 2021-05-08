@@ -91,8 +91,9 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
   std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
   std::vector<float> l_s(l_N.size(), 0); 
+  std::vector<float> l_g(l_N.size(), 0.5); 
   std::vector<float> l_e(l_N.size(), r*Copy_D -> Integral()); 
-  std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_s, l_e); 
+  std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_g, l_s, l_e); 
 
   // Shift variables
   std::vector<TString> d_N = NameGenerator(PDF_H, "_Dx"); 
@@ -137,13 +138,13 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   RooFitResult* re; 
   if (Params["Minimizer"].size() == 0)
   {
-    re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(n_cpu), Extended(true), Save()); 
+    re = model.fitTo(D, Range("fit"), SumW2Error(true), Extended(true), Save()); 
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Extended(true)); //, NumCPU(n_cpu)); 
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true)); //, NumCPU(n_cpu)); 
     RooMinimizer* pg = new RooMinimizer(*nll);
-    pg -> minimize("Minuit2", "migrad"); 
+    pg -> minimize("Minuit", "migrad"); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
@@ -151,8 +152,8 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     pg -> hesse();  
     pg -> minos();
     pg -> setEvalErrorWall(true); 
-    //pg -> setEps(0.000001); 
-    //pg -> optimizeConst(true); 
+    pg -> setEps(0.000001); 
+    pg -> optimizeConst(true); 
     re = pg -> fit("r"); 
     pg -> cleanup(); 
     delete pg; 
@@ -196,8 +197,14 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   return Output; 
 }
 
-std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
+std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
+  TH1F* Data = (TH1F*)Data_Org -> Clone("temp"); 
+  float Lum = Data -> Integral(); 
+
+  //Normalize(Data); 
+  Normalize(PDF_H); 
+    
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
@@ -215,8 +222,9 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
   if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
   std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
   std::vector<float> l_s(l_N.size(), 0); 
+  std::vector<float> l_g(l_N.size(), 0.5 * Data -> Integral()); 
   std::vector<float> l_e(l_N.size(), r*Data -> Integral()); 
-  std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_s, l_e); 
+  std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_g, l_s, l_e); 
 
   // Mean variables
   std::vector<TString> m_N = NameGenerator(PDF_H, "_M"); 
@@ -237,9 +245,11 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
 
   // Standard Deviation variables
   std::vector<TString> s_N = NameGenerator(PDF_H, "_S"); 
-  std::vector<float> s_s(PDF_H.size(), 0.0001); 
+  std::vector<float> s_s(PDF_H.size(), 0.001); 
   std::vector<float> s_e(PDF_H.size(), 0.001); 
   setconst = false;
+  
+  if (Params["s_s"].size() == 0){setconst = true;}
   for (int i(0); i < Params["s_s"].size(); i++)
   {
     if (i >= PDF_H.size()){continue;}
@@ -292,13 +302,18 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Range("fit"), NumCPU(n_cpu), Extended(true)); 
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true)); 
     RooMinimizer* pg = new RooMinimizer(*nll); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
-    pg -> minos(); 
-    re = pg -> fit("hr"); 
+    pg -> minos();
+    pg -> hesse();
+    pg -> improve(); 
+    pg -> optimizeConst(true); 
+    pg -> setEvalErrorWall(true); 
+    pg -> setEps(0.00001); 
+    re = pg -> fit("r"); 
     pg -> cleanup(); 
     delete pg; 
     delete nll;
@@ -333,6 +348,8 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
     PDF_H[i] -> Scale(n); 
     for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
   }
+
+  delete Data; 
   BulkDelete(l_vars); 
   BulkDelete(m_vars); 
   BulkDelete(s_vars); 

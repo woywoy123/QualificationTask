@@ -5,9 +5,9 @@
 
 int main(int argc, char* argv[])
 {
-  TString JE = "Blayer"; //argv[1]; 
-  TString Mode = "ShiftNormal"; // argv[2];  
-  TString File = "Merged_MC.root"; //argv[3]; 
+  TString JE = argv[1]; 
+  TString Mode = argv[2];  
+  TString File = argv[3]; 
   //std::cout << File << std::endl;
   //IOTest(); 
   //RooFitBaseFunctionTest();  

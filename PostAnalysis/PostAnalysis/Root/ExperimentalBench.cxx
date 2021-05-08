@@ -21,30 +21,30 @@ void RooFitBaseFunctionTest()
     std::vector<TString> ntrk1_Name = NameGenerator(ntrk_1_T.size(), "dEdx_ntrk_1_tru_"); 
     std::vector<TH1F*> PDF_H = BulkClone(ntrk_1_T, ntrk1_Name); 
     
-    std::map<TString, std::vector<float>> Params_N; 
+    //std::map<TString, std::vector<float>> Params_N; 
     //Params_N["Range"] = {0, 10}; 
     //Params_N["r_value"] = {1.1};
     
-    Normalization(ntrk_1_M, PDF_H, Params_N, "Normal"); 
+    //Normalization(ntrk_1_M, PDF_H, Params_N, "Normal"); 
   
-    TCanvas* can = new TCanvas(); 
-    can -> SetLogy();
-    PlotHists(ntrk_1_T, PDF_H, can); 
-    can -> Print("Example.pdf"); 
-    delete can; 
+    //TCanvas* can = new TCanvas(); 
+    //can -> SetLogy();
+    //PlotHists(ntrk_1_T, PDF_H, can); 
+    //can -> Print("Example.pdf"); 
+    //delete can; 
 
-    //std::map<TString, std::vector<float>> Params_NS; 
-    //Params_NS["Range"] = {1, 8}; 
-    //Params_NS["r_value"] = {1.1};
-    //Params_NS["dx"] = {0.5, 0.5, 0.5, 0.5}; 
-    //Params_NS["dx_G"] = {0, 0, 0, 0};
-    //NormalizationShift(ntrk_1_M, PDF_H, Params_NS, "NormalShift"); 
-    //
-    //TCanvas* can1 = new TCanvas(); 
-    //can1 -> SetLogy();
-    //PlotHists(ntrk_1_T, PDF_H, can1); 
-    //can1 -> Print("ExampleS.pdf"); 
-    //delete can1; 
+    std::map<TString, std::vector<float>> Params_NS; 
+    Params_NS["Range"] = {0.1, 8}; 
+    Params_NS["r_value"] = {1.1};
+    Params_NS["dx"] = {0.5, 0.5, 0.5, 0.5}; 
+    Params_NS["dx_G"] = {0, 0, 0, 0};
+    NormalizationShift(ntrk_1_M, PDF_H, Params_NS, "NormalShift"); 
+    
+    TCanvas* can1 = new TCanvas(); 
+    can1 -> SetLogy();
+    PlotHists(ntrk_1_T, PDF_H, can1); 
+    can1 -> Print("ExampleS.pdf"); 
+    delete can1; 
 
 
     ntrk1_Name = NameGenerator(ntrk_1_T.size(), "FFTdEdx_ntrk_1_tru_"); 
@@ -199,9 +199,9 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
  
-  std::vector<std::vector<float>> Ranges = {{0.1, 8}, {0.2, 8}, {1.5, 8.6}, {2, 8.6}}; 
+  std::vector<std::vector<float>> Ranges = {{0.1, 8.9}, {0.1, 8.9}, {1.5, 8.9}, {2, 8.9}}; 
 
-  float m = 0.6; 
+  float m = 0.5; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Range"] = {0, 8}; 
@@ -215,18 +215,18 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::map<TString, std::vector<float>> Params_NS; 
   Params_NS["Range"] = {0.2, 8}; 
   Params_NS["r_value"] = {2};
-  Params_NS["Range_ntrk_1"] = Ranges[0]; 
-  Params_NS["Range_ntrk_2"] = Ranges[1]; 
-  Params_NS["Range_ntrk_3"] = Ranges[2];   
-  Params_NS["Range_ntrk_4"] = Ranges[3]; 
+  //Params_NS["Range_ntrk_1"] = Ranges[0]; 
+  //Params_NS["Range_ntrk_2"] = Ranges[1]; 
+  //Params_NS["Range_ntrk_3"] = Ranges[2];   
+  //Params_NS["Range_ntrk_4"] = Ranges[3]; 
   Params_NS["dx"] = {m, m, m, m}; 
-  //Params_NS["dx_G"] = {0, 0, 0, 0};
-  Params_NS["Minimizer"] = {1000000}; 
+  Params_NS["dx_G"] = {0, 0, 0, 0};
+  Params_NS["Minimizer"] = {100000}; 
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
-  Params_FFT["Range"] = {0.2, 8}; 
-  Params_FFT["r_value"] = {1.2};
+  Params_FFT["Range"] = {0, 8}; 
+  Params_FFT["r_value"] = {2};
   Params_FFT["Range_ntrk_1"] = Ranges[0]; 
   Params_FFT["Range_ntrk_2"] = Ranges[1]; 
   Params_FFT["Range_ntrk_3"] = Ranges[2];   
@@ -234,7 +234,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["m"] = {m, m, m, m};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["fft_cache"] = {10000}; 
-  Params_FFT["Minimizer"] = {100000}; 
+  Params_FFT["Minimizer"] = {1000000}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 

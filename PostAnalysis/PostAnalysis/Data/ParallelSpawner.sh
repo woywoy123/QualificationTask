@@ -19,12 +19,12 @@ function CreateBatches_Local
 function CondorBuild
 {
   echo "executable = Spawn.sh" >> example.submit
-  echo "output = ./results.output.$""(ClusterID)"  >> example.submit
+  #echo "output = ./results.output.$""(ClusterID)"  >> example.submit
   echo "error =  ./results.error.$""(ClusterID)"  >> example.submit
   #echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
-  echo "Request_Cpus = 4"  >> example.submit
-  echo "Request_Memory = 1GB" >> example.submit
-  echo "+RequestRunTime= 43200"  >> example.submit
+  echo "Request_Cpus = 2"  >> example.submit
+  echo "Request_Memory = 500MB" >> example.submit
+  #echo "+RequestRunTime= 43200"  >> example.submit
   echo "queue 1"  >> example.submit
 }
 
@@ -38,6 +38,9 @@ Mode=("ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Experimental" "Norma
 root_dir=$PWD
 echo $root_dir
 
+export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
+source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
+
 cd ../../
 PostAnalysis_root_dir=$PWD
 echo $PostAnalysis_root_dir
@@ -48,8 +51,7 @@ mkdir PostAnalysisCompiler
 
 cd PostAnalysisCompiler
 cp -r $PostAnalysis_root_dir . 
-export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
-source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
+
 cd PostAnalysis && asetup AnalysisBase,21.2.58,here
 cd ../
 mkdir build 
