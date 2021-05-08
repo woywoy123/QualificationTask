@@ -224,6 +224,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_NS["Minimizer"] = {100000}; 
   
   // Normalization Shift FFT parameters
+  m = 0.5;
   std::map<TString, std::vector<float>> Params_FFT; 
   Params_FFT["Range"] = {0, 8}; 
   Params_FFT["r_value"] = {2};
@@ -234,19 +235,19 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["m"] = {m, m, m, m};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["fft_cache"] = {10000}; 
-  Params_FFT["Minimizer"] = {1000000}; 
+  Params_FFT["Minimizer"] = {100000}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
   Params_WidthFFT["Range"] = {0.2, 8}; 
-  Params_WidthFFT["r_value"] = {1.2};
+  Params_WidthFFT["r_value"] = {2};
   Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
   Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
   Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
   Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
   Params_WidthFFT["m"] = {m, m, m, m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
-  Params_WidthFFT["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
+  Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_WidthFFT["s_G"] = {0.005, 0.005, 0.005, 0.005};
   Params_WidthFFT["fft_cache"] = {10000}; 
@@ -361,7 +362,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     if (All){Mode = "Experimental"; }
     if (Mode == "Experimental")
     {
-      Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_Exp, current);
+      Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_WidthFFT, current);
       Plotter(Fits, TruthVector, current, Mode); 
     }   
     X -> Write();

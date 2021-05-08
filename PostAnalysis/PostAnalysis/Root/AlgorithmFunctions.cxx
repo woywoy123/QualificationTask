@@ -239,7 +239,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
 
   for (int x(0); x < 3; x++)
   {
-    if (x == 1)
+    if (x > 0)
     {
       for (int t(0); t < Data.size(); t++)
       {

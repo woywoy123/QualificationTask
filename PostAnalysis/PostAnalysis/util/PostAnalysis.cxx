@@ -8,6 +8,10 @@ int main(int argc, char* argv[])
   TString JE = argv[1]; 
   TString Mode = argv[2];  
   TString File = argv[3]; 
+
+  //File = "Merged_MC.root"; 
+  //Mode = "ShiftNormalWidthFFT"; 
+  //JE = "Blayer";
   //std::cout << File << std::endl;
   //IOTest(); 
   //RooFitBaseFunctionTest();  

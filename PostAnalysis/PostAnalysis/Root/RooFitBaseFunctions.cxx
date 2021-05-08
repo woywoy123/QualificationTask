@@ -201,6 +201,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
 {
   TH1F* Data = (TH1F*)Data_Org -> Clone("temp"); 
   float Lum = Data -> Integral(); 
+  Data -> Sumw2(); 
 
   //Normalize(Data); 
   Normalize(PDF_H); 
@@ -313,6 +314,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
     pg -> optimizeConst(true); 
     pg -> setEvalErrorWall(true); 
     pg -> setEps(0.00001); 
+    pg -> setPrintLevel(0); 
     re = pg -> fit("r"); 
     pg -> cleanup(); 
     delete pg; 
