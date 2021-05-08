@@ -5,9 +5,9 @@
 
 int main(int argc, char* argv[])
 {
-  TString JE = "x"; //argv[1]; 
-  TString Mode = "Experimental"; //argv[2];  
-  TString File = "x"; //argv[3]; 
+  TString JE = argv[1]; 
+  TString Mode = argv[2];  
+  TString File = argv[3]; 
   //std::cout << File << std::endl;
   //IOTest(); 
   //RooFitBaseFunctionTest();  
