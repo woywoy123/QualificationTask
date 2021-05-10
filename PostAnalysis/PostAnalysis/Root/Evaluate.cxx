@@ -147,7 +147,7 @@ void MultiTrackTruthComparison(TString dir)
         Map[dEdx_S].push_back(trk_P -> KolmogorovTest( trk_T, "" )); 
         Map[dEdx_S].push_back(trk_P -> KolmogorovTest( trk_T, "M" ));
         
-        float r = trk_T -> Integral() / L; 
+        float r = trk_T -> Integral() / L;
         Map[dEdx_S].push_back(r*ErrorByIntegral(trk_P, trk_T)); 
       }
     }
@@ -168,9 +168,16 @@ void MultiTrackTruthComparison(TString dir)
         TH1F* trk_T = Truth[i][p]; 
         
         TString dEdx_S = "dEdx_ntrk_"; dEdx_S += (i+1); dEdx_S += ("_ntru_"); dEdx_S += (p+1);  
-        float r = 1; //trk_T -> Integral() / L; 
+        float r = trk_T -> Integral() / L; 
+       
+        // Simple test cases to validate result table
+        //TString name = trk_P -> GetTitle(); 
+        //if (name.Contains("Experimental")){ r = 0.1; }
+        //if (name.Contains("Normal")){ r = 0.01; }
+        //if (name.Contains("ShiftNormal")){ r = 0.1; }
+        //if (name.Contains("ShiftNormalFFT")){ r = 0.1; }
+        //if (name.Contains("ShiftNormalWidthFFT")){ r = 0.1; }
         
-        TString name = trk_P -> GetTitle(); 
         //if (name.Contains("ShiftNormalWidthFFT_")) { r = 0; }
         float err = r*ErrorByIntegral(trk_P, trk_T); 
         (*Scores)[dEdx_S].push_back(err);
@@ -190,7 +197,7 @@ void MultiTrackTruthComparison(TString dir)
       {
         float e = Map[x -> first][i]; 
         
-        if (e <= err)
+        if (e < err)
         {
           err = e;
           index = i; 
@@ -207,11 +214,59 @@ void MultiTrackTruthComparison(TString dir)
     }
   };
 
+  auto GetStatus =[&] (std::map<TString, std::map<TString, std::vector<float>>> Err, std::map<TString, std::map<TString, std::vector<float>>>* Sta)
+  {
+    for (int i(0); i < 4; i++)
+    {
+      for (MMVFi x = Err.begin(); x != Err.end(); x++)
+      {
+        TString algo = x -> first; 
+        std::map<TString, std::vector<float>> Res = Err[x -> first]; 
+        for (MVFi p = Res.begin(); p != Res.end(); p++)
+        {
+          TString trk = "ntrk_"; trk += (i+1); 
+          TString metric = p -> first; 
+          if (!metric.Contains(trk) || !metric.Contains("fit_status")){continue;}
+          if ((*Sta)[trk][algo].size() == 0){ (*Sta)[trk][algo] = std::vector<float>(6, 0);} 
+          
+          int in = (int)Res[metric][0];
+          (*Sta)[trk][algo][in]++;
+        }
+      } 
+    }
+  };
+  
+  auto GetNormalizationError =[&] (std::map<TString, std::vector<float>> Err)
+  {
+    std::vector<std::vector<float>> Output; 
+    for (int i(0); i < 4; i++)
+    {
+      for (MVFi p = Err.begin(); p != Err.end(); p++)
+      {
+        TString trk = "ntrk_"; trk += (i+1); 
+        TString metric = p -> first; 
+          
+        if (!metric.Contains(trk) || !metric.Contains("Normalization_Error")){continue;}
+        Output.push_back(p -> second);    
+      } 
+    }
+    return Output; 
+  };
+  
+
+
+
+
   bool PlotOn = false; 
   std::map<TString, std::map<TString, std::vector<TH1F*>>> Results = ReadAlgorithmResults(dir); 
   std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> Errors = ReadOutputFileToMap(dir); 
   std::map<TString, std::map<TString, std::vector<float>>> Stats;
   std::map<TString, std::vector<float>> Scores; 
+  std::map<TString, std::map<TString, std::vector<float>>> Status; 
+  std::map<TString, std::vector<float>> Flost2_Map;
+  std::map<TString, std::vector<float>> Flost3_Map;
+  std::vector<TString> Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Experimental"}; 
+
   for (MMVi x = Results.begin(); x != Results.end(); x++)
   {
   
@@ -223,7 +278,10 @@ void MultiTrackTruthComparison(TString dir)
     std::vector<TH1F*> ntrk_2_T = Results[x -> first]["ntrk_2_Truth"]; 
     std::vector<TH1F*> ntrk_3_T = Results[x -> first]["ntrk_3_Truth"]; 
     std::vector<TH1F*> ntrk_4_T = Results[x -> first]["ntrk_4_Truth"]; 
-    std::vector<std::vector<TH1F*>> All_Truth = {ntrk_1_T, ntrk_2_T, ntrk_3_T, ntrk_4_T};  
+    std::vector<std::vector<TH1F*>> All_Truth = {ntrk_1_T, ntrk_2_T, ntrk_3_T, ntrk_4_T}; 
+    std::vector<std::vector<float>> N_Err = GetNormalizationError(Errors[LE]["Truth"]); 
+    Flost2_Map[LE + "_Truth"] = Flost2(All_Truth, N_Err);  
+    Flost3_Map[LE + "_Truth"] = Flost3(All_Truth, N_Err); 
     
     // Return the Algos:
     // Normal
@@ -233,9 +291,12 @@ void MultiTrackTruthComparison(TString dir)
     std::vector<TH1F*> ntrk_4_Normal = Results[x -> first]["Normal_ntrk_4"]; 
     std::vector<std::vector<TH1F*>> All_Normal = {ntrk_1_Normal, ntrk_2_Normal, ntrk_3_Normal, ntrk_4_Normal}; 
     Plotting(All_Truth, All_Normal, LE + "_Normal", PlotOn); 
-    Stats[LE + "_Normal"] = Statistics(All_Truth, All_Normal); 
-    CreateErrorBoard(&Error_Map, All_Truth, All_Normal);  
-
+    //Stats[LE + "_Normal"] = Statistics(All_Truth, All_Normal); 
+    CreateErrorBoard(&Error_Map, All_Truth, All_Normal); 
+    std::vector<std::vector<float>> Normal_Error = GetNormalizationError(Errors[LE]["Normal"]); 
+    Flost2_Map[LE + "_Normal"] = Flost2(All_Normal, Normal_Error);  
+    Flost3_Map[LE + "_Normal"] = Flost3(All_Normal, Normal_Error); 
+ 
     // ShiftNormal
     std::vector<TH1F*> ntrk_1_ShiftNormal = Results[x -> first]["ShiftNormal_ntrk_1"]; 
     std::vector<TH1F*> ntrk_2_ShiftNormal = Results[x -> first]["ShiftNormal_ntrk_2"]; 
@@ -243,8 +304,11 @@ void MultiTrackTruthComparison(TString dir)
     std::vector<TH1F*> ntrk_4_ShiftNormal = Results[x -> first]["ShiftNormal_ntrk_4"]; 
     std::vector<std::vector<TH1F*>> All_ShiftNormal = {ntrk_1_ShiftNormal, ntrk_2_ShiftNormal, ntrk_3_ShiftNormal, ntrk_4_ShiftNormal}; 
     Plotting(All_Truth, All_ShiftNormal, LE + "_ShiftNormal", PlotOn); 
-    Stats[LE + "_ShiftNormal"] = Statistics(All_Truth, All_ShiftNormal);
+    //Stats[LE + "_ShiftNormal"] = Statistics(All_Truth, All_ShiftNormal);
     CreateErrorBoard(&Error_Map, All_Truth, All_ShiftNormal);  
+    std::vector<std::vector<float>> ShiftNormal_Error = GetNormalizationError(Errors[LE]["ShiftNormal"]); 
+    Flost2_Map[LE + "_ShiftNormal"] = Flost2(All_ShiftNormal, ShiftNormal_Error);  
+    Flost3_Map[LE + "_ShiftNormal"] = Flost3(All_ShiftNormal, ShiftNormal_Error); 
 
     // ShiftNormalFFT
     std::vector<TH1F*> ntrk_1_ShiftNormalFFT = Results[x -> first]["ShiftNormalFFT_ntrk_1"]; 
@@ -253,9 +317,12 @@ void MultiTrackTruthComparison(TString dir)
     std::vector<TH1F*> ntrk_4_ShiftNormalFFT = Results[x -> first]["ShiftNormalFFT_ntrk_4"]; 
     std::vector<std::vector<TH1F*>> All_ShiftNormalFFT = {ntrk_1_ShiftNormalFFT, ntrk_2_ShiftNormalFFT, ntrk_3_ShiftNormalFFT, ntrk_4_ShiftNormalFFT}; 
     Plotting(All_Truth, All_ShiftNormalFFT, LE + "_ShiftNormalFFT", PlotOn); 
-    Stats[LE + "_ShiftNormalFFT"] = Statistics(All_Truth, All_ShiftNormalFFT);
+    //Stats[LE + "_ShiftNormalFFT"] = Statistics(All_Truth, All_ShiftNormalFFT);
     CreateErrorBoard(&Error_Map, All_Truth, All_ShiftNormalFFT);  
-   
+    std::vector<std::vector<float>> ShiftNormalFFT_Error = GetNormalizationError(Errors[LE]["ShiftNormalFFT"]); 
+    Flost2_Map[LE + "_ShiftNormalFFT"] = Flost2(All_ShiftNormalFFT, ShiftNormalFFT_Error);  
+    Flost3_Map[LE + "_ShiftNormalFFT"] = Flost3(All_ShiftNormalFFT, ShiftNormalFFT_Error); 
+
     // ShiftNormalWidthFFT
     std::vector<TH1F*> ntrk_1_ShiftNormalWidthFFT = Results[x -> first]["ShiftNormalWidthFFT_ntrk_1"]; 
     std::vector<TH1F*> ntrk_2_ShiftNormalWidthFFT = Results[x -> first]["ShiftNormalWidthFFT_ntrk_2"]; 
@@ -263,29 +330,60 @@ void MultiTrackTruthComparison(TString dir)
     std::vector<TH1F*> ntrk_4_ShiftNormalWidthFFT = Results[x -> first]["ShiftNormalWidthFFT_ntrk_4"]; 
     std::vector<std::vector<TH1F*>> All_ShiftNormalWidthFFT = {ntrk_1_ShiftNormalWidthFFT, ntrk_2_ShiftNormalWidthFFT, ntrk_3_ShiftNormalWidthFFT, ntrk_4_ShiftNormalWidthFFT}; 
     Plotting(All_Truth, All_ShiftNormalWidthFFT, LE + "_ShiftNormalWidthFFT", PlotOn); 
-    Stats[LE + "_ShiftNormalWidthFFT"] = Statistics(All_Truth, All_ShiftNormalWidthFFT);
+    //Stats[LE + "_ShiftNormalWidthFFT"] = Statistics(All_Truth, All_ShiftNormalWidthFFT);
     CreateErrorBoard(&Error_Map, All_Truth, All_ShiftNormalWidthFFT);  
-    
+    std::vector<std::vector<float>> ShiftNormalWidthFFT_Error = GetNormalizationError(Errors[LE]["ShiftNormalWidthFFT"]); 
+    Flost2_Map[LE + "_ShiftNormalWidthFFT"] = Flost2(All_ShiftNormalWidthFFT, ShiftNormalWidthFFT_Error);  
+    Flost3_Map[LE + "_ShiftNormalWidthFFT"] = Flost3(All_ShiftNormalWidthFFT, ShiftNormalWidthFFT_Error); 
+
+    // Experimental
+    std::vector<TH1F*> ntrk_1_Experimental = Results[x -> first]["Experimental_ntrk_1"]; 
+    std::vector<TH1F*> ntrk_2_Experimental = Results[x -> first]["Experimental_ntrk_2"]; 
+    std::vector<TH1F*> ntrk_3_Experimental = Results[x -> first]["Experimental_ntrk_3"]; 
+    std::vector<TH1F*> ntrk_4_Experimental = Results[x -> first]["Experimental_ntrk_4"]; 
+    std::vector<std::vector<TH1F*>> All_Experimental = {ntrk_1_Experimental, ntrk_2_Experimental, ntrk_3_Experimental, ntrk_4_Experimental}; 
+    Plotting(All_Truth, All_Experimental, LE + "_Experimental", PlotOn); 
+    //Stats[LE + "_Experimental"] = Statistics(All_Truth, All_Experimental);
+    CreateErrorBoard(&Error_Map, All_Truth, All_Experimental);  
+    std::vector<std::vector<float>> Experimental_Error = GetNormalizationError(Errors[LE]["Experimental"]); 
+    Flost2_Map[LE + "_Experimental"] = Flost2(All_Experimental, Experimental_Error);  
+    Flost3_Map[LE + "_Experimental"] = Flost3(All_Experimental, Experimental_Error); 
+
+    GetStatus(Errors[LE], &Status); 
     GetScores(Error_Map, &Scores); 
-    
   }
+
+  // ============= COUT STUFF ===================== //
+  auto CompileHeading =[&] (std::vector<TString> Algo_Strings, TString sep, int margin, TString* out)
+  {
+    CoutText(&(*out), margin-1, " "); 
+    for (int i(0); i < Algo_Strings.size(); i++)
+    {
+      *out += (sep); 
+      *out += Algo_Strings[i]; 
+      CoutText(&(*out), margin - Algo_Strings[i].Sizeof(), " "); 
+    }
+    *out += (sep); 
+  }; 
+
+  auto InjectString =[&] (std::vector<TString> Algo_Strings, TString sep, int margin, TString* out, TString inject)
+  {
+    CoutText(&(*out), margin-1, " "); 
+    for (int i(0); i < Algo_Strings.size(); i++)
+    {
+      *out += (sep); 
+      *out += inject; 
+      CoutText(&(*out), margin - inject.Sizeof(), " "); 
+    }
+    *out += (sep); 
+  }; 
 
 
   std::vector<TString> cout_V; 
   TString out; 
   int margin = 20; 
   TString sep = " | "; 
-  
-  CoutText(&out, margin-1, " "); 
-  
-  std::vector<TString> Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT"}; 
-  for (int i(0); i < Algo_Strings.size(); i++)
-  {
-    out += (sep); 
-    out += Algo_Strings[i]; 
-    CoutText(&out, margin - Algo_Strings[i].Sizeof(), " "); 
-  }
-  out += (sep); 
+  CompileHeading(Algo_Strings, sep, margin, &out); 
   cout_V.push_back(out); 
   out.Clear();  
 
@@ -313,6 +411,9 @@ void MultiTrackTruthComparison(TString dir)
     out.Clear();
   }
 
+
+
+  // Best performing fit: Minimal Truth-Track Error.
   std::map<TString, std::vector<float>> verdict; 
   for (MVFi p = Scores.begin(); p != Scores.end(); p++)
   {
@@ -360,6 +461,197 @@ void MultiTrackTruthComparison(TString dir)
 
     cout_V.push_back(out); 
     out.Clear();
+  }
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+
+
+
+  // ===== Status codes from individual fits ===== //
+  cout_V.push_back("Status codes per Track fit"); 
+ 
+  std::vector<TString> status_table;
+  status_table.push_back(out); 
+  CoutText(&status_table[0], margin-2, " "); 
+  status_table[0] += sep; 
+  
+  int index = 0; 
+  for (MMVFi s = Status.begin(); s != Status.end(); s++)
+  {
+    out += s -> first; 
+    CoutText(&out, margin - (s -> first).Sizeof() -1, " "); 
+    out += (sep); 
+    
+    for (MVFi a = (s -> second).begin(); a != (s -> second).end(); a++)
+    {
+      TString algo = a -> first; 
+      int size = (a -> second).size();
+      index++; 
+      
+      if (index < size)
+      {
+        status_table[0] += algo; 
+        CoutText(&status_table[0], margin - algo.Sizeof()-1, " "); 
+        status_table[0] += sep; 
+      }
+      
+      TString sub; 
+      for (int t(0); t < (a -> second).size(); t++)
+      {
+        float l = (a -> second)[t]; 
+        if (l != 0)
+        { 
+          sub += l; 
+          sub += "("; sub += t; sub += ") "; 
+        }
+      }
+      
+      out += sub;
+      CoutText(&out, margin - sub.Sizeof() -1, " "); 
+      out += sep;
+    }
+    status_table.push_back(out); 
+    out.Clear(); 
+  }
+  for (TString a : status_table){ cout_V.push_back(a); }
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+
+
+  // ========= FLOST comparisons to truth ============= //
+  margin = 35;
+  std::vector<TString> Fl3_cout;
+  std::vector<TString> Fl2_cout;
+
+  CompileHeading(Algo_Strings, sep, margin, &out); 
+  out += "Truth";
+  Fl2_cout.push_back(out); 
+  Fl3_cout.push_back(out); 
+  out.Clear();  
+
+  
+  InjectString(Algo_Strings, sep, margin, &out, "F2       (Error)    [Delta]"); 
+  Fl2_cout.push_back(out); 
+  out.Clear();  
+
+  InjectString(Algo_Strings, sep, margin, &out, "F3       (Error)    [Delta]"); 
+  Fl3_cout.push_back(out); 
+  out.Clear();  
+  
+  std::map<TString, int> Score_algos_2; 
+  std::map<TString, int> Score_algos_3; 
+  for (TString i : Algo_Strings)
+  {
+    Score_algos_2[i] = 0; 
+    Score_algos_3[i] = 0; 
+  }
+
+
+  for (MMVi x = Results.begin(); x != Results.end(); x++)
+  {
+    auto ReturnBest =[&] (std::vector<TString> Algo_Strings, std::map<TString, std::vector<float>> FlostMap, int margin, TString LE, TString* out, TString* Best)
+    {
+      float Er = 100;
+      for (TString alg : Algo_Strings)
+      {
+        std::vector<float> Truth = FlostMap[LE +"_Truth"]; 
+        std::vector<float> Flost_P = FlostMap[LE + "_" + alg]; 
+        float dif = Truth[0] - Flost_P[0]; 
+        if ( Er > std::abs(dif))
+        {
+          *Best = alg; 
+          Er = std::abs(dif); 
+        }
+        
+        TString x = PrecisionString(Flost_P[0], 2, true);
+        x += " ("; 
+        x += PrecisionString(Flost_P[1], 2, true);
+        x += ") "; 
+        x += "["; 
+        x += PrecisionString(dif, 2, true);  
+        x += "]"; 
+        *out += x; 
+        CoutText(&(*out), margin - x.Sizeof(), " "); 
+        *out += " | "; 
+      }
+    };
+
+    out.Clear(); 
+    TString LE = x -> first; 
+    out += LE; 
+    CoutText(&out, margin - LE.Sizeof(), " "); 
+    out += sep; 
+    
+    // ========= Flost comparisons ========= //
+    TString out2 = out; 
+    TString out3 = out; 
+    std::vector<float> Flost2_T = Flost2_Map[LE + "_Truth"];
+    std::vector<float> Flost3_T = Flost3_Map[LE + "_Truth"];
+    
+    TString Best_Fit2;
+    TString Best_Fit3;
+
+    ReturnBest(Algo_Strings, Flost2_Map, margin, LE, &out2, &Best_Fit2);  
+    ReturnBest(Algo_Strings, Flost3_Map, margin, LE, &out3, &Best_Fit3); 
+
+    out2 += PrecisionString(Flost2_T[0], 2, true);
+    out3 += PrecisionString(Flost3_T[0], 2, true);
+
+    Fl2_cout.push_back(out2); 
+    Fl3_cout.push_back(out3); 
+    
+    Score_algos_2[Best_Fit2]++;
+    Score_algos_3[Best_Fit3]++;
+  }
+
+  for (TString i : Fl2_cout){cout_V.push_back(i);}
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+  for (TString i : Fl3_cout){cout_V.push_back(i);}
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+  
+  cout_V.push_back("Final FLost 2 Scores"); 
+  out.Clear();
+  out += ("Algorithm"); 
+  CoutText(&out, margin - out.Sizeof(), " "); 
+  out += sep; 
+  out += "Score"; 
+  cout_V.push_back(out);
+  out.Clear(); 
+  for (MIi x = Score_algos_2.begin(); x != Score_algos_2.end(); x++)
+  {
+    out += x -> first; 
+    CoutText(&out, margin - (x->first).Sizeof(), " "); 
+    out += sep; 
+    out += x -> second; 
+    cout_V.push_back(out); 
+    out.Clear(); 
+  }
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+  cout_V.push_back(" "); 
+
+  cout_V.push_back("Final FLost 3 Scores"); 
+  out.Clear();
+  out += ("Algorithm"); 
+  CoutText(&out, margin - out.Sizeof(), " "); 
+  out += sep; 
+  out += "Score"; 
+  cout_V.push_back(out);
+  out.Clear(); 
+  for (MIi x = Score_algos_3.begin(); x != Score_algos_3.end(); x++)
+  {
+    out += x -> first; 
+    CoutText(&out, margin - (x->first).Sizeof(), " "); 
+    out += sep; 
+    out += x -> second; 
+    cout_V.push_back(out); 
+    out.Clear(); 
   }
 
   std::ofstream myfile; 

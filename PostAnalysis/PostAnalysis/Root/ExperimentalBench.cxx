@@ -253,21 +253,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["fft_cache"] = {10000}; 
   Params_WidthFFT["Minimizer"] = {100000}; 
 
-  // Normalization Shift Width FFT parameters
-  std::map<TString, std::vector<float>> Params_Exp; 
-  Params_Exp["Range"] = {0.2, 8}; 
-  Params_Exp["r_value"] = {1.2};
-  Params_Exp["Range_ntrk_1"] = Ranges[0]; 
-  Params_Exp["Range_ntrk_2"] = Ranges[1];   
-  Params_Exp["Range_ntrk_3"] = Ranges[2];  
-  Params_Exp["Range_ntrk_4"] = Ranges[3]; 
-  Params_Exp["m"] = {m, m, m, m};
-  Params_Exp["m_G"] = {0, 0, 0, 0}; 
-  Params_Exp["s_s"] = {0, 0, 0, 0};
-  Params_Exp["s_e"] = {0.01, 0.01, 0.01, 0.01};
-  Params_Exp["fft_cache"] = {10000}; 
-  Params_Exp["Minimizer"] = {100000}; 
-
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   for (MMVi x = F.begin(); x != F.end(); x++)
   {

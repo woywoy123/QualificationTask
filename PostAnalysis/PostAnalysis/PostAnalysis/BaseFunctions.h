@@ -52,7 +52,7 @@ typedef std::map<TString, std::vector<TH1F*>>::iterator MVi;
 typedef std::map<TString, std::vector<std::vector<TH1F*>>> MVVi; 
 typedef std::map<TString, std::vector<float>>::iterator MVFi; 
 typedef std::map<TString, std::map<TString, std::vector<float>>>::iterator MMVFi; 
-
-
-
+typedef std::map<TString, std::map<TString, float>>::iterator MMFi; 
+typedef std::map<TString, float>::iterator MFi;
+typedef std::map<TString, int>::iterator MIi; 
 #endif

@@ -9,21 +9,20 @@ int main(int argc, char* argv[])
   TString Mode = argv[2];  
   TString File = argv[3]; 
 
-  //File = "Merged_MC.root"; 
-  //Mode = "ShiftNormalWidthFFT"; 
-  //JE = "Blayer";
+  File = "Merged_MC.root"; 
+  Mode = "ShiftNormalWidthFFT"; 
+  JE = "Blayer";
   //std::cout << File << std::endl;
   //IOTest(); 
   //RooFitBaseFunctionTest();  
   //TestFits_NTruth_NTrack();  
   //TestRead(); 
   //CompareToTruth("ntrk_ntru.root"); 
-  std::cout << "+++" << JE << " " << Mode << std::endl;
-  TestFits_AllTruth_ToTrack(JE, Mode, File);  
+  //std::cout << "+++" << JE << " " << Mode << std::endl;
+  //TestFits_AllTruth_ToTrack(JE, Mode, File);  
   //ReadOutputFileToMap("Fit_Tracks.root"); 
 
-  //MultiTrackTruthComparison("MultiTrackFit.root"); 
-  //CompareToTruth("MultiTrackFit.root"); 
+  MultiTrackTruthComparison("MultiTrackFit.root"); 
 
 
 

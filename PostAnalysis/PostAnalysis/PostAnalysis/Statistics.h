@@ -8,7 +8,7 @@
 
 // Benchmarking 
 float ErrorByIntegral(TH1F* Hist1, TH1F* Hist2, float x_min = 0, float x_max = 0); 
-std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<TH1F*> Err); 
-std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<TH1F*> Err); 
+std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<std::vector<float>> Err); 
+std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<std::vector<float>> Err); 
 
 #endif

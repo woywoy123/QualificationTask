@@ -362,6 +362,7 @@ std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> Read
           }
         }
       }
+      if (Alg_Folder.Contains("ntrk")){continue;}
       Algorithms_Map[Alg_Folder] = key_map; 
     }
     Output[Folder] = Algorithms_Map; 

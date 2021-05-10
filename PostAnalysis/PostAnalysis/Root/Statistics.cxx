@@ -29,7 +29,7 @@ float ErrorByIntegral(TH1F* Hist1, TH1F* Hist2, float x_min, float x_max)
 
 }
 
-std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<TH1F*>Err)
+std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<std::vector<float>> Err)
 {
   std::vector<float> fi = {0, 0, 0}; 
   for (int i(0); i < ntrk.size(); i++)
@@ -49,9 +49,9 @@ std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<TH1F
   std::vector<std::vector<float>> Error = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
   for (int i(0); i < Err.size(); i++)
   {
-    for (int x(0); x < Err[i] -> GetNbinsX(); x++)
+    for (int x(0); x < Err[i].size(); x++)
     {
-      if (x < Error[i].size() && i < Error.size()){Error[i][x] = Err[i] -> GetBinContent(x+1);}
+      if (x < Error[i].size() && i < Error.size()){Error[i][x] = Err[i][x];}
     }
   }
 
@@ -64,7 +64,7 @@ std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<TH1F
   return {FLost2, E_flost2};
 }
 
-std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<TH1F*>Err)
+std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<std::vector<float>> Err)
 {
   std::vector<float> fi = {0, 0, 0, 0}; 
   for (int i(0); i < ntrk.size(); i++)
@@ -85,9 +85,9 @@ std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<TH1F
   std::vector<std::vector<float>> Error = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
   for (int i(0); i < Err.size(); i++)
   {
-    for (int x(0); x < Err[i] -> GetNbinsX(); x++)
+    for (int x(0); x < Err[i].size(); x++)
     {
-      if (x < Error[i].size() && i < Error.size()){Error[i][x] = Err[i] -> GetBinContent(x+1);}
+      if (x < Error[i].size() && i < Error.size()){Error[i][x] = Err[i][x];}
     }
   }
 
