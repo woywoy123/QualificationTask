@@ -203,7 +203,6 @@ void MultiTrackTruthComparison(TString dir)
           index = i; 
         }
       }
-      //std::cout << x -> first << std::endl;
       Best.push_back(std::pair<TString, float>(x -> first, index)); 
     }
     
@@ -351,8 +350,9 @@ void MultiTrackTruthComparison(TString dir)
 
     GetStatus(Errors[LE], &Status); 
     GetScores(Error_Map, &Scores); 
+    
   }
-
+  
   // ============= COUT STUFF ===================== //
   auto CompileHeading =[&] (std::vector<TString> Algo_Strings, TString sep, int margin, TString* out)
   {
@@ -556,15 +556,14 @@ void MultiTrackTruthComparison(TString dir)
       float Er = 100;
       for (TString alg : Algo_Strings)
       {
-        std::vector<float> Truth = FlostMap[LE +"_Truth"]; 
+        std::vector<float> Truth = FlostMap[LE + "_Truth"]; 
         std::vector<float> Flost_P = FlostMap[LE + "_" + alg]; 
         float dif = Truth[0] - Flost_P[0]; 
         if ( Er > std::abs(dif))
         {
           *Best = alg; 
-          Er = std::abs(dif); 
+          Er = std::abs(dif);
         }
-        
         TString x = PrecisionString(Flost_P[0], 2, true);
         x += " ("; 
         x += PrecisionString(Flost_P[1], 2, true);
@@ -592,7 +591,6 @@ void MultiTrackTruthComparison(TString dir)
     
     TString Best_Fit2;
     TString Best_Fit3;
-
     ReturnBest(Algo_Strings, Flost2_Map, margin, LE, &out2, &Best_Fit2);  
     ReturnBest(Algo_Strings, Flost3_Map, margin, LE, &out3, &Best_Fit3); 
 
@@ -860,8 +858,7 @@ void CompileCout(std::vector<TString> JetEnergy, std::vector<TString> Algo_Strin
   myfile.open("Results.txt"); 
   for (TString S : cout_V)
   {
-    std::cout << S << std::endl;
-
+    //std::cout << S << std::endl;
     myfile << S << "\n"; 
   }
   myfile.close(); 

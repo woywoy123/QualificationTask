@@ -265,7 +265,7 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TS
       {
         if (H_TS.Contains("_error")){continue;}
         TH1F* H = (TH1F*)gDirectory -> Get(H_TS);
-
+        
         // Truth inside the jet core. 
         if (!Alg_Folder.Contains("ntrk_1_T") && H_TS.Contains("ntrk_1")){ Algorithms_Map[Alg_Folder + "_ntrk_1"].push_back(H); }
         if (!Alg_Folder.Contains("ntrk_2_T") && H_TS.Contains("ntrk_2")){ Algorithms_Map[Alg_Folder + "_ntrk_2"].push_back(H); }

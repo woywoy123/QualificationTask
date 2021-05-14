@@ -21,10 +21,10 @@ float ErrorByIntegral(TH1F* Hist1, TH1F* Hist2, float x_min, float x_max)
     float h2 = Hist2 -> GetBinContent(i+1); 
     sum += std::abs(h1 - h2);
   } 
-  float A = Hist2 -> Integral(bin_min, bin_max); 
-  float r = sum / A; 
+  float A = Hist2 -> Integral(); 
+  float r = std::abs((sum / A)); 
   if (std::isinf(r)){r = 100;}
-  if (std::isnan(r)){r = 100; }
+  if (std::isnan(r)){r = 100;}
   return r; 
 
 }
@@ -37,6 +37,7 @@ std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
     if (ntrk[i].size() > 1 && i < fi.size())
     {  
       fi[i] = ntrk[i][1] -> Integral(); 
+      std::cout << ntrk[i][1] -> GetTitle() <<  " " << ntrk[i][1] -> Integral() << std::endl;
     }
   }
 
@@ -44,7 +45,7 @@ std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
   float n_1_2 = fi[0];
   float n_2_2 = fi[1];
   float n_3_2 = fi[2];
-  float FLost2 = float(n_1_2 + n_3_2) / float(2.*(n_1_2 + n_2_2 + n_3_2)); 
+  float FLost2 = float(n_1_2) / float(2.*(n_1_2 + n_2_2)); 
   
   std::vector<std::vector<float>> Error = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
   for (int i(0); i < Err.size(); i++)
@@ -57,10 +58,8 @@ std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
 
   float E_1_2 = Error[0][1];  
   float E_2_2 = Error[1][1];  
-  float E_3_2 = Error[2][1];  
   
-  float E_flost2 = (1./(2*std::pow(n_1_2 + n_2_2 + n_3_2, 2))) * std::pow(std::pow(n_2_2 - n_1_2 - n_3_2, 2)*(std::pow(E_1_2, 2) + std::pow(E_3_2, 2)) + std::pow(2*(n_1_2 + n_3_2), 2)*std::pow(E_2_2, 2), 0.5); 
-
+  float E_flost2 = (1./(n_1_2 + n_2_2)) * std::pow((1/2)*(std::pow(n_2_2 * E_1_2, 2) + std::pow(n_1_2 * E_2_2, 2)), 0.5);
   return {FLost2, E_flost2};
 }
 
@@ -80,7 +79,7 @@ std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
   float n_2_3 = fi[1];
   float n_3_3 = fi[2];
   float n_4_3 = fi[3]; 
-  float FLost3 = float(2*n_1_3 + n_2_3 + n_4_3) / float(3.*(n_1_3 + n_2_3 + n_3_3 + n_4_3)); 
+  float FLost3 = float(2*n_1_3 + n_2_3) / float(3.*(n_1_3 + n_2_3 + n_3_3 + n_4_3)); 
   
   std::vector<std::vector<float>> Error = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
   for (int i(0); i < Err.size(); i++)
@@ -95,8 +94,9 @@ std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
   float E_2_3 = Error[1][2];  
   float E_3_3 = Error[2][2];  
   float E_4_3 = Error[3][2]; 
-  
-  float E_flost3 = float( float(1.) / float( 3. * std::pow(n_1_3 + n_2_3 + n_3_3 + n_4_3, 2)) ) * std::sqrt( std::pow(n_2_3 + 2*n_3_3 + n_4_3, 2) * std::pow(E_1_3, 2 ) + std::pow(n_3_3 - n_1_3, 2) * (std::pow(E_4_3, 2) + std::pow(E_2_3, 2)) + std::pow( 2*n_1_3 + n_2_3 + n_4_3, 2 ) * std::pow(E_3_3, 2));
+
+  float denom = 3*std::pow((n_1_3 + n_2_3 + n_3_3 + n_4_3), 2); 
+  float E_flost3 = (1 / denom) * std::pow( std::pow((n_2_3 + 2*n_3_3 + n_4_3)*E_1_3, 2) + std::pow( (n_3_3 + n_4_3 - n_1_3) * E_2_3, 2) + std::pow( 2*n_1_3 + n_2_3, 2) * (std::pow(E_3_3, 2) + std::pow(E_4_3, 2)), 0.5); 
 
   return {FLost3, E_flost3};
 }

@@ -223,9 +223,10 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
   std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
   std::vector<float> l_s(l_N.size(), 0); 
-  std::vector<float> l_g(l_N.size(), 0.5 * Data -> Integral()); 
-  std::vector<float> l_e(l_N.size(), r*Data -> Integral()); 
-  std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_g, l_s, l_e); 
+  std::vector<float> l_e(l_N.size(), r*Data -> Integral());
+  std::vector<RooRealVar*> l_vars; 
+  if (Params["l_G"].size() != 0){l_vars = RooRealVariable(l_N, Params["l_G"], l_s, l_e);}
+  else {l_vars = RooRealVariable(l_N, l_s, l_e);}
 
   // Mean variables
   std::vector<TString> m_N = NameGenerator(PDF_H, "_M"); 
@@ -299,7 +300,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   RooFitResult* re; 
   if (Params["Minimizer"].size() == 0)
   {
-    re = model.fitTo(D, Range("fit"), SumW2Error(true), NumCPU(n_cpu), Extended(true), Save()); 
+    re = model.fitTo(D, Range("fit"), SumW2Error(true), Extended(true), Save()); 
   }
   else
   {
@@ -312,8 +313,8 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
     pg -> hesse();
     pg -> improve(); 
     pg -> optimizeConst(true); 
-    pg -> setEvalErrorWall(true); 
-    pg -> setEps(0.00001); 
+    //pg -> setEvalErrorWall(true); 
+    pg -> setEps(1e-4); 
     pg -> setPrintLevel(0); 
     re = pg -> fit("r"); 
     pg -> cleanup(); 
@@ -420,4 +421,106 @@ std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<T
   std::map<TString, std::vector<float>> Output = ConvolutionFFT(Data, PDF_H, Params);
   
   return Output;
+}
+
+
+
+/// NEED TO FIX THIS!!!!
+std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
+{
+
+  float x_min = Data[0] -> GetXaxis() -> GetXmin(); 
+  float x_max = Data[0] -> GetXaxis() -> GetXmax(); 
+  int bins = Data[0] -> GetNbinsX(); 
+
+  RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
+  //if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
+  if (Params["fft_cache"].size() != 0)
+  {
+    x -> setBins(Params["fft_cache"][0], "fft"); 
+    x -> setBins(Params["fft_cache"][0], "cache");  
+  }
+
+  // Generate the variables for each ntrk
+  
+  std::vector<RooAddPdf> s_models; 
+  std::vector<RooAddPdf> b_models;
+
+  std::vector<std::vector<RooRealVar*>> Future_Rubbish; 
+  std::vector<std::vector<RooGaussian*>> Future_Rubbish_G; 
+  std::vector<std::vector<RooDataHist*>> Future_Rubbish_D; 
+  std::vector<std::vector<RooFFTConvPdf*>> Future_Rubbish_FT; 
+  std::vector<std::vector<RooHistPdf*>> Future_Rubbish_P;
+  
+  for (int i(0); i < PDF_H.size(); i++)
+  {
+    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H[i], Params, 0, Data[i] -> Integral()); 
+    std::vector<RooRealVar*> s_var = ProtectionRealVariable("s", PDF_H[i], Params, 0.0001, 0.0002); 
+    std::vector<RooRealVar*> m_var = ProtectionRealVariable("m", PDF_H[i], Params, -0.0001, 0.0001); 
+
+    // Create the resolution model: Gaussian 
+    std::vector<TString> g_N = NameGenerator(PDF_H[i], "_Gx");
+    std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_var, s_var); 
+    
+    // Create the PDFs for the model 
+    std::vector<TString> pdf_N_D = NameGenerator(PDF_H[i], "_D"); 
+    std::vector<RooDataHist*> pdf_D = RooDataVariable(pdf_N_D, x, PDF_H[i]); 
+    std::vector<TString> pdf_N_P = NameGenerator(PDF_H[i], "_P"); 
+    std::vector<RooHistPdf*> pdf_P = RooPdfVariable(pdf_N_P, x, pdf_D); 
+
+    // Convolve the Gaussian and the PDFs
+    std::vector<TString> pxg_N = NameGenerator(PDF_H[i], "_PxG"); 
+    std::vector<RooFFTConvPdf*> PxG_vars = RooFFTVariable(pxg_N, x, g_vars, pdf_P); 
+
+    RooArgList L_B; 
+    RooArgList PxG_B; 
+    RooArgList L_S; 
+    RooArgList PxG_S; 
+    for (int p(0); p < PxG_vars.size(); p++)
+    {
+      // Create the background model for i != p (i.e. ntrack != mtru) 
+      if (p != i)
+      {
+        PxG_B.add(*PxG_vars[p]); 
+        L_B.add(*l_var[p]); 
+      }
+      
+      // Create the signal for the n-Track ntru 
+      if (p == i)
+      {
+        PxG_S.add(*PxG_vars[p]); 
+        L_S.add(*l_var[p]); 
+      }
+    }
+    
+    TString back_name = "dEdx_ntrk_"; back_name += (i+1); back_name += ("_background"); 
+    TString sig_name = "dEdx_ntrk_"; sig_name += (i+1); sig_name += ("signal"); 
+    RooAddPdf background(back_name, back_name, L_B, PxG_B); 
+    RooAddPdf signal(sig_name, sig_name, L_S, PxG_S);
+
+    s_models.push_back(signal); 
+    b_models.push_back(background); 
+
+  }
+  
+
+  RooCategory sample("sample", "sample"); 
+  sample.defineType("dEdx_ntrk1_H");
+  sample.defineType("dEdx_ntrk1_H_B"); 
+  RooDataHist* H = RooDataVariable({"dEdx_ntrk_1"}, x, {Data[0]})[0]; 
+  
+  RooSimultaneous simPDF("simPDF", "simPDF", sample);
+  simPDF.addPdf(s_models[0], "dEdx_ntrk1_H"); 
+  simPDF.addPdf(b_models[0], "dEdx_ntrk1_H_B"); 
+  simPDF.fitTo(*H);
+
+
+
+  
+
+
+
+  return Params; // Change after
+
+
 }

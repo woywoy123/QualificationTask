@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
   TString File = argv[3]; 
 
   File = "Merged_MC.root"; 
-  Mode = "ShiftNormalWidthFFT"; 
+  Mode = "IncrementalFit"; 
   JE = "Blayer";
   //std::cout << File << std::endl;
   //IOTest(); 
@@ -19,10 +19,10 @@ int main(int argc, char* argv[])
   //TestRead(); 
   //CompareToTruth("ntrk_ntru.root"); 
   //std::cout << "+++" << JE << " " << Mode << std::endl;
-  //TestFits_AllTruth_ToTrack(JE, Mode, File);  
+  TestFits_AllTruth_ToTrack(JE, Mode, File);  
   //ReadOutputFileToMap("Fit_Tracks.root"); 
 
-  MultiTrackTruthComparison("MultiTrackFit.root"); 
+  //MultiTrackTruthComparison("MultiTrackFit.root"); 
 
 
 

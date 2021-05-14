@@ -15,6 +15,9 @@
 #include<TMatrixDSym.h>
 #include<RooAbsReal.h>
 #include<RooMinimizer.h>
+#include<RooSimultaneous.h>
+#include<RooDataSet.h>
+#include<RooCategory.h>
 
 
 using namespace RooFit;
@@ -41,6 +44,35 @@ static std::vector<RooRealVar*> RooRealVariable(std::vector<TString> Names, std:
   }
   return Variables; 
 }
+
+static void VariableConstant(std::vector<float> Bools, std::vector<RooRealVar*> Vars)
+{
+  for (int i(0); i < Vars.size(); i++)
+  { 
+    bool on; 
+    if (Bools[i] == 1){ on = true; }
+    else {on = false;}
+
+    Vars[i] -> setConstant(on); 
+  }
+}
+
+
+static std::vector<RooRealVar*> ProtectionRealVariable(TString ext, std::vector<TH1F*> PDF, std::map<TString, std::vector<float>> Params, float start, float end)
+{
+  std::vector<TString> var_N = NameGenerator(PDF, "_" + ext); 
+  if (Params[ext + "_s"].size() == 0){Params[ext + "_s"] = std::vector<float>(PDF.size(), start);} 
+  if (Params[ext + "_e"].size() == 0){Params[ext + "_e"] = std::vector<float>(PDF.size(), end);} 
+
+  std::vector<RooRealVar*> v_vars;
+  if (Params[ext + "_G"].size() != 0){v_vars = RooRealVariable(var_N, Params[ext + "_G"], Params[ext + "_s"], Params[ext + "_e"]);}
+  else{v_vars = RooRealVariable(var_N, Params[ext + "_s"], Params[ext + "_e"]);}
+
+  if (Params[ext + "_C"].size() != 0){ VariableConstant(Params[ext + "_C"], v_vars);}
+
+  return v_vars; 
+}
+
 
 // PDF + Data related Variables 
 static std::vector<RooDataHist*> RooDataVariable(std::vector<TString> Name, RooRealVar* domain, std::vector<TH1F*> Hist)
@@ -139,6 +171,8 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
 std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = "");
 std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = "");
+std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
+
 
 const int n_cpu = 4; 
 

@@ -19,7 +19,7 @@ void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle S
 void PlotHists(TH1F* Hist, TCanvas* can)
 {
   can -> SetLogy(); 
-  Hist -> Draw("SAMEHIST"); 
+  Hist -> Draw("HIST"); 
   can -> Update(); 
 }
 
