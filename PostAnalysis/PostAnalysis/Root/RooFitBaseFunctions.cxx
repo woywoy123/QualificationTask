@@ -424,103 +424,159 @@ std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<T
 }
 
 
-
-/// NEED TO FIX THIS!!!!
-std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
+std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H_V, std::map<TString, std::vector<float>> Params, TString Name)
 {
+  auto Minimization =[&] (RooAbsReal* nll, std::map<TString, std::vector<float>> Params)
+  {
+    RooMinimizer* pg = new RooMinimizer(*nll); 
+    pg -> setMaxIterations(Params["Minimizer"][0]); 
+    pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
+    pg -> migrad(); 
+    pg -> minos();
+    pg -> hesse();
+    pg -> improve(); 
+    pg -> optimizeConst(true); 
+    pg -> setEps(1e-6); 
+    pg -> setPrintLevel(0); 
+    RooFitResult* re = pg -> fit("r"); 
+    pg -> cleanup(); 
+    delete pg; 
+    delete nll;
+    
+    return re; 
+  }; 
 
   float x_min = Data[0] -> GetXaxis() -> GetXmin(); 
   float x_max = Data[0] -> GetXaxis() -> GetXmax(); 
   int bins = Data[0] -> GetNbinsX(); 
 
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  //if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
   if (Params["fft_cache"].size() != 0)
   {
     x -> setBins(Params["fft_cache"][0], "fft"); 
     x -> setBins(Params["fft_cache"][0], "cache");  
   }
 
-  // Generate the variables for each ntrk
+  std::vector<TH1F*> PDF_H; 
+  for (int i(0); i < Data.size(); i++){PDF_H.push_back(PDF_H_V[i][i]);}
   
-  std::vector<RooAddPdf> s_models; 
-  std::vector<RooAddPdf> b_models;
-
-  std::vector<std::vector<RooRealVar*>> Future_Rubbish; 
-  std::vector<std::vector<RooGaussian*>> Future_Rubbish_G; 
-  std::vector<std::vector<RooDataHist*>> Future_Rubbish_D; 
-  std::vector<std::vector<RooFFTConvPdf*>> Future_Rubbish_FT; 
-  std::vector<std::vector<RooHistPdf*>> Future_Rubbish_P;
-  
-  for (int i(0); i < PDF_H.size(); i++)
+  std::vector<std::vector<RooRealVar*>> Lumi; 
+  for (int i(0); i < PDF_H_V.size(); i++)
   {
-    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H[i], Params, 0, Data[i] -> Integral()); 
-    std::vector<RooRealVar*> s_var = ProtectionRealVariable("s", PDF_H[i], Params, 0.0001, 0.0002); 
-    std::vector<RooRealVar*> m_var = ProtectionRealVariable("m", PDF_H[i], Params, -0.0001, 0.0001); 
+    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 0, Data[i] -> Integral()); 
+    Lumi.push_back(l_var); 
+  } 
 
-    // Create the resolution model: Gaussian 
-    std::vector<TString> g_N = NameGenerator(PDF_H[i], "_Gx");
-    std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_var, s_var); 
-    
-    // Create the PDFs for the model 
-    std::vector<TString> pdf_N_D = NameGenerator(PDF_H[i], "_D"); 
-    std::vector<RooDataHist*> pdf_D = RooDataVariable(pdf_N_D, x, PDF_H[i]); 
-    std::vector<TString> pdf_N_P = NameGenerator(PDF_H[i], "_P"); 
-    std::vector<RooHistPdf*> pdf_P = RooPdfVariable(pdf_N_P, x, pdf_D); 
+  std::vector<RooRealVar*> s_var = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.0002); 
+  std::vector<RooRealVar*> m_var = ProtectionRealVariable("m", PDF_H, Params, -0.0001, 0.0001); 
 
-    // Convolve the Gaussian and the PDFs
-    std::vector<TString> pxg_N = NameGenerator(PDF_H[i], "_PxG"); 
-    std::vector<RooFFTConvPdf*> PxG_vars = RooFFTVariable(pxg_N, x, g_vars, pdf_P); 
+  // Create the resolution model: Gaussian 
+  std::vector<TString> g_N = NameGenerator(PDF_H, "_Gx");
+  std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_var, s_var); 
+  
+  // Create the PDFs for the model 
+  std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
+  std::vector<RooDataHist*> pdf_D = RooDataVariable(pdf_N_D, x, PDF_H); 
+  std::vector<TString> pdf_N_P = NameGenerator(PDF_H, "_P"); 
+  std::vector<RooHistPdf*> pdf_P = RooPdfVariable(pdf_N_P, x, pdf_D); 
 
-    RooArgList L_B; 
-    RooArgList PxG_B; 
-    RooArgList L_S; 
-    RooArgList PxG_S; 
-    for (int p(0); p < PxG_vars.size(); p++)
-    {
-      // Create the background model for i != p (i.e. ntrack != mtru) 
-      if (p != i)
-      {
-        PxG_B.add(*PxG_vars[p]); 
-        L_B.add(*l_var[p]); 
-      }
-      
-      // Create the signal for the n-Track ntru 
-      if (p == i)
-      {
-        PxG_S.add(*PxG_vars[p]); 
-        L_S.add(*l_var[p]); 
-      }
-    }
-    
-    TString back_name = "dEdx_ntrk_"; back_name += (i+1); back_name += ("_background"); 
-    TString sig_name = "dEdx_ntrk_"; sig_name += (i+1); sig_name += ("signal"); 
-    RooAddPdf background(back_name, back_name, L_B, PxG_B); 
-    RooAddPdf signal(sig_name, sig_name, L_S, PxG_S);
+  // Convolve the Gaussian and the PDFs
+  std::vector<TString> pxg_N = NameGenerator(PDF_H, "_PxG"); 
+  std::vector<RooFFTConvPdf*> PxG_vars = RooFFTVariable(pxg_N, x, g_vars, pdf_P); 
 
-    s_models.push_back(signal); 
-    b_models.push_back(background); 
+  RooArgList PxG; 
+  std::vector<RooArgList> L_Args; 
+  for (int i(0); i < PxG_vars.size(); i++)
+  {
+    RooArgList L; 
+    for (int j(0); j < Lumi[i].size(); j++){L.add(*Lumi[i][j]);}
+    L_Args.push_back(L); 
 
+    PxG.add(*PxG_vars[i]); 
   }
   
-
-  RooCategory sample("sample", "sample"); 
-  sample.defineType("dEdx_ntrk1_H");
-  sample.defineType("dEdx_ntrk1_H_B"); 
-  RooDataHist* H = RooDataVariable({"dEdx_ntrk_1"}, x, {Data[0]})[0]; 
+  RooCategory sample("Sample", "Sample"); 
+  for (int i(0); i < Data.size(); i++)
+  {
+    TString name = "trk"; name += (i+1); 
+    sample.defineType(name); 
+  }
   
-  RooSimultaneous simPDF("simPDF", "simPDF", sample);
-  simPDF.addPdf(s_models[0], "dEdx_ntrk1_H"); 
-  simPDF.addPdf(b_models[0], "dEdx_ntrk1_H_B"); 
-  simPDF.fitTo(*H);
+  RooSimultaneous simPdf("simPdf", "simPdf", sample);
+  std::vector<RooAddPdf*> models; 
+  for (int i(0); i < Data.size(); i++)
+  {
+    TString name = "trk"; name += (i+1); name += ("_F"); 
+    RooAddPdf* trk_M = new RooAddPdf(name, name, PxG, L_Args[i]); 
 
+    name = "trk"; name += (i+1);  
+    simPdf.addPdf(*trk_M, name); 
+    models.push_back(trk_M); 
+  }
 
-
+  std::vector<TString> name_D = NameGenerator(Data, "_F"); 
+  std::vector<RooDataHist*> Data_D  = RooDataVariable(name_D, x, Data);
+  std::map<std::string, RooDataHist*> Data_V; 
+  RooArgList x_var; 
+  for (int i(0); i < Data.size(); i++)
+  {
+    std::string name = "trk"; name += std::to_string(i+1); 
+    x_var.add(*x); 
+    
+    Data_V.insert(std::pair<std::string, RooDataHist*>(name, Data_D[i])); 
+  }
   
+  RooDataHist* ComData = new RooDataHist("ComData", "ComData", x_var, sample, Data_V, 1.0); 
+  RooAbsReal* nll = simPdf.createNLL(*ComData, NumCPU(6, true)); 
+  int stat = Minimization(nll, Params); 
+
+  for (int i(0); i < PDF_H_V.size(); i++)
+  {
+    for (int j(0); j < PDF_H_V[i].size(); j++)
+    {
+      CopyPDFToTH1F(PxG_vars[j], x, PDF_H_V[i][j], Data[0]); 
+      float e = Lumi[i][j] -> getVal(); 
+      Normalize(PDF_H_V[i][j]); 
+      PDF_H_V[i][j] -> Scale(e); 
+    } 
+  }
+  
+  std::map<TString, std::vector<float>> Output; 
+  for (int i(0); i < Lumi.size(); i++)
+  {
+    for (int j(0); j < Lumi[i].size(); j++)
+    {
+      TString name_t = "trk"; name_t += (i+1); name_t += ("_"); 
+      Output[name_t + "Normalization"].push_back( Lumi[i][j] -> getVal() ); 
+      Output[name_t + "Normalization_Error"].push_back( Lumi[i][j] -> getError() ); 
+    }
+    
+    Output["Shift"].push_back(m_var[i] -> getVal()); 
+    Output["Shift_Error"].push_back(m_var[i] -> getError()); 
+    Output["Stdev"].push_back(s_var[i] -> getVal()); 
+    Output["Stdev_Error"].push_back(s_var[i] -> getError()); 
+    Output["fit_status"].push_back(stat); 
+  }
+  
+  for (int i(0); i < PDF_H_V.size(); i++)
+  {
+    for (int j(0); j < PDF_H_V[i].size(); j++)
+    {
+      for (int k(0); k < PDF_H_V[i][j] -> GetNbinsX(); k++){PDF_H_V[i][j] -> SetBinError(k+1, 0.);}
+    }
+  }
 
 
+  delete x; 
+  BulkDelete(s_var); 
+  BulkDelete(m_var); 
+  BulkDelete(g_vars); 
+  BulkDelete(pdf_D); 
+  BulkDelete(pdf_P); 
+  BulkDelete(PxG_vars); 
+  for (int i(0); i < Lumi.size(); i++){ BulkDelete(Lumi[i]); }
+  for (int i(0); i < models.size(); i++){ delete models[i]; }
+  BulkDelete(Data_D); 
 
-  return Params; // Change after
-
-
+  return Output; 
 }

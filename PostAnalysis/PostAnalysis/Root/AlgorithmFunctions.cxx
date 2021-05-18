@@ -296,6 +296,39 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   return ntrk_mtru_H; 
 }
 
+std::vector<std::vector<TH1F*>> Simultaneous_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
+{
+  TString ext = "_" + JE + "_Simultaneous";
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext); 
+  gDirectory -> cd("/"); 
+  gDirectory -> mkdir(JE + "/Simultaneous"); 
+  
+  std::map<TString, std::vector<float>> Fit_Res = SimultaneousFFT(Data, ntrk_mtru_H, Params, ext);  
+
+  
+  for (int i(0); i < Data.size(); i++)
+  {
+    std::vector<TH1F*> ntrk_Template = ntrk_mtru_H[i];  
+    WriteHistsToFile(ntrk_Template, JE + "/Simultaneous"); 
+   
+    TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
+
+    std::map<TString, std::vector<float>> Map; 
+    TString trk_e = "trk"; trk_e += (i+1); trk_e += ("_"); 
+    Map.insert(std::pair<TString, std::vector<float>>("Normalization", Fit_Res[trk_e + "Normalization"])); 
+    Map.insert(std::pair<TString, std::vector<float>>("Normalization_Error", Fit_Res[trk_e + "Normalization_Error"])); 
+    Map.insert(std::pair<TString, std::vector<float>>("Shift", Fit_Res["Shift"])); 
+    Map.insert(std::pair<TString, std::vector<float>>("Shift_Error", Fit_Res["Shift_Error"])); 
+    Map.insert(std::pair<TString, std::vector<float>>("Stdev", Fit_Res["Stdev"])); 
+    Map.insert(std::pair<TString, std::vector<float>>("Stdev_Error", Fit_Res["Stdev_Error"])); 
+    Map.insert(std::pair<TString, std::vector<float>>("fit_status", Fit_Res["fit_status"])); 
+
+    WriteOutputMapToFile(Map, JE + "/Simultaneous", trk_n);
+  }
+
+  return ntrk_mtru_H; 
+}
+
 std::vector<std::vector<TH1F*>> BruceMethod(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
   auto Minimization =[&] (RooAbsReal* nll, std::map<TString, std::vector<float>> Params)
@@ -508,19 +541,7 @@ std::vector<std::vector<TH1F*>> BruceMethod(std::vector<TH1F*> Data, TH1F* trk1_
 
 }
 
-std::vector<std::vector<TH1F*>> Simultaneous_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
-{
-  TString ext = "_" + JE + "_Simultaneous";
-  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext); 
-  gDirectory -> cd("/"); 
-  gDirectory -> mkdir(JE + "/Simultaneous"); 
-  
-  std::map<TString, std::vector<float>> Fit_Res = SimultaneousFFT(Data, ntrk_mtru_H, Params, ext);  
 
-
-
-  return ntrk_mtru_H; 
-}
 
 std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
@@ -534,8 +555,7 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
     pg -> hesse();
     pg -> improve(); 
     pg -> optimizeConst(true); 
-    //pg -> setEvalErrorWall(true); 
-    pg -> setEps(1e-3); 
+    pg -> setEps(1e-6); 
     pg -> setPrintLevel(0); 
     RooFitResult* re = pg -> fit("r"); 
     pg -> cleanup(); 
@@ -578,40 +598,40 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
     }
   }; 
 
-  
-  std::vector<std::map<TString, std::vector<float>>> Output_List; 
-  std::vector<std::map<TString, std::vector<float>>> Lumi_Update; 
-  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, JE); 
-  float x_min = Data[0] -> GetXaxis() -> GetXmin(); 
-  float x_max = Data[0] -> GetXaxis() -> GetXmax(); 
-
-  for (int i(0); i < Data.size(); i++)
+  auto Algorithm =[&] (std::map<TString, std::vector<float>> Params, 
+                       std::vector<std::vector<TH1F*>> ntrk_mtru_H, 
+                       std::vector<TH1F*> Data)
   {
-    std::map<TString, std::vector<float>> Map; 
-    Map["l_s"] = std::vector<float>(ntrk_mtru_H[i].size(), 0.*(Data[i] -> Integral())); 
-    Map["l_e"] = std::vector<float>(ntrk_mtru_H[i].size(), 1.*(Data[i] -> Integral())); 
-    Lumi_Update.push_back(Map); 
- 
-    std::map<TString, std::vector<float>> Output;
-    Output_List.push_back(Output); 
-  }
+    
+    float r = 1; 
+    if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; } 
+    
+    float x_min = Data[0] -> GetXaxis() -> GetXmin(); 
+    float x_max = Data[0] -> GetXaxis() -> GetXmax(); 
 
-  float r = 1; 
-  if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; } 
-
-  for (int v(0); v < 2; v++)
-  {
+    std::vector<std::map<TString, std::vector<float>>> Output_List; 
     for (int i(0); i < Data.size(); i++)
     {
+      std::map<TString, std::vector<float>> Map; 
+      Output_List.push_back(Map); 
+    }
 
-      std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", ntrk_mtru_H[i], Lumi_Update[i], 0, r*(Data[i] -> Integral())); 
+    for (int i(0); i < Data.size(); i++)
+    {
+      std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", ntrk_mtru_H[i], Params, 0, r*(Data[i] -> Integral())); 
       std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", ntrk_mtru_H[i], Params, -0.001, 0.001); 
       std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", ntrk_mtru_H[i], Params, 0.0001, 0.001); 
 
       RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-      x -> setBins(Params["fft_cache"][0], "fft"); 
-      x -> setBins(Params["fft_cache"][0], "cache"); 
-      
+      TString rang;  
+      if (Params["fft_cache"].size() != 0)
+      {
+        x -> setBins(Params["fft_cache"][0], "fft"); 
+        x -> setBins(Params["fft_cache"][0], "cache"); 
+        rang = "Range_ntrk_"; rang += (i+1); 
+        //x -> setRange(rang, Params[rang][0], Params[rang][1]); 
+      }
+
       // Create the resolution model: Gaussian 
       std::vector<TString> g_N = NameGenerator(ntrk_mtru_H[i], "_Gx");
       std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
@@ -634,57 +654,47 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
         L.add(*l_vars[i]); 
       }
 
-
-      for (int g(0); g < ntrk_mtru_H[i].size(); g++)
-      {
-
-        // Make it such that only the current ntrk-ntru is allowed to float the fit variables 
-        std::vector<float> Bools(ntrk_mtru_H[i].size(), 1); 
-        Bools[g] = 0; 
-        
-        VariableConstant(Bools, m_vars); 
-        VariableConstant(Bools, s_vars); 
-        VariableConstant(Bools, l_vars); 
-
-        // Fitting the PDFs to the Data 
-        RooAddPdf model("model", "model", PxG, L); 
-
-        RooDataHist D("Data", "Data", *x, Data[i]); 
-        RooAbsReal* nll = model.createNLL(D, Extended(true)); 
-        RooFitResult* re = Minimization(nll, Params); 
-        //CaptureResults(re, &(Output_List[i]));
-        delete re;
-      }
-
-      std::vector<float> Bools(ntrk_mtru_H[i].size(), 0); 
-      
-      VariableConstant(Bools, m_vars); 
-      VariableConstant(Bools, s_vars); 
-      VariableConstant(Bools, l_vars); 
-
+      // Fitting the PDFs to the Data 
       RooAddPdf model("model", "model", PxG, L); 
-
       RooDataHist D("Data", "Data", *x, Data[i]); 
-      RooAbsReal* nll = model.createNLL(D, Extended(true)); 
-      RooFitResult* re = Minimization(nll, Params); 
+      
+      std::vector<float> Bools; 
+      RooAbsReal* nll;
+      RooFitResult* re; 
+      // Make it such that only the current ntrk-ntru is allowed to float the fit variables 
+      // First fit ==== Release m and not s
+      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 1); 
+      VariableConstant(Bools, s_vars); 
+      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 0); 
+      VariableConstant(Bools, m_vars); 
+
+      nll = model.createNLL(D); 
+      re = Minimization(nll, Params); 
+      delete re; 
+
+      // Second fit ===== Fix m and let s float 
+      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 0); 
+      VariableConstant(Bools, s_vars); 
+      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 1); 
+      VariableConstant(Bools, m_vars); 
+      
+      nll = model.createNLL(D); 
+      re = Minimization(nll, Params); 
+      delete re;
+
+      // Third fit ==== Fix s and m and let only L float
+      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 1); 
+      VariableConstant(Bools, m_vars); 
+      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 1); 
+      VariableConstant(Bools, s_vars); 
+
+      nll = model.createNLL(D); 
+      re = Minimization(nll, Params); 
       CaptureResults(re, &(Output_List[i]));
 
       TString plot_t = JE + "_trk_"; plot_t += (i+1); plot_t += "PULL.pdf"; 
       RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
-
       
-      // Now get the parameters of the fit for ntru of ntrk and update the initial guess of the params map
-      if ( Params["s_G"].size() == 0 ){Params["s_G"] = std::vector<float>(s_vars.size(), 0);}
-      if ( Params["m_G"].size() == 0 ){Params["m_G"] = std::vector<float>(m_vars.size(), 0);}
-      Params["s_G"][i] = s_vars[i] -> getVal(); 
-      Params["m_G"][i] = m_vars[i] -> getVal(); 
-      
-      for (int t(0); t < l_vars.size(); t++)
-      {
-        (Lumi_Update[i])["l_s"][t] = 0.01*(l_vars[t] -> getVal()); 
-        (Lumi_Update[i])["l_e"][t] = 100*(l_vars[t] -> getVal()); 
-      }
-
       IntoOutput(&(Output_List[i]), l_vars, m_vars, s_vars, ntrk_mtru_H[i], PxG_vars, x, Data[i]); 
 
       BulkDelete(l_vars); 
@@ -696,7 +706,41 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
       BulkDelete(PxG_vars); 
       delete x; 
     }
-  } 
+
+    return Output_List;
+  };
+
+  
+  auto FitBins =[&] (std::vector<TH1F*> ntrk, TH1F* Data)
+  {
+
+    for (int i(0); i < Data -> GetNbinsX(); i++)
+    {
+      float e = Data -> GetBinContent(i+1); 
+      float sum = 0; 
+      for (int x(0); x < ntrk.size(); x++)
+      {
+        sum += ntrk[x] -> GetBinContent(x+1); 
+      } 
+      
+      if (sum == 0){continue;}
+      float r = e/sum; 
+      for (int x(0); x < ntrk.size(); x++)
+      {
+        float p = ntrk[x] -> GetBinContent(x+1); 
+        ntrk[x] -> SetBinContent(x+1, r*p); 
+      } 
+    }
+  }; 
+  
+
+
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, JE); 
+  std::vector<std::map<TString, std::vector<float>>> Output_List;   
+  for (int i(0); i < 2; i++)
+  {
+    Output_List = Algorithm(Params, ntrk_mtru_H, Data);
+  }
 
   TString ext = "_" + JE + "_Incremental";
   gDirectory -> cd("/"); 
@@ -709,8 +753,7 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
     WriteOutputMapToFile(Output_List[i], JE + "/Incremental", trk_n); 
   }
 
-
   return ntrk_mtru_H; 
-
 }
+
 

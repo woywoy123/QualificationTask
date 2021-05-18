@@ -18,6 +18,7 @@
 #include<RooSimultaneous.h>
 #include<RooDataSet.h>
 #include<RooCategory.h>
+#include<RooRealSumPdf.h>
 
 
 using namespace RooFit;
