@@ -99,13 +99,13 @@ std::vector<TH1F*> NormalizationShiftWidthFFT_Fit(std::vector<TH1F*> Data, TH1F*
   return ntrk_ntru_H; 
 }
 
-std::vector<std::vector<TH1F*>> BuildNtrkMtru(int n, TH1F* trk1_start, TString extension)
+std::vector<std::vector<TH1F*>> BuildNtrkMtru(int n, TH1F* trk1_start, TString extension, int tru)
 {
   std::vector<std::vector<TString>> ntrk_ntru_names; 
   for (int i(0); i < n; i++)
   {
     std::vector<TString> ntrk_ntru_n; 
-    for (int j(0); j < 4; j++)
+    for (int j(0); j < tru; j++)
     {
       TString base = "dEdx_ntrk_"; base += (i+1); base += ("_ntru_"); base += (j+1); 
       ntrk_ntru_n.push_back(base); 
@@ -299,7 +299,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
 std::vector<std::vector<TH1F*>> Simultaneous_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
   TString ext = "_" + JE + "_Simultaneous";
-  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext); 
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext, Data.size()); 
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Simultaneous"); 
   
