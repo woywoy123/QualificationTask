@@ -442,8 +442,9 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
     pg -> cleanup(); 
     delete pg; 
     delete nll;
-    
-    return re; 
+    int x = re -> status(); 
+    delete re; 
+    return x; 
   }; 
 
   float x_min = Data[0] -> GetXaxis() -> GetXmin(); 
@@ -529,6 +530,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   RooDataHist* ComData = new RooDataHist("ComData", "ComData", x_var, sample, Data_V, 1.0); 
   RooAbsReal* nll = simPdf.createNLL(*ComData, NumCPU(6, true)); 
   int stat = Minimization(nll, Params); 
+  //simPdf.fitTo(*ComData); 
 
   for (int i(0); i < PDF_H_V.size(); i++)
   {
@@ -577,6 +579,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   for (int i(0); i < Lumi.size(); i++){ BulkDelete(Lumi[i]); }
   for (int i(0); i < models.size(); i++){ delete models[i]; }
   BulkDelete(Data_D); 
+  delete ComData;
 
   return Output; 
 }

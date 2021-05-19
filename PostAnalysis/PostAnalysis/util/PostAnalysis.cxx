@@ -9,9 +9,9 @@ int main(int argc, char* argv[])
   TString Mode = argv[2];  
   TString File = argv[3]; 
 
-  //File = "Merged_MC.root"; 
-  //Mode = "Simultaneous"; 
-  //JE = "x";
+  File = "Merged_MC.root"; 
+  Mode = "Simultaneous"; 
+  JE = "x";
   //std::cout << File << std::endl;
   //IOTest(); 
   //RooFitBaseFunctionTest();  
