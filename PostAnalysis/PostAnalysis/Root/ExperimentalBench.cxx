@@ -267,7 +267,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   //Params_Sim["s_G"] = {0.001, 0.001, 0.001, 0.001};
   Params_Sim["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_Sim["fft_cache"] = {10000}; 
-  Params_Sim["Minimizer"] = {100}; 
+  Params_Sim["Minimizer"] = {1000000}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
