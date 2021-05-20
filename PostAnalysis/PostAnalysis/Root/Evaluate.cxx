@@ -264,7 +264,7 @@ void MultiTrackTruthComparison(TString dir)
   std::map<TString, std::map<TString, std::vector<float>>> Status; 
   std::map<TString, std::vector<float>> Flost2_Map;
   std::map<TString, std::vector<float>> Flost3_Map;
-  std::vector<TString> Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Incremental", "Simultaneous"}; 
+  std::vector<TString> Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Incremental", "Simultaneous", "Experimental"}; 
 
   for (MMVi x = Results.begin(); x != Results.end(); x++)
   {
@@ -484,11 +484,11 @@ void MultiTrackTruthComparison(TString dir)
   out.Clear();  
 
   
-  InjectString(Algo_Strings, sep, margin, &out, "F2       (Error)    [Delta]"); 
+  InjectString(Algo_Strings, sep, margin, &out, "F2 (Err% (er/FP)) [Del% (dif/FT)]"); 
   Fl2_cout.push_back(out); 
   out.Clear();  
 
-  InjectString(Algo_Strings, sep, margin, &out, "F3       (Error)    [Delta]"); 
+  InjectString(Algo_Strings, sep, margin, &out, "F3 (Err% (er/FP)) [Del% (dif/FT)]"); 
   Fl3_cout.push_back(out); 
   out.Clear();  
   
@@ -518,10 +518,10 @@ void MultiTrackTruthComparison(TString dir)
         }
         TString x = PrecisionString(Flost_P[0], 2, true);
         x += " ("; 
-        x += PrecisionString(Flost_P[1], 2, true);
-        x += ") "; 
+        x += PrecisionString((Flost_P[1]/Flost_P[0])*100, 2, false);
+        x += ")    "; 
         x += "["; 
-        x += PrecisionString(dif, 2, true);  
+        x += PrecisionString((dif/Truth[0])*100, 2, false);  
         x += "]"; 
         *out += x; 
         CoutText(&(*out), margin - x.Sizeof(), " "); 

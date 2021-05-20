@@ -240,7 +240,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   int iter = 2; 
   for (int x(0); x < iter; x++)
   {
-    if (x > iter)
+    if (x > 1)
     {
       for (int t(0); t < Data.size(); t++)
       {
@@ -279,6 +279,8 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       std::vector<float> Norm = prefit["Normalization"]; 
       Params["l_G"] = Norm;
       std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
+      Map = Normalization(ntrk_Measure, ntrk_Template, Params, Name); 
+      
       float L = Data[i] -> Integral(); 
       for (TH1F* H : ntrk_Template){ H -> Scale(L); }
       delete ntrk_Measure;
