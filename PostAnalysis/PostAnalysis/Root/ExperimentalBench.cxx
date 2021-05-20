@@ -201,7 +201,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
  
   std::vector<std::vector<float>> Ranges = {{0.4, 8.}, {0.1, 8.}, {1.5, 8.9}, {2, 8.7}}; 
 
-  float m = 0.4; 
+  float m = 0.2; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Range"] = {0, 8}; 
@@ -213,10 +213,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
   Params_NS["Range"] = {0.2, 8}; 
-  //Params_NS["Range_ntrk_1"] = Ranges[0]; 
-  //Params_NS["Range_ntrk_2"] = Ranges[1]; 
-  //Params_NS["Range_ntrk_3"] = Ranges[2];   
-  //Params_NS["Range_ntrk_4"] = Ranges[3]; 
+  Params_NS["Range_ntrk_1"] = Ranges[0]; 
+  Params_NS["Range_ntrk_2"] = Ranges[1]; 
+  Params_NS["Range_ntrk_3"] = Ranges[2];   
+  Params_NS["Range_ntrk_4"] = Ranges[3]; 
   Params_NS["dx"] = {m, m, m, m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
   Params_NS["Minimizer"] = {100000}; 
