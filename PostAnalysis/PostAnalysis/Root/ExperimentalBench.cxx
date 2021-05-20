@@ -201,7 +201,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
  
   std::vector<std::vector<float>> Ranges = {{0.4, 8.}, {0.1, 8.}, {1.5, 8.9}, {2, 8.7}}; 
 
-  float m = 0.2; 
+  float m = 0.4; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Range"] = {0, 8}; 
@@ -381,8 +381,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     
     p++;
     X -> Write();
-  
-    if (p == 3){break;}
   }
 
   X -> Close(); 

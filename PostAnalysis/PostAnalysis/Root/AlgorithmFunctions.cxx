@@ -240,7 +240,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   int iter = 2; 
   for (int x(0); x < iter; x++)
   {
-    if (x > 1)
+    if (x > 0)
     {
       for (int t(0); t < Data.size(); t++)
       {
@@ -256,13 +256,13 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         delete ntrk_Data;  
       }
 
-      for (int t(0); t < Data.size(); t++)
-      {
-        for (int j(0); j < Data.size(); j++)
-        {
-          Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]}); 
-        }
-      }
+      //for (int t(0); t < Data.size(); t++)
+      //{
+      //  for (int j(0); j < Data.size(); j++)
+      //  {
+      //    Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]}); 
+      //  }
+      //}
     }   
      
     for (int i(0); i < Data.size(); i++)
@@ -279,10 +279,10 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       std::vector<float> Norm = prefit["Normalization"]; 
       Params["l_G"] = Norm;
       std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
-      Map = Normalization(ntrk_Measure, ntrk_Template, Params, Name); 
       
       float L = Data[i] -> Integral(); 
       for (TH1F* H : ntrk_Template){ H -> Scale(L); }
+      Map = Normalization(Data[i], ntrk_Template, Params, base); 
       delete ntrk_Measure;
       if (x == iter -1)
       {
