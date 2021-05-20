@@ -201,11 +201,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
  
   std::vector<std::vector<float>> Ranges = {{0.4, 8.}, {0.1, 8.}, {1.5, 8.9}, {2, 8.7}}; 
 
-  float m = 0.5; 
+  float m = 0.4; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Range"] = {0, 8}; 
-  Params_N["r_value"] = {1};
   Params_N["Range_ntrk_1"] = Ranges[0]; 
   Params_N["Range_ntrk_2"] = Ranges[1]; 
   Params_N["Range_ntrk_3"] = Ranges[2]; 
@@ -214,11 +213,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
   Params_NS["Range"] = {0.2, 8}; 
-  Params_NS["r_value"] = {2};
-  Params_NS["Range_ntrk_1"] = Ranges[0]; 
-  Params_NS["Range_ntrk_2"] = Ranges[1]; 
-  Params_NS["Range_ntrk_3"] = Ranges[2];   
-  Params_NS["Range_ntrk_4"] = Ranges[3]; 
+  //Params_NS["Range_ntrk_1"] = Ranges[0]; 
+  //Params_NS["Range_ntrk_2"] = Ranges[1]; 
+  //Params_NS["Range_ntrk_3"] = Ranges[2];   
+  //Params_NS["Range_ntrk_4"] = Ranges[3]; 
   Params_NS["dx"] = {m, m, m, m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
   Params_NS["Minimizer"] = {100000}; 
@@ -226,7 +224,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
   Params_FFT["Range"] = {0, 8}; 
-  Params_FFT["r_value"] = {2};
   Params_FFT["Range_ntrk_1"] = Ranges[0]; 
   Params_FFT["Range_ntrk_2"] = Ranges[1]; 
   Params_FFT["Range_ntrk_3"] = Ranges[2];   
@@ -234,12 +231,11 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["m"] = {m, m, m, m};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["fft_cache"] = {10000}; 
-  //Params_FFT["Minimizer"] = {100000}; 
+  Params_FFT["Minimizer"] = {100000}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
   Params_WidthFFT["Range"] = {0.2, 8}; 
-  Params_WidthFFT["r_value"] = {2};
   Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
   Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
   Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
@@ -247,15 +243,13 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["m"] = {m, m, m, m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  Params_WidthFFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
-  Params_WidthFFT["s_G"] = {0.002, 0.002, 0.002, 0.002};
+  Params_WidthFFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_WidthFFT["fft_cache"] = {10000}; 
-  Params_WidthFFT["Minimizer"] = {1000000}; 
+  Params_WidthFFT["Minimizer"] = {100000}; 
 
   // Simultaneous Fitting method 
   std::map<TString, std::vector<float>> Params_Sim; 
   Params_Sim["Range"] = {0.2, 8}; 
-  //Params_Sim["r_value"] = {2};
   Params_Sim["Range_ntrk_1"] = {0.4, 6}; 
   Params_Sim["Range_ntrk_2"] = {1, 6}; 
   Params_Sim["Range_ntrk_3"] = {2.5, 7}; 
@@ -263,11 +257,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["m_e"] = {m, m, m, m};
   Params_Sim["m_G"] = {0, 0, 0, 0};
   Params_Sim["m_s"] = {-m, -m, -m, -m};
-  Params_Sim["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
-  //Params_Sim["s_G"] = {0.001, 0.001, 0.001, 0.001};
+  Params_Sim["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_Sim["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_Sim["fft_cache"] = {10000}; 
-  Params_Sim["Minimizer"] = {1000000}; 
+  Params_Sim["Minimizer"] = {100000}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
@@ -312,28 +305,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       ToBeUsed.push_back(Proposed[i]); 
     }
  
-    // Delete after
-    //TCanvas* can = new TCanvas(); 
-    //can -> SetLogy(); 
-    //can -> Print("Data_To_Fit.pdf["); 
-    //for (int i(0); i < ToBeUsed.size(); i++)
-    //{
-    //  PlotHists(ToBeUsed[i], can); 
-    //  can -> Print("Data_To_Fit.pdf"); 
-    //}
-    //can -> Print("Data_To_Fit.pdf]"); 
-    //can -> Clear(); 
-
-
-    //std::vector<std::vector<TH1F*>> ntrkmtru = BuildNtrkMtru(4, trk1_start, "_InputFunctions"); 
-    //can -> SetLogy(); 
-    //can -> Print("FitFunctions.pdf["); 
-    //PlotHists(ntrkmtru[0], can); 
-    //can -> Print("FitFunctions.pdf"); 
-    //can -> Print("FitFunctions.pdf]"); 
-    //delete can; 
-
-    
     if (ToBeUsed.size() == 0){continue;}
     X -> mkdir(current); 
     X -> cd(current); 

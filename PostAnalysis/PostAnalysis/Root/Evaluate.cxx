@@ -264,7 +264,7 @@ void MultiTrackTruthComparison(TString dir)
   std::map<TString, std::map<TString, std::vector<float>>> Status; 
   std::map<TString, std::vector<float>> Flost2_Map;
   std::map<TString, std::vector<float>> Flost3_Map;
-  std::vector<TString> Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Experimental"}; 
+  std::vector<TString> Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Incremental", "Simultaneous"}; 
 
   for (MMVi x = Results.begin(); x != Results.end(); x++)
   {
@@ -281,72 +281,24 @@ void MultiTrackTruthComparison(TString dir)
     std::vector<std::vector<float>> N_Err = GetNormalizationError(Errors[LE]["Truth"]); 
     Flost2_Map[LE + "_Truth"] = Flost2(All_Truth, N_Err);  
     Flost3_Map[LE + "_Truth"] = Flost3(All_Truth, N_Err); 
-    
-    // Return the Algos:
-    // Normal
-    std::vector<TH1F*> ntrk_1_Normal = Results[x -> first]["Normal_ntrk_1"]; 
-    std::vector<TH1F*> ntrk_2_Normal = Results[x -> first]["Normal_ntrk_2"]; 
-    std::vector<TH1F*> ntrk_3_Normal = Results[x -> first]["Normal_ntrk_3"]; 
-    std::vector<TH1F*> ntrk_4_Normal = Results[x -> first]["Normal_ntrk_4"]; 
-    std::vector<std::vector<TH1F*>> All_Normal = {ntrk_1_Normal, ntrk_2_Normal, ntrk_3_Normal, ntrk_4_Normal}; 
-    Plotting(All_Truth, All_Normal, LE + "_Normal", PlotOn); 
-    //Stats[LE + "_Normal"] = Statistics(All_Truth, All_Normal); 
-    CreateErrorBoard(&Error_Map, All_Truth, All_Normal); 
-    std::vector<std::vector<float>> Normal_Error = GetNormalizationError(Errors[LE]["Normal"]); 
-    Flost2_Map[LE + "_Normal"] = Flost2(All_Normal, Normal_Error);  
-    Flost3_Map[LE + "_Normal"] = Flost3(All_Normal, Normal_Error); 
- 
-    // ShiftNormal
-    std::vector<TH1F*> ntrk_1_ShiftNormal = Results[x -> first]["ShiftNormal_ntrk_1"]; 
-    std::vector<TH1F*> ntrk_2_ShiftNormal = Results[x -> first]["ShiftNormal_ntrk_2"]; 
-    std::vector<TH1F*> ntrk_3_ShiftNormal = Results[x -> first]["ShiftNormal_ntrk_3"]; 
-    std::vector<TH1F*> ntrk_4_ShiftNormal = Results[x -> first]["ShiftNormal_ntrk_4"]; 
-    std::vector<std::vector<TH1F*>> All_ShiftNormal = {ntrk_1_ShiftNormal, ntrk_2_ShiftNormal, ntrk_3_ShiftNormal, ntrk_4_ShiftNormal}; 
-    Plotting(All_Truth, All_ShiftNormal, LE + "_ShiftNormal", PlotOn); 
-    //Stats[LE + "_ShiftNormal"] = Statistics(All_Truth, All_ShiftNormal);
-    CreateErrorBoard(&Error_Map, All_Truth, All_ShiftNormal);  
-    std::vector<std::vector<float>> ShiftNormal_Error = GetNormalizationError(Errors[LE]["ShiftNormal"]); 
-    Flost2_Map[LE + "_ShiftNormal"] = Flost2(All_ShiftNormal, ShiftNormal_Error);  
-    Flost3_Map[LE + "_ShiftNormal"] = Flost3(All_ShiftNormal, ShiftNormal_Error); 
+   
+    // Go over the algorithms 
+    for (int i(0); i < Algo_Strings.size(); i++)
+    {
+      TString Alg = Algo_Strings[i];  
+      std::vector<TH1F*> ntrk_1_Algo = Results[x -> first][Alg + "_ntrk_1"];
+      std::vector<TH1F*> ntrk_2_Algo = Results[x -> first][Alg + "_ntrk_2"];
+      std::vector<TH1F*> ntrk_3_Algo = Results[x -> first][Alg + "_ntrk_3"];
+      std::vector<TH1F*> ntrk_4_Algo = Results[x -> first][Alg + "_ntrk_4"];
 
-    // ShiftNormalFFT
-    std::vector<TH1F*> ntrk_1_ShiftNormalFFT = Results[x -> first]["ShiftNormalFFT_ntrk_1"]; 
-    std::vector<TH1F*> ntrk_2_ShiftNormalFFT = Results[x -> first]["ShiftNormalFFT_ntrk_2"]; 
-    std::vector<TH1F*> ntrk_3_ShiftNormalFFT = Results[x -> first]["ShiftNormalFFT_ntrk_3"]; 
-    std::vector<TH1F*> ntrk_4_ShiftNormalFFT = Results[x -> first]["ShiftNormalFFT_ntrk_4"]; 
-    std::vector<std::vector<TH1F*>> All_ShiftNormalFFT = {ntrk_1_ShiftNormalFFT, ntrk_2_ShiftNormalFFT, ntrk_3_ShiftNormalFFT, ntrk_4_ShiftNormalFFT}; 
-    Plotting(All_Truth, All_ShiftNormalFFT, LE + "_ShiftNormalFFT", PlotOn); 
-    //Stats[LE + "_ShiftNormalFFT"] = Statistics(All_Truth, All_ShiftNormalFFT);
-    CreateErrorBoard(&Error_Map, All_Truth, All_ShiftNormalFFT);  
-    std::vector<std::vector<float>> ShiftNormalFFT_Error = GetNormalizationError(Errors[LE]["ShiftNormalFFT"]); 
-    Flost2_Map[LE + "_ShiftNormalFFT"] = Flost2(All_ShiftNormalFFT, ShiftNormalFFT_Error);  
-    Flost3_Map[LE + "_ShiftNormalFFT"] = Flost3(All_ShiftNormalFFT, ShiftNormalFFT_Error); 
-
-    // ShiftNormalWidthFFT
-    std::vector<TH1F*> ntrk_1_ShiftNormalWidthFFT = Results[x -> first]["ShiftNormalWidthFFT_ntrk_1"]; 
-    std::vector<TH1F*> ntrk_2_ShiftNormalWidthFFT = Results[x -> first]["ShiftNormalWidthFFT_ntrk_2"]; 
-    std::vector<TH1F*> ntrk_3_ShiftNormalWidthFFT = Results[x -> first]["ShiftNormalWidthFFT_ntrk_3"]; 
-    std::vector<TH1F*> ntrk_4_ShiftNormalWidthFFT = Results[x -> first]["ShiftNormalWidthFFT_ntrk_4"]; 
-    std::vector<std::vector<TH1F*>> All_ShiftNormalWidthFFT = {ntrk_1_ShiftNormalWidthFFT, ntrk_2_ShiftNormalWidthFFT, ntrk_3_ShiftNormalWidthFFT, ntrk_4_ShiftNormalWidthFFT}; 
-    Plotting(All_Truth, All_ShiftNormalWidthFFT, LE + "_ShiftNormalWidthFFT", PlotOn); 
-    //Stats[LE + "_ShiftNormalWidthFFT"] = Statistics(All_Truth, All_ShiftNormalWidthFFT);
-    CreateErrorBoard(&Error_Map, All_Truth, All_ShiftNormalWidthFFT);  
-    std::vector<std::vector<float>> ShiftNormalWidthFFT_Error = GetNormalizationError(Errors[LE]["ShiftNormalWidthFFT"]); 
-    Flost2_Map[LE + "_ShiftNormalWidthFFT"] = Flost2(All_ShiftNormalWidthFFT, ShiftNormalWidthFFT_Error);  
-    Flost3_Map[LE + "_ShiftNormalWidthFFT"] = Flost3(All_ShiftNormalWidthFFT, ShiftNormalWidthFFT_Error); 
-
-    // Experimental
-    std::vector<TH1F*> ntrk_1_Experimental = Results[x -> first]["Experimental_ntrk_1"]; 
-    std::vector<TH1F*> ntrk_2_Experimental = Results[x -> first]["Experimental_ntrk_2"]; 
-    std::vector<TH1F*> ntrk_3_Experimental = Results[x -> first]["Experimental_ntrk_3"]; 
-    std::vector<TH1F*> ntrk_4_Experimental = Results[x -> first]["Experimental_ntrk_4"]; 
-    std::vector<std::vector<TH1F*>> All_Experimental = {ntrk_1_Experimental, ntrk_2_Experimental, ntrk_3_Experimental, ntrk_4_Experimental}; 
-    Plotting(All_Truth, All_Experimental, LE + "_Experimental", PlotOn); 
-    //Stats[LE + "_Experimental"] = Statistics(All_Truth, All_Experimental);
-    CreateErrorBoard(&Error_Map, All_Truth, All_Experimental);  
-    std::vector<std::vector<float>> Experimental_Error = GetNormalizationError(Errors[LE]["Experimental"]); 
-    Flost2_Map[LE + "_Experimental"] = Flost2(All_Experimental, Experimental_Error);  
-    Flost3_Map[LE + "_Experimental"] = Flost3(All_Experimental, Experimental_Error); 
+      std::vector<std::vector<TH1F*>> All_Algo = {ntrk_1_Algo, ntrk_2_Algo, ntrk_3_Algo, ntrk_4_Algo}; 
+      Plotting(All_Truth, All_Algo, LE + Alg, PlotOn); 
+      Stats[LE + "_" + Alg] = Statistics(All_Truth, All_Algo); 
+      CreateErrorBoard(&Error_Map, All_Truth, All_Algo); 
+      std::vector<std::vector<float>> Algo_Error = GetNormalizationError(Errors[LE][Alg]); 
+      Flost2_Map[LE + "_" + Alg] = Flost2(All_Algo, Algo_Error);  
+      Flost3_Map[LE + "_" + Alg] = Flost3(All_Algo, Algo_Error); 
+    }
 
     GetStatus(Errors[LE], &Status); 
     GetScores(Error_Map, &Scores); 
