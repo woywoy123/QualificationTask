@@ -199,35 +199,38 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
  
-  std::vector<std::vector<float>> Ranges = {{0.4, 8.}, {0.1, 8.}, {1.5, 8.9}, {2, 8.7}}; 
+  std::vector<std::vector<float>> Ranges = {{0.4, 1.5}, {1.5, 3}, {3, 4}, {4, 8}}; 
 
-  float m = 0.4; 
+  float m = 0.2; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
-  Params_N["Range"] = {0, 8}; 
-  Params_N["Range_ntrk_1"] = Ranges[0]; 
-  Params_N["Range_ntrk_2"] = Ranges[1]; 
-  Params_N["Range_ntrk_3"] = Ranges[2]; 
-  Params_N["Range_ntrk_4"] = Ranges[3]; 
+  //Params_N["Range"] = {0, 8}; 
+  //Params_N["Range_ntrk_1"] = Ranges[0]; 
+  //Params_N["Range_ntrk_2"] = Ranges[1]; 
+  //Params_N["Range_ntrk_3"] = Ranges[2]; 
+  //Params_N["Range_ntrk_4"] = Ranges[3]; 
 
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
-  Params_NS["Range"] = {0.2, 8}; 
-  Params_NS["Range_ntrk_1"] = Ranges[0]; 
-  Params_NS["Range_ntrk_2"] = Ranges[1]; 
-  Params_NS["Range_ntrk_3"] = Ranges[2];   
-  Params_NS["Range_ntrk_4"] = Ranges[3]; 
+  //Params_NS["Range"] = {0.2, 8}; 
+  //Params_NS["r_value"] = {1}; 
+  //Params_NS["Range_ntrk_1"] = Ranges[0]; 
+  //Params_NS["Range_ntrk_2"] = Ranges[1]; 
+  //Params_NS["Range_ntrk_3"] = Ranges[2];   
+  //Params_NS["Range_ntrk_4"] = Ranges[3]; 
   Params_NS["dx"] = {m, m, m, m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
-  Params_NS["Minimizer"] = {100000}; 
+  Params_NS["Minimizer"] = {100000};
+  //Params_NS["fft_cache"] = {1000};
+  
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
-  Params_FFT["Range"] = {0, 8}; 
-  Params_FFT["Range_ntrk_1"] = Ranges[0]; 
-  Params_FFT["Range_ntrk_2"] = Ranges[1]; 
-  Params_FFT["Range_ntrk_3"] = Ranges[2];   
-  Params_FFT["Range_ntrk_4"] = Ranges[3]; 
+  //Params_FFT["Range"] = {0, 8}; 
+  //Params_FFT["Range_ntrk_1"] = Ranges[0]; 
+  //Params_FFT["Range_ntrk_2"] = Ranges[1]; 
+  //Params_FFT["Range_ntrk_3"] = Ranges[2];   
+  //Params_FFT["Range_ntrk_4"] = Ranges[3]; 
   Params_FFT["m"] = {m, m, m, m};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["fft_cache"] = {10000}; 
@@ -235,25 +238,25 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
-  Params_WidthFFT["Range"] = {0.2, 8}; 
-  Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
-  Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
-  Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
-  Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
+  //Params_WidthFFT["Range"] = {0.2, 8}; 
+  //Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
+  //Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
+  //Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
+  //Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
   Params_WidthFFT["m"] = {m, m, m, m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  Params_WidthFFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
+  Params_WidthFFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
   Params_WidthFFT["fft_cache"] = {10000}; 
   Params_WidthFFT["Minimizer"] = {100000}; 
 
   // Simultaneous Fitting method 
   std::map<TString, std::vector<float>> Params_Sim; 
-  Params_Sim["Range"] = {0.2, 8}; 
-  Params_Sim["Range_ntrk_1"] = {0.4, 6}; 
-  Params_Sim["Range_ntrk_2"] = {1, 6}; 
-  Params_Sim["Range_ntrk_3"] = {2.5, 7}; 
-  Params_Sim["Range_ntrk_4"] = {4, 8}; 
+  //Params_Sim["Range"] = {0.2, 8}; 
+  //Params_Sim["Range_ntrk_1"] = {0.4, 6}; 
+  //Params_Sim["Range_ntrk_2"] = {1, 6}; 
+  //Params_Sim["Range_ntrk_3"] = {2.5, 7}; 
+  //Params_Sim["Range_ntrk_4"] = {4, 8}; 
   Params_Sim["m_e"] = {m, m, m, m};
   Params_Sim["m_G"] = {0, 0, 0, 0};
   Params_Sim["m_s"] = {-m, -m, -m, -m};
@@ -367,12 +370,14 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       Plotter(Fits, TruthVector, current, Mode); 
     }
 
+    if (All){Mode = "IncrementalFit"; }
     if (Mode == "IncrementalFit")
     {
       Fits = IncrementalFit(ToBeUsed, trk1_start, Params_Sim, current); 
       Plotter(Fits, TruthVector, current, Mode); 
     }
 
+    if (All){Mode = "Simultaneous"; }
     if (Mode == "Simultaneous")
     {
       Fits = Simultaneous_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_Sim, current); 

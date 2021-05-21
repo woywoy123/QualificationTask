@@ -166,6 +166,19 @@ static void BulkDelete(std::vector<RooFormulaVar*> var){ for (int i(0); i < var.
 static void BulkDelete(std::vector<RooGaussian*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 static void BulkDelete(std::vector<RooFFTConvPdf*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 
+static std::vector<float> MultiplyByConstant(std::vector<float> Vec, float c)
+{
+  std::vector<float> Out; 
+  for (int i(0); i < Vec.size(); i++){ Out.push_back(Vec[i]*c); }
+  return Out; 
+}
+
+
+
+
+
+
+
 
 // ==================== Base Functions 
 std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 

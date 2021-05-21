@@ -73,27 +73,31 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
+
   float Lum = Data -> Integral(); 
   TH1F* Copy_D = (TH1F*)Data -> Clone("Temp");  
 
   Normalize(PDF_H); 
   Average(PDF_H);
-  Normalize(Copy_D); 
+  //Normalize(Copy_D); 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
 
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
   if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
+  if (Params["fft_cache"].size() != 0){x -> setBins(Params["fft_cache"][0], "cache"); } 
+  
+  // Do a preliminary normalization fit:
+  std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
 
   // Normalization variables
-  float r = 1; 
-  if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
+  //float r = 1; 
+  //if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
   std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
-  std::vector<float> l_s(l_N.size(), 0); 
-  std::vector<float> l_g(l_N.size(), 0.5); 
-  std::vector<float> l_e(l_N.size(), r*Copy_D -> Integral()); 
-  std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_g, l_s, l_e); 
+  std::vector<float> l_s = MultiplyByConstant(Pre["Normalization"], 0.5); 
+  std::vector<float> l_e = MultiplyByConstant(Pre["Normalization"], 2); 
+  std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_s, l_e); 
 
   // Shift variables
   std::vector<TString> d_N = NameGenerator(PDF_H, "_Dx"); 
@@ -144,16 +148,18 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   {
     RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true)); //, NumCPU(n_cpu)); 
     RooMinimizer* pg = new RooMinimizer(*nll);
-    pg -> minimize("Minuit", "migrad"); 
+    int print = 0; 
+    if (Params["Print"].size() != 0){print = Params["Print"][0]; }
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
-    pg -> improve(); 
+    //pg -> improve(); 
     pg -> hesse();  
     pg -> minos();
-    pg -> setEvalErrorWall(true); 
-    pg -> setEps(0.000001); 
+    //pg -> setEvalErrorWall(true); 
+    pg -> setEps(1e-6); 
     pg -> optimizeConst(true); 
+    pg -> setPrintLevel(print); 
     re = pg -> fit("r"); 
     pg -> cleanup(); 
     delete pg; 
@@ -181,7 +187,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
    
     CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 
-    PDF_H[i] -> Scale(n*Lum); 
+    PDF_H[i] -> Scale(n); //*Lum); 
     
     for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
   }
@@ -218,12 +224,14 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
     x -> setBins(Params["fft_cache"][0], "cache");  
   }
 
+  // Do a preliminary normalization fit:
+  std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
+
+
   // Normalization variables
-  float r = 1; 
-  if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
   std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
-  std::vector<float> l_s(l_N.size(), 0); 
-  std::vector<float> l_e(l_N.size(), r*Data -> Integral());
+  std::vector<float> l_s = MultiplyByConstant(Pre["Normalization"], 0.01); 
+  std::vector<float> l_e = MultiplyByConstant(Pre["Normalization"], 100); 
   std::vector<RooRealVar*> l_vars; 
   if (Params["l_G"].size() != 0){l_vars = RooRealVariable(l_N, Params["l_G"], l_s, l_e);}
   else {l_vars = RooRealVariable(l_N, l_s, l_e);}
@@ -306,6 +314,8 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   {
     RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true)); 
     RooMinimizer* pg = new RooMinimizer(*nll); 
+    int print = 0; 
+    if (Params["Print"].size() != 0){print = Params["Print"][0]; }   
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
@@ -314,8 +324,8 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
     pg -> improve(); 
     pg -> optimizeConst(true); 
     //pg -> setEvalErrorWall(true); 
-    pg -> setEps(1e-4); 
-    pg -> setPrintLevel(0); 
+    pg -> setEps(1e-6); 
+    pg -> setPrintLevel(print); 
     re = pg -> fit("r"); 
     pg -> cleanup(); 
     delete pg; 
@@ -431,13 +441,15 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
     RooMinimizer* pg = new RooMinimizer(*nll); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
+    int print = 0; 
+    if (Params["Print"].size() != 0){print = Params["Print"][0]; }
     pg -> migrad(); 
     pg -> minos();
     pg -> hesse();
     pg -> improve(); 
     pg -> optimizeConst(true); 
     pg -> setEps(1e-6); 
-    pg -> setPrintLevel(0); 
+    pg -> setPrintLevel(print); 
     RooFitResult* re = pg -> fit("r"); 
     pg -> cleanup(); 
     delete pg; 
@@ -464,6 +476,10 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   std::vector<std::vector<RooRealVar*>> Lumi; 
   for (int i(0); i < PDF_H_V.size(); i++)
   {
+    // Do a preliminary normalization fit:
+    std::map<TString, std::vector<float>> Pre = Normalization(Data[i], PDF_H_V[i], Params);
+    Params["l_s"] = MultiplyByConstant(Pre["Normalization"], 0.5); 
+    Params["l_e"] = MultiplyByConstant(Pre["Normalization"], 2); 
     std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 0, Data[i] -> Integral()); 
     Lumi.push_back(l_var); 
   } 
@@ -528,7 +544,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   }
   
   RooDataHist* ComData = new RooDataHist("ComData", "ComData", x_var, sample, Data_V, 1.0); 
-  RooAbsReal* nll = simPdf.createNLL(*ComData, NumCPU(6, true)); 
+  RooAbsReal* nll = simPdf.createNLL(*ComData); 
   int stat = Minimization(nll, Params); 
   //simPdf.fitTo(*ComData); 
 
