@@ -275,14 +275,12 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       TString base = "Fit_"; base += (i+1); base += (ext); 
       
       Normalize(ntrk_Measure); 
-      std::map<TString, std::vector<float>> prefit = Normalization(ntrk_Measure, ntrk_Template, Params, base); 
-      std::vector<float> Norm = prefit["Normalization"]; 
-      Params["l_G"] = Norm;
       std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
       
       float L = Data[i] -> Integral(); 
       for (TH1F* H : ntrk_Template){ H -> Scale(L); }
-      Map = Normalization(Data[i], ntrk_Template, Params, base); 
+      Normalization(Data[i], ntrk_Template, Params); 
+      
       delete ntrk_Measure;
       if (x == iter -1)
       {

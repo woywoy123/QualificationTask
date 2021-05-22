@@ -24,16 +24,16 @@ function CondorBuild
   #echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
   echo "Request_Cpus = 1"  >> example.submit
   echo "Request_Memory = 500MB" >> example.submit
-  echo "+RequestRunTime= 7200"  >> example.submit
+  echo "+RequestRunTime= 14400"  >> example.submit
   echo "queue 1"  >> example.submit
 }
 
 
 #Constants that we need to generate the names 
-Condor_active=true
+Condor_active=false
 Layer=("IBL" "Blayer" "layer1" "layer2") 
-JetEnergy=("200_up_GeV" "200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV" "All")
-Mode=("Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Truth" "IncrementalFit" "Simultaneous" "Experimental")
+JetEnergy=("200_up_GeV" "200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
+Mode=("None") #"Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Truth" "IncrementalFit" "Simultaneous" "Experimental")
 root_dir=$PWD
 echo $root_dir
 
@@ -88,10 +88,8 @@ do
       cd ../
     done 
   done 
-done
 
-for L in ${Layer[@]}
-do
+
   for M in ${Mode[@]}
   do
     Line=$L"_"$M
@@ -99,45 +97,47 @@ do
     echo $Line
     mkdir $Line
     cd $Line 
-
-    CreateBatches_Local $L $M $File $PWD
+    LJE=$L
+    
+    CreateBatches_Local $LJE $M $File $PWD
     CondorBuild
     chmod +x Spawn.sh
-
+    
     if [[ $Condor_active == true ]]
     then 
       condor_submit example.submit 
     else
       bash Spawn.sh
     fi 
-
     
     cd ../
   done 
-done 
 
-for L in ${JetEnergy[@]}
+done
+
+JetEnergy+=("All")
+for E in ${JetEnergy[@]}
 do
   for M in ${Mode[@]}
   do
-    Line=$L"_"$M
+    Line="$E"
    
     echo $Line
     mkdir $Line
     cd $Line 
-
-    CreateBatches_Local $L $M $File $PWD
+    LJE=$E
+    
+    CreateBatches_Local $LJE $M $File $PWD
     CondorBuild
     chmod +x Spawn.sh
-
+    
     if [[ $Condor_active == true ]]
     then 
       condor_submit example.submit 
     else
       bash Spawn.sh
     fi 
-
-
+    
     cd ../
   done 
 done 
