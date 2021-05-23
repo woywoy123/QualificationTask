@@ -226,7 +226,7 @@ void MultiTrackTruthComparison(TString dir)
           TString trk = "ntrk_"; trk += (i+1); 
           TString metric = p -> first; 
           if (!metric.Contains(trk) || !metric.Contains("fit_status")){continue;}
-          if ((*Sta)[trk][algo].size() == 0){ (*Sta)[trk][algo] = std::vector<float>(6, 0);} 
+          if ((*Sta)[trk][algo].size() == 0){ (*Sta)[trk][algo] = std::vector<float>(8, 0);} 
           
           int in = (int)Res[metric][0];
           (*Sta)[trk][algo][in]++;
@@ -518,7 +518,7 @@ void MultiTrackTruthComparison(TString dir)
         }
         TString x = PrecisionString(Flost_P[0], 2, true);
         x += " ("; 
-        x += PrecisionString((Flost_P[1]/Flost_P[0])*100, 2, false);
+        x += PrecisionString((Flost_P[1]/Flost_P[0])*100, 2, true);
         x += ")    "; 
         x += "["; 
         x += PrecisionString((dif/Truth[0])*100, 2, false);  
