@@ -304,7 +304,6 @@ std::vector<std::vector<TH1F*>> Simultaneous_Fit_NtrkMtru(std::vector<TH1F*> Dat
   gDirectory -> mkdir(JE + "/Simultaneous"); 
   
   std::map<TString, std::vector<float>> Fit_Res = SimultaneousFFT(Data, ntrk_mtru_H, Params, ext);  
-
   
   for (int i(0); i < Data.size(); i++)
   {
@@ -322,7 +321,7 @@ std::vector<std::vector<TH1F*>> Simultaneous_Fit_NtrkMtru(std::vector<TH1F*> Dat
     Map.insert(std::pair<TString, std::vector<float>>("Stdev", Fit_Res["Stdev"])); 
     Map.insert(std::pair<TString, std::vector<float>>("Stdev_Error", Fit_Res["Stdev_Error"])); 
     Map.insert(std::pair<TString, std::vector<float>>("fit_status", Fit_Res["fit_status"])); 
-
+  
     WriteOutputMapToFile(Map, JE + "/Simultaneous", trk_n);
   }
 
@@ -404,6 +403,11 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
 
     for (int i(0); i < Data.size(); i++)
     {
+      // Do a preliminary normalization fit:
+      std::map<TString, std::vector<float>> Pre = Normalization(Data[i], ntrk_mtru_H[i], Params);
+      Params["l_s"] = MultiplyByConstant(Pre["Normalization"], 0.01); 
+      Params["l_e"] = MultiplyByConstant(Pre["Normalization"], 100); 
+      
       std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", ntrk_mtru_H[i], Params, 0, r*(Data[i] -> Integral())); 
       std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", ntrk_mtru_H[i], Params, -0.001, 0.001); 
       std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", ntrk_mtru_H[i], Params, 0.0001, 0.001); 
@@ -476,12 +480,21 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
 
       nll = model.createNLL(D); 
       re = Minimization(nll, Params); 
+      int stat = re -> status();
       CaptureResults(re, &(Output_List[i]));
 
       TString plot_t = JE + "_trk_"; plot_t += (i+1); plot_t += "PULL.pdf"; 
       RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
       
       IntoOutput(&(Output_List[i]), l_vars, m_vars, s_vars, ntrk_mtru_H[i], PxG_vars, x, Data[i]); 
+
+      if (stat != 0)
+      { 
+        Normalize(ntrk_mtru_H[i]); 
+        Normalization(Data[i], ntrk_mtru_H[i], Params);
+      }
+
+
 
       BulkDelete(l_vars); 
       BulkDelete(m_vars); 
@@ -498,11 +511,11 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
 
 
 
-  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, JE); 
+  TString ext = "_" + JE + "_Incremental_NtrkMtru";
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext); 
   std::vector<std::map<TString, std::vector<float>>> Output_List;   
   Output_List = Algorithm(Params, ntrk_mtru_H, Data);
 
-  TString ext = "_" + JE + "_Incremental_NtrkMtru";
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Incremental"); 
   

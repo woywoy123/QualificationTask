@@ -4,6 +4,8 @@
 #include<PostAnalysis/AlgorithmFunctions.h>
 #include<PostAnalysis/Plotting.h>
 
+#include<PostAnalysis/ROOT_Alternative.h>
+
 void IOTest(){TestReadCTIDE();}
 void TestRead(){TestReadAlgorithm();}
 void RooFitBaseFunctionTest()
@@ -233,7 +235,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   //Params_FFT["Range_ntrk_4"] = Ranges[3]; 
   Params_FFT["m"] = {m, m, m, m};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
-  Params_FFT["fft_cache"] = {10000}; 
+  Params_FFT["fft_cache"] = {50000}; 
   Params_FFT["Minimizer"] = {10000}; 
   Params_FFT["Print"] = {-1}; 
 
@@ -248,7 +250,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {0.01, 0.01, 0.01, 0.01};
-  Params_WidthFFT["fft_cache"] = {10000}; 
+  Params_WidthFFT["fft_cache"] = {50000}; 
   Params_WidthFFT["Minimizer"] = {10000}; 
   Params_WidthFFT["Print"] = {-1}; 
 
@@ -264,7 +266,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["m_s"] = {-m, -m, -m, -m};
   Params_Sim["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_Sim["s_e"] = {0.01, 0.01, 0.01, 0.01};
-  Params_Sim["fft_cache"] = {10000}; 
+  Params_Sim["fft_cache"] = {50000}; 
   Params_Sim["Minimizer"] = {10000}; 
   Params_Sim["Print"] = {-1}; 
 
@@ -373,8 +375,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       Plotter(Fits, TruthVector, current, Mode); 
     }
 
-    if (All){Mode = "IncrementalFit"; }
-    if (Mode == "IncrementalFit")
+    if (All){Mode = "Incremental"; }
+    if (Mode == "Incremental")
     {
       Fits = IncrementalFit(ToBeUsed, trk1_start, Params_Sim, current); 
       Plotter(Fits, TruthVector, current, Mode); 
@@ -386,7 +388,13 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       Fits = Simultaneous_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_Sim, current); 
       Plotter(Fits, TruthVector, current, Mode);
     }
-    
+   
+    if (Mode == "Test")
+    {
+      FitWithRoot(ToBeUsed, trk1_start, TruthVector); 
+    }
+
+
     p++;
     X -> Write();
   }

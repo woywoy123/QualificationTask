@@ -37,7 +37,6 @@ std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
     if (ntrk[i].size() > 1 && i < fi.size())
     {  
       fi[i] = ntrk[i][1] -> Integral(); 
-      std::cout << ntrk[i][1] -> GetTitle() <<  " " << ntrk[i][1] -> Integral() << std::endl;
     }
   }
 
@@ -62,8 +61,7 @@ std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
   //float E_flost2 = (1./(n_1_2 + n_2_2))*std::pow(0.5*(std::pow(n_2_2 * E_1_2, 2) + std::pow(n_1_2 * E_2_2, 2)), 0.5);
   
   float E_flost2 = (1. / std::pow(n_1_2 + n_2_2, 2)) * std::pow( std::pow(E_2_2, 2) + std::pow(n_2_2 * E_1_2, 2), 0.5); 
-  
-  
+
   return {FLost2, E_flost2};
 }
 
