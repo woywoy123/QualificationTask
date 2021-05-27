@@ -38,8 +38,33 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Import(*Data)); 
-  RooFitResult* re = model.fitTo(D, Range("fit"), SumW2Error(true), Save()); 
-  
+  RooFitResult* re; 
+  if (Params["Minimizer"].size() == 0)
+  {
+    re = model.fitTo(D, Range("fit"), SumW2Error(true), Extended(true), Save()); 
+  }
+  else
+  {
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true)); //, NumCPU(n_cpu)); 
+    RooMinimizer* pg = new RooMinimizer(*nll);
+    int print = 0; 
+    if (Params["Print"].size() != 0){print = Params["Print"][0]; }
+    pg -> setMaxIterations(Params["Minimizer"][0]); 
+    pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
+    pg -> migrad(); 
+    //pg -> improve(); 
+    pg -> hesse();  
+    pg -> minos();
+    //pg -> setEvalErrorWall(true); 
+    pg -> setEps(1e-15); 
+    pg -> optimizeConst(true); 
+    pg -> setPrintLevel(print); 
+    re = pg -> fit("r"); 
+    pg -> cleanup(); 
+    delete pg; 
+    delete nll;
+  }
+
   std::map<TString, std::vector<float>> Output;  
   CaptureResults(re, &Output);  
  
@@ -157,7 +182,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     pg -> hesse();  
     pg -> minos();
     //pg -> setEvalErrorWall(true); 
-    pg -> setEps(1e-6); 
+    pg -> setEps(1e-15); 
     pg -> optimizeConst(true); 
     pg -> setPrintLevel(print); 
     re = pg -> fit("r"); 
@@ -256,7 +281,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   // Standard Deviation variables
   std::vector<TString> s_N = NameGenerator(PDF_H, "_S"); 
   std::vector<float> s_s(PDF_H.size(), 0.001); 
-  std::vector<float> s_e(PDF_H.size(), 0.001); 
+  std::vector<float> s_e(PDF_H.size(), 0.0012); 
   setconst = false;
   
   if (Params["s_s"].size() == 0){setconst = true;}
@@ -319,12 +344,12 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> migrad(); 
-    pg -> minos();
+    //pg -> minos();
     pg -> hesse();
     pg -> improve(); 
     pg -> optimizeConst(true); 
     //pg -> setEvalErrorWall(true); 
-    pg -> setEps(1e-6); 
+    pg -> setEps(1e-15); 
     pg -> setPrintLevel(print); 
     re = pg -> fit("r"); 
     pg -> cleanup(); 
@@ -448,7 +473,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
     pg -> hesse();
     pg -> improve(); 
     pg -> optimizeConst(true); 
-    pg -> setEps(1e-6); 
+    pg -> setEps(1e-15); 
     pg -> setPrintLevel(print); 
     RooFitResult* re = pg -> fit("r"); 
     pg -> cleanup(); 

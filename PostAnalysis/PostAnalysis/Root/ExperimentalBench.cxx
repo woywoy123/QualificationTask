@@ -203,7 +203,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
  
   std::vector<std::vector<float>> Ranges = {{0.4, 1.5}, {1.5, 3}, {3, 4}, {4, 8}}; 
 
-  float m = 0.2; 
+  float m = 0.3; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   //Params_N["Range"] = {0, 8}; 
@@ -222,7 +222,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   //Params_NS["Range_ntrk_4"] = Ranges[3]; 
   Params_NS["dx"] = {m, m, m, m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
-  Params_NS["Minimizer"] = {10000};
+  Params_NS["Minimizer"] = {1000000};
   Params_NS["Print"] = {-1};
   
   
@@ -236,7 +236,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["m"] = {m, m, m, m};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["fft_cache"] = {50000}; 
-  Params_FFT["Minimizer"] = {10000}; 
+  Params_FFT["Minimizer"] = {1000000}; 
   Params_FFT["Print"] = {-1}; 
 
   // Normalization Shift Width FFT parameters
@@ -251,7 +251,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {0.01, 0.01, 0.01, 0.01};
   Params_WidthFFT["fft_cache"] = {50000}; 
-  Params_WidthFFT["Minimizer"] = {10000}; 
+  Params_WidthFFT["Minimizer"] = {1000000}; 
   Params_WidthFFT["Print"] = {-1}; 
 
   // Simultaneous Fitting method 
@@ -267,7 +267,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_Sim["s_e"] = {0.01, 0.01, 0.01, 0.01};
   Params_Sim["fft_cache"] = {50000}; 
-  Params_Sim["Minimizer"] = {10000}; 
+  Params_Sim["Minimizer"] = {1000000}; 
   Params_Sim["Print"] = {-1}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
