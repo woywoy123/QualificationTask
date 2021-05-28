@@ -47,12 +47,48 @@ void CoutText(TString *Input, int v, TString Text = "");
 TString PrecisionString(float number, int precision, bool sci = false);
 
 // Iterators that are used throughout the package 
+typedef std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>>::iterator MMMVFi;
+typedef std::map<TString, std::map<TString, std::map<TString, int>>>::iterator MMMSIi; 
 typedef std::map<TString, std::map<TString, std::vector<TH1F*>>>::iterator MMVi; 
-typedef std::map<TString, std::vector<TH1F*>>::iterator MVi; 
-typedef std::map<TString, std::vector<std::vector<TH1F*>>> MVVi; 
-typedef std::map<TString, std::vector<float>>::iterator MVFi; 
 typedef std::map<TString, std::map<TString, std::vector<float>>>::iterator MMVFi; 
+
+
+typedef std::map<TString, std::map<TString, std::map<int, int>>>::iterator MMIIi; 
+
+typedef std::map<TString, std::vector<std::vector<TH1F*>>> MVVi; 
+
+typedef std::map<TString, std::vector<float>>::iterator MVFi; 
+typedef std::map<TString, std::vector<TH1F*>>::iterator MVi; 
+
+typedef std::map<TString, std::map<int, int>>::iterator MIIi; 
+typedef std::map<TString, std::map<TString, int>>::iterator MMSIi; 
 typedef std::map<TString, std::map<TString, float>>::iterator MMFi; 
+
+
 typedef std::map<TString, float>::iterator MFi;
 typedef std::map<TString, int>::iterator MIi; 
+typedef std::map<int, int>::iterator IIi; 
+
+// Non iterators used in this package
+typedef std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> MMMVF;
+typedef std::map<TString, std::map<TString, std::map<TString, int>>> MMMSI; 
+typedef std::map<TString, std::map<TString, std::vector<TH1F*>>> MMVT; 
+typedef std::map<TString, std::map<TString, std::vector<float>>> MMVF;
+
+typedef std::map<TString, std::map<TString, std::map<int, int>>> MMII; 
+
+typedef std::map<TString, std::map<TString, int>> MMSI; 
+typedef std::map<TString, std::map<int, int>> MII; 
+typedef std::map<TString, std::vector<float>> MVF; 
+typedef std::map<TString, std::vector<TH1F*>> MVT; 
+
+typedef std::vector<std::vector<TH1F*>> VVT; 
+typedef std::vector<std::vector<float>> VVF; 
+
+typedef std::map<TString, int> MI;
+typedef std::map<int, int> II; 
+typedef std::map<TString, float> MF; 
+typedef std::vector<TH1F*> VT; 
+typedef std::vector<float> VF;
+typedef std::vector<TString> VS; 
 #endif
