@@ -237,7 +237,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Experimental"); 
   
-  int iter = 1; 
+  int iter = 2; 
   for (int x(0); x < iter; x++)
   {
     if (x > 0)
@@ -252,6 +252,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         }
         
         Average(ntrk_Data); 
+        ntrk_Data -> Smooth(1); 
         Flush({ntrk_Data}, {ntrk_mtru_H[t][t]}); 
         delete ntrk_Data;  
       }
