@@ -224,8 +224,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["Range_ntrk_4"] = Ranges[3]; 
   Params_FFT["m"] = {m, m, m, m};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
-  Params_FFT["fft_cache"] = {50000}; 
-  Params_FFT["Minimizer"] = {50000}; 
+  Params_FFT["fft_cache"] = {10000}; 
+  Params_FFT["Minimizer"] = {5000}; 
   Params_FFT["Print"] = {-1}; 
 
   // Normalization Shift Width FFT parameters
@@ -239,8 +239,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {0.01, 0.01, 0.01, 0.01};
-  Params_WidthFFT["fft_cache"] = {50000}; 
-  Params_WidthFFT["Minimizer"] = {50000}; 
+  Params_WidthFFT["fft_cache"] = {10000}; 
+  Params_WidthFFT["Minimizer"] = {5000}; 
   Params_WidthFFT["Print"] = {-1}; 
 
   // Simultaneous Fitting method 
@@ -250,8 +250,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["m_s"] = {-m, -m, -m, -m};
   Params_Sim["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_Sim["s_e"] = {0.01, 0.01, 0.01, 0.01};
-  Params_Sim["fft_cache"] = {50000}; 
-  Params_Sim["Minimizer"] = {50000}; 
+  Params_Sim["fft_cache"] = {10000}; 
+  Params_Sim["Minimizer"] = {5000}; 
   Params_Sim["Print"] = {-1}; 
 
 
@@ -268,7 +268,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["s_s"] = {0.005, 0.005, 0.005, 0.005};
   Params_Exp["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_Exp["fft_cache"] = {10000}; 
-  Params_Exp["Minimizer"] = {10000}; 
+  Params_Exp["Minimizer"] = {1000}; 
   Params_Exp["Print"] = {-1}; 
   Params_Exp["G_Mean"] = {0, 0, 0, 0};
   Params_Exp["G_Stdev"] = {0.01, 0.01, 0.01, 0.01};
