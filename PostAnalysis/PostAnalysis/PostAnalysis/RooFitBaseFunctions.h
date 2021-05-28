@@ -20,7 +20,6 @@
 #include<RooCategory.h>
 #include<RooRealSumPdf.h>
 
-
 using namespace RooFit;
 
 // ==================  Basic RooFit Variables
@@ -158,6 +157,35 @@ static void CaptureResults(RooFitResult* Re, std::map<TString, std::vector<float
   delete Re; 
 }
 
+static RooFitResult* MinimizationCustom(RooAbsReal* nll, std::map<TString, std::vector<float>> Params)
+{
+    RooFitResult* re; 
+    RooMinimizer* pg = new RooMinimizer(*nll);
+    int print = -1; 
+    if (Params["Print"].size() != 0){print = Params["Print"][0]; }
+    pg -> setPrintLevel(print); 
+    pg -> setPrintEvalErrors(print);
+    pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
+    pg -> setMaxIterations(Params["Minimizer"][0]); 
+    pg -> minimize("GSLMultiMin"); 
+    pg -> optimizeConst(true); 
+    pg -> simplex();
+    pg -> seek(); 
+    pg -> setOffsetting(true); 
+    pg -> setEvalErrorWall(true); 
+    pg -> migrad(); 
+    pg -> setStrategy(2); 
+    pg -> improve(); 
+    pg -> hesse();  
+    pg -> minos();
+
+    re = pg -> fit("r"); 
+
+    pg -> cleanup(); 
+    delete pg; 
+    delete nll;
+    return re; 
+}
 
 static void BulkDelete(std::vector<RooDataHist*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 static void BulkDelete(std::vector<RooRealVar*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}

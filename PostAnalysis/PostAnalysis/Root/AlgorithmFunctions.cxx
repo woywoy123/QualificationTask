@@ -151,7 +151,7 @@ std::vector<std::vector<TH1F*>> Normalization_Fit_NtrkMtru(std::vector<TH1F*> Da
 std::vector<std::vector<TH1F*>> NormalizationShift_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
   TString ext = "_" + JE + "_ShiftNormal_NtrkMtru"; 
-  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext, 4);
 
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/ShiftNormal"); 
@@ -237,7 +237,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Experimental"); 
   
-  int iter = 2; 
+  int iter = 1; 
   for (int x(0); x < iter; x++)
   {
     if (x > 0)
@@ -275,7 +275,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       TString base = "Fit_"; base += (i+1); base += (ext); 
       
       Normalize(ntrk_Measure); 
-      std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
+      std::map<TString, std::vector<float>> Map = DeConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
       
       float L = Data[i] -> Integral(); 
       for (TH1F* H : ntrk_Template){ H -> Scale(L); }
@@ -330,26 +330,6 @@ std::vector<std::vector<TH1F*>> Simultaneous_Fit_NtrkMtru(std::vector<TH1F*> Dat
 
 std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
-  auto Minimization =[&] (RooAbsReal* nll, std::map<TString, std::vector<float>> Params)
-  {
-    RooMinimizer* pg = new RooMinimizer(*nll); 
-    pg -> setMaxIterations(Params["Minimizer"][0]); 
-    pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
-    pg -> migrad(); 
-    pg -> minos();
-    pg -> hesse();
-    pg -> improve(); 
-    pg -> optimizeConst(true); 
-    pg -> setEps(1e-6); 
-    pg -> setPrintLevel(0); 
-    RooFitResult* re = pg -> fit("r"); 
-    pg -> cleanup(); 
-    delete pg; 
-    delete nll;
-    
-    return re; 
-  }; 
-
   auto IntoOutput =[&] (std::map<TString, std::vector<float>>* output, 
                         std::vector<RooRealVar*> N, 
                         std::vector<RooRealVar*> M, 
@@ -459,7 +439,7 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
       VariableConstant(Bools, m_vars); 
 
       nll = model.createNLL(D); 
-      re = Minimization(nll, Params); 
+      re = MinimizationCustom(nll, Params); 
       delete re; 
 
       // Second fit ===== Fix m and let s float 
@@ -469,7 +449,7 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
       VariableConstant(Bools, m_vars); 
       
       nll = model.createNLL(D); 
-      re = Minimization(nll, Params); 
+      re = MinimizationCustom(nll, Params); 
       delete re;
 
       // Third fit ==== Fix s and m and let only L float
@@ -479,7 +459,7 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
       VariableConstant(Bools, s_vars); 
 
       nll = model.createNLL(D); 
-      re = Minimization(nll, Params); 
+      re = MinimizationCustom(nll, Params); 
       int stat = re -> status();
       CaptureResults(re, &(Output_List[i]));
 
@@ -535,7 +515,7 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
 
 std::vector<std::vector<TH1F*>> BruceMethod(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
-  auto Minimization =[&] (RooAbsReal* nll, std::map<TString, std::vector<float>> Params)
+  auto Minimization2 =[&] (RooAbsReal* nll, std::map<TString, std::vector<float>> Params)
   {
     RooMinimizer* pg = new RooMinimizer(*nll); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
@@ -692,7 +672,7 @@ std::vector<std::vector<TH1F*>> BruceMethod(std::vector<TH1F*> Data, TH1F* trk1_
     //SetConstantVar(m_vars, OFF); 
     //SetConstantVar(s_vars, OFF); 
     nll = model.createNLL(D, Range("trk_1, trk_2, trk_3, trk_4"), Extended(true)); 
-    re = Minimization(nll, Params_Bruce); 
+    re = Minimization2(nll, Params_Bruce); 
 
 
     // Fit only the 1-Track, 1-Truth
