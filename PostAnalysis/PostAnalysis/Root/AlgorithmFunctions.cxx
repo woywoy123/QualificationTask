@@ -246,6 +246,9 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       {
         TString name_temp = Data[t] -> GetTitle(); 
         TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
+        Normalization(ntrk_Data, ntrk_mtru_H[t], Params);
+
+
         for (int j(0); j < ntrk_mtru_H[t].size(); j++)
         {
           if (j != t){ ntrk_Data -> Add(ntrk_mtru_H[t][j], -1); }
@@ -257,13 +260,21 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         delete ntrk_Data;  
       }
 
-      //for (int t(0); t < Data.size(); t++)
-      //{
-      //  for (int j(0); j < Data.size(); j++)
-      //  {
-      //    Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]}); 
-      //  }
-      //}
+      for (int t(0); t < Data.size(); t++)
+      {
+        for (int j(0); j < Data.size(); j++)
+        {
+          Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]}); 
+        }
+      }
+
+      for (int t(0); t < Data.size(); t++)
+      {
+        for (int j(0); j < Data.size(); j++)
+        {
+          ntrk_mtru_H[j][t] -> Smooth(5); 
+        }
+      }
     }   
      
     for (int i(0); i < Data.size(); i++)
@@ -275,12 +286,12 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       
       TString base = "Fit_"; base += (i+1); base += (ext); 
       
-      Normalize(ntrk_Measure); 
+      //Normalize(ntrk_Measure); 
       std::map<TString, std::vector<float>> Map = DeConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
       
-      float L = Data[i] -> Integral(); 
-      for (TH1F* H : ntrk_Template){ H -> Scale(L); }
-      Normalization(Data[i], ntrk_Template, Params); 
+      //float L = Data[i] -> Integral(); 
+      //for (TH1F* H : ntrk_Template){ H -> Scale(L); }
+      //Normalization(Data[i], ntrk_Template, Params); 
       
       delete ntrk_Measure;
       if (x == iter -1)
@@ -385,9 +396,9 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
     for (int i(0); i < Data.size(); i++)
     {
       // Do a preliminary normalization fit:
-      std::map<TString, std::vector<float>> Pre = Normalization(Data[i], ntrk_mtru_H[i], Params);
-      Params["l_s"] = MultiplyByConstant(Pre["Normalization"], 0.01); 
-      Params["l_e"] = MultiplyByConstant(Pre["Normalization"], 100); 
+      //std::map<TString, std::vector<float>> Pre = Normalization(Data[i], ntrk_mtru_H[i], Params);
+      //Params["l_s"] = MultiplyByConstant(Pre["Normalization"], 0.01); 
+      //Params["l_e"] = MultiplyByConstant(Pre["Normalization"], 100); 
       
       std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", ntrk_mtru_H[i], Params, 0, r*(Data[i] -> Integral())); 
       std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", ntrk_mtru_H[i], Params, -0.001, 0.001); 
@@ -421,6 +432,7 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
       RooArgList PxG; 
       for (int i(0); i < PxG_vars.size(); i++)
       {
+        PxG_vars[i] -> setBufferFraction(1); 
         PxG.add(*PxG_vars[i]); 
         L.add(*l_vars[i]); 
       }

@@ -167,7 +167,7 @@ static RooFitResult* MinimizationCustom(RooAbsReal* nll, std::map<TString, std::
     pg -> setPrintEvalErrors(print);
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
-    pg -> minimize("GSLMultiMin"); 
+    pg -> setMinimizerType("GSLMultiMin"); //minimize("GSLMultiMin"); 
     pg -> optimizeConst(true); 
     pg -> simplex();
     pg -> seek(); 
