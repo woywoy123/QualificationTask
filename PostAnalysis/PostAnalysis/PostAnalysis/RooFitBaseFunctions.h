@@ -167,7 +167,7 @@ static RooFitResult* MinimizationCustom(RooAbsReal* nll, std::map<TString, std::
     pg -> setPrintEvalErrors(print);
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
-    //pg -> setMinimizerType("GSLMultiMin"); //minimize("GSLMultiMin"); 
+    if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
     pg -> optimizeConst(true); 
     pg -> simplex();
     pg -> seek(); 
@@ -216,6 +216,6 @@ std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<T
 std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
 
 
-const int n_cpu = 12; 
+const int n_cpu = 4; 
 
 #endif
