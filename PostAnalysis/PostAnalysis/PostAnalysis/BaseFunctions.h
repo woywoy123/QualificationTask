@@ -17,6 +17,8 @@ TH1F* SumHists(std::vector<TH1F*> Hists_V, TString name);
 void Normalize(TH1F* Hist); 
 void Normalize(std::vector<TH1F*> Hists); 
 void Shift(TH1F* Hist, int shift);
+void MatchBins(std::vector<TH1F*> In, TH1F* Data); 
+void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk = false); 
 
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty); 

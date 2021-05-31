@@ -45,7 +45,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Extended(true)); 
+    RooAbsReal* nll = model.createNLL(D, Extended(true), NumCPU(n_cpu, 1)); 
     re = MinimizationCustom(nll, Params);  
   }
   std::map<TString, std::vector<float>> Output;  
@@ -145,7 +145,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Extended(true)); 
+    RooAbsReal* nll = model.createNLL(D, Extended(true), NumCPU(n_cpu, 1)); 
     re = MinimizationCustom(nll, Params);  
   }
   CaptureResults(re, &Output);
@@ -246,7 +246,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   {re = model.fitTo(D, Range("fit"), SumW2Error(true), Extended(true), Save());}
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true)); 
+    RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true), NumCPU(n_cpu, 1)); 
     re = MinimizationCustom(nll, Params);  
   }
   CaptureResults(re, &Output); 
@@ -441,7 +441,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   }
   
   RooDataHist* ComData = new RooDataHist("ComData", "ComData", x_var, sample, Data_V, 1.0); 
-  RooAbsReal* nll = simPdf.createNLL(*ComData, Range("fit")); 
+  RooAbsReal* nll = simPdf.createNLL(*ComData, Range("fit"), NumCPU(n_cpu, 1)); 
   RooFitResult* re = MinimizationCustom(nll, Params); 
   int stat = re -> status(); 
   delete re; 

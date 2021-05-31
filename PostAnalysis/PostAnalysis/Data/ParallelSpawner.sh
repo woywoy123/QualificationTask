@@ -21,8 +21,8 @@ function CondorBuild
   echo "executable = Spawn.sh" >> example.submit
   #echo "output = ./results.output.$""(ClusterID)"  >> example.submit
   echo "error =  ./results.error.$""(ClusterID)"  >> example.submit
-  #echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
-  echo "Request_Cpus = 1"  >> example.submit
+  echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
+  echo "Request_Cpus = 12"  >> example.submit
   echo "Request_Memory = 500MB" >> example.submit
   echo "+RequestRunTime= 14400"  >> example.submit
   echo "queue 1"  >> example.submit

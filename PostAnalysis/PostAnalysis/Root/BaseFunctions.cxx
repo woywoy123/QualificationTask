@@ -171,6 +171,37 @@ void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool DeletePoin
   }
 }
 
+void MatchBins(std::vector<TH1F*> In, TH1F* Data)
+{
+  int bins = In[0] -> GetNbinsX(); 
+  for (int i(0); i < bins; i++)
+  {
+    float e = Data -> GetBinContent(i+1); 
+    
+    float s = 0; 
+    for (int c(0); c < In.size(); c++){s += In[c] -> GetBinContent(i+1);}
+    
+    float r = e / s; 
+    if (std::isnan(r)){continue;}
+    for (int c(0); c < In.size(); c++)
+    {
+      float g = In[c] -> GetBinContent(c+1); 
+      In[c] -> SetBinContent(c+1, g*r); 
+    }
+  }
+}
+
+void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk)
+{
+  for (int i(0); i < In.size(); i++)
+  {
+    if (i != trk && !trutrk){ Data -> Add(In[i], -1);}
+    if (i == trk && trutrk){ Data -> Add(In[i], -1);}
+  }
+  Average(Data); 
+}
+
+
 void Average(TH1F* Data)
 {
   for (int i(0); i < Data -> GetNbinsX(); i++)

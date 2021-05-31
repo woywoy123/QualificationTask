@@ -237,10 +237,10 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Experimental"); 
   
-  int iter = 2; 
+  int iter = 3; 
   for (int x(0); x < iter; x++)
   {
-    if (x > 0)
+    if (x > 1)
     {
       for (int t(0); t < Data.size(); t++)
       {
@@ -248,32 +248,40 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
         Normalization(ntrk_Data, ntrk_mtru_H[t], Params);
 
-
-        for (int j(0); j < ntrk_mtru_H[t].size(); j++)
-        {
-          if (j != t){ ntrk_Data -> Add(ntrk_mtru_H[t][j], -1); }
-        }
+        SubtractData(ntrk_mtru_H[t], ntrk_Data, t);
         
-        Average(ntrk_Data); 
         ntrk_Data -> Smooth(1); 
         Flush({ntrk_Data}, {ntrk_mtru_H[t][t]}); 
         delete ntrk_Data;  
       }
-
+     
       for (int t(0); t < Data.size(); t++)
       {
-        for (int j(0); j < Data.size(); j++)
+        for (int j(0); j < Data.size(); j++){Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]});}
+        TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone("Temp_Data"); 
+        VT mtru = ntrk_mtru_H[t]; 
+        delete ntrk_Data; 
+        
+        for (int p(0); p < mtru.size(); p++)
         {
-          Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]}); 
+          VT sample; 
+          for (int h(0); h < mtru.size(); h++)
+          {
+            if (h == p){ continue; }
+            sample.push_back(mtru[h]); 
+          }
+
+
+          TH1F* ntrkD = (TH1F*)Data[t] -> Clone("Temp_Dat2"); 
+          SubtractData(mtru, ntrkD, p, true);
+          Normalization(ntrkD, sample, Params); 
+          MatchBins(sample, ntrkD);
+          delete ntrkD; 
         }
       }
-
       for (int t(0); t < Data.size(); t++)
       {
-        for (int j(0); j < Data.size(); j++)
-        {
-          ntrk_mtru_H[j][t] -> Smooth(5); 
-        }
+        for (int j(0); j < Data.size(); j++){ntrk_mtru_H[j][t] -> Smooth(5); }
       }
     }   
      
