@@ -5,6 +5,7 @@
 #include<PostAnalysis/Plotting.h>
 
 #include<PostAnalysis/ROOT_Alternative.h>
+#include<PostAnalysis/SimpleExampleFits.h>
 
 void IOTest(){TestReadCTIDE();}
 void TestRead(){TestReadAlgorithm();}
@@ -213,7 +214,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_NS["dx"] = {m, m, m, m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0};
   Params_NS["Minimizer"] = {100000};
-  Params_NS["GSL"] = {1};
+  //Params_NS["GSL"] = {1};
   Params_NS["Print"] = {-1};
   
   
@@ -230,23 +231,23 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
   Params_FFT["fft_cache"] = {10000}; 
   Params_FFT["Minimizer"] = {50000}; 
-  Params_FFT["GSL"] = {1};
+  //Params_FFT["GSL"] = {1};
   Params_FFT["Print"] = {-1}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
   Params_WidthFFT["Range"] = {0.2, 8}; 
-  Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
-  Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
-  Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
-  Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
+  Params_WidthFFT["Range_ntrk_1"] =  
+  Params_WidthFFT["Range_ntrk_2"] =    
+  Params_WidthFFT["Range_ntrk_3"] =   
+  Params_WidthFFT["Range_ntrk_4"] =  
   Params_WidthFFT["m"] = {m, m, m, m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_WidthFFT["fft_cache"] = {10000}; 
   Params_WidthFFT["Minimizer"] = {50000}; 
-  Params_WidthFFT["GSL"] = {1};
+  //Params_WidthFFT["GSL"] = {1};
   Params_WidthFFT["Print"] = {-1}; 
 
   // Simultaneous Fitting method 
@@ -258,17 +259,17 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_Sim["fft_cache"] = {10000}; 
   Params_Sim["Minimizer"] = {50000}; 
-  Params_Sim["GSL"] = {1};
+  //Params_Sim["GSL"] = {1};
   Params_Sim["Print"] = {-1}; 
 
 
   // Experimental Fitting method 
   std::map<TString, std::vector<float>> Params_Exp; 
   Params_Exp["Range"] = {0.2, 8}; 
-  Params_Exp["Range_ntrk_1"] = {0.2, 8}; 
-  Params_Exp["Range_ntrk_2"] = {0.2, 8}; 
-  Params_Exp["Range_ntrk_3"] = {0.2, 8}; 
-  Params_Exp["Range_ntrk_4"] = {0.2, 8}; 
+  Params_Exp["Range_ntrk_1"] = Ranges[0];
+  Params_Exp["Range_ntrk_2"] = Ranges[1];
+  Params_Exp["Range_ntrk_3"] = Ranges[2];
+  Params_Exp["Range_ntrk_4"] = Ranges[3];
   Params_Exp["m_e"] = {m, m, m, m};
   Params_Exp["m_G"] = {0, 0, 0, 0};
   Params_Exp["m_s"] = {-m, -m, -m, -m};
@@ -280,7 +281,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["G_Mean"] = {0, 0, 0, 0};
   Params_Exp["G_Stdev"] = {0.01, 0.01, 0.01, 0.01};
   Params_Exp["LR"] = {20};
-  Params_Exp["GSL"] = {1};
+  //Params_Exp["GSL"] = {1};
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
@@ -402,11 +403,16 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       Plotter(Fits, TruthVector, current, Mode);
     }
    
-    if (Mode == "Test")
-    {
-      FitWithRoot(ToBeUsed, trk1_start, TruthVector); 
+    if (Mode == "Test"){FitWithRoot(ToBeUsed, trk1_start, TruthVector);}
+    
+    if (Mode == "FitToTemplate")
+    { 
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_N, "Normalization", current);
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "ConvolutionFFT", (current + "+ ShiftWidth")); 
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_FFT, "ConvolutionFFT", (current + " + ShiftOnly")); 
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_Sim, "IncrementalFFT", current); 
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_NS, "NormalShift", current); 
     }
-
 
     p++;
     X -> Write();
@@ -414,4 +420,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
 
   X -> Close(); 
 }
+
+
+
 

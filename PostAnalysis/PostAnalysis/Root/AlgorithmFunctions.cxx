@@ -350,163 +350,18 @@ std::vector<std::vector<TH1F*>> Simultaneous_Fit_NtrkMtru(std::vector<TH1F*> Dat
 
 std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
-  auto IntoOutput =[&] (std::map<TString, std::vector<float>>* output, 
-                        std::vector<RooRealVar*> N, 
-                        std::vector<RooRealVar*> M, 
-                        std::vector<RooRealVar*> S, 
-                        std::vector<TH1F*> PDF_H, 
-                        std::vector<RooFFTConvPdf*> PxG, 
-                        RooRealVar* x, 
-                        TH1F* Data
-  )
-  {
-    for (int i(0); i < N.size(); i++)
-    {
-      float n = N[i] -> getVal(); 
-      float n_er = N[i] -> getError(); 
-      float m = M[i] -> getVal(); 
-      float m_er = M[i] -> getError(); 
-      float s = S[i] -> getVal(); 
-      float s_er = S[i] -> getError(); 
-  
-      (*output)["Normalization"].push_back(n); 
-      (*output)["Normalization_Error"].push_back(n_er); 
-      (*output)["Mean"].push_back(m); 
-      (*output)["Mean_Error"].push_back(m_er); 
-      (*output)["Stdev"].push_back(s); 
-      (*output)["Stdev_Error"].push_back(s_er); 
-  
-      CopyPDFToTH1F(PxG[i], x, PDF_H[i], Data); 
-      Normalize(PDF_H[i]); 
-      PDF_H[i] -> Scale(n); 
-      for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
-    }
-  }; 
-
   auto Algorithm =[&] (std::map<TString, std::vector<float>> Params, 
                        std::vector<std::vector<TH1F*>> ntrk_mtru_H, 
                        std::vector<TH1F*> Data)
   {
-    
-    float r = 1; 
-    if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; } 
-    
-    float x_min = Data[0] -> GetXaxis() -> GetXmin(); 
-    float x_max = Data[0] -> GetXaxis() -> GetXmax(); 
-
     std::vector<std::map<TString, std::vector<float>>> Output_List; 
     for (int i(0); i < Data.size(); i++)
     {
-      std::map<TString, std::vector<float>> Map; 
+      TString rang = "Range_ntrk_"; rang += (i+1); 
+      Params["Range"] = Params[rang]; 
+      std::map<TString, std::vector<float>> Map = IncrementalFFT(Data[i], ntrk_mtru_H[i], Params); 
       Output_List.push_back(Map); 
     }
-
-    for (int i(0); i < Data.size(); i++)
-    {
-      // Do a preliminary normalization fit:
-      //std::map<TString, std::vector<float>> Pre = Normalization(Data[i], ntrk_mtru_H[i], Params);
-      //Params["l_s"] = MultiplyByConstant(Pre["Normalization"], 0.01); 
-      //Params["l_e"] = MultiplyByConstant(Pre["Normalization"], 100); 
-      
-      std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", ntrk_mtru_H[i], Params, 0, r*(Data[i] -> Integral())); 
-      std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", ntrk_mtru_H[i], Params, -0.001, 0.001); 
-      std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", ntrk_mtru_H[i], Params, 0.0001, 0.001); 
-
-      RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-      TString rang;  
-      if (Params["fft_cache"].size() != 0)
-      {
-        x -> setBins(Params["fft_cache"][0], "fft"); 
-        x -> setBins(Params["fft_cache"][0], "cache"); 
-        rang = "Range_ntrk_"; rang += (i+1); 
-        //x -> setRange(rang, Params[rang][0], Params[rang][1]); 
-      }
-
-      // Create the resolution model: Gaussian 
-      std::vector<TString> g_N = NameGenerator(ntrk_mtru_H[i], "_Gx");
-      std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
-
-      // Convert the PDFs to RooPDFs
-      std::vector<TString> pdf_N_D = NameGenerator(ntrk_mtru_H[i], "_D"); 
-      std::vector<RooDataHist*> pdf_D = RooDataVariable(pdf_N_D, x, ntrk_mtru_H[i]); 
-      std::vector<TString> pdf_N_P = NameGenerator(ntrk_mtru_H[i], "_P"); 
-      std::vector<RooHistPdf*> pdf_P = RooPdfVariable(pdf_N_P, x, pdf_D); 
-      
-      // Convolve the Gaussian and the PDFs
-      std::vector<TString> pxg_N = NameGenerator(ntrk_mtru_H[i], "_PxG"); 
-      std::vector<RooFFTConvPdf*> PxG_vars = RooFFTVariable(pxg_N, x, g_vars, pdf_P); 
-
-      RooArgList L; 
-      RooArgList PxG; 
-      for (int i(0); i < PxG_vars.size(); i++)
-      {
-        PxG_vars[i] -> setBufferFraction(1); 
-        PxG.add(*PxG_vars[i]); 
-        L.add(*l_vars[i]); 
-      }
-
-      // Fitting the PDFs to the Data 
-      RooAddPdf model("model", "model", PxG, L); 
-      RooDataHist D("Data", "Data", *x, Data[i]); 
-      
-      std::vector<float> Bools; 
-      RooAbsReal* nll;
-      RooFitResult* re; 
-      // Make it such that only the current ntrk-ntru is allowed to float the fit variables 
-      // First fit ==== Release m and not s
-      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 1); 
-      VariableConstant(Bools, s_vars); 
-      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 0); 
-      VariableConstant(Bools, m_vars); 
-
-      nll = model.createNLL(D); 
-      re = MinimizationCustom(nll, Params); 
-      delete re; 
-
-      // Second fit ===== Fix m and let s float 
-      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 0); 
-      VariableConstant(Bools, s_vars); 
-      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 1); 
-      VariableConstant(Bools, m_vars); 
-      
-      nll = model.createNLL(D); 
-      re = MinimizationCustom(nll, Params); 
-      delete re;
-
-      // Third fit ==== Fix s and m and let only L float
-      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 1); 
-      VariableConstant(Bools, m_vars); 
-      Bools = std::vector<float>(ntrk_mtru_H[i].size(), 1); 
-      VariableConstant(Bools, s_vars); 
-
-      nll = model.createNLL(D); 
-      re = MinimizationCustom(nll, Params); 
-      int stat = re -> status();
-      CaptureResults(re, &(Output_List[i]));
-
-      TString plot_t = JE + "_trk_"; plot_t += (i+1); plot_t += "PULL.pdf"; 
-      RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
-      
-      IntoOutput(&(Output_List[i]), l_vars, m_vars, s_vars, ntrk_mtru_H[i], PxG_vars, x, Data[i]); 
-
-      if (stat != 0)
-      { 
-        Normalize(ntrk_mtru_H[i]); 
-        Normalization(Data[i], ntrk_mtru_H[i], Params);
-      }
-
-
-
-      BulkDelete(l_vars); 
-      BulkDelete(m_vars); 
-      BulkDelete(s_vars); 
-      BulkDelete(g_vars); 
-      BulkDelete(pdf_D); 
-      BulkDelete(pdf_P); 
-      BulkDelete(PxG_vars); 
-      delete x; 
-    }
-
     return Output_List;
   };
 

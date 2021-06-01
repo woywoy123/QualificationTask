@@ -165,8 +165,12 @@ static RooFitResult* MinimizationCustom(RooAbsReal* nll, std::map<TString, std::
     if (Params["Print"].size() != 0){print = Params["Print"][0]; }
     pg -> setPrintLevel(print); 
     pg -> setPrintEvalErrors(print);
-    pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
-    pg -> setMaxIterations(Params["Minimizer"][0]); 
+    if (Params["Minimizer"].size() != 0)
+    {
+      pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
+      pg -> setMaxIterations(Params["Minimizer"][0]); 
+    } 
+
     if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
     pg -> optimizeConst(true); 
     pg -> simplex();
@@ -177,7 +181,7 @@ static RooFitResult* MinimizationCustom(RooAbsReal* nll, std::map<TString, std::
     pg -> setStrategy(2); 
     pg -> improve(); 
     pg -> hesse();  
-    //pg -> minos();
+    pg -> minos();
 
     re = pg -> fit("r"); 
 
@@ -214,7 +218,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
 std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = "");
 std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = "");
 std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
-
+std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
 
 const int n_cpu = 4; 
 

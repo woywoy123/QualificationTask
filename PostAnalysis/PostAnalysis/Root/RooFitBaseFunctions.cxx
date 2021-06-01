@@ -352,6 +352,147 @@ std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<T
 }
 
 
+std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
+{
+  auto IntoOutput =[&] (std::map<TString, std::vector<float>>* output, 
+                        std::vector<RooRealVar*> N, 
+                        std::vector<RooRealVar*> M, 
+                        std::vector<RooRealVar*> S, 
+                        std::vector<TH1F*> PDF_H, 
+                        std::vector<RooFFTConvPdf*> PxG, 
+                        RooRealVar* x, 
+                        TH1F* Data
+  )
+  {
+    for (int i(0); i < N.size(); i++)
+    {
+      float n = N[i] -> getVal(); 
+      float n_er = N[i] -> getError(); 
+      float m = M[i] -> getVal(); 
+      float m_er = M[i] -> getError(); 
+      float s = S[i] -> getVal(); 
+      float s_er = S[i] -> getError(); 
+  
+      (*output)["Normalization"].push_back(n); 
+      (*output)["Normalization_Error"].push_back(n_er); 
+      (*output)["Mean"].push_back(m); 
+      (*output)["Mean_Error"].push_back(m_er); 
+      (*output)["Stdev"].push_back(s); 
+      (*output)["Stdev_Error"].push_back(s_er); 
+  
+      CopyPDFToTH1F(PxG[i], x, PDF_H[i], Data); 
+      Normalize(PDF_H[i]); 
+      PDF_H[i] -> Scale(n); 
+      for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
+    }
+  }; 
+  
+  
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
+  std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
+ 
+  float x_min = Data -> GetXaxis() -> GetXmin(); 
+  float x_max = Data -> GetXaxis() -> GetXmax(); 
+
+  RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
+  TString rang;  
+  if (Params["fft_cache"].size() != 0)
+  {
+    x -> setBins(Params["fft_cache"][0], "fft"); 
+    x -> setBins(Params["fft_cache"][0], "cache"); 
+  }
+  
+  // Create the resolution model: Gaussian 
+  std::vector<TString> g_N = NameGenerator(PDF_H, "_Gx");
+  std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
+  
+  // Convert the PDFs to RooPDFs
+  std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
+  std::vector<RooDataHist*> pdf_D = RooDataVariable(pdf_N_D, x, PDF_H); 
+  std::vector<TString> pdf_N_P = NameGenerator(PDF_H, "_P"); 
+  std::vector<RooHistPdf*> pdf_P = RooPdfVariable(pdf_N_P, x, pdf_D); 
+  
+  // Convolve the Gaussian and the PDFs
+  std::vector<TString> pxg_N = NameGenerator(PDF_H, "_PxG"); 
+  std::vector<RooFFTConvPdf*> PxG_vars = RooFFTVariable(pxg_N, x, g_vars, pdf_P); 
+  
+  RooArgList L; 
+  RooArgList PxG; 
+  for (int i(0); i < PxG_vars.size(); i++)
+  {
+    PxG_vars[i] -> setBufferFraction(1); 
+    PxG.add(*PxG_vars[i]); 
+    L.add(*l_vars[i]); 
+  }
+  
+  // Fitting the PDFs to the Data 
+  RooAddPdf model("model", "model", PxG, L); 
+  RooDataHist D("Data", "Data", *x, Data); 
+  
+  std::vector<float> Bools; 
+  RooAbsReal* nll;
+  RooFitResult* re; 
+
+  // Make it such that only the current ntrk-ntru is allowed to float the fit variables 
+  // First fit ==== Release m and not s
+  Bools = std::vector<float>(PDF_H.size(), 1); 
+  VariableConstant(Bools, s_vars); 
+  Bools = std::vector<float>(PDF_H.size(), 0); 
+  VariableConstant(Bools, m_vars); 
+  
+  nll = model.createNLL(D); 
+  re = MinimizationCustom(nll, Params); 
+  delete re; 
+  
+  // Second fit ===== Fix m and let s float 
+  Bools = std::vector<float>(PDF_H.size(), 0); 
+  VariableConstant(Bools, s_vars); 
+  Bools = std::vector<float>(PDF_H.size(), 1); 
+  VariableConstant(Bools, m_vars); 
+  
+  nll = model.createNLL(D); 
+  re = MinimizationCustom(nll, Params); 
+  delete re;
+  
+  // Third fit ==== Fix s and m and let only L float
+  Bools = std::vector<float>(PDF_H.size(), 1); 
+  VariableConstant(Bools, m_vars); 
+  Bools = std::vector<float>(PDF_H.size(), 1); 
+  VariableConstant(Bools, s_vars); 
+  
+  nll = model.createNLL(D); 
+  re = MinimizationCustom(nll, Params); 
+  int stat = re -> status();
+
+  std::map<TString, std::vector<float>> Output;
+  CaptureResults(re, &Output);
+  
+  TString plot_t = Name; plot_t += "PULL.pdf"; 
+  RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
+  
+  IntoOutput(&Output, l_vars, m_vars, s_vars, PDF_H, PxG_vars, x, Data); 
+  
+  if (stat != 0)
+  { 
+    Normalize(PDF_H); 
+    Normalization(Data, PDF_H, Params);
+  }
+  
+  BulkDelete(l_vars); 
+  BulkDelete(m_vars); 
+  BulkDelete(s_vars); 
+  BulkDelete(g_vars); 
+  BulkDelete(pdf_D); 
+  BulkDelete(pdf_P); 
+  BulkDelete(PxG_vars); 
+  delete x; 
+
+  return Output; 
+}
+
+
+
 std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H_V, std::map<TString, std::vector<float>> Params, TString Name)
 {
   float x_min = Data[0] -> GetXaxis() -> GetXmin(); 
@@ -497,3 +638,8 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
 
   return Output; 
 }
+
+
+
+
+
