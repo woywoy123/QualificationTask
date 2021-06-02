@@ -271,7 +271,6 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
             sample.push_back(mtru[h]); 
           }
 
-
           TH1F* ntrkD = (TH1F*)Data[t] -> Clone("Temp_Dat2"); 
           SubtractData(mtru, ntrkD, p, true);
           Normalization(ntrkD, sample, Params); 
@@ -294,12 +293,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       
       TString base = "Fit_"; base += (i+1); base += (ext); 
       
-      //Normalize(ntrk_Measure); 
-      std::map<TString, std::vector<float>> Map = DeConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
-      
-      //float L = Data[i] -> Integral(); 
-      //for (TH1F* H : ntrk_Template){ H -> Scale(L); }
-      //Normalization(Data[i], ntrk_Template, Params); 
+      std::map<TString, std::vector<float>> Map = IncrementalFFT(ntrk_Measure, ntrk_Template, Params, base); 
       
       delete ntrk_Measure;
       if (x == iter -1)
@@ -384,6 +378,20 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
 
   return ntrk_mtru_H; 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

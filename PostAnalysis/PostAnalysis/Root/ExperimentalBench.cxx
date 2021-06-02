@@ -208,6 +208,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   float m = 0.4; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
+  Params_N["Minimizer"] = {100000};
+  Params_N["Strategy"] = {2};
 
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
@@ -238,10 +240,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
   Params_WidthFFT["Range"] = {0.2, 8}; 
-  Params_WidthFFT["Range_ntrk_1"] =  
-  Params_WidthFFT["Range_ntrk_2"] =    
-  Params_WidthFFT["Range_ntrk_3"] =   
-  Params_WidthFFT["Range_ntrk_4"] =  
+  Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
+  Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
+  Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
+  Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
   Params_WidthFFT["m"] = {m, m, m, m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};

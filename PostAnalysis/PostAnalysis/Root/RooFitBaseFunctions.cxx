@@ -10,13 +10,10 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
   if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
   
-  float r = 1; 
-  if (Params["r_value"].size() != 0){ r = Params["r_value"][0]; }
-
   // Normalization variables
   std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
-  std::vector<float> l_s(l_N.size(), 0.); 
-  std::vector<float> l_e(l_N.size(), r*Data -> Integral()); 
+  std::vector<float> l_s(l_N.size(), 1.); 
+  std::vector<float> l_e(l_N.size(), Data -> Integral()); 
   std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_s, l_e); 
 
   // PDF Data variables 
@@ -96,7 +93,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Copy_D -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Copy_D -> Integral())); 
 
   // Shift variables
   std::vector<TString> d_N = NameGenerator(PDF_H, "_Dx"); 
@@ -208,7 +205,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   }
 
   // Base Variables 
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
 
@@ -388,7 +385,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   }; 
   
   
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
  
@@ -513,11 +510,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   std::vector<std::vector<RooRealVar*>> Lumi; 
   for (int i(0); i < PDF_H_V.size(); i++)
   {
-    // Do a preliminary normalization fit:
-    //std::map<TString, std::vector<float>> Pre = Normalization(Data[i], PDF_H_V[i], Params);
-    //Params["l_s"] = MultiplyByConstant(Pre["Normalization"], 0.5); 
-    //Params["l_e"] = MultiplyByConstant(Pre["Normalization"], 2); 
-    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 0, Data[i] -> Integral()); 
+    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 1, Data[i] -> Integral()); 
     Lumi.push_back(l_var); 
   } 
 
