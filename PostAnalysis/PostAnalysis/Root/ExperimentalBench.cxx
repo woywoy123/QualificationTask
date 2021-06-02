@@ -216,6 +216,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_NS["Minimizer"] = {100000};
   //Params_NS["GSL"] = {1};
   Params_NS["Print"] = {-1};
+  Params_NS["Strategy"] = {2};
   
   
   // Normalization Shift FFT parameters

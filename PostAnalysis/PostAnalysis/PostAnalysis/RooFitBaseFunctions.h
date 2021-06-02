@@ -178,10 +178,13 @@ static RooFitResult* MinimizationCustom(RooAbsReal* nll, std::map<TString, std::
     pg -> setOffsetting(true); 
     pg -> setEvalErrorWall(true); 
     pg -> migrad(); 
-    pg -> setStrategy(2); 
+    if (Params["Strategy"].size() != 0)
+    {
+      pg -> setStrategy(Params["Strategy"][0]); 
+    }
     pg -> improve(); 
     pg -> hesse();  
-    pg -> minos();
+    //pg -> minos();
 
     re = pg -> fit("r"); 
 
