@@ -260,23 +260,24 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         for (int j(0); j < Data.size(); j++){Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]});}
         TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone("Temp_Data"); 
         VT mtru = ntrk_mtru_H[t]; 
-        delete ntrk_Data; 
-        
-        for (int p(0); p < mtru.size(); p++)
-        {
-          VT sample; 
-          for (int h(0); h < mtru.size(); h++)
-          {
-            if (h == p){ continue; }
-            sample.push_back(mtru[h]); 
-          }
+        MatchBins(mtru, ntrk_Data);       
+      
+        //for (int p(0); p < mtru.size(); p++)
+        //{
+        //  VT sample; 
+        //  for (int h(0); h < mtru.size(); h++)
+        //  {
+        //    if (h == p){ continue; }
+        //    sample.push_back(mtru[h]); 
+        //  }
 
-          TH1F* ntrkD = (TH1F*)Data[t] -> Clone("Temp_Dat2"); 
-          SubtractData(mtru, ntrkD, p, true);
-          Normalization(ntrkD, sample, Params); 
-          MatchBins(sample, ntrkD);
-          delete ntrkD; 
-        }
+        //  TH1F* ntrkD = (TH1F*)Data[t] -> Clone("Temp_Dat2"); 
+        //  SubtractData(mtru, ntrkD, p, true);
+        //  Normalization(ntrkD, sample, Params); 
+        //  MatchBins(sample, ntrkD);
+        //  delete ntrkD; 
+        //}
+        delete ntrk_Data; 
       }
       for (int t(0); t < Data.size(); t++)
       {
