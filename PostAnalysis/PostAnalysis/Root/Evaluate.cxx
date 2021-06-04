@@ -239,8 +239,9 @@ void MultiTrackTruthComparison(TString dir)
   MVF Scores; 
   MVF Flost2_Map;
   MVF Flost3_Map;
-  VS Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Incremental", "Experimental", "Simultaneous"};
-  
+ // VS Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Incremental", "Experimental", "Simultaneous"};
+  VS Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Experimental"};
+ 
   int ip = 0; 
   for (MMVi x = Results.begin(); x != Results.end(); x++)
   {

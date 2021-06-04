@@ -438,7 +438,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   Bools = std::vector<float>(PDF_H.size(), 0); 
   VariableConstant(Bools, m_vars); 
   
-  nll = model.createNLL(D); 
+  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
   re = MinimizationCustom(nll, Params); 
   delete re; 
   
@@ -448,7 +448,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   Bools = std::vector<float>(PDF_H.size(), 1); 
   VariableConstant(Bools, m_vars); 
   
-  nll = model.createNLL(D); 
+  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
   re = MinimizationCustom(nll, Params); 
   delete re;
   
@@ -458,7 +458,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   Bools = std::vector<float>(PDF_H.size(), 1); 
   VariableConstant(Bools, s_vars); 
   
-  nll = model.createNLL(D); 
+  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
   re = MinimizationCustom(nll, Params); 
   int stat = re -> status();
 

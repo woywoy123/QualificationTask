@@ -202,10 +202,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
-  std::vector<float> k = {0.4, 8.6}; 
+  std::vector<float> k = {0.2, 8.8}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
-  float m = 0.4; 
+  float m = 0.2; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Minimizer"] = {100000};
@@ -230,8 +230,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["Range_ntrk_4"] = Ranges[3]; 
   Params_FFT["m_s"] = {-m, -m, -m, -m};
   Params_FFT["m_e"] = {m, m, m, m};
-  Params_FFT["s_C"] = {1, 1, 1, 1};
   Params_FFT["m_G"] = {0, 0, 0, 0}; 
+  Params_FFT["s_C"] = {1, 1, 1, 1};
   Params_FFT["fft_cache"] = {10000}; 
   Params_FFT["Minimizer"] = {50000}; 
   //Params_FFT["GSL"] = {1};
@@ -244,10 +244,12 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
   Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
   Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
-  Params_WidthFFT["m"] = {m, m, m, m};
+  Params_WidthFFT["m_s"] = {-m, -m, -m, -m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0}; 
+  Params_WidthFFT["m_e"] = {m, m, m, m};
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  Params_WidthFFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
+  Params_WidthFFT["s_e"] = {0.01, 0.01, 0.01, 0.01};
+  Params_WidthFFT["s_e"] = {0.1, 0.1, 0.1, 0.1};
   Params_WidthFFT["fft_cache"] = {10000}; 
   Params_WidthFFT["Minimizer"] = {50000}; 
   //Params_WidthFFT["GSL"] = {1};
@@ -276,7 +278,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["m_e"] = {m, m, m, m};
   Params_Exp["m_G"] = {0, 0, 0, 0};
   Params_Exp["m_s"] = {-m, -m, -m, -m};
-  Params_Exp["s_s"] = {0.005, 0.005, 0.005, 0.005};
+  Params_Exp["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_Exp["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_Exp["fft_cache"] = {10000}; 
   Params_Exp["Minimizer"] = {10000}; 
@@ -284,6 +286,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["G_Mean"] = {0, 0, 0, 0};
   Params_Exp["G_Stdev"] = {0.01, 0.01, 0.01, 0.01};
   Params_Exp["LR"] = {20};
+  Params_Exp["Print"] = {-1}; 
   //Params_Exp["GSL"] = {1};
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
