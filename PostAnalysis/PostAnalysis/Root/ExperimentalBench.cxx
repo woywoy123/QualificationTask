@@ -324,10 +324,9 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     TH1F* ntrk_4_M = M["ntrk_4_M_I"][0]; 
     std::vector<TH1F*> Proposed = {ntrk_1_M, ntrk_2_M, ntrk_3_M, ntrk_4_M};  
     
-    TH1F* trk1_start = M["ntrk_1_T_I"][0]; 
-    //CreateStart(trk1_start); 
-    //trk1_start -> Smooth(100); 
-    //SmoothHist(trk1_start, 1); 
+    TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
+    SmoothHist(trk1_start, 3); 
+    trk1_start -> Smooth(5); 
     
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)

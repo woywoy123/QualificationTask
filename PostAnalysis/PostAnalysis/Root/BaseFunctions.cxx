@@ -214,6 +214,7 @@ void Average(TH1F* Data)
 void SmoothHist(TH1F* Hist, int iter)
 {
   int bins = Hist -> GetNbinsX(); 
+  int bin_s = Hist -> GetXaxis() -> FindBin(1.5); 
   for (int t(0); t < iter; t++)
   {
     std::vector<float> v; 
@@ -230,7 +231,7 @@ void SmoothHist(TH1F* Hist, int iter)
       float av = (1./3)*(Hist -> GetBinContent(bins -i) + Hist -> GetBinContent(bins - (i+1)) + Hist -> GetBinContent(bins - (i+2)));
       v_2.push_back(av); 
     }
-    for (int i(1); i < bins-1; i++){Hist -> SetBinContent(bins - (i+1), v_2[i]);}  
+    for (int i(bin_s); i < bins-1; i++){Hist -> SetBinContent(i+1, (1./3)*(Hist -> GetBinContent(i+1) + (v_2[v_2.size() - i] + v[i])));}  
   } 
 }
 
