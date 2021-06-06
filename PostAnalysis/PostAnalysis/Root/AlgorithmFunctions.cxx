@@ -250,7 +250,6 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
 
         SubtractData(ntrk_mtru_H[t], ntrk_Data, t);
         
-        ntrk_Data -> Smooth(1); 
         Flush({ntrk_Data}, {ntrk_mtru_H[t][t]}); 
         delete ntrk_Data;  
       }
@@ -262,21 +261,6 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         VT mtru = ntrk_mtru_H[t]; 
         MatchBins(mtru, ntrk_Data);       
       
-        //for (int p(0); p < mtru.size(); p++)
-        //{
-        //  VT sample; 
-        //  for (int h(0); h < mtru.size(); h++)
-        //  {
-        //    if (h == p){ continue; }
-        //    sample.push_back(mtru[h]); 
-        //  }
-
-        //  TH1F* ntrkD = (TH1F*)Data[t] -> Clone("Temp_Dat2"); 
-        //  SubtractData(mtru, ntrkD, p, true);
-        //  Normalization(ntrkD, sample, Params); 
-        //  MatchBins(sample, ntrkD);
-        //  delete ntrkD; 
-        //}
         delete ntrk_Data; 
       }
       for (int t(0); t < Data.size(); t++)
@@ -359,8 +343,6 @@ std::vector<std::vector<TH1F*>> IncrementalFit(std::vector<TH1F*> Data, TH1F* tr
     }
     return Output_List;
   };
-
-
 
   TString ext = "_" + JE + "_Incremental_NtrkMtru";
   std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext); 

@@ -91,7 +91,6 @@ void Deconvolution(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
   auto ToVector =[](TH1F* H, int bins)
   {
     int bins_H = H -> GetNbinsX(); 
-    int Padding = float((bins - bins_H))/2; 
 
     std::vector<float> Output; 
     for (int i(0); i < bins_H; i++)
@@ -109,7 +108,7 @@ void Deconvolution(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
 
   for (int i(0); i < iter; i++)
   {
-    Deconv_V = LucyRichardson(Signal_V, PSF_V, Deconv_V, 0.9); 
+    Deconv_V = LucyRichardson(Signal_V, PSF_V, Deconv_V, 0.95); 
   }
 
   int bin_0 = Signal -> GetXaxis() -> FindBin(0.) -1; 
@@ -126,4 +125,49 @@ void MultiThreadingDeconvolution(std::vector<TH1F*> Data, std::vector<TH1F*> PSF
   for (int i(0); i < Result.size(); i++){th.push_back(std::thread(Deconvolution, Data[i], PSF[i], Result[i], Iter));}
   for (std::thread &t : th){t.join();}
 
+}
+
+
+void CreateStart(TH1F* trk1_start, int iter)
+{
+  int bins = trk1_start -> GetNbinsX(); 
+  float min = trk1_start -> GetXaxis() -> GetXmin(); 
+  float max = trk1_start -> GetXaxis() -> GetXmax(); 
+  float w = (max - min) / float(bins); 
+  float r = 1;  
+  float new_min = min - w*bins*r; 
+  float new_max = max + w*bins*r; 
+  float L = trk1_start -> Integral(); 
+  
+  TH1F* trk_C = new TH1F("name", "name", bins + bins*r, min, new_max); 
+  TH1F* trk_D = new TH1F("namD", "namD", bins + bins*r, min, new_max); 
+  
+  // Fill the convolution one first
+  for (int i(0); i < bins; i++)
+  {
+    float o = trk1_start -> GetBinContent(i+1); 
+    trk_C -> SetBinContent(i+1, o); 
+  }
+
+  TH1F* Temp = (TH1F*)trk_C -> Clone("Temp"); 
+  Convolution(trk_C, trk_C, trk_C); 
+  Deconvolution(trk_C, Temp, trk_D, iter); 
+ 
+  for (int i(0); i < bins; i++)
+  {
+    float o = trk_D -> GetBinContent(i+1); 
+    trk1_start -> SetBinContent(i+1, o); 
+  }
+
+  Normalize(trk1_start); 
+  trk1_start -> Scale(L); 
+  
+  //TCanvas* can = new TCanvas(); 
+  //can -> SetLogy(); 
+  //PlotHists({Temp2}, {trk1_start}, can);
+  //can -> Print("Hello.pdf"); 
+
+  delete trk_C; 
+  delete trk_D; 
+  delete Temp; 
 }

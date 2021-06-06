@@ -1,4 +1,5 @@
 #include<PostAnalysis/SimpleExampleFits.h>
+#include<PostAnalysis/Plotting.h>
 
 void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start, std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, TString Mode, TString JE)
 {
@@ -26,18 +27,17 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     }
   }; 
 
-
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+  can -> Print(Mode + ".pdf["); 
 
   std::vector<std::vector<TH1F*>> ntrk_mtru = BuildNtrkMtru(4, trk1_Start, "_Test_" + Mode, 4); 
   std::vector<std::vector<TH1F*>> ntrk_mtru_template = BuildNtrkMtru(4, trk1_Start, "_Template_" + Mode, 4); 
 
   std::vector<TString> Out; 
-  for (int i(0); i < Truth.size(); i++)
+  for (int i(0); i < Data.size(); i++)
   {
-    Params["dx_G"] = {}; 
-    Params["l_G"]  = {}; 
-    Params["m_G"]  = {}; 
-    Params["s_G"]  = {}; 
+    MVF Params_TFit = Params; 
 
     std::vector<TH1F*> ntru_P = ntrk_mtru[i];
     std::vector<TH1F*> ntru_T = Truth[i]; 
@@ -58,30 +58,35 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
       if ( Mode == "Normalization"){  Pred_Tru = Normalization(trk_tru_T, {trk_tru}, Params, "_Test"); }
 
       // Update the parameters of the PARAMS as guess 
-      if (Pred_Tru["Shift"].size() != 0)        { Params["dx_G"].push_back(Pred_Tru["Shift"][0]); }
-      if (Pred_Tru["Normalization"].size() != 0){ Params["l_G"].push_back(Pred_Tru["Normalization"][0]); }
-      if (Pred_Tru["Mean"].size() != 0)         { Params["m_G"].push_back(Pred_Tru["Mean"][0]); }
-      if (Pred_Tru["Stdev"].size() != 0)        { Params["s_G"].push_back(Pred_Tru["Stdev"][0]); }
+      if (Pred_Tru["Shift"].size() != 0)        { Params_TFit["dx_G"].push_back(Pred_Tru["Shift"][0]); }
+      if (Pred_Tru["Normalization"].size() != 0){ Params_TFit["l_G"].push_back(Pred_Tru["Normalization"][0]); }
+      if (Pred_Tru["Mean"].size() != 0)         { Params_TFit["m_G"].push_back(Pred_Tru["Mean"][0]); }
+      if (Pred_Tru["Stdev"].size() != 0)        { Params_TFit["s_G"].push_back(Pred_Tru["Stdev"][0]); }
     }
-    
+   
     // Perform the full fit on the data
     std::vector<TH1F*> ntru_temp = ntrk_mtru_template[i]; 
-    TH1F* ntrk_D = Data[i]; 
+    TH1F* ntrk_D = Data[i];
+    for (int b(0); b < ntrk_D -> GetNbinsX(); b++){ ntrk_D -> SetBinError(b+1,0.1); } 
 
-    std::map<TString, std::vector<float>> Pred_Tru;   
-    if ( Mode == "NormalShift"){ Pred_Tru = NormalizationShift(ntrk_D, ntru_temp, Params, "_Test"); }
-    if ( Mode == "ConvolutionFFT"){ Pred_Tru = ConvolutionFFT(ntrk_D, ntru_temp, Params, "_Test"); }
-    if ( Mode == "IncrementalFFT"){ Pred_Tru = IncrementalFFT(ntrk_D, ntru_temp, Params, "_Test"); }
-    if ( Mode == "Normalization"){ Pred_Tru = Normalization(ntrk_D, ntru_temp, Params, "_Test"); }
+    std::map<TString, std::vector<float>> Pred;   
+    if ( Mode == "NormalShift"){ Pred = NormalizationShift(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
+    if ( Mode == "ConvolutionFFT"){ Pred = ConvolutionFFT(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
+    if ( Mode == "IncrementalFFT"){ Pred = IncrementalFFT(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
+    if ( Mode == "Normalization"){ Pred = Normalization(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
   
     // Get the values from the fits and find the delta of the fit. 
     Out.push_back(""); 
     TString Head = " ------- Performing fit under mode: "; Head += (Mode); Head+= (" :: Layer + Jet Energy "); Head += (JE); Head+= (" :: trk_"); Head += (i+1); Head += (" -------");
     Out.push_back(Head); 
-    if (Pred_Tru["Normalization"].size() != 0){Compare(Pred_Tru, Params, "Normalization", "l_G", &Out);}
-    if (Pred_Tru["Shift"].size() != 0){Compare(Pred_Tru, Params, "Shift", "dx_G", &Out);}
-    if (Pred_Tru["Mean"].size() != 0){Compare(Pred_Tru, Params, "Mean", "m_G", &Out);}
-    if (Pred_Tru["Stdev"].size() != 0){Compare(Pred_Tru, Params, "Stdev", "s_G", &Out);}
+    if (Pred["Normalization"].size() != 0){Compare(Pred, Params_TFit, "Normalization", "l_G", &Out);}
+    if (Pred["Shift"].size() != 0){Compare(Pred, Params_TFit, "Shift", "dx_G", &Out);}
+    if (Pred["Mean"].size() != 0){Compare(Pred, Params_TFit, "Mean", "m_G", &Out);}
+    if (Pred["Stdev"].size() != 0){Compare(Pred, Params_TFit, "Stdev", "s_G", &Out);}
+
+    PlotHists(Truth[i], ntrk_mtru_template[i], can); 
+    can -> Print(Mode + ".pdf"); 
+    can -> Clear();
   }
  
   std::vector<std::vector<float>> f; 
@@ -101,14 +106,13 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
   Out.push_back(Flost3P); 
 
   std::ofstream myfile; 
-  myfile.open("Results.txt", std::ios_base::app); 
+  myfile.open(Mode + ".txt", std::ios_base::app); 
   for (TString S : Out)
   {
     std::cout << S << std::endl;
     myfile << S << "\n"; 
   }
   myfile.close(); 
-
-
-
+  
+  can -> Print(Mode + ".pdf]"); 
 }

@@ -201,7 +201,6 @@ void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk)
   Average(Data); 
 }
 
-
 void Average(TH1F* Data)
 {
   for (int i(0); i < Data -> GetNbinsX(); i++)
@@ -210,6 +209,29 @@ void Average(TH1F* Data)
     if ( y <= 0){ y = 1e-19; } 
     Data -> SetBinContent(i+1, y); 
   }
+}
+
+void SmoothHist(TH1F* Hist, int iter)
+{
+  int bins = Hist -> GetNbinsX(); 
+  for (int t(0); t < iter; t++)
+  {
+    std::vector<float> v; 
+    for (int i(1); i < bins-1; i++)
+    {
+      float av = (1./3)*(Hist -> GetBinContent(i) + Hist -> GetBinContent(i+1) + Hist -> GetBinContent(i+2));
+      v.push_back(av); 
+    }
+    //for (int i(1); i < bins-1; i++){Hist -> SetBinContent(i+1, v[i]);}  
+
+    std::vector<float> v_2; 
+    for (int i(1); i < bins-1; i++)
+    {
+      float av = (1./3)*(Hist -> GetBinContent(bins -i) + Hist -> GetBinContent(bins - (i+1)) + Hist -> GetBinContent(bins - (i+2)));
+      v_2.push_back(av); 
+    }
+    for (int i(1); i < bins-1; i++){Hist -> SetBinContent(bins - (i+1), v_2[i]);}  
+  } 
 }
 
 void Average(std::vector<TH1F*> Data){for (TH1F* H : Data){ Average(H); }}

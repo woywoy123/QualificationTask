@@ -3,6 +3,7 @@
 
 #include<TString.h>
 #include<TH1F.h>
+#include<TKDE.h>
 #include<iostream> 
 #include<PostAnalysis/Plotting.h>
 #include<PostAnalysis/Convolution.h>
@@ -19,6 +20,7 @@ void Normalize(std::vector<TH1F*> Hists);
 void Shift(TH1F* Hist, int shift);
 void MatchBins(std::vector<TH1F*> In, TH1F* Data); 
 void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk = false); 
+void SmoothHist(TH1F* Hist, int iter); 
 
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty); 

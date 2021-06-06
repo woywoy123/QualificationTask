@@ -8,13 +8,10 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   int bins = Data -> GetNbinsX(); 
 
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
+  //if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
   
   // Normalization variables
-  std::vector<TString> l_N = NameGenerator(PDF_H, "_L"); 
-  std::vector<float> l_s(l_N.size(), 1.); 
-  std::vector<float> l_e(l_N.size(), Data -> Integral()); 
-  std::vector<RooRealVar*> l_vars = RooRealVariable(l_N, l_s, l_e); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, Data -> Integral()); 
 
   // PDF Data variables 
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -26,7 +23,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
   RooArgList N; 
   RooArgList PDFs; 
-  for (int i(0); i < l_N.size(); i++)
+  for (int i(0); i < l_vars.size(); i++)
   {
     PDFs.add(*pdf_P[i]); 
     N.add(*l_vars[i]); 
@@ -38,11 +35,11 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   RooFitResult* re; 
   if (Params["Minimizer"].size() == 0)
   {
-    re = model.fitTo(D, Range("fit"), SumW2Error(true), Extended(true), Save()); 
+    re = model.fitTo(D, Range("fit"), SumW2Error(true), Save()); 
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(D, Extended(true), NumCPU(n_cpu, 1)); 
+    RooAbsReal* nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
     re = MinimizationCustom(nll, Params);  
   }
   std::map<TString, std::vector<float>> Output;  
@@ -55,7 +52,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   }
 
   Normalize(PDF_H); 
-  for (int i(0); i < l_N.size(); i++)
+  for (int i(0); i < l_vars.size(); i++)
   {
     float n = l_vars[i] -> getVal(); 
     float n_e = l_vars[i] -> getError(); 
@@ -134,18 +131,22 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Copy_D); 
   RooAddPdf model("model", "model", PDFs, N); 
-  std::map<TString, std::vector<float>> Output;  
+  
   RooFitResult* re; 
-  if (Params["Minimizer"].size() == 0)
-  {
-    re = model.fitTo(D, Range("fit"), SumW2Error(true), Extended(true), Save()); 
-  }
-  else
-  {
-    RooAbsReal* nll = model.createNLL(D, Extended(true), NumCPU(n_cpu, 1)); 
-    re = MinimizationCustom(nll, Params);  
-  }
+  RooAbsReal* nll; 
+  std::vector<float> Bools; 
+  std::vector<float> State; 
+
+  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
+  re = MinimizationCustom(nll, Params); 
+  State.push_back(re -> status()); 
+
+  std::map<TString, std::vector<float>> Output;  
   CaptureResults(re, &Output);
+
+  int status = 0; 
+  for (float x : State){ if (x != 0){ status = x; } }
+  Output["fit_status"][0] = status; 
   
   if (Name != "")
   {
@@ -185,13 +186,45 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
 
 std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
+  auto IntoOutput =[&] (std::map<TString, std::vector<float>>* output, 
+                        std::vector<RooRealVar*> N, 
+                        std::vector<RooRealVar*> M, 
+                        std::vector<RooRealVar*> S, 
+                        std::vector<TH1F*> PDF_H, 
+                        std::vector<RooFFTConvPdf*> PxG, 
+                        RooRealVar* x, 
+                        TH1F* Data
+  )
+  {
+    for (int i(0); i < N.size(); i++)
+    {
+      float n = N[i] -> getVal(); 
+      float n_er = N[i] -> getError(); 
+      float m = M[i] -> getVal(); 
+      float m_er = M[i] -> getError(); 
+      float s = S[i] -> getVal(); 
+      float s_er = S[i] -> getError(); 
+  
+      (*output)["Normalization"].push_back(n); 
+      (*output)["Normalization_Error"].push_back(n_er); 
+      (*output)["Mean"].push_back(m); 
+      (*output)["Mean_Error"].push_back(m_er); 
+      (*output)["Stdev"].push_back(s); 
+      (*output)["Stdev_Error"].push_back(s_er); 
+  
+      CopyPDFToTH1F(PxG[i], x, PDF_H[i], Data); 
+      Normalize(PDF_H[i]); 
+      PDF_H[i] -> Scale(n); 
+      for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
+    }
+  }; 
+  
+
+
   TH1F* Data = (TH1F*)Data_Org -> Clone("temp"); 
   float Lum = Data -> Integral(); 
   Data -> Sumw2(); 
 
-  //Normalize(Data); 
-  //Normalize(PDF_H); 
-    
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
@@ -237,47 +270,26 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   RooDataHist D("data", "data", *x, Data); 
   RooAddPdf model("model", "model", PxG, L); 
   
-  std::map<TString, std::vector<float>> Output;  
+  std::vector<float> Bools; 
+  RooAbsReal* nll;
   RooFitResult* re; 
-  if (Params["Minimizer"].size() == 0)
-  {re = model.fitTo(D, Range("fit"), SumW2Error(true), Extended(true), Save());}
-  else
-  {
-    RooAbsReal* nll = model.createNLL(D, Range("fit"), Extended(true), NumCPU(n_cpu, 1)); 
-    re = MinimizationCustom(nll, Params);  
-  }
-  CaptureResults(re, &Output); 
+  std::vector<float> State; 
 
-  if (Name != "")
-  {
-    TString plot_t = Name + "PULL.pdf"; 
-    RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
-  }
+  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
+  re = MinimizationCustom(nll, Params); 
+  State.push_back(re -> status()); 
 
-  for (int i(0); i < l_vars.size(); i++)
-  {
-    float n = l_vars[i] -> getVal(); 
-    float n_er = l_vars[i] -> getError(); 
-    float m = m_vars[i] -> getVal(); 
-    float m_er = m_vars[i] -> getError(); 
-    float s = s_vars[i] -> getVal(); 
-    float s_er = s_vars[i] -> getError(); 
+  std::map<TString, std::vector<float>> Output;
+  CaptureResults(re, &Output);
 
-    
-    Output["Normalization"].push_back(n); 
-    Output["Normalization_Error"].push_back(n_er); 
-    Output["Mean"].push_back(m); 
-    Output["Mean_Error"].push_back(m_er); 
-    Output["Stdev"].push_back(s); 
-    Output["Stdev_Error"].push_back(s_er); 
-
-    CopyPDFToTH1F(PxG_vars[i], x, PDF_H[i], Data); 
-    Normalize(PDF_H[i]); 
-    PDF_H[i] -> Scale(n); 
-    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
-  }
-
-  delete Data; 
+  int status = 0; 
+  for (float x : State){ if (x != 0){ status = x; } }
+  Output["fit_status"][0] = status; 
+  
+  TString plot_t = Name; plot_t += "PULL.pdf"; 
+  RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
+  IntoOutput(&Output, l_vars, m_vars, s_vars, PDF_H, PxG_vars, x, Data); 
+  
   BulkDelete(l_vars); 
   BulkDelete(m_vars); 
   BulkDelete(s_vars); 
@@ -286,7 +298,6 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   BulkDelete(pdf_P); 
   BulkDelete(PxG_vars); 
   delete x; 
-
   return Output; 
 }
 
@@ -430,6 +441,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   std::vector<float> Bools; 
   RooAbsReal* nll;
   RooFitResult* re; 
+  std::vector<float> State; 
 
   // Make it such that only the current ntrk-ntru is allowed to float the fit variables 
   // First fit ==== Release m and not s
@@ -440,6 +452,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   
   nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
   re = MinimizationCustom(nll, Params); 
+  State.push_back(re -> status()); 
   delete re; 
   
   // Second fit ===== Fix m and let s float 
@@ -450,6 +463,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   
   nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
   re = MinimizationCustom(nll, Params); 
+  State.push_back(re -> status()); 
   delete re;
   
   // Third fit ==== Fix s and m and let only L float
@@ -460,21 +474,18 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   
   nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
   re = MinimizationCustom(nll, Params); 
-  int stat = re -> status();
+  State.push_back(re -> status()); 
 
   std::map<TString, std::vector<float>> Output;
   CaptureResults(re, &Output);
+
+  int status = 0; 
+  for (float x : State){ if (x != 0){ status = x; } }
+  Output["fit_status"][0] = status; 
   
   TString plot_t = Name; plot_t += "PULL.pdf"; 
   RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
-  
   IntoOutput(&Output, l_vars, m_vars, s_vars, PDF_H, PxG_vars, x, Data); 
-  
-  if (stat != 0)
-  { 
-    Normalize(PDF_H); 
-    Normalization(Data, PDF_H, Params);
-  }
   
   BulkDelete(l_vars); 
   BulkDelete(m_vars); 

@@ -159,39 +159,47 @@ static void CaptureResults(RooFitResult* Re, std::map<TString, std::vector<float
 
 static RooFitResult* MinimizationCustom(RooAbsReal* nll, std::map<TString, std::vector<float>> Params)
 {
+  if (Params["debug"].size() != 0)
+  {
     RooFitResult* re; 
-    RooMinimizer* pg = new RooMinimizer(*nll);
-    int print = -1; 
-    if (Params["Print"].size() != 0){print = Params["Print"][0]; }
-    pg -> setPrintLevel(print); 
-    pg -> setPrintEvalErrors(print);
-    if (Params["Minimizer"].size() != 0)
-    {
-      pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
-      pg -> setMaxIterations(Params["Minimizer"][0]); 
-    } 
-
-    if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
-    pg -> optimizeConst(true); 
-    //pg -> simplex();
-    pg -> seek(); 
-    pg -> setOffsetting(true); 
-    pg -> setEvalErrorWall(true); 
-    pg -> migrad(); 
-    if (Params["Strategy"].size() != 0)
-    {
-      pg -> setStrategy(Params["Strategy"][0]); 
-    }
-    pg -> improve(); 
-    pg -> hesse();  
-    //pg -> minos();
-
-    re = pg -> fit("r"); 
-
-    pg -> cleanup(); 
+    RooMinimizer* pg = new RooMinimizer(*nll); 
+    re = pg -> fit("mr"); 
+    pg -> cleanup();
+    delete nll; 
     delete pg; 
-    delete nll;
-    return re; 
+    return re;
+  }
+
+  RooFitResult* re; 
+  RooMinimizer* pg = new RooMinimizer(*nll);
+  int print = -1; 
+  if (Params["Print"].size() != 0){print = Params["Print"][0]; }
+  pg -> setPrintLevel(print); 
+  pg -> setPrintEvalErrors(print);
+  if (Params["Minimizer"].size() != 0)
+  {
+    pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
+    pg -> setMaxIterations(Params["Minimizer"][0]); 
+  } 
+
+  //if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
+  pg -> optimizeConst(true); 
+  pg -> seek(); 
+  //pg -> setProfile(true);
+  pg -> setOffsetting(true); 
+  pg -> setEvalErrorWall(true); 
+  //pg -> migrad(); 
+  //if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
+  pg -> improve(); 
+  pg -> hesse();  
+  //pg -> minos();
+
+  re = pg -> fit("mr"); 
+
+  pg -> cleanup(); 
+  delete pg; 
+  delete nll;
+  return re; 
 }
 
 static void BulkDelete(std::vector<RooDataHist*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
