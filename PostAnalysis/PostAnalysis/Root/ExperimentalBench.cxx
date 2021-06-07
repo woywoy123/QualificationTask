@@ -205,7 +205,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<float> k = {0.4, 8.6}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
-  float m = 0.2; 
+  float m = 0.4; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Minimizer"] = {100000};
@@ -236,7 +236,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["Minimizer"] = {50000}; 
   //Params_FFT["GSL"] = {1};
   Params_FFT["Print"] = {-1}; 
-  Params_FFT["debug"] = {0};  
+  //Params_FFT["debug"] = {0};  
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
@@ -248,7 +248,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["m_s"] = {-m, -m, -m, -m};
   Params_WidthFFT["m_e"] = {m, m, m, m};
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  Params_WidthFFT["s_e"] = {0.5, 0.5, 0.5, 0.5};
+  Params_WidthFFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_WidthFFT["fft_cache"] = {10000}; 
   Params_WidthFFT["Minimizer"] = {50000}; 
   //Params_WidthFFT["GSL"] = {1};
@@ -260,12 +260,12 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["m_e"] = {m, m, m, m};
   Params_Sim["m_s"] = {-m, -m, -m, -m};
   Params_Sim["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  Params_Sim["s_e"] = {0.5, 0.5, 0.5, 0.5};
+  Params_Sim["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_Sim["fft_cache"] = {10000}; 
   Params_Sim["Minimizer"] = {50000}; 
   //Params_Sim["GSL"] = {1};
   Params_Sim["Print"] = {-1}; 
-  Params_Sim["debug"] = {0}; 
+  //Params_Sim["debug"] = {0}; 
 
   // Experimental Fitting method 
   std::map<TString, std::vector<float>> Params_Exp; 
@@ -277,7 +277,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["m_e"] = {m, m, m, m};
   Params_Exp["m_s"] = {-m, -m, -m, -m};
   Params_Exp["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  Params_Exp["s_e"] = {0.5, 0.5, 0.5, 0.5};
+  Params_Exp["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_Exp["fft_cache"] = {10000}; 
   Params_Exp["Minimizer"] = {10000}; 
   Params_Exp["Print"] = {-1}; 
@@ -285,7 +285,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["G_Stdev"] = {0.01, 0.01, 0.01, 0.01};
   Params_Exp["LR"] = {20};
   Params_Exp["Print"] = {-1}; 
-  Params_Exp["debug"] = {0};
+  //Params_Exp["debug"] = {0};
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
@@ -326,7 +326,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     
     TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
     SmoothHist(trk1_start, 3); 
-    trk1_start -> Smooth(5); 
     
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)

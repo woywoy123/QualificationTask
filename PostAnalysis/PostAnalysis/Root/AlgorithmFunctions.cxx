@@ -233,41 +233,29 @@ std::vector<std::vector<TH1F*>> NormalizationShiftWidthFFT_Fit_NtrkMtru(std::vec
 std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
   TString ext = "_" + JE + "_Experimental_NtrkMtru"; 
-  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1_start, ext);
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H; 
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Experimental"); 
   
   int iter = 3; 
+  TH1F* trk1 = (TH1F*)trk1_start -> Clone("x"); 
+
   for (int x(0); x < iter; x++)
   {
-    if (x > 1)
+    for (int t(0); t < ntrk_mtru_H.size(); t++){ BulkDelete(ntrk_mtru_H[t]); }
+    ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1, ext);
+    
+    for (int t(0); t < Data.size(); t++)
     {
-      for (int t(0); t < Data.size(); t++)
-      {
-        TString name_temp = Data[t] -> GetTitle(); 
-        TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
-        Normalization(ntrk_Data, ntrk_mtru_H[t], Params);
+      TString name_temp = Data[t] -> GetTitle(); 
+      TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
+      Normalization(ntrk_Data, ntrk_mtru_H[t], Params);
 
-        SubtractData(ntrk_mtru_H[t], ntrk_Data, t);
-        
-        Flush({ntrk_Data}, {ntrk_mtru_H[t][t]}); 
-        delete ntrk_Data;  
-      }
-     
-      for (int t(0); t < Data.size(); t++)
-      {
-        for (int j(0); j < Data.size(); j++){Flush({ntrk_mtru_H[t][t]}, {ntrk_mtru_H[j][t]});}
-        TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone("Temp_Data"); 
-        VT mtru = ntrk_mtru_H[t]; 
-        MatchBins(mtru, ntrk_Data);       
+      SubtractData(ntrk_mtru_H[t], ntrk_Data, t);
       
-        delete ntrk_Data; 
-      }
-      for (int t(0); t < Data.size(); t++)
-      {
-        for (int j(0); j < Data.size(); j++){ntrk_mtru_H[j][t] -> Smooth(5); }
-      }
-    }   
+      Flush({ntrk_Data}, {ntrk_mtru_H[t][t]}); 
+      delete ntrk_Data;  
+    }
      
     for (int i(0); i < Data.size(); i++)
     {
@@ -287,10 +275,14 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
       }
     }
+    
+    trk1 -> Reset(); 
+    trk1 -> Add(ntrk_mtru_H[0][0], 1); 
   }
 
   for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], JE + "/Experimental"); }
-
+  
+  delete trk1; 
 
   return ntrk_mtru_H; 
 }
