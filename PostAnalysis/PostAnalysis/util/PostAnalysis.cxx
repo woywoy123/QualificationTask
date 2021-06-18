@@ -1,7 +1,7 @@
 #include<PostAnalysis/BaseFunctions.h>
 #include<PostAnalysis/ExperimentalBench.h>
 #include<PostAnalysis/Evaluate.h>
-
+#include<PostAnalysis/Debug.h>
 
 int main(int argc, char* argv[])
 {
@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
   TString Mode = argv[2];  
   TString File = argv[3]; 
 
-  //File = "Merged_MC.root"; 
+  //File = "./Merged_MC.root"; 
   //Mode = "Simultaneous"; 
   //JE = "x";
   //std::cout << File << std::endl;
@@ -23,8 +23,9 @@ int main(int argc, char* argv[])
   //ReadOutputFileToMap("Fit_Tracks.root"); 
 
   //MultiTrackTruthComparison("MultiTrackFit.root"); 
-
-
+  
+  //Proxy(); 
+  //SmoothingTest();
 
 
 

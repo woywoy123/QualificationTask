@@ -21,14 +21,18 @@
 #include<RooRealSumPdf.h>
 
 using namespace RooFit;
-
+const std::vector<TString> FitRanges_Names = {"Range_ntrk_1", "Range_ntrk_2", "Range_ntrk_3", "Range_ntrk_4"}; 
+const int n_cpu = 8; 
+ 
 // ==================  Basic RooFit Variables
 static std::vector<RooRealVar*> RooRealVariable(std::vector<TString> Names, std::vector<float> Guess, std::vector<float> Begin, std::vector<float> End)
 {
   std::vector<RooRealVar*> Variables; 
   for (int i(0); i < Names.size(); i++)
   {
-    RooRealVar* r = new RooRealVar(Names[i], Names[i], Guess[i], Begin[i], End[i]); 
+    RooRealVar* r; 
+    if (i < Guess.size()){r = new RooRealVar(Names[i], Names[i], Guess[i], Begin[i], End[i]);}
+    else {r = new RooRealVar(Names[i], Names[i], Begin[i], End[i]);}
     Variables.push_back(r); 
   }
   return Variables; 
@@ -157,48 +161,62 @@ static void CaptureResults(RooFitResult* Re, std::map<TString, std::vector<float
   delete Re; 
 }
 
-static RooFitResult* MinimizationCustom(RooAbsReal* nll, std::map<TString, std::vector<float>> Params)
+template<typename mod>
+static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<TString, std::vector<float>> Params, RooRealVar* x)
 {
-  if (Params["debug"].size() != 0)
-  {
-    RooFitResult* re; 
-    RooMinimizer* pg = new RooMinimizer(*nll); 
-    re = pg -> fit("mr"); 
-    pg -> cleanup();
-    delete nll; 
-    delete pg; 
-    return re;
-  }
 
   RooFitResult* re; 
-  RooMinimizer* pg = new RooMinimizer(*nll);
-  int print = -1; 
-  if (Params["Print"].size() != 0){print = Params["Print"][0]; }
-  pg -> setPrintLevel(print); 
-  pg -> setPrintEvalErrors(print);
-  if (Params["Minimizer"].size() != 0)
+  TString Ranges; 
+  for (TString F : FitRanges_Names){if (Params[F].size() != 0){x -> setRange(F, Params[F][0], Params[F][1]); Ranges += (F+ ",");}}
+  Ranges = Ranges[0, Ranges.Sizeof()-1];
+
+  if (Params["Minimizer"].size() == 0)
   {
-    pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
-    pg -> setMaxIterations(Params["Minimizer"][0]); 
-  } 
+    re = model.fitTo(*data, Range(Ranges), NumCPU(n_cpu, 1), Save()); 
+  }
+  else
+  {
+    RooAbsReal* nll = model.createNLL(*data, Range(Ranges), NumCPU(n_cpu, 1)); 
+    if (Params["debug"].size() != 0)
+    {
+      RooFitResult* re; 
+      RooMinimizer* pg = new RooMinimizer(*nll); 
+      re = pg -> fit("mr"); 
+      pg -> cleanup();
+      delete nll; 
+      delete pg; 
+      return re;
+    }
 
-  //if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
-  pg -> optimizeConst(true); 
-  pg -> seek(); 
-  //pg -> setProfile(true);
-  pg -> setOffsetting(true); 
-  pg -> setEvalErrorWall(true); 
-  //pg -> migrad(); 
-  //if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
-  pg -> improve(); 
-  pg -> hesse();  
-  //pg -> minos();
+    RooMinimizer* pg = new RooMinimizer(*nll);
+    int print = -1; 
+    if (Params["Print"].size() != 0){print = Params["Print"][0]; }
+    pg -> setPrintLevel(print); 
+    pg -> setPrintEvalErrors(print);
+    if (Params["Minimizer"].size() != 0)
+    {
+      pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
+      pg -> setMaxIterations(Params["Minimizer"][0]); 
+    } 
 
-  re = pg -> fit("mr"); 
+    if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
+    pg -> optimizeConst(true); 
+    pg -> seek(); 
+    //pg -> setProfile(true);
+    pg -> setOffsetting(true); 
+    pg -> setEvalErrorWall(true); 
+    //pg -> migrad(); 
+    //if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
+    pg -> improve(); 
+    pg -> hesse();  
 
-  pg -> cleanup(); 
-  delete pg; 
-  delete nll;
+    re = pg -> fit("mr"); 
+
+    pg -> cleanup(); 
+    delete pg; 
+    delete nll;
+  }
+
   return re; 
 }
 
@@ -217,12 +235,6 @@ static std::vector<float> MultiplyByConstant(std::vector<float> Vec, float c)
 }
 
 
-
-
-
-
-
-
 // ==================== Base Functions 
 std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
@@ -231,6 +243,5 @@ std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<T
 std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
 std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
 
-const int n_cpu = 8; 
 
 #endif

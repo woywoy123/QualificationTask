@@ -143,6 +143,7 @@ void TestFits_NTruth_NTrack()
   
   TFile* X = new TFile("ntrk_ntru.root", "RECREATE"); 
   int p = 0;
+  
   for (MMVi x = F.begin(); x != F.end(); x++)
   {
     TString current = x -> first;  
@@ -186,6 +187,7 @@ void TestFits_NTruth_NTrack()
     PlotHists(ShiftNormalWidthFFT_Fits, ToBeUsed, can); 
     can -> Print(current + ".pdf"); 
     can -> Print(current + ".pdf]"); 
+    
 
     BulkDelete(Normal_Fits); 
     BulkDelete(ShiftNormal_Fits); 
@@ -325,7 +327,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     std::vector<TH1F*> Proposed = {ntrk_1_M, ntrk_2_M, ntrk_3_M, ntrk_4_M};  
     
     TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
-    SmoothHist(trk1_start, 3); 
+    SmoothHist(trk1_start, 0); 
     
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)

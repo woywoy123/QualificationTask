@@ -8,8 +8,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   int bins = Data -> GetNbinsX(); 
 
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  //if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
-  
+
   // Normalization variables
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, Data -> Integral()); 
 
@@ -32,16 +31,8 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Import(*Data)); 
-  RooFitResult* re; 
-  if (Params["Minimizer"].size() == 0)
-  {
-    re = model.fitTo(D, Range("fit"), SumW2Error(true), Save()); 
-  }
-  else
-  {
-    RooAbsReal* nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
-    re = MinimizationCustom(nll, Params);  
-  }
+  RooFitResult* re = MinimizationCustom(model, &D, Params, x); 
+
   std::map<TString, std::vector<float>> Output;  
   CaptureResults(re, &Output);  
  
@@ -77,20 +68,20 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
 {
 
   TH1F* Copy_D = (TH1F*)Data -> Clone("Temp");  
+  Average(PDF_H);
 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
 
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  //if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
   if (Params["fft_cache"].size() != 0){x -> setBins(Params["fft_cache"][0], "cache"); } 
   
   // Do a preliminary normalization fit:
   std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Copy_D -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Copy_D -> Integral())); 
 
   // Shift variables
   std::vector<TString> d_N = NameGenerator(PDF_H, "_Dx"); 
@@ -132,21 +123,9 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   RooDataHist D("data", "data", *x, Copy_D); 
   RooAddPdf model("model", "model", PDFs, N); 
   
-  RooFitResult* re; 
-  RooAbsReal* nll; 
-  std::vector<float> Bools; 
-  std::vector<float> State; 
-
-  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
-  re = MinimizationCustom(nll, Params); 
-  State.push_back(re -> status()); 
-
+  RooFitResult* re = MinimizationCustom(model, &D, Params, x); 
   std::map<TString, std::vector<float>> Output;  
   CaptureResults(re, &Output);
-
-  int status = 0; 
-  for (float x : State){ if (x != 0){ status = x; } }
-  Output["fit_status"][0] = status; 
   
   if (Name != "")
   {
@@ -218,9 +197,8 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
       for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
     }
   }; 
-  
-
-
+ 
+  Average(PDF_H); 
   TH1F* Data = (TH1F*)Data_Org -> Clone("temp"); 
   float Lum = Data -> Integral(); 
   Data -> Sumw2(); 
@@ -230,7 +208,6 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   int bins = Data -> GetNbinsX(); 
 
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
   if (Params["fft_cache"].size() != 0)
   {
     x -> setBins(Params["fft_cache"][0], "fft"); 
@@ -238,7 +215,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   }
 
   // Base Variables 
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
 
@@ -269,23 +246,11 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Data); 
   RooAddPdf model("model", "model", PxG, L); 
-  
-  std::vector<float> Bools; 
-  RooAbsReal* nll;
-  RooFitResult* re; 
-  std::vector<float> State; 
-
-  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
-  re = MinimizationCustom(nll, Params); 
-  State.push_back(re -> status()); 
+  RooFitResult* re = MinimizationCustom(model, &D, Params, x);  
 
   std::map<TString, std::vector<float>> Output;
   CaptureResults(re, &Output);
 
-  int status = 0; 
-  for (float x : State){ if (x != 0){ status = x; } }
-  Output["fit_status"][0] = status; 
-  
   TString plot_t = Name; plot_t += "PULL.pdf"; 
   RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
   IntoOutput(&Output, l_vars, m_vars, s_vars, PDF_H, PxG_vars, x, Data); 
@@ -395,16 +360,15 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
     }
   }; 
   
-  
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
+  Average(PDF_H);   
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
  
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
-
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  TString rang;  
+  
   if (Params["fft_cache"].size() != 0)
   {
     x -> setBins(Params["fft_cache"][0], "fft"); 
@@ -438,20 +402,18 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   RooAddPdf model("model", "model", PxG, L); 
   RooDataHist D("Data", "Data", *x, Data); 
   
-  std::vector<float> Bools; 
-  RooAbsReal* nll;
   RooFitResult* re; 
   std::vector<float> State; 
-
+  std::vector<float> Bools; 
+  
   // Make it such that only the current ntrk-ntru is allowed to float the fit variables 
   // First fit ==== Release m and not s
   Bools = std::vector<float>(PDF_H.size(), 1); 
   VariableConstant(Bools, s_vars); 
   Bools = std::vector<float>(PDF_H.size(), 0); 
   VariableConstant(Bools, m_vars); 
-  
-  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
-  re = MinimizationCustom(nll, Params); 
+ 
+  re = MinimizationCustom(model, &D, Params, x); 
   State.push_back(re -> status()); 
   delete re; 
   
@@ -461,8 +423,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   Bools = std::vector<float>(PDF_H.size(), 1); 
   VariableConstant(Bools, m_vars); 
   
-  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
-  re = MinimizationCustom(nll, Params); 
+  re = MinimizationCustom(model, &D, Params, x); 
   State.push_back(re -> status()); 
   delete re;
   
@@ -472,8 +433,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   Bools = std::vector<float>(PDF_H.size(), 1); 
   VariableConstant(Bools, s_vars); 
   
-  nll = model.createNLL(D, NumCPU(n_cpu, 1)); 
-  re = MinimizationCustom(nll, Params); 
+  re = MinimizationCustom(model, &D, Params, x); 
   State.push_back(re -> status()); 
 
   std::map<TString, std::vector<float>> Output;
@@ -499,16 +459,13 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   return Output; 
 }
 
-
-
 std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H_V, std::map<TString, std::vector<float>> Params, TString Name)
 {
   float x_min = Data[0] -> GetXaxis() -> GetXmin(); 
   float x_max = Data[0] -> GetXaxis() -> GetXmax(); 
   int bins = Data[0] -> GetNbinsX(); 
-
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  if (Params["Range"].size() != 0){x -> setRange("fit", Params["Range"][0], Params["Range"][1]);}
+
   if (Params["fft_cache"].size() != 0)
   {
     x -> setBins(Params["fft_cache"][0], "fft"); 
@@ -521,11 +478,12 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   std::vector<std::vector<RooRealVar*>> Lumi; 
   for (int i(0); i < PDF_H_V.size(); i++)
   {
-    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 1, Data[i] -> Integral()); 
+    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 0, Data[i] -> Integral()); 
     Lumi.push_back(l_var); 
+    Average(PDF_H_V[i]); 
   } 
 
-  std::vector<RooRealVar*> s_var = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.0002); 
+  std::vector<RooRealVar*> s_var = ProtectionRealVariable("s", PDF_H, Params, 0.001, 0.002); 
   std::vector<RooRealVar*> m_var = ProtectionRealVariable("m", PDF_H, Params, -0.0001, 0.0001); 
 
   // Create the resolution model: Gaussian 
@@ -586,8 +544,8 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   }
   
   RooDataHist* ComData = new RooDataHist("ComData", "ComData", x_var, sample, Data_V, 1.0); 
-  RooAbsReal* nll = simPdf.createNLL(*ComData, Range("fit"), NumCPU(n_cpu, 1)); 
-  RooFitResult* re = MinimizationCustom(nll, Params); 
+  RooFitResult* re = MinimizationCustom(simPdf, ComData, Params, x); 
+  
   int stat = re -> status(); 
   delete re; 
 

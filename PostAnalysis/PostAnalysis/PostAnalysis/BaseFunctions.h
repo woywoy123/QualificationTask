@@ -1,9 +1,14 @@
 #ifndef BASEFUNCTIONS_H
 #define BASEFUNCTIONS_H
 
+#include<TRandom2.h>
+#include<TF1.h>
+#include<TMatrixD.h>
+#include<TMatrixDSym.h>
+#include<TVectorD.h>
+
 #include<TString.h>
 #include<TH1F.h>
-#include<TKDE.h>
 #include<iostream> 
 #include<PostAnalysis/Plotting.h>
 #include<PostAnalysis/Convolution.h>

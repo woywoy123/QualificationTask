@@ -206,34 +206,83 @@ void Average(TH1F* Data)
   for (int i(0); i < Data -> GetNbinsX(); i++)
   {
     float y = Data -> GetBinContent(i+1); 
-    if ( y <= 0){ y = 1e-19; } 
+    if ( y <= 0){ y = 1e-10; } 
     Data -> SetBinContent(i+1, y); 
   }
 }
 
 void SmoothHist(TH1F* Hist, int iter)
 {
-  int bins = Hist -> GetNbinsX(); 
-  int bin_s = Hist -> GetXaxis() -> FindBin(1.5); 
-  for (int t(0); t < iter; t++)
-  {
-    std::vector<float> v; 
-    for (int i(1); i < bins-1; i++)
-    {
-      float av = (1./3)*(Hist -> GetBinContent(i) + Hist -> GetBinContent(i+1) + Hist -> GetBinContent(i+2));
-      v.push_back(av); 
-    }
-    //for (int i(1); i < bins-1; i++){Hist -> SetBinContent(i+1, v[i]);}  
+  int order = 4; 
+  float sigma = 0.1; 
 
-    std::vector<float> v_2; 
-    for (int i(1); i < bins-1; i++)
+  TF1 gaus("mygaus", "gaus", -200, 200); 
+  gaus.SetNpx(10000); 
+  gaus.SetParameters(1., 0., sigma); 
+  
+  const int ndata = Hist -> GetNbinsX(); 
+  
+  std::vector<float> x(ndata, 0); 
+  std::vector<float> y(ndata, 0); 
+  std::vector<float> sig(ndata, 0); 
+  std::vector<float> wt2(ndata, 0); 
+  
+  for (int j(0); j < ndata; j++)
+  {
+    int j1 = j+1; 
+    x[j] = Hist -> GetBinCenter(j1); 
+    y[j] = Hist -> GetBinContent(j1); 
+
+    if (y[j] != 0)
     {
-      float av = (1./3)*(Hist -> GetBinContent(bins -i) + Hist -> GetBinContent(bins - (i+1)) + Hist -> GetBinContent(bins - (i+2)));
-      v_2.push_back(av); 
+      sig[j] = Hist -> GetBinError(j1); 
+      wt2[j] = pow(sig[j], -2); 
     }
-    for (int i(bin_s); i < bins-1; i++){Hist -> SetBinContent(i+1, (1./3)*(Hist -> GetBinContent(i+1) + (v_2[v_2.size() - i] + v[i])));}  
-  } 
+    else
+    {
+      sig[j] = 1.; 
+      wt2[j] = 2.; 
+    }
+  }
+  
+  for (int j(0); j < ndata; j++)
+  {
+    TMatrixD A(ndata, order+1); 
+    TMatrixDSym W(ndata); 
+    TVectorD m(ndata); 
+
+    for (int i(0); i < ndata; i++)
+    {
+      float dx = x[i] - x[j]; 
+      float gausval = gaus.Eval(dx); 
+      A(i, 0) = 1; 
+      for (int k(1); k < order +1; k++){A(i, k) = A(i, k-1)*dx;}
+      
+      W(i, i) = gausval*wt2[i]; 
+      m(i) = y[i]; 
+    }
+
+    TMatrixD ATW = A.T() * W; 
+    TMatrixD C = ATW * A.T(); 
+    C.Invert(); 
+
+    auto results = C*ATW*m; 
+
+    Hist -> SetBinContent(j+1, results(0)); 
+    Hist -> SetBinError(j+1, sqrt(C(0, 0))); 
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 void Average(std::vector<TH1F*> Data){for (TH1F* H : Data){ Average(H); }}
 

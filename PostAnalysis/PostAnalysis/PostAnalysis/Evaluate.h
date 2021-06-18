@@ -392,7 +392,9 @@ static void CompileFLostTable(MMVT Results, MMMVF Errors, VS* Output, TString FL
   CompileHeading(Algos_V, " | ", margin, &out); 
   (*Output).push_back(out); 
   out.Clear();
-  Spacer(&out, "Flost 2 Scores", margin);
+  
+  if (FL == "FL2"){Spacer(&out, "Flost 2 Scores", margin);}
+  if (FL == "FL3"){Spacer(&out, "Flost 3 Scores", margin);}
   for (TString i : Algos_V)
   { 
     TString x; x += FLost_pred[i]; 

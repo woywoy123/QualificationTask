@@ -8,6 +8,7 @@ std::vector<TString> ReturnCurrentDirs()
   {
     auto k = dynamic_cast<TKey*>(key); 
     TString dir = (TString)k -> GetName(); 
+    if (dir.Contains("temp")){continue;}
     Output.push_back(dir); 
   }
   return Output; 

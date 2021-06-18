@@ -236,8 +236,9 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   std::vector<std::vector<TH1F*>> ntrk_mtru_H; 
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Experimental"); 
+  std::vector<MVF> Params_V(Data.size(), Params);
   
-  int iter = 3; 
+  int iter = 4; 
   TH1F* trk1 = (TH1F*)trk1_start -> Clone("x"); 
 
   for (int x(0); x < iter; x++)
@@ -249,35 +250,40 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
     {
       TString name_temp = Data[t] -> GetTitle(); 
       TH1F* ntrk_Data = (TH1F*)Data[t] -> Clone(name_temp + "_C"); 
-      Normalization(ntrk_Data, ntrk_mtru_H[t], Params);
-
-      SubtractData(ntrk_mtru_H[t], ntrk_Data, t);
-      
-      Flush({ntrk_Data}, {ntrk_mtru_H[t][t]}); 
-      delete ntrk_Data;  
-    }
      
-    for (int i(0); i < Data.size(); i++)
-    {
-      TString r_name = "Range_ntrk_"; r_name += (i+1); 
-      Params["Range"] = Params[r_name]; 
-      std::vector<TH1F*> ntrk_Template = ntrk_mtru_H[i]; 
-      TH1F* ntrk_Measure = (TH1F*)Data[i] -> Clone("trk_cop"); 
+      for (int tru(1); tru < ntrk_mtru_H[t].size(); tru++)
+      {
+        std::vector<TH1F*> sample; 
+        for (int z(0); z < tru+1; z++){sample.push_back(ntrk_mtru_H[t][z]);}
+        std::map<TString, std::vector<float>> res = ConvolutionFFT(ntrk_Data, sample, Params);
+        float stat = res["fit_status"][0]; 
+        if (stat == 0)
+        {
+          Params_V[t]["l_G"] = res["Normalization"];
+          Params_V[t]["m_G"] = res["Mean"];
+          Params_V[t]["s_G"] = res["Stdev"];
+        }
+      }
+      delete ntrk_Data;  
       
-      TString base = "Fit_"; base += (i+1); base += (ext); 
+
+
+      std::vector<TH1F*> ntrk_Template = ntrk_mtru_H[t]; 
+      TH1F* ntrk_Measure = (TH1F*)Data[t] -> Clone("trk_cop"); 
       
-      std::map<TString, std::vector<float>> Map = IncrementalFFT(ntrk_Measure, ntrk_Template, Params, base); 
+      TString base = "Fit_"; base += (t+1); base += (ext); 
+      std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
       
       delete ntrk_Measure;
       if (x == iter -1)
       {
-        TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
+        TString trk_n = "ntrk_"; trk_n += (t+1); trk_n += ("_error"); 
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
       }
     }
-    
-    trk1 -> Reset(); 
-    trk1 -> Add(ntrk_mtru_H[0][0], 1); 
+    trk1 -> Reset();
+    trk1 -> Add(Data[0], 1); 
+    SubtractData(ntrk_mtru_H[0], trk1, 0, false);   
   }
 
   for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], JE + "/Experimental"); }
