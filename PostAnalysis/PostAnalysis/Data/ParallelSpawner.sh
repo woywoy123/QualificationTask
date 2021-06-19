@@ -48,7 +48,7 @@ PostAnalysis_root_dir=$PWD
 echo $PostAnalysis_root_dir
 
 echo "You have 30 seconds to cancel the deleting of $compiler !"
-sleep(30)
+sleep 30
 
 
 

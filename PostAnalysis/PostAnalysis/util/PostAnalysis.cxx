@@ -29,6 +29,6 @@ int main(int argc, char* argv[])
 
 
 
-  //std::cout << "fin" << std::endl;
-  return 0; 
+  std::cout << "fin" << std::endl; 
+  return 1;
 }

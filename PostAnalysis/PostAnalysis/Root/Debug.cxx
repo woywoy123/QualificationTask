@@ -11,10 +11,10 @@ void Proxy()
   std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 
   TH1F* ntrk_1_M = M["ntrk_1_M_I"][0]; 
   TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
-  SmoothHist(trk1_start, 0); 
 
   std::vector<TH1F*> trk1_templates = BuildNtrkMtru(1, trk1_start, "_template", 2)[0]; 
- 
+  SmoothHist(trk1_start, 0); 
+  
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
   can -> Print("Package.pdf["); 
@@ -97,8 +97,8 @@ void Proxy()
   // ======================== Normalization + Shift x-a ====================== //
   auto StepFitShift =[&](TH1F* start, std::vector<TH1F*> truth, float delta, float S_L, TCanvas* can)
   {
-    int steps = 1; //200 / delta; 
-    float cu = 90; //0; 
+    int steps = 200 / delta; 
+    float cu = 0; 
 
     std::vector<MVF> out; 
     std::vector<TString> setting; 

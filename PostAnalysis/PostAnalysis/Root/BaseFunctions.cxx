@@ -213,7 +213,9 @@ void Average(TH1F* Data)
 
 void SmoothHist(TH1F* Hist, int iter)
 {
-  int order = 4; 
+  TH1F* ori = (TH1F*)Hist -> Clone("Original"); 
+  
+  int order = 3; 
   float sigma = 0.1; 
 
   TF1 gaus("mygaus", "gaus", -200, 200); 
@@ -269,20 +271,23 @@ void SmoothHist(TH1F* Hist, int iter)
     auto results = C*ATW*m; 
 
     Hist -> SetBinContent(j+1, results(0)); 
-    Hist -> SetBinError(j+1, sqrt(C(0, 0))); 
+    Hist -> SetBinError(j+1, sqrt(C(0, 0)));
+
   }
+
+
+  //int start = ori -> GetXaxis() -> FindBin(4.0); 
+  //float t = ori -> GetBinContent(start); 
+  //float g = Hist -> GetBinContent(start); 
+  //float s = t/g;  
+
+  //Hist -> Scale(s); 
+  //for (int i(0); i < start; i++){Hist -> SetBinContent(i+1, ori -> GetBinContent(i+1));}
+  //for (int i(0); i < ndata; i++){Hist -> SetBinError(i+1, 0.);}
+  Hist -> SetLineColor(kRed); 
+
+
 }
-
-
-
-
-
-
-
-
-
-
-
 
 void Average(std::vector<TH1F*> Data){for (TH1F* H : Data){ Average(H); }}
 

@@ -118,6 +118,7 @@ static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, Roo
   for (int i(0); i < Name.size(); i++)
   {
     RooFFTConvPdf* H = new RooFFTConvPdf(Name[i], Name[i], *domain, *p[i], *g[i]); 
+    //H -> setInterpolationOrder(4); 
     Out.push_back(H); 
   }
   return Out; 
@@ -172,7 +173,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
 
   if (Params["Minimizer"].size() == 0)
   {
-    re = model.fitTo(*data, Range(Ranges), NumCPU(n_cpu, 1), Save()); 
+    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Extended(true), Minimizer("Minuit"), Save()); 
   }
   else
   {
@@ -201,14 +202,15 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
 
     if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
     pg -> optimizeConst(true); 
-    pg -> seek(); 
+    //pg -> seek(); 
     //pg -> setProfile(true);
     pg -> setOffsetting(true); 
-    pg -> setEvalErrorWall(true); 
-    //pg -> migrad(); 
-    //if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
+    pg -> setEvalErrorWall(false); 
+    pg -> migrad(); 
+    if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
     pg -> improve(); 
     pg -> hesse();  
+    //pg -> minos();
 
     re = pg -> fit("mr"); 
 

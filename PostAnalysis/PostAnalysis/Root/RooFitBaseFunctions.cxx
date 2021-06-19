@@ -79,24 +79,14 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   
   // Do a preliminary normalization fit:
   std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
+  Params["l_G"] = Pre["Normalization"];
 
   // Normalization variables
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Copy_D -> Integral())); 
 
   // Shift variables
-  std::vector<TString> d_N = NameGenerator(PDF_H, "_Dx"); 
-  std::vector<float> d_s(PDF_H.size(), -0.1); 
-  std::vector<float> d_e(PDF_H.size(), 0.1); 
-  for (int i(0); i < Params["dx"].size(); i++)
-  {
-    if (i >= PDF_H.size()){continue;}
-    d_s[i] = -Params["dx"][i]; 
-    d_e[i] = Params["dx"][i];
-  }
-  std::vector<RooRealVar*> d_vars; 
-  if (Params["dx_G"].size() != 0){d_vars = RooRealVariable(d_N, Params["dx_G"], d_s, d_e);}
-  else {d_vars = RooRealVariable(d_N, d_s, d_e);}
-  
+  std::vector<RooRealVar*> d_vars = ProtectionRealVariable("dx", PDF_H, Params, -0.1, 0.1);   
+
   RooArgList N; 
   RooArgList PDFs; 
   std::vector<RooDataHist*> pdf_D; 
@@ -107,9 +97,10 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   std::vector<TString> pdf_n = NameGenerator(PDF_H, "_P"); 
   for (int i(0); i < PDF_H.size(); i++)
   {
-    RooFormulaVar* dx = new RooFormulaVar(d_N[i] + "dx", "@0 - @1", RooArgList(*x, *d_vars[i])); 
+    TString n = "dx_"; n+= (i+1); 
+    RooFormulaVar* dx = new RooFormulaVar(n, "@0 - @1", RooArgList(*x, *d_vars[i])); 
     RooDataHist* DH = new RooDataHist(data_n[i], data_n[i], *x, PDF_H[i]); 
-    RooHistPdf* PH = new RooHistPdf(pdf_n[i], pdf_n[i], *dx, *x, *DH); 
+    RooHistPdf* PH = new RooHistPdf(pdf_n[i], pdf_n[i], *dx, *x, *DH, 4); 
 
     pdf_D.push_back(DH); 
     pdf_P.push_back(PH); 
@@ -213,6 +204,10 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
     x -> setBins(Params["fft_cache"][0], "fft"); 
     x -> setBins(Params["fft_cache"][0], "cache");  
   }
+
+  // Do a preliminary normalization fit:
+  std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
+  Params["l_G"] = Pre["Normalization"];
 
   // Base Variables 
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 

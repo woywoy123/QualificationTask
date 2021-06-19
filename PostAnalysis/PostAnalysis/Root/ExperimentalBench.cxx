@@ -204,25 +204,20 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
-  std::vector<float> k = {0.4, 8.6}; 
+  std::vector<float> k = {0.3, 12.}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
-  float m = 0.4; 
+  float m = 0.2; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Minimizer"] = {100000};
-  //Params_N["Strategy"] = {2};
-  //Params_N["GSL"] = {1};
-  //Params_N["debug"] = {0}; 
 
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
-  Params_NS["dx"] = {m, m, m, m}; 
+  Params_NS["dx_s"] = {-m, -m, -m, -m}; 
+  Params_NS["dx_e"] = {m, m, m, m}; 
   Params_NS["Minimizer"] = {100000};
-  //Params_NS["GSL"] = {1};
   Params_NS["Print"] = {-1};
-  //Params_NS["Strategy"] = {2};
-  //Params_NS["debug"] = {0};  
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
@@ -232,13 +227,11 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["Range_ntrk_3"] = Ranges[2];   
   Params_FFT["Range_ntrk_4"] = Ranges[3]; 
   Params_FFT["m_s"] = {-m, -m, -m, -m};
+  Params_FFT["m_G"] = {0, 0, 0, 0};
   Params_FFT["m_e"] = {m, m, m, m};
   Params_FFT["s_C"] = {1, 1, 1, 1};
   Params_FFT["fft_cache"] = {10000}; 
   Params_FFT["Minimizer"] = {50000}; 
-  //Params_FFT["GSL"] = {1};
-  Params_FFT["Print"] = {-1}; 
-  //Params_FFT["debug"] = {0};  
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
@@ -248,14 +241,12 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
   Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
   Params_WidthFFT["m_s"] = {-m, -m, -m, -m};
+  Params_WidthFFT["m_G"] = {0, 0, 0, 0};
   Params_WidthFFT["m_e"] = {m, m, m, m};
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_WidthFFT["fft_cache"] = {10000}; 
   Params_WidthFFT["Minimizer"] = {50000}; 
-  //Params_WidthFFT["GSL"] = {1};
-  Params_WidthFFT["Print"] = {-1}; 
-  //Params_WidthFFT["debug"] = {-1}; 
 
   // Simultaneous Fitting method 
   std::map<TString, std::vector<float>> Params_Sim; 
@@ -265,9 +256,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_Sim["fft_cache"] = {10000}; 
   Params_Sim["Minimizer"] = {50000}; 
-  //Params_Sim["GSL"] = {1};
   Params_Sim["Print"] = {-1}; 
-  //Params_Sim["debug"] = {0}; 
 
   // Experimental Fitting method 
   std::map<TString, std::vector<float>> Params_Exp; 
@@ -286,8 +275,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["G_Mean"] = {0, 0, 0, 0};
   Params_Exp["G_Stdev"] = {0.01, 0.01, 0.01, 0.01};
   Params_Exp["LR"] = {20};
-  Params_Exp["Print"] = {-1}; 
-  //Params_Exp["debug"] = {0};
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
@@ -327,8 +314,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     std::vector<TH1F*> Proposed = {ntrk_1_M, ntrk_2_M, ntrk_3_M, ntrk_4_M};  
     
     TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
-    SmoothHist(trk1_start, 0); 
-    
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)
     {
@@ -390,12 +375,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_Exp, current);
       Plotter(Fits, TruthVector, current, Mode); 
     }   
-
-    if (Mode == "BruceMethod")
-    {
-      Fits = BruceMethod(ToBeUsed, trk1_start, Params_WidthFFT, current); 
-      Plotter(Fits, TruthVector, current, Mode); 
-    }
 
     if (All){Mode = "Incremental"; }
     if (Mode == "Incremental")
