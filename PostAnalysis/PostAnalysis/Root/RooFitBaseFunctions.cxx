@@ -51,8 +51,6 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
     Output["Normalization_Error"].push_back(n_e); 
 
     PDF_H[i] -> Scale(n); 
-
-    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
   }
 
   BulkDelete(l_vars); 
@@ -139,8 +137,6 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 
     PDF_H[i] -> Scale(n);
-    
-    for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
   }
 
   delete Copy_D; 
@@ -185,14 +181,11 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
       CopyPDFToTH1F(PxG[i], x, PDF_H[i], Data); 
       Normalize(PDF_H[i]); 
       PDF_H[i] -> Scale(n); 
-      for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
     }
   }; 
  
   Average(PDF_H); 
   TH1F* Data = (TH1F*)Data_Org -> Clone("temp"); 
-  float Lum = Data -> Integral(); 
-  Data -> Sumw2(); 
 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
@@ -257,6 +250,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   BulkDelete(pdf_D); 
   BulkDelete(pdf_P); 
   BulkDelete(PxG_vars); 
+  delete Data; 
   delete x; 
   return Output; 
 }
@@ -351,7 +345,6 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
       CopyPDFToTH1F(PxG[i], x, PDF_H[i], Data); 
       Normalize(PDF_H[i]); 
       PDF_H[i] -> Scale(n); 
-      for (int p(0); p < Data -> GetNbinsX(); p++){PDF_H[i] -> SetBinError(p+1, 0.);}
     }
   }; 
   
@@ -571,15 +564,6 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
     Output["Stdev_Error"].push_back(s_var[i] -> getError()); 
   }
   Output["fit_status"].push_back(stat); 
-  
-  for (int i(0); i < PDF_H_V.size(); i++)
-  {
-    for (int j(0); j < PDF_H_V[i].size(); j++)
-    {
-      for (int k(0); k < PDF_H_V[i][j] -> GetNbinsX(); k++){PDF_H_V[i][j] -> SetBinError(k+1, 0.);}
-    }
-  }
-
 
   delete x; 
   BulkDelete(s_var); 

@@ -177,7 +177,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(*data, Range(Ranges), NumCPU(n_cpu, 1)); 
+    RooAbsReal* nll = model.createNLL(*data, Range(Ranges), Extended(true), NumCPU(n_cpu, 1)); 
     if (Params["debug"].size() != 0)
     {
       RooFitResult* re; 

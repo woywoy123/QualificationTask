@@ -195,7 +195,8 @@ void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk)
 {
   for (int i(0); i < In.size(); i++)
   {
-    if (i != trk && !trutrk){ Data -> Add(In[i], -1);}
+    Average(In[i]); 
+    if (i != trk && trutrk == false){ Data -> Add(In[i], -1);}
     if (i == trk && trutrk){ Data -> Add(In[i], -1);}
   }
   Average(Data); 
@@ -207,6 +208,7 @@ void Average(TH1F* Data)
   {
     float y = Data -> GetBinContent(i+1); 
     if ( y <= 0){ y = 1e-10; } 
+    if ( std::isnan(y) ) { y = 1e-10; }
     Data -> SetBinContent(i+1, y); 
   }
 }
@@ -285,6 +287,8 @@ void SmoothHist(TH1F* Hist, int iter)
   //for (int i(0); i < start; i++){Hist -> SetBinContent(i+1, ori -> GetBinContent(i+1));}
   //for (int i(0); i < ndata; i++){Hist -> SetBinError(i+1, 0.);}
   Hist -> SetLineColor(kRed); 
+
+  delete ori; 
 
 
 }

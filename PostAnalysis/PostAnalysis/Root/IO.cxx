@@ -1,14 +1,16 @@
 #include<PostAnalysis/IO.h>
 
-std::vector<TString> ReturnCurrentDirs()
+std::vector<TString> ReturnCurrentDirs(bool FolderOnly = true)
 {
   std::vector<TString> Output; 
   TDirectory* dir = gDirectory; 
   for (TObject* key : *dir -> GetListOfKeys())
   {
     auto k = dynamic_cast<TKey*>(key); 
-    TString dir = (TString)k -> GetName(); 
-    if (dir.Contains("temp")){continue;}
+    TString dir = (TString)k -> GetName();
+    
+    if (dir.Contains("Original") || dir.Contains("temp")){ continue;}
+    //if (FolderOnly && !k -> IsFolder()){continue;}
     Output.push_back(dir); 
   }
   return Output; 
@@ -26,11 +28,10 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
       std::map<TString, std::vector<TH1F*>> Trk_Tru; 
 
       F -> cd(L1 + "/" + E1 + "_radius");  
-      std::vector<TString> Folders = ReturnCurrentDirs(); 
+      std::vector<TString> Folders = ReturnCurrentDirs(false); 
       for (TString x : Folders)
       {
         TH1F* H = (TH1F*)gDirectory -> Get(x); 
-        
         // Truth inside the jet core. 
         if (x.Contains("ntrk_1") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_1_T_I"].push_back(H); }
         if (x.Contains("ntrk_2") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_2_T_I"].push_back(H); }
@@ -266,6 +267,8 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TS
       {
         if (H_TS.Contains("_error")){continue;}
         TH1F* H = (TH1F*)gDirectory -> Get(H_TS);
+
+        std::cout << H -> GetTitle() << std::endl;
         
         // Truth inside the jet core. 
         if (!Alg_Folder.Contains("ntrk_1_T") && H_TS.Contains("ntrk_1")){ Algorithms_Map[Alg_Folder + "_ntrk_1"].push_back(H); }
@@ -338,7 +341,7 @@ std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> Read
     {
       F -> cd(Folder + "/" + Alg_Folder); 
       
-      std::vector<TString> Alg_V = ReturnCurrentDirs(); 
+      std::vector<TString> Alg_V = ReturnCurrentDirs(false); 
       std::map<TString, std::vector<float>> key_map; 
       for (TString H_TS : Alg_V)
       {

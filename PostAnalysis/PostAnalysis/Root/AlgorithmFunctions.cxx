@@ -216,18 +216,31 @@ std::vector<std::vector<TH1F*>> NormalizationShiftWidthFFT_Fit_NtrkMtru(std::vec
 std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
   TString ext = "_" + JE + "_Experimental_NtrkMtru"; 
-  std::vector<std::vector<TH1F*>> ntrk_mtru_H; 
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Experimental"); 
   std::vector<MVF> Params_V(Data.size(), Params);
   
-  int iter = 2; 
+  int iter = 6; 
+  
   TH1F* trk1 = (TH1F*)trk1_start -> Clone("x"); 
-
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1, ext);
+  
+  TCanvas* can = new TCanvas(); 
   for (int x(0); x < iter; x++)
   {
-    for (int t(0); t < ntrk_mtru_H.size(); t++){ BulkDelete(ntrk_mtru_H[t]); }
-    ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1, ext);
+
+    for (int t(0); t < ntrk_mtru_H.size(); t++)
+    {
+      for (int k(0); k < ntrk_mtru_H[t].size(); k++)
+      {
+        TH1F* tmp = (TH1F*)ntrk_mtru_H[t][t] -> Clone("tmp");  
+        ntrk_mtru_H[k][t] -> Reset(); 
+        ntrk_mtru_H[k][t] -> Add(tmp, 1);
+        delete tmp; 
+
+      }
+      Normalize(ntrk_mtru_H[t]); 
+    }
     
     for (int t(0); t < Data.size(); t++)
     {
@@ -235,18 +248,27 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       TH1F* ntrk_Measure = (TH1F*)Data[t] -> Clone("trk_cop"); 
       
       TString base = "Fit_"; base += (t+1); base += (ext); 
-      std::map<TString, std::vector<float>> Map = ConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
+      std::map<TString, std::vector<float>> Map = DeConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
       
-      delete ntrk_Measure;
       if (x == iter -1)
       {
         TString trk_n = "ntrk_"; trk_n += (t+1); trk_n += ("_error"); 
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
       }
+      
+      //MatchBins(ntrk_mtru_H[t], ntrk_Measure); 
+      //SmoothHist(ntrk_Measure, 0);  
+      SubtractData(ntrk_mtru_H[t], ntrk_Measure, t, false); 
+
+      ntrk_mtru_H[t][t] -> Reset(); 
+      ntrk_mtru_H[t][t] -> Add(ntrk_Measure, 1); 
+      
+      can -> SetLogy();
+      PlotHists(ntrk_Measure, ntrk_mtru_H[t], can);
+      can -> Print("Temp.pdf");  
+      
+      delete ntrk_Measure;
     }
-    trk1 -> Reset();
-    trk1 -> Add(Data[0], 1); 
-    SubtractData(ntrk_mtru_H[0], trk1, 0, false);   
   }
 
   for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], JE + "/Experimental"); }
