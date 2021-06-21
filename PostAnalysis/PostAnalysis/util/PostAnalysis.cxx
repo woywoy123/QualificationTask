@@ -19,9 +19,9 @@ int main(int argc, char* argv[])
   //TestRead(); 
   //CompareToTruth("ntrk_ntru.root"); 
   //std::cout << "+++" << JE << " " << Mode << std::endl;
-  TestFits_AllTruth_ToTrack(JE, Mode, File);  
   //ReadOutputFileToMap("Fit_Tracks.root"); 
 
+  TestFits_AllTruth_ToTrack(JE, Mode, File);  
   //MultiTrackTruthComparison("MultiTrackFit.root"); 
   
   //Proxy(); 

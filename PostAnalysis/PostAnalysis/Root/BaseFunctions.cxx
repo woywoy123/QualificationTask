@@ -245,7 +245,7 @@ void SmoothHist(TH1F* Hist, int iter)
     else
     {
       sig[j] = 1.; 
-      wt2[j] = 2.; 
+      wt2[j] = 0.; 
     }
   }
   

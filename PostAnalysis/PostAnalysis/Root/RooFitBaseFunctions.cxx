@@ -283,12 +283,13 @@ std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<T
   
     TString name_L = "L_"; name_L += (PDF_H[i] -> GetTitle()); 
     TH1F* X = new TH1F(name_L, name_L, bins+2*bins*r, new_min, new_max); 
-    PDF.push_back(X); 
 
     for (int j(0); j < bins; j++)
     {
       X -> SetBinContent(j+1+r*bins, PDF_H[i] -> GetBinContent(j+1)); 
     }
+
+    PDF.push_back(X); 
   }
  
   Normalize(PDF); 

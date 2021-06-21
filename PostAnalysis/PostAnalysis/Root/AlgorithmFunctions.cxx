@@ -223,7 +223,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   int iter = 6; 
   
   TH1F* trk1 = (TH1F*)trk1_start -> Clone("x"); 
-  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1, ext);
+  std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1, ext, Data.size());
   
   TCanvas* can = new TCanvas(); 
   for (int x(0); x < iter; x++)
@@ -233,6 +233,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
     {
       for (int k(0); k < ntrk_mtru_H[t].size(); k++)
       {
+        if (ntrk_mtru_H.size() < k+1){continue;}
         TH1F* tmp = (TH1F*)ntrk_mtru_H[t][t] -> Clone("tmp");  
         ntrk_mtru_H[k][t] -> Reset(); 
         ntrk_mtru_H[k][t] -> Add(tmp, 1);
@@ -256,7 +257,6 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
       }
       
-      //MatchBins(ntrk_mtru_H[t], ntrk_Measure); 
       //SmoothHist(ntrk_Measure, 0);  
       SubtractData(ntrk_mtru_H[t], ntrk_Measure, t, false); 
 
