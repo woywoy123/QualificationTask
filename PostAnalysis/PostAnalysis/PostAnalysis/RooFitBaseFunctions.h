@@ -202,7 +202,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
 
     if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
     pg -> optimizeConst(true); 
-    //pg -> seek(); 
+    if (Params["seek"].size() != 0){pg -> seek();}
     //pg -> setProfile(true);
     pg -> setOffsetting(true); 
     pg -> setEvalErrorWall(false); 

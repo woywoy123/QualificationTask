@@ -217,9 +217,9 @@ void SmoothHist(TH1F* Hist, int iter)
 {
   TH1F* ori = (TH1F*)Hist -> Clone("Original"); 
   
-  int order = 3; 
-  float sigma = 0.1; 
-
+  int order = 4; 
+  float sigma = 0.01; 
+  
   TF1 gaus("mygaus", "gaus", -200, 200); 
   gaus.SetNpx(10000); 
   gaus.SetParameters(1., 0., sigma); 
@@ -230,13 +230,13 @@ void SmoothHist(TH1F* Hist, int iter)
   std::vector<float> y(ndata, 0); 
   std::vector<float> sig(ndata, 0); 
   std::vector<float> wt2(ndata, 0); 
-  
+
   for (int j(0); j < ndata; j++)
   {
     int j1 = j+1; 
     x[j] = Hist -> GetBinCenter(j1); 
     y[j] = Hist -> GetBinContent(j1); 
-
+  
     if (y[j] != 0)
     {
       sig[j] = Hist -> GetBinError(j1); 
@@ -245,7 +245,7 @@ void SmoothHist(TH1F* Hist, int iter)
     else
     {
       sig[j] = 1.; 
-      wt2[j] = 0.; 
+      wt2[j] = 1.; 
     }
   }
   
@@ -274,23 +274,26 @@ void SmoothHist(TH1F* Hist, int iter)
 
     Hist -> SetBinContent(j+1, results(0)); 
     Hist -> SetBinError(j+1, sqrt(C(0, 0)));
-
   }
 
+  TH1F* h = (TH1F*)Hist -> Clone("temp"); 
+  Convolution(h, h, h); 
+  Deconvolution(h, Hist, Hist, 20);
+  Normalize(Hist); 
+  Hist -> Scale(ori -> Integral());
+  delete h; 
 
-  //int start = ori -> GetXaxis() -> FindBin(4.0); 
-  //float t = ori -> GetBinContent(start); 
-  //float g = Hist -> GetBinContent(start); 
-  //float s = t/g;  
+  int start = ori -> GetXaxis() -> FindBin(2.0); 
+  float t = ori -> GetBinContent(start); 
+  float g = Hist -> GetBinContent(start); 
+  float s = t/g;  
+  Hist -> Scale(s); 
 
-  //Hist -> Scale(s); 
-  //for (int i(0); i < start; i++){Hist -> SetBinContent(i+1, ori -> GetBinContent(i+1));}
-  //for (int i(0); i < ndata; i++){Hist -> SetBinError(i+1, 0.);}
+  for (int i(0); i < start; i++){Hist -> SetBinContent(i+1, ori -> GetBinContent(i+1));}
+  for (int i(0); i < ndata; i++){Hist -> SetBinError(i+1, 0.);}
+
   Hist -> SetLineColor(kRed); 
-
   delete ori; 
-
-
 }
 
 void Average(std::vector<TH1F*> Data){for (TH1F* H : Data){ Average(H); }}

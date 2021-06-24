@@ -207,7 +207,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<float> k = {0., 12}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
-  float m = 0.6; 
+  float m = 0.4; 
   float s_e = 0.1; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
@@ -218,15 +218,16 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_NS["dx_s"] = {-m, -m, -m, -m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0}; 
   Params_NS["dx_e"] = {m, m, m, m}; 
+  Params_NS["seek"] = {1};
   Params_NS["Minimizer"] = {10000};
   Params_NS["Print"] = {-1};
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
-  //Params_FFT["Range_ntrk_1"] = Ranges[0]; 
-  //Params_FFT["Range_ntrk_2"] = Ranges[1]; 
-  //Params_FFT["Range_ntrk_3"] = Ranges[2];   
-  //Params_FFT["Range_ntrk_4"] = Ranges[3]; 
+  Params_FFT["Range_ntrk_1"] = Ranges[0]; 
+  Params_FFT["Range_ntrk_2"] = Ranges[1]; 
+  Params_FFT["Range_ntrk_3"] = Ranges[2];   
+  Params_FFT["Range_ntrk_4"] = Ranges[3]; 
   Params_FFT["m_s"] = {-m, -m, -m, -m};
   Params_FFT["m_G"] = {0, 0, 0, 0};
   Params_FFT["m_e"] = {m, m, m, m};
@@ -236,10 +237,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
-  //Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
-  //Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
-  //Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
-  //Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
+  Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
+  Params_WidthFFT["Range_ntrk_2"] = Ranges[1];   
+  Params_WidthFFT["Range_ntrk_3"] = Ranges[2];  
+  Params_WidthFFT["Range_ntrk_4"] = Ranges[3]; 
   Params_WidthFFT["m_s"] = {-m, -m, -m, -m};
   Params_WidthFFT["m_G"] = {0, 0, 0, 0};
   Params_WidthFFT["m_e"] = {m, m, m, m};
@@ -265,18 +266,19 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   //Params_Exp["Range_ntrk_2"] = Ranges[1];
   //Params_Exp["Range_ntrk_3"] = Ranges[2];
   //Params_Exp["Range_ntrk_4"] = Ranges[3];
-  Params_Exp["m_e"] = {m, m, m, m};
-  Params_Exp["m_G"] = {0, 0, 0, 0};
-  Params_Exp["m_s"] = {-m, -m, -m, -m};
-  Params_Exp["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
-  Params_Exp["fft_cache"] = {10000}; 
+  Params_Exp["dx_e"] = {m, m, m, m};
+  Params_Exp["dx_G"] = {0, 0, 0, 0};
+  Params_Exp["dx_s"] = {-m, -m, -m, -m};
+  //Params_Exp["s_s"] = {0.001, 0.001, 0.001, 0.001};
+  //Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
+  //Params_Exp["fft_cache"] = {10000}; 
   Params_Exp["Minimizer"] = {10000}; 
+  Params_Exp["Seek"] = {1};  
   //Params_Exp["Strategy"] = {2}; 
   Params_Exp["Print"] = {-1}; 
-  Params_Exp["G_Mean"] = {0, 0, 0, 0};
-  Params_Exp["G_Stdev"] = {0.05, 0.05, 0.05, 0.05};
-  Params_Exp["LR"] = {30};
+  //Params_Exp["G_Mean"] = {0, 0, 0, 0};
+  //Params_Exp["G_Stdev"] = {0.05, 0.05, 0.05, 0.05};
+  //Params_Exp["LR"] = {30};
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 

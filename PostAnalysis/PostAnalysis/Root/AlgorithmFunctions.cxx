@@ -249,7 +249,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       TH1F* ntrk_Measure = (TH1F*)Data[t] -> Clone("trk_cop"); 
       
       TString base = "Fit_"; base += (t+1); base += (ext); 
-      std::map<TString, std::vector<float>> Map = DeConvolutionFFT(ntrk_Measure, ntrk_Template, Params, base); 
+      std::map<TString, std::vector<float>> Map = NormalizationShift(ntrk_Measure, ntrk_Template, Params, base); 
       
       if (x == iter -1)
       {

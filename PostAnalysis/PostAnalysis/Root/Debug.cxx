@@ -13,7 +13,7 @@ void Proxy()
   TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
 
   std::vector<TH1F*> trk1_templates = BuildNtrkMtru(1, trk1_start, "_template", 2)[0]; 
-  SmoothHist(trk1_start, 0); 
+  //SmoothHist(trk1_start, 0); 
   
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
@@ -29,61 +29,7 @@ void Proxy()
   can -> Print("Package.pdf");
   can -> Clear(); 
 
-  VT trk1_Normal = BuildNtrkMtru(1, trk1_start, "_Normal", 2)[0]; 
-  MVF N_Res = Normalization(ntrk_1_M, trk1_Normal, Params_N); 
-  
-  ntrk_1_M -> SetTitle("Fit of Templates using only Normalization Fit on 1-Track Data"); 
-  PlotHists(ntrk_1_M, ntrk_1_T, trk1_Normal, can); 
-  can -> Print("Package.pdf"); 
-
-  // Now we perform a stress test of when the fit will fail 
-  // Store original parameters
-  // ======================== Normalization only fit ====================== //
-  auto StepFit =[&](std::vector<TH1F*> templ, std::vector<TH1F*> truth, float delta, float S_L, TCanvas* can)
-  {
-    int steps = 100 / delta; 
-    float cu = 0; 
-
-    std::vector<MVF> out; 
-    std::vector<TString> setting; 
-    for (int i(0); i < 2*steps; i++)
-    {
-      cu += delta; 
-      TString title = "Track 1 Normalization Fit with Truth-2 being "; 
-      title += (cu); title += "% of Original Normalization";
-      TString name = "_ntru_2_"; name += (cu); name += "%"; 
-
-      std::cout << "=========== >" + title << std::endl;
-      // Scale ntrk1_tru2 by 1%
-      Normalize(templ); 
-      Normalize(truth[1]); 
-      truth[1] -> Scale(S_L*(cu / 100)); 
-      TH1F* ntrk_1 = SumHists(truth, title); 
-      ntrk_1 -> SetTitle(title);
-      ntrk_1 -> SetLineColor(kBlack);
-      MVF N_Res = Normalization(ntrk_1, templ, Params_N); 
-      PlotHists(ntrk_1, {truth[0], truth[1]}, templ, can); 
-      can -> Print("Package.pdf"); 
-      can -> Clear(); 
-      
-      out.push_back(N_Res); 
-      setting.push_back(title);
-
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-    }
-    return std::pair<std::vector<MVF>, std::vector<TString>>(out, setting); 
-  }; 
-
-  float S_L = ntrk_1_T[1] -> Integral(); 
-  Normalize(ntrk_1_T[1]); 
-  
-  std::pair<std::vector<MVF>, std::vector<TString>> Normal = StepFit(trk1_Normal, ntrk_1_T, 10, S_L, can); 
   std::vector<TString> c_out; 
-  
   for (int i(0); i < FitRanges_Names.size(); i++)
   {
     TString c = FitRanges_Names[i]; c += (" -> start: "); c += (Ranges[i][0]); c += (" end: "); c+= (Ranges[i][1]); 
@@ -91,150 +37,25 @@ void Proxy()
   }
   
   c_out.push_back(""); 
+
+  std::vector<TString> c_normal; 
+  std::pair<std::vector<MVF>, std::vector<TString>> Normal = StepFit(trk1_start, ntrk_1_T, 10, can, "Normal"); 
   FitParameterError(Normal.first, &c_out, {"Normalization"}, Normal.second);  
  
-
   // ======================== Normalization + Shift x-a ====================== //
-  auto StepFitShift =[&](TH1F* start, std::vector<TH1F*> truth, float delta, float S_L, TCanvas* can)
-  {
-    int steps = 200 / delta; 
-    float cu = 0; 
-
-    std::vector<MVF> out; 
-    std::vector<TString> setting; 
-    for (int i(0); i < steps; i++)
-    {
-
-      cu += delta; 
-      TString title = "Track 1 Normalization + Shifting Fit with Truth-2 being "; 
-      title += (cu); title += "% of Original Normalization";
-      TString name = "_ntru_2_"; name += (cu); name += "%"; 
-      VT templ = BuildNtrkMtru(1, start, "_Norm_Shift", 2)[0];
-   
-      std::cout << "=========== >" + title << std::endl;
-      // Scale ntrk1_tru2 by 1%
-      Normalize(templ); 
-      Normalize(truth[1]); 
-      truth[1] -> Scale(S_L*(cu / 100)); 
-      TH1F* ntrk_1 = SumHists(truth, name); 
-      ntrk_1 -> SetTitle(title);
-      ntrk_1 -> SetLineColor(kBlack);
-      MVF N_Res = NormalizationShift(ntrk_1, templ, Params_NS); 
-      PlotHists(ntrk_1, {truth[0], truth[1]}, templ, can); 
-      can -> Print("Package.pdf"); 
-      can -> Clear(); 
-      out.push_back(N_Res); 
-      setting.push_back(title);
-
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-
-    }
-    return std::pair<std::vector<MVF>, std::vector<TString>>(out, setting); 
-  }; 
-
-  Normalize(ntrk_1_T[1]); 
-  std::pair<std::vector<MVF>, std::vector<TString>> NormalShift = StepFitShift(trk1_start, ntrk_1_T, 10, S_L, can); 
+  std::pair<std::vector<MVF>, std::vector<TString>> NormalShift = StepFit(trk1_start, ntrk_1_T, 10, can, "ShiftNormal"); 
   FitParameterError(NormalShift.first, &c_out, {"Normalization", "Shift"}, NormalShift.second);  
-
+  CompareNormalization(Normal.first, NormalShift.first, NormalShift.second, &c_normal); 
 
   // ======================== Normalization + Shift FFT ====================== //
-  auto StepFitFFTShift =[&](TH1F* start, std::vector<TH1F*> truth, float delta, float S_L, TCanvas* can)
-  {
-    int steps = 100 / delta; 
-    float cu = 0; 
+  //std::pair<std::vector<MVF>, std::vector<TString>> NormalShiftFFT = StepFit(trk1_start, ntrk_1_T, 10, can, "ShiftNormalFFT"); 
+  //FitParameterError(NormalShiftFFT.first, &c_out, {"Normalization", "Mean"}, NormalShiftFFT.second);  
+  //CompareNormalization(Normal.first, NormalShiftFFT.first, NormalShiftFFT.second, &c_normal); 
 
-    std::vector<MVF> out; 
-    std::vector<TString> setting; 
-    for (int i(0); i < 2*steps; i++)
-    {
-
-      cu += delta; 
-      TString title = "Track 1 Normalization + Shifting using FFT in Fit with Truth-2 being "; 
-      title += (cu); title += "% of Original Normalization";
-      TString name = "_ntru_2_"; name += (cu); name += "%"; 
-      VT templ = BuildNtrkMtru(1, start, "_Norm_Shift", 2)[0];
-   
-      std::cout << "=========== >" + title << std::endl;
-      // Scale ntrk1_tru2 by 1%
-      Normalize(templ); 
-      Normalize(truth[1]); 
-      truth[1] -> Scale(S_L*(cu / 100)); 
-      TH1F* ntrk_1 = SumHists(truth, name); 
-      ntrk_1 -> SetTitle(title);
-      ntrk_1 -> SetLineColor(kBlack);
-      MVF N_Res = ConvolutionFFT(ntrk_1, templ, Params_FFT); 
-      PlotHists(ntrk_1, {truth[0], truth[1]}, templ, can); 
-      can -> Print("Package.pdf"); 
-      can -> Clear(); 
-      
-      out.push_back(N_Res); 
-      setting.push_back(title);
-
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-
-    }
-    return std::pair<std::vector<MVF>, std::vector<TString>>(out, setting); 
-  }; 
-
-  Normalize(ntrk_1_T[1]); 
-  std::pair<std::vector<MVF>, std::vector<TString>> NormalShiftFFT = StepFitFFTShift(trk1_start, ntrk_1_T, 10, S_L, can); 
-  FitParameterError(NormalShiftFFT.first, &c_out, {"Normalization", "Mean"}, NormalShiftFFT.second);  
-
-  // ======================== Normalization + Shift FFT Width ====================== //
-  auto StepFitFFTShiftWidth =[&](TH1F* start, std::vector<TH1F*> truth, float delta, float S_L, TCanvas* can)
-  {
-    int steps = 100 / delta; 
-    float cu = 0; 
-
-    std::vector<MVF> out; 
-    std::vector<TString> setting; 
-    for (int i(0); i < 2*steps; i++)
-    {
-
-      cu += delta; 
-      TString title = "Track 1 Normalization + Shifting + Width using FFT in Fit with Truth-2 being "; 
-      title += (cu); title += "% of Original Normalization";
-      TString name = "_ntru_2_"; name += (cu); name += "%"; 
-      VT templ = BuildNtrkMtru(1, start, "_Norm_Shift_Width", 2)[0];
-   
-      std::cout << "=========== >" + title << std::endl;
-      // Scale ntrk1_tru2 by 1%
-      Normalize(templ); 
-      Normalize(truth[1]); 
-      truth[1] -> Scale(S_L*(cu / 100)); 
-      TH1F* ntrk_1 = SumHists(truth, name); 
-      ntrk_1 -> SetTitle(title);
-      ntrk_1 -> SetLineColor(kBlack);
-      MVF N_Res = ConvolutionFFT(ntrk_1, templ, Params_WidthFFT); 
-      PlotHists(ntrk_1, {truth[0], truth[1]}, templ, can); 
-      can -> Print("Package.pdf"); 
-      can -> Clear(); 
-      
-      out.push_back(N_Res); 
-      setting.push_back(title);
-
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-      std::cout << "" << std::endl;
-
-    }
-    return std::pair<std::vector<MVF>, std::vector<TString>>(out, setting); 
-  }; 
-
-  Normalize(ntrk_1_T[1]); 
-  std::pair<std::vector<MVF>, std::vector<TString>> NormalShiftFFTWidth = StepFitFFTShiftWidth(trk1_start, ntrk_1_T, 10, S_L, can); 
-  FitParameterError(NormalShiftFFTWidth.first, &c_out, {"Normalization", "Mean", "Stdev"}, NormalShiftFFTWidth.second);  
-
+  //// ======================== Normalization + Shift FFT Width ====================== //
+  //std::pair<std::vector<MVF>, std::vector<TString>> NormalShiftFFTWidth = StepFit(trk1_start, ntrk_1_T, 10, can, "ShiftNormalWidthFFT"); 
+  //FitParameterError(NormalShiftFFTWidth.first, &c_out, {"Normalization", "Mean", "Stdev"}, NormalShiftFFTWidth.second);  
+  //CompareNormalization(Normal.first, NormalShiftFFTWidth.first, NormalShiftFFTWidth.second, &c_normal); 
 
   can -> Print("Package.pdf]");
   
@@ -246,6 +67,20 @@ void Proxy()
     myfile << S << "\n"; 
   }
   myfile.close(); 
+
+  std::ofstream myNormal; 
+  myNormal.open("NormalizationComparison.txt"); 
+  for (TString S : c_normal)
+  {
+    //std::cout << S << std::endl;
+    myNormal << S << "\n"; 
+  }
+  myNormal.close(); 
+
+
+
+
+
 
 }
 
