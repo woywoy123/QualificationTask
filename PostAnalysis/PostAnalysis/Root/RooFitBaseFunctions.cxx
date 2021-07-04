@@ -6,11 +6,12 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
-
+  
+  std::cout << x_min << " " << x_max << std::endl;
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, Data -> Integral()); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
 
   // PDF Data variables 
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -73,19 +74,19 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   int bins = Data -> GetNbinsX(); 
 
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  if (Params["fft_cache"].size() != 0){x -> setBins(Params["fft_cache"][0], "cache"); } 
   
   // Do a preliminary normalization fit:
   std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
   Params["l_G"] = Pre["Normalization"];
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Copy_D -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Copy_D -> Integral())); 
 
   // Shift variables
   std::vector<RooRealVar*> d_vars = ProtectionRealVariable("dx", PDF_H, Params, -0.1, 0.1);   
 
   RooArgList N; 
+  RooArgList All;
   RooArgList PDFs; 
   std::vector<RooDataHist*> pdf_D; 
   std::vector<RooHistPdf*> pdf_P; 
@@ -106,13 +107,15 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
 
     PDFs.add(*PH); 
     N.add(*l_vars[i]);
+    All.add(*l_vars[i]); 
+    All.add(*d_vars[i]); 
   }
 
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Copy_D); 
   RooAddPdf model("model", "model", PDFs, N); 
   
-  RooFitResult* re = MinimizationCustom(model, &D, Params, x); 
+  RooFitResult* re = MinimizationCustom(model, &D, Params, x);
   std::map<TString, std::vector<float>> Output;  
   CaptureResults(re, &Output);
   
@@ -203,7 +206,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   Params["l_G"] = Pre["Normalization"];
 
   // Base Variables 
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
 
@@ -260,7 +263,7 @@ std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<T
 {
 
   std::vector<TString> Names_Dec; 
-  float r = 0.1; 
+  float r = 0.5; 
   int bins = Data -> GetNbinsX(); 
   float min = Data -> GetXaxis() -> GetXmin(); 
   float max = Data -> GetXaxis() -> GetXmax(); 
@@ -350,7 +353,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   }; 
   
   Average(PDF_H);   
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
  
@@ -467,7 +470,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   std::vector<std::vector<RooRealVar*>> Lumi; 
   for (int i(0); i < PDF_H_V.size(); i++)
   {
-    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 0, Data[i] -> Integral()); 
+    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 1, Data[i] -> Integral()); 
     Lumi.push_back(l_var); 
     Average(PDF_H_V[i]); 
   } 

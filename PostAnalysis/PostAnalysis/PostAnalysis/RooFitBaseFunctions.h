@@ -8,6 +8,7 @@
 #include<RooFormulaVar.h>
 #include<TF1.h>
 #include<RooGaussian.h>
+#include<RooLandau.h>
 #include<RooFitResult.h>
 #include<RooFFTConvPdf.h>
 #include<PostAnalysis/BaseFunctions.h>
@@ -118,7 +119,7 @@ static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, Roo
   for (int i(0); i < Name.size(); i++)
   {
     RooFFTConvPdf* H = new RooFFTConvPdf(Name[i], Name[i], *domain, *p[i], *g[i]); 
-    //H -> setInterpolationOrder(4); 
+    H -> setInterpolationOrder(2); 
     Out.push_back(H); 
   }
   return Out; 
@@ -158,7 +159,7 @@ static void CaptureResults(RooFitResult* Re, std::map<TString, std::vector<float
   }
 
   float res = Re -> status(); 
-  Output -> insert({"fit_status", {res}}); 
+  (*Output)["fit_status"].push_back(res); 
   delete Re; 
 }
 
@@ -169,11 +170,9 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
   RooFitResult* re; 
   TString Ranges; 
   for (TString F : FitRanges_Names){if (Params[F].size() != 0){x -> setRange(F, Params[F][0], Params[F][1]); Ranges += (F+ ",");}}
-  Ranges = Ranges[0, Ranges.Sizeof()-1];
-
   if (Params["Minimizer"].size() == 0)
   {
-    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Extended(true), Minimizer("Minuit"), Save()); 
+    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Extended(true), Save()); 
   }
   else
   {
@@ -201,20 +200,23 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     } 
 
     if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
-    pg -> optimizeConst(true); 
-    if (Params["seek"].size() != 0){pg -> seek();}
     //pg -> setProfile(true);
     pg -> setOffsetting(true); 
-    pg -> setEvalErrorWall(false); 
-    pg -> migrad(); 
+    pg -> setEvalErrorWall(true); 
+    pg -> optimizeConst(true); 
     if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
+    int res = pg -> migrad();
     pg -> improve(); 
-    pg -> hesse();  
-    //pg -> minos();
-
-    re = pg -> fit("mr"); 
-
+    pg -> simplex();
+    pg -> hesse();
+    if (Params["seek"].size() != 0){pg -> seek();}
+    res = pg -> migrad(); 
+    pg -> improve();
+    pg -> minos(); 
+    res = pg -> migrad(); 
+    re = pg -> save(); 
     pg -> cleanup(); 
+   
     delete pg; 
     delete nll;
   }

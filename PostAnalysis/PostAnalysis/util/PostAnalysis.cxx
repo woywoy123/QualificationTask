@@ -27,7 +27,5 @@ int main(int argc, char* argv[])
   //Proxy(); 
   //SmoothingTest();
 
-
-
   std::cout << "fin" << std::endl; 
 }

@@ -128,47 +128,38 @@ void MultiThreadingDeconvolution(std::vector<TH1F*> Data, std::vector<TH1F*> PSF
 
 }
 
-
-void CreateStart(TH1F* trk1_start, int iter)
+void Smooth1Trk(TH1F* trk1_start, int iter)
 {
+  float L = trk1_start -> Integral(); 
+
   int bins = trk1_start -> GetNbinsX(); 
   float min = trk1_start -> GetXaxis() -> GetXmin(); 
   float max = trk1_start -> GetXaxis() -> GetXmax(); 
   float w = (max - min) / float(bins); 
-  float r = 1;  
-  float new_min = min - w*bins*r; 
-  float new_max = max + w*bins*r; 
-  float L = trk1_start -> Integral(); 
+  float new_min = min - w*bins; 
+  float new_max = max + w*bins; 
+
+  TString name = "Dec_"; 
+  TH1F* G = new TH1F(name, name, bins+2*bins, new_min, new_max); 
   
-  TH1F* trk_C = new TH1F("name", "name", bins + bins*r, min, new_max); 
-  TH1F* trk_D = new TH1F("namD", "namD", bins + bins*r, min, new_max); 
-  
-  // Fill the convolution one first
-  for (int i(0); i < bins; i++)
+  TString name_L = "L_";
+  TH1F* X = new TH1F(name_L, name_L, bins+2*bins, new_min, new_max); 
+
+  for (int j(0); j < bins; j++)
   {
-    float o = trk1_start -> GetBinContent(i+1); 
-    trk_C -> SetBinContent(i+1, o); 
+    X -> SetBinContent(j+1+bins, trk1_start -> GetBinContent(j+1)); 
   }
 
-  TH1F* Temp = (TH1F*)trk_C -> Clone("Temp"); 
-  Convolution(trk_C, trk_C, trk_C); 
-  Deconvolution(trk_C, Temp, trk_D, iter); 
- 
-  for (int i(0); i < bins; i++)
-  {
-    float o = trk_D -> GetBinContent(i+1); 
-    trk1_start -> SetBinContent(i+1, o); 
-  }
+  Convolution(X, X, G); 
+  Deconvolution(G, X, G, iter);
 
+  for (int j(0); j < bins; j++)
+  {
+    float e = G -> GetBinContent(j+1+bins); 
+    trk1_start -> SetBinContent(j+1, e);    
+  }
   Normalize(trk1_start); 
   trk1_start -> Scale(L); 
   
-  //TCanvas* can = new TCanvas(); 
-  //can -> SetLogy(); 
-  //PlotHists({Temp2}, {trk1_start}, can);
-  //can -> Print("Hello.pdf"); 
-
-  delete trk_C; 
-  delete trk_D; 
-  delete Temp; 
+  delete G, X; 
 }

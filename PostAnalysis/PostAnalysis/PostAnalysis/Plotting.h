@@ -16,6 +16,7 @@
 #include<RooRealVar.h>
 #include<RooFit.h>
 #include<RooProfileLL.h>
+#include<TMultiGraph.h>
 
 void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style);
 void PlotHists(TH1F* Hist, TCanvas* can); 
@@ -37,4 +38,5 @@ TLegend* GenerateLegend(std::vector<TH1F*> Hist_V, TCanvas* can);
 void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString Xaxis);
 
 void PlotLikelyHood(RooAbsReal* nll, RooRealVar* var, TString name); 
+void PlotGraphs(std::vector<TH1F*>, TString Title, TCanvas* can);
 

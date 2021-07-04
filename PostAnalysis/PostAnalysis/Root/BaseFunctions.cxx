@@ -1,4 +1,5 @@
 #include<PostAnalysis/BaseFunctions.h>
+#include<TMath.h>
 
 
 // Creates Histograms from vector names - Used for bulk generation 
@@ -213,13 +214,8 @@ void Average(TH1F* Data)
   }
 }
 
-void SmoothHist(TH1F* Hist, int iter)
+void SmoothHist(TH1F* Hist, int order, float sigma)
 {
-  TH1F* ori = (TH1F*)Hist -> Clone("Original"); 
-  
-  int order = 4; 
-  float sigma = 0.01; 
-  
   TF1 gaus("mygaus", "gaus", -200, 200); 
   gaus.SetNpx(10000); 
   gaus.SetParameters(1., 0., sigma); 
@@ -275,25 +271,6 @@ void SmoothHist(TH1F* Hist, int iter)
     Hist -> SetBinContent(j+1, results(0)); 
     Hist -> SetBinError(j+1, sqrt(C(0, 0)));
   }
-
-  TH1F* h = (TH1F*)Hist -> Clone("temp"); 
-  Convolution(h, h, h); 
-  Deconvolution(h, Hist, Hist, 20);
-  Normalize(Hist); 
-  Hist -> Scale(ori -> Integral());
-  delete h; 
-
-  int start = ori -> GetXaxis() -> FindBin(2.0); 
-  float t = ori -> GetBinContent(start); 
-  float g = Hist -> GetBinContent(start); 
-  float s = t/g;  
-  Hist -> Scale(s); 
-
-  for (int i(0); i < start; i++){Hist -> SetBinContent(i+1, ori -> GetBinContent(i+1));}
-  for (int i(0); i < ndata; i++){Hist -> SetBinError(i+1, 0.);}
-
-  Hist -> SetLineColor(kRed); 
-  delete ori; 
 }
 
 void Average(std::vector<TH1F*> Data){for (TH1F* H : Data){ Average(H); }}
@@ -351,9 +328,45 @@ TString PrecisionString(float number, int precision, bool sci)
   return out; 
 }
 
+void ReplaceTail(TH1F* H, TH1F* R)
+{
+  float L = R -> Integral(); 
+  Normalize(H); 
+  Normalize(R); 
+  float x; 
+  int b;
+  for (int i(0); i < H -> GetNbinsX(); i++)
+  {
+    float e  = H -> GetBinContent(i+1);
+    float f = R -> GetBinContent(i+1);
+    float delta = std::abs((e/f) -1);
+    if (std::isnan(delta)){ continue; }
+    if (i == 0){ x = delta; }
+    if (x > delta){ b = i; x = delta; }
 
+  }
 
+  float p = H -> GetBinContent(b+1); 
+  float q = R -> GetBinContent(b+1); 
+  float r = p/q; 
 
+  for (int i(b); i < H -> GetNbinsX(); i++)
+  {
+    float e = H -> GetBinContent(i+1); 
+    float f = R -> GetBinContent(i+1); 
+    
+    R -> SetBinContent(i+1,(1./r)*e);  
+  }
 
+  R -> Scale(L); 
+}
 
+void ReplaceTail(TH1F* H, TString File, TString dir, TString HName)
+{
+  TFile* F = new TFile(File, "READ");
+  F -> cd(dir); 
+  TH1F* G = (TH1F*)gDirectory -> Get(HName); 
+  ReplaceTail(G, H); 
+  delete G; 
+}
 

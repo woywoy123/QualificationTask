@@ -20,5 +20,6 @@ std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, st
 void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter); 
 void MultiThreadingDeconvolution(std::vector<TH1F*> Data, std::vector<TH1F*> PSF, std::vector<TH1F*> Result, int Iter); 
 
-void CreateStart(TH1F* trk1_start, int iter = 50); 
+void Smooth1Trk(TH1F* trk1_start, int iter); 
+
 #endif

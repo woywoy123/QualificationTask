@@ -204,10 +204,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
-  std::vector<float> k = {0., 12}; 
+  std::vector<float> k = {0.1, 8.0}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
-  float m = 0.4; 
+  float m = 0.6; 
   float s_e = 0.1; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
@@ -215,9 +215,9 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
 
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
-  Params_NS["dx_s"] = {-m, -m, -m, -m}; 
-  Params_NS["dx_G"] = {0, 0, 0, 0}; 
-  Params_NS["dx_e"] = {m, m, m, m}; 
+  //Params_NS["dx_s"] = {-m, -m, -m, -m}; 
+  //Params_NS["dx_G"] = {0, 0, 0, 0}; 
+  //Params_NS["dx_e"] = {m, m, m, m}; 
   Params_NS["seek"] = {1};
   Params_NS["Minimizer"] = {10000};
   Params_NS["Print"] = {-1};
@@ -247,7 +247,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {s_e, s_e, s_e, s_e};
   Params_WidthFFT["fft_cache"] = {10000}; 
-  Params_WidthFFT["Minimizer"] = {10000};
+  //Params_WidthFFT["Minimizer"] = {10000};
 
   // Simultaneous Fitting method 
   std::map<TString, std::vector<float>> Params_Sim; 
@@ -269,13 +269,17 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["dx_e"] = {m, m, m, m};
   Params_Exp["dx_G"] = {0, 0, 0, 0};
   Params_Exp["dx_s"] = {-m, -m, -m, -m};
-  //Params_Exp["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  //Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
-  //Params_Exp["fft_cache"] = {10000}; 
+  Params_Exp["m_e"] = {m, m, m, m};
+  Params_Exp["m_G"] = {0, 0, 0, 0};
+  Params_Exp["m_s"] = {-m, -m, -m, -m};
+  Params_Exp["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
+  Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
+  Params_Exp["fft_cache"] = {10000}; 
   Params_Exp["Minimizer"] = {10000}; 
   Params_Exp["Seek"] = {1};  
   //Params_Exp["Strategy"] = {2}; 
-  Params_Exp["Print"] = {-1}; 
+  Params_Exp["Print"] = {1}; 
+  //Params_Exp["GSL"] = {1};
   //Params_Exp["G_Mean"] = {0, 0, 0, 0};
   //Params_Exp["G_Stdev"] = {0.05, 0.05, 0.05, 0.05};
   //Params_Exp["LR"] = {30};

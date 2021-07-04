@@ -387,9 +387,41 @@ void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString 
   TPad *P2 = new TPad("P2", "P2", 0.0, 0.05, 1, 0.3);  
   P2 -> Draw();
   P2 -> cd(); 
-	Ratio -> SetStats(0); 
   Ratio -> SetLineColor(kWhite);
   Ratio -> GetYaxis() -> SetRangeUser(0.25, 1.75);
   Ratio -> SetMarkerSize(1); 
   Ratio -> Draw("epl"); 
 }
+
+void PlotGraphs(std::vector<TH1F*> Hists, TString Title, TCanvas* can)
+{
+
+  can -> Clear(); 
+  can -> SetLogy(false); 
+  gStyle -> SetOptStat(0);
+  TMultiGraph* mg = new TMultiGraph(); 
+  TLegend* len = new TLegend(0.9, 0.9, 0.5, 0.8); 
+  mg -> SetTitle(Title); 
+  TH1F* H = (TH1F*)Hists[0] -> Clone(""); 
+  
+  for (int i(0); i < H -> GetNbinsX(); i++){ H -> SetBinContent(i+1, 110); }
+  H -> SetLineColor(kWhite); 
+  H -> GetYaxis() -> SetRangeUser(60, 200); 
+  TGraph* gr = new TGraph(H); 
+  mg -> Add(gr); 
+  for (int i(0); i < Hists.size(); i++)
+  {
+    TGraph* G1 = new TGraph(Hists[i]); 
+    G1 -> SetLineColor(i+1); 
+    mg -> Add(G1); 
+    len -> AddEntry(G1);
+  }
+  mg -> Draw("SAMEAC.");
+  mg -> GetXaxis() -> SetTitle("Percentage of Original 2-Truth Normalization (%)"); 
+  mg -> GetYaxis() -> SetTitle("Prediction / Truth (%)"); 
+
+  len -> Draw("SAME"); 
+
+  can -> Update(); 
+}
+
