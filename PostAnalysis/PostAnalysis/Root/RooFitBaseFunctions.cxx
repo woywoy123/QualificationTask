@@ -77,7 +77,15 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   
   // Do a preliminary normalization fit:
   std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-  Params["l_G"] = Pre["Normalization"];
+  for (int i(0); i < Pre["Normalization"].size(); i++)
+  {
+    float f = Pre["Normalization"][i]; 
+    float er = Pre["Normalization_Error"][i]; 
+    
+    Params["l_G"].push_back(f); 
+    Params["l_e"].push_back(f + f*10); 
+    Params["l_s"].push_back(f - f*0.1); 
+  }
 
   // Normalization variables
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Copy_D -> Integral())); 
@@ -203,8 +211,16 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
 
   // Do a preliminary normalization fit:
   std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-  Params["l_G"] = Pre["Normalization"];
-
+  for (int i(0); i < Pre["Normalization"].size(); i++)
+  {
+    float f = Pre["Normalization"][i]; 
+    float er = Pre["Normalization_Error"][i]; 
+    
+    Params["l_G"].push_back(f); 
+    Params["l_e"].push_back(f + f*10); 
+    Params["l_s"].push_back(f - f*0.1); 
+  }
+  
   // Base Variables 
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 

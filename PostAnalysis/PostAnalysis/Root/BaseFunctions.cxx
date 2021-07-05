@@ -370,3 +370,60 @@ void ReplaceTail(TH1F* H, TString File, TString dir, TString HName)
   delete G; 
 }
 
+TH1F* Snipping(TH1F* H, float x_min, float x_max)
+{
+  float min_b = H -> GetXaxis() -> FindBin(x_min); 
+  float max_b = H -> GetXaxis() -> FindBin(x_max); 
+  float bins = max_b - min_b;
+  
+  TString name = H -> GetTitle();
+  TH1F* Small = new TH1F(name + "_S", name + "_S", bins, x_min, x_max); 
+  
+  for (int i(0); i < bins; i++)
+  {
+    float e = H -> GetBinContent(min_b + i+1); 
+    Small -> SetBinContent(i+1, e); 
+  }
+  return Small; 
+}
+
+
+void RevertSnipping(TH1F* Smaller, TH1F* Original)
+{
+  Normalize(Original);
+  float min = Smaller -> GetXaxis() -> GetXmin(); 
+  float max = Smaller -> GetXaxis() -> GetXmin(); 
+
+  float bin_min = Original -> GetXaxis() -> FindBin(min); 
+  float bin_max = Original -> GetXaxis() -> FindBin(max); 
+
+  float bin_min_L = Original -> GetBinContent(bin_min+2); 
+  float bin_max_L = Original -> GetBinContent(bin_max+2);  
+
+  float bin_min_L_S = Smaller -> GetBinContent(min+1);
+  float bin_max_L_S = Smaller -> GetBinContent(max+1);
+
+  float r = bin_min_L_S / bin_min_L; 
+  Original -> Scale(r); 
+  std::cout << r << " " << bin_min_L_S << " "<< bin_min_L << std::endl;
+
+  for (int i(0); i < Smaller -> GetNbinsX(); i++)
+  {
+    float e = Smaller -> GetBinContent(i+1); 
+    float err = Smaller -> GetBinError(i+1);  
+    Original -> SetBinContent(i+1 + bin_min, e);
+    Original -> SetBinError(i+1 + bin_min, err);
+  }
+}
+
+std::vector<TH1F*> Snipping(std::vector<TH1F*> H, float x_min, float x_max)
+{
+  std::vector<TH1F*> Output; 
+  for (TH1F* X : H){ Output.push_back(Snipping(X, x_min, x_max)); }
+  return Output; 
+}
+
+void RevertSnipping(std::vector<TH1F*> Small, std::vector<TH1F*> Ori)
+{
+  for (int i(0); i < Small.size(); i++){ RevertSnipping(Small[i], Ori[i]); }
+}

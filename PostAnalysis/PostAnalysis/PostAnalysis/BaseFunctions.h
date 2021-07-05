@@ -30,6 +30,10 @@ void SmoothHist(TH1F* Hist, int iter);
 void SmoothHist(TH1F* Hist, int order, float sigma); 
 void ReplaceTail(TH1F* H, TString File, TString dir, TString HName);
 void ReplaceTail(TH1F* H, TH1F* R);
+TH1F* Snipping(TH1F* H, float x_min, float x_max); 
+void RevertSnipping(TH1F* H, TH1F* Original); 
+std::vector<TH1F*> Snipping(std::vector<TH1F*> H, float x_min, float x_max); 
+void RevertSnipping(std::vector<TH1F*> H, std::vector<TH1F*> Original); 
 
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty); 

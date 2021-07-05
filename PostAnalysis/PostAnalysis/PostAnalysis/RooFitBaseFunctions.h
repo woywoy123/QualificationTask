@@ -24,7 +24,8 @@
 using namespace RooFit;
 const std::vector<TString> FitRanges_Names = {"Range_ntrk_1", "Range_ntrk_2", "Range_ntrk_3", "Range_ntrk_4"}; 
 const int n_cpu = 8; 
- 
+
+
 // ==================  Basic RooFit Variables
 static std::vector<RooRealVar*> RooRealVariable(std::vector<TString> Names, std::vector<float> Guess, std::vector<float> Begin, std::vector<float> End)
 {
@@ -172,7 +173,12 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
   for (TString F : FitRanges_Names){if (Params[F].size() != 0){x -> setRange(F, Params[F][0], Params[F][1]); Ranges += (F+ ",");}}
   if (Params["Minimizer"].size() == 0)
   {
-    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Extended(true), Save()); 
+    for (int i(0); i < 10; i ++)
+    {
+      re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Extended(true), Save());
+
+      if (re -> status() == 0){break; }
+    }
   }
   else
   {

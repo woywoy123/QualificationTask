@@ -157,7 +157,6 @@ void TestFits_NTruth_NTrack()
     
     std::vector<TH1F*> Proposed = { ntrk_1_T,  ntrk_2_T, ntrk_3_T, ntrk_4_T };
     std::vector<TH1F*> ToBeUsed; 
-    
     for ( int i(0); i < Proposed.size(); i++)
     {
       if (Proposed[i] -> GetEntries() < 5000){continue;}
@@ -204,11 +203,21 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
+  TString MostEntryTrack; 
+  float e = 0; 
+  for (MMVi x = F.begin(); x != F.end(); x++)
+  {
+    MVT M = F[x -> first];
+    TH1F* trk1_s = M["ntrk_1_M_O"][0]; 
+    float f = trk1_s -> GetEntries(); 
+    if (f > e){ MostEntryTrack = x -> first; e = f;}
+  }
+
   std::vector<float> k = {0.1, 8.0}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
   float m = 0.6; 
-  float s_e = 0.1; 
+  float s_e = 0.01; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Minimizer"] = {100000};
@@ -272,12 +281,12 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["m_e"] = {m, m, m, m};
   Params_Exp["m_G"] = {0, 0, 0, 0};
   Params_Exp["m_s"] = {-m, -m, -m, -m};
-  Params_Exp["s_s"] = {0.0001, 0.0001, 0.0001, 0.0001};
+  Params_Exp["s_s"] = {0.01, 0.01, 0.01, 0.01};
   Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
   Params_Exp["fft_cache"] = {10000}; 
   Params_Exp["Minimizer"] = {10000}; 
   Params_Exp["Seek"] = {1};  
-  //Params_Exp["Strategy"] = {2}; 
+  //Params_Exp["Strategy"] = {1}; 
   Params_Exp["Print"] = {1}; 
   //Params_Exp["GSL"] = {1};
   //Params_Exp["G_Mean"] = {0, 0, 0, 0};
@@ -312,7 +321,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     std::vector<TH1F*> ntrk_2_T = M["ntrk_2_T_I"]; 
     std::vector<TH1F*> ntrk_3_T = M["ntrk_3_T_I"]; 
     std::vector<TH1F*> ntrk_4_T = M["ntrk_4_T_I"]; 
-    
     std::vector<std::vector<TH1F*>> TruthVector = { ntrk_1_T,  ntrk_2_T, ntrk_3_T, ntrk_4_T };
 
     TH1F* ntrk_1_M = M["ntrk_1_M_I"][0]; 
@@ -322,6 +330,10 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     std::vector<TH1F*> Proposed = {ntrk_1_M, ntrk_2_M, ntrk_3_M, ntrk_4_M};  
     
     TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
+    //float L = trk1_start -> GetEntries(); 
+    //trk1_start -> Reset(); 
+    //trk1_start -> FillRandom(F[MostEntryTrack]["ntrk_1_M_O"][0], L); 
+    
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)
     {

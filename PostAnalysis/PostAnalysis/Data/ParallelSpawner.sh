@@ -22,7 +22,7 @@ function CondorBuild
   #echo "output = ./results.output.$""(ClusterID)"  >> example.submit
   echo "error =  ./results.error.$""(ClusterID)"  >> example.submit
   echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
-  echo "Request_Cpus = 3"  >> example.submit
+  echo "Request_Cpus = 2"  >> example.submit
   echo "Request_Memory = 500MB" >> example.submit
   echo "+RequestRunTime= 172800"  >> example.submit
   echo "queue 1"  >> example.submit

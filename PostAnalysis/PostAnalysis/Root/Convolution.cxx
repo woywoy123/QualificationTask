@@ -27,8 +27,11 @@ std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, std::vector<TString> base,
     base[i] += (extension);  
   }
   std::vector<TH1F*> Hist_V = CloneTH1F(Start, base);
-  Hist_V[0] -> Add(Start, 1);  
-  
+  for (int i(0); i < Start -> GetNbinsX(); i++)
+  {
+    Hist_V[0] -> SetBinContent(i+1, Start -> GetBinContent(i+1)); 
+  }
+
   for (int i(0); i < n-1; i++)
   {
     Convolution(Hist_V[i], Start, Hist_V[i+1]); 

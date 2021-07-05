@@ -119,38 +119,58 @@ void SmoothingTest()
   
   //SmoothHist(trk1, 10, 0.25); 
 
-  float min = trk1 -> GetXaxis() -> GetXmin(); 
-  float max = trk1 -> GetXaxis() -> GetXmax();
+  //float min = trk1 -> GetXaxis() -> GetXmin(); 
+  //float max = trk1 -> GetXaxis() -> GetXmax();
 
-  TGraph* gr = new TGraph(trk1);  
-  TGraphSmooth* g = new TGraphSmooth("Smoother"); 
+  //TGraph* gr = new TGraph(trk1);  
+  //TGraphSmooth* g = new TGraphSmooth("Smoother"); 
 
-  TGraph* h = g -> SmoothKern(gr, "normal", 0.1); 
+  //TGraph* h = g -> SmoothKern(gr, "normal", 0.1); 
 
-  int n = h -> GetN(); 
-  for (int i(0); i < n; i++)
-  {
-    double x, y; 
-    h -> GetPoint(i, x, y); 
-    trk1 -> SetBinContent(i+1, y);
-  }
-  Average(trk1);
+  //int n = h -> GetN(); 
+  //for (int i(0); i < n; i++)
+  //{
+  //  double x, y; 
+  //  h -> GetPoint(i, x, y); 
+  //  trk1 -> SetBinContent(i+1, y);
+  //}
+  //Average(trk1);
 
-  
-  //ReplaceTail(trk1, trk1_start);
-   
-  //ConvolutionFFT(trk1, {Lan}, Params_WidthFFT);
-  trk1 -> SetLineColor(kBlack);
+  //
+  ////ReplaceTail(trk1, trk1_start);
+  // 
+  ////ConvolutionFFT(trk1, {Lan}, Params_WidthFFT);
+  //trk1 -> SetLineColor(kBlack);
+
+
+
+  TH1F* Small = Snipping(trk1, 0.4, 8); 
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
   can -> Print("Smooth.pdf["); 
-  trk1_start -> Draw("HIST"); 
-  trk1 -> Draw("SAMEHIST");
+  Small -> Draw("HIST");  
   can -> Print("Smooth.pdf");
   can -> Clear(); 
+  trk1 -> Draw("HIST"); 
+  can -> Print("Smooth.pdf");
   
-  can -> Print("Smooth.pdf]");
+  TH1F* Ori = (TH1F*)trk1 -> Clone("Ori"); 
+  Ori -> SetLineColor(kBlack); 
+  RevertSnipping(Small, Ori);  
+  can -> Clear(); 
+  trk1 -> Draw("HIST"); 
+  Ori -> Draw("SAMEHIST");  
+  can -> Print("Smooth.pdf");
 
+  can -> Clear(); 
+  can -> Print("Smooth.pdf]");
+  
+  for (int i(0); i < Ori -> GetNbinsX(); i++)
+  {
+    float e = Ori -> GetBinContent(i+1); 
+    float f = trk1 -> GetBinContent(i+1); 
+    std::cout << e-f << std::endl;
+  }
 
 
 
