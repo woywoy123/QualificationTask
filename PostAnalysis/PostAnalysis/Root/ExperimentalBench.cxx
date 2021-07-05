@@ -203,16 +203,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
-  TString MostEntryTrack; 
-  float e = 0; 
-  for (MMVi x = F.begin(); x != F.end(); x++)
-  {
-    MVT M = F[x -> first];
-    TH1F* trk1_s = M["ntrk_1_M_O"][0]; 
-    float f = trk1_s -> GetEntries(); 
-    if (f > e){ MostEntryTrack = x -> first; e = f;}
-  }
-
   std::vector<float> k = {0.1, 8.0}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
@@ -224,9 +214,9 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
 
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
-  //Params_NS["dx_s"] = {-m, -m, -m, -m}; 
-  //Params_NS["dx_G"] = {0, 0, 0, 0}; 
-  //Params_NS["dx_e"] = {m, m, m, m}; 
+  Params_NS["dx_s"] = {-m, -m, -m, -m}; 
+  Params_NS["dx_G"] = {0, 0, 0, 0}; 
+  Params_NS["dx_e"] = {m, m, m, m}; 
   Params_NS["seek"] = {1};
   Params_NS["Minimizer"] = {10000};
   Params_NS["Print"] = {-1};
@@ -243,6 +233,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["s_C"] = {1, 1, 1, 1};
   Params_FFT["fft_cache"] = {10000}; 
   Params_FFT["Minimizer"] = {10000}; 
+  Params_FFT["Print"] = {-1};
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
@@ -256,7 +247,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {s_e, s_e, s_e, s_e};
   Params_WidthFFT["fft_cache"] = {10000}; 
-  //Params_WidthFFT["Minimizer"] = {10000};
+  Params_WidthFFT["Minimizer"] = {10000};
+  Params_WidthFFT["Print"] = {-1};
 
   // Simultaneous Fitting method 
   std::map<TString, std::vector<float>> Params_Sim; 
@@ -270,7 +262,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["Print"] = {-1}; 
 
   // Experimental Fitting method 
-  float m = 0.6; 
+  m = 0.5; 
   std::map<TString, std::vector<float>> Params_Exp; 
   //Params_Exp["Range_ntrk_1"] = Ranges[0];
   //Params_Exp["Range_ntrk_2"] = Ranges[1];
@@ -279,20 +271,9 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["dx_e"] = {m, m, m, m};
   Params_Exp["dx_G"] = {0, 0, 0, 0};
   Params_Exp["dx_s"] = {-m, -m, -m, -m};
-  Params_Exp["m_e"] = {m, m, m, m};
-  Params_Exp["m_G"] = {0, 0, 0, 0};
-  Params_Exp["m_s"] = {-m, -m, -m, -m};
-  Params_Exp["s_s"] = {0.01, 0.01, 0.01, 0.01};
-  Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
-  Params_Exp["fft_cache"] = {10000}; 
   Params_Exp["Minimizer"] = {10000}; 
   Params_Exp["Seek"] = {1};  
-  //Params_Exp["Strategy"] = {1}; 
-  Params_Exp["Print"] = {1}; 
-  //Params_Exp["GSL"] = {1};
-  //Params_Exp["G_Mean"] = {0, 0, 0, 0};
-  //Params_Exp["G_Stdev"] = {0.05, 0.05, 0.05, 0.05};
-  //Params_Exp["LR"] = {30};
+  Params_Exp["Print"] = {-1}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
@@ -331,9 +312,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     std::vector<TH1F*> Proposed = {ntrk_1_M, ntrk_2_M, ntrk_3_M, ntrk_4_M};  
     
     TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
-    //float L = trk1_start -> GetEntries(); 
-    //trk1_start -> Reset(); 
-    //trk1_start -> FillRandom(F[MostEntryTrack]["ntrk_1_M_O"][0], L); 
     
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)

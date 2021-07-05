@@ -242,31 +242,20 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   gDirectory -> cd("/"); 
   gDirectory -> mkdir(JE + "/Experimental"); 
   std::vector<MVF> Params_V(Data.size(), Params);
-
-
+  
   TH1F* trk1 = (TH1F*)trk1_start -> Clone("x"); 
   std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1, ext, Data.size());
   
   TCanvas* can = new TCanvas(); 
   can -> SetLogy();
-  int iter = 2;
+  int iter = 3;
   for (int x(0); x < iter; x++)
   {
    
     for (int i(0); i < Data.size(); i++)
     {
       TH1F* D_t = (TH1F*)Data[i] -> Clone("D"); 
-      std::vector<TH1F*> BackUp;  
-      for (int k(0); k < ntrk_mtru_H[i].size(); k++)
-      {
-        TString n = ntrk_mtru_H[i][k] -> GetTitle();
-        BackUp.push_back((TH1F*)ntrk_mtru_H[i][k] -> Clone(n + "_BU"));
-      }
-
- 
       MVF Map = NormalizationShift(D_t, ntrk_mtru_H[i], Params, JE); 
-      BulkDelete(BackUp); 
-
       PlotHists(D_t, ntrk_mtru_H[i], can); 
       can -> Print("Fit.pdf"); 
       if (x == iter -1)
@@ -274,36 +263,33 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
       }
-      
       delete D_t;
     }
-
-
+    
     for (int i(0); i < ntrk_mtru_H.size(); i++)
     {
-      TH1F* Update = (TH1F*)ntrk_mtru_H[i][i] -> Clone("Temp"); 
       for (int j(0); j < ntrk_mtru_H[i].size(); j++)
       {
         if (j > Data.size()-1){ continue; }
-        int L = ntrk_mtru_H[j][i] -> Integral(); 
-        if (L <= 20){ continue; }
-        std::cout << L << " " << ntrk_mtru_H[j][i] -> GetTitle() <<  std::endl;
+        TH1F* Update = (TH1F*)ntrk_mtru_H[i][i] -> Clone("CX"); 
+
+        float L = ntrk_mtru_H[j][i] -> Integral(); 
+        if (L <= 100){ continue; }
         ntrk_mtru_H[j][i] -> Reset(); 
         ntrk_mtru_H[j][i] -> FillRandom(Update, L); 
+        delete Update;
       }
-      delete Update;
     }  
     
     for (int i(0); i < Data.size(); i++)
     {
       TH1F* D_t = (TH1F*)Data[i] -> Clone("D"); 
       SubtractData(ntrk_mtru_H[i], D_t, i, false); 
+      Average(D_t);
       ntrk_mtru_H[i][i] -> Reset(); 
-      ntrk_mtru_H[i][i] -> Add(D_t, 1); 
+      ntrk_mtru_H[i][i] -> FillRandom(D_t, D_t -> Integral()); 
       delete D_t; 
     }
-    
-
   }
 
   for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], JE + "/Experimental"); }

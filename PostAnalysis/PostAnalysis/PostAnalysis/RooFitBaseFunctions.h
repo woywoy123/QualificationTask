@@ -211,14 +211,17 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     pg -> setEvalErrorWall(true); 
     pg -> optimizeConst(true); 
     if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
+    
     int res = pg -> migrad();
-    pg -> improve(); 
-    pg -> simplex();
-    pg -> hesse();
-    if (Params["seek"].size() != 0){pg -> seek();}
-    res = pg -> migrad(); 
-    pg -> improve();
-    pg -> minos(); 
+    for (int i(0); i < 10; i++)
+    {
+      pg -> improve(); 
+      pg -> simplex();
+      pg -> hesse();
+      if (Params["seek"].size() != 0){pg -> seek();}
+      res = pg -> migrad();
+      if (res == 0){break;}
+    } 
     res = pg -> migrad(); 
     re = pg -> save(); 
     pg -> cleanup(); 
