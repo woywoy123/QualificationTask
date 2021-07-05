@@ -216,7 +216,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<float> k = {0.1, 8.0}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
-  float m = 0.6; 
+  float m = 0.3; 
   float s_e = 0.01; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
@@ -270,6 +270,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["Print"] = {-1}; 
 
   // Experimental Fitting method 
+  float m = 0.6; 
   std::map<TString, std::vector<float>> Params_Exp; 
   //Params_Exp["Range_ntrk_1"] = Ranges[0];
   //Params_Exp["Range_ntrk_2"] = Ranges[1];
