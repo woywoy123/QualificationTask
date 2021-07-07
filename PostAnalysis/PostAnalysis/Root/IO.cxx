@@ -9,8 +9,7 @@ std::vector<TString> ReturnCurrentDirs(bool FolderOnly = true)
     auto k = dynamic_cast<TKey*>(key); 
     TString dir = (TString)k -> GetName();
     
-    if (dir.Contains("Original") || dir.Contains("temp")){ continue;}
-    //if (FolderOnly && !k -> IsFolder()){continue;}
+    if (dir.Contains("CX") || dir.Contains("temp")){ continue;}
     Output.push_back(dir); 
   }
   return Output; 
@@ -46,7 +45,9 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
 
         // Outside jetcore measurement 
         if (x.Contains("ntrk_1") && x.Contains("rgreater") && !x.Contains("ntru")){ Trk_Tru["ntrk_1_M_O"].push_back(H); }
-      
+        if (x.Contains("ntrk_2") && x.Contains("rgreater") && !x.Contains("ntru")){ Trk_Tru["ntrk_2_M_O"].push_back(H); }
+        if (x.Contains("ntrk_3") && x.Contains("rgreater") && !x.Contains("ntru")){ Trk_Tru["ntrk_3_M_O"].push_back(H); }
+        if (x.Contains("ntrk_4") && x.Contains("rgreater") && !x.Contains("ntru")){ Trk_Tru["ntrk_4_M_O"].push_back(H); }
       }
       Output[L1 + "_" + E1] = Trk_Tru; 
       F -> cd(); 
@@ -208,7 +209,6 @@ void TestReadCTIDE(TString dir)
   
   for (MMVi x = F.begin(); x != F.end(); x++)
   {
-    std::cout << x -> first << std::endl;
     std::map<TString, std::vector<TH1F*>> M = F[x -> first]; 
     
     std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 
@@ -223,15 +223,6 @@ void TestReadCTIDE(TString dir)
     
     std::vector<TH1F*> ntrk_1 = M["ntrk_1_M_O"]; 
     
-    for (int i(0); i < ntrk_1_M.size(); i++)
-    {
-      std::cout << ntrk_1_M[i] -> GetTitle() << " " << ntrk_2_M[i] -> GetTitle() << " " << ntrk_3_M[i] -> GetTitle() << " " << ntrk_4_M[i] -> GetTitle() << std::endl; 
-    }
-
-    for (int i(0); i < ntrk_1_T.size(); i++)
-    {
-      std::cout << ntrk_1_T[i] -> GetTitle() << " " << ntrk_2_T[i] -> GetTitle() << " " << ntrk_3_T[i] -> GetTitle() << " " << ntrk_4_T[i] -> GetTitle() << std::endl; 
-    }
   }
 }
 
@@ -268,8 +259,6 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TS
         if (H_TS.Contains("_error")){continue;}
         TH1F* H = (TH1F*)gDirectory -> Get(H_TS);
 
-        std::cout << H -> GetTitle() << std::endl;
-        
         // Truth inside the jet core. 
         if (!Alg_Folder.Contains("ntrk_1_T") && H_TS.Contains("ntrk_1")){ Algorithms_Map[Alg_Folder + "_ntrk_1"].push_back(H); }
         if (!Alg_Folder.Contains("ntrk_2_T") && H_TS.Contains("ntrk_2")){ Algorithms_Map[Alg_Folder + "_ntrk_2"].push_back(H); }
@@ -298,12 +287,7 @@ void TestReadAlgorithm()
     
     for ( MVi p = Algs.begin(); p != Algs.end(); p++)
     {
-      std::cout << current << "/" << p -> first << std::endl; 
       std::vector<TH1F*> Hists = Algs[p -> first]; 
-      for (TH1F* J : Hists)
-      {
-        std::cout << "----- " << J -> GetTitle() << std::endl;
-      }
     }
   }
 }

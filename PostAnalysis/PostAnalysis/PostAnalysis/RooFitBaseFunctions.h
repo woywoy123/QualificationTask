@@ -7,7 +7,7 @@
 #include<RooAddPdf.h>
 #include<RooFormulaVar.h>
 #include<TF1.h>
-#include<RooGaussian.h>
+#include<RooGaussModel.h>
 #include<RooLandau.h>
 #include<RooFitResult.h>
 #include<RooFFTConvPdf.h>
@@ -19,7 +19,7 @@
 #include<RooSimultaneous.h>
 #include<RooDataSet.h>
 #include<RooCategory.h>
-#include<RooRealSumPdf.h>
+#include<RooRealSumFunc.h>
 
 using namespace RooFit;
 const std::vector<TString> FitRanges_Names = {"Range_ntrk_1", "Range_ntrk_2", "Range_ntrk_3", "Range_ntrk_4"}; 
@@ -97,30 +97,30 @@ static std::vector<RooHistPdf*> RooPdfVariable(std::vector<TString> Name, RooRea
   std::vector<RooHistPdf*> Out; 
   for (int i(0); i < Hist.size(); i++)
   {
-    RooHistPdf* H = new RooHistPdf(Name[i], Name[i], *domain, *Hist[i]); 
+    RooHistPdf* H = new RooHistPdf(Name[i], Name[i], *domain, *Hist[i], 4); 
     Out.push_back(H); 
   }
   return Out; 
 }
 
-static std::vector<RooGaussian*> RooGaussianVariable(std::vector<TString> Name, RooRealVar* domain, std::vector<RooRealVar*> m, std::vector<RooRealVar*> s)
+static std::vector<RooGaussModel*> RooGaussianVariable(std::vector<TString> Name, RooRealVar* domain, std::vector<RooRealVar*> m, std::vector<RooRealVar*> s)
 {
-  std::vector<RooGaussian*> Out; 
+  std::vector<RooGaussModel*> Out; 
   for (int i(0); i < Name.size(); i++)
   {
-    RooGaussian* H = new RooGaussian(Name[i], Name[i], *domain, *m[i], *s[i]); 
+    RooGaussModel* H = new RooGaussModel(Name[i], Name[i], *domain, *m[i], *s[i]); 
     Out.push_back(H); 
   }
   return Out; 
 }
 
-static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, RooRealVar* domain, std::vector<RooGaussian*> g, std::vector<RooHistPdf*> p)
+static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, RooRealVar* domain, std::vector<RooGaussModel*> g, std::vector<RooHistPdf*> p)
 {
   std::vector<RooFFTConvPdf*> Out; 
   for (int i(0); i < Name.size(); i++)
   {
     RooFFTConvPdf* H = new RooFFTConvPdf(Name[i], Name[i], *domain, *p[i], *g[i]); 
-    H -> setInterpolationOrder(2); 
+    H -> setInterpolationOrder(4); 
     Out.push_back(H); 
   }
   return Out; 
@@ -173,37 +173,19 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
   for (TString F : FitRanges_Names){if (Params[F].size() != 0){x -> setRange(F, Params[F][0], Params[F][1]); Ranges += (F+ ",");}}
   if (Params["Minimizer"].size() == 0)
   {
-    for (int i(0); i < 10; i ++)
-    {
-      re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Extended(true), Save());
-
-      if (re -> status() == 0){break; }
-    }
+    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Save(), Extended(true));
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(*data, Range(Ranges), Extended(true), NumCPU(n_cpu, 1)); 
-    if (Params["debug"].size() != 0)
-    {
-      RooFitResult* re; 
-      RooMinimizer* pg = new RooMinimizer(*nll); 
-      re = pg -> fit("mr"); 
-      pg -> cleanup();
-      delete nll; 
-      delete pg; 
-      return re;
-    }
+    RooAbsReal* nll = model.createNLL(*data, Range(Ranges), NumCPU(n_cpu, 1), Extended(true)); 
 
     RooMinimizer* pg = new RooMinimizer(*nll);
     int print = -1; 
     if (Params["Print"].size() != 0){print = Params["Print"][0]; }
     pg -> setPrintLevel(print); 
     pg -> setPrintEvalErrors(print);
-    if (Params["Minimizer"].size() != 0)
-    {
-      pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
-      pg -> setMaxIterations(Params["Minimizer"][0]); 
-    } 
+    pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
+    pg -> setMaxIterations(Params["Minimizer"][0]); 
 
     if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
     //pg -> setProfile(true);
@@ -213,16 +195,16 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
     
     int res = pg -> migrad();
-    for (int i(0); i < 10; i++)
+    for (int i(0); i < 2; i++)
     {
       pg -> improve(); 
       pg -> simplex();
       pg -> hesse();
       if (Params["seek"].size() != 0){pg -> seek();}
+      pg -> minos();
       res = pg -> migrad();
       if (res == 0){break;}
     } 
-    res = pg -> migrad(); 
     re = pg -> save(); 
     pg -> cleanup(); 
    
@@ -237,7 +219,7 @@ static void BulkDelete(std::vector<RooDataHist*> var){ for (int i(0); i < var.si
 static void BulkDelete(std::vector<RooRealVar*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 static void BulkDelete(std::vector<RooHistPdf*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 static void BulkDelete(std::vector<RooFormulaVar*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
-static void BulkDelete(std::vector<RooGaussian*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
+static void BulkDelete(std::vector<RooGaussModel*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 static void BulkDelete(std::vector<RooFFTConvPdf*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 
 static std::vector<float> MultiplyByConstant(std::vector<float> Vec, float c)

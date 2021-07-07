@@ -20,12 +20,13 @@ int main(int argc, char* argv[])
   //CompareToTruth("ntrk_ntru.root"); 
   //std::cout << "+++" << JE << " " << Mode << std::endl;
   //ReadOutputFileToMap("Fit_Tracks.root"); 
-
-  TestFits_AllTruth_ToTrack(JE, Mode, File);  
-  //MultiTrackTruthComparison("MultiTrackFit.root"); 
+    
+  if (Mode == "Debug"){ Proxy( JE ); }
+  else { TestFits_AllTruth_ToTrack(JE, Mode, File); }
   
-  //Proxy(); 
+  
+  
   //SmoothingTest();
-
+  //MultiTrackTruthComparison("MultiTrackFit.root"); 
   std::cout << "fin" << std::endl; 
 }

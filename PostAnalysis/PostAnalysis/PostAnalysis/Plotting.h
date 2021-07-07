@@ -17,6 +17,7 @@
 #include<RooFit.h>
 #include<RooProfileLL.h>
 #include<TMultiGraph.h>
+#include<RooRealSumPdf.h>
 
 void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style);
 void PlotHists(TH1F* Hist, TCanvas* can); 
@@ -31,6 +32,13 @@ void PlotHists(std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TString 
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can); 
 void RooFitPullPlot(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data, TString Name);
 void RooFitPullPlot(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data, TString Name);
+
+void RooFitPullPlot(RooRealSumPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data, TString Name);
+void RooFitPullPlot(RooRealSumPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data, TString Name);
+
+
+
+
 void PlotRooFit(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PDFs, RooDataHist* Data);
 
 void GeneratePlot(TH1F* H, TString Title, TCanvas* can, Color_t color, ELineStyle style, TString DrawOption, float Intensity); 

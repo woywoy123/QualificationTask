@@ -245,7 +245,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   
   TH1F* trk1 = (TH1F*)trk1_start -> Clone("x"); 
   std::vector<std::vector<TH1F*>> ntrk_mtru_H = BuildNtrkMtru(Data.size(), trk1, ext, Data.size());
-  
+
   TCanvas* can = new TCanvas(); 
   can -> SetLogy();
   int iter = 3;
@@ -255,41 +255,39 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
     for (int i(0); i < Data.size(); i++)
     {
       TH1F* D_t = (TH1F*)Data[i] -> Clone("D"); 
-      MVF Map = NormalizationShift(D_t, ntrk_mtru_H[i], Params, JE); 
+      MVF Map = ConvolutionFFT(D_t, ntrk_mtru_H[i], Params, JE); 
+      SubtractData(ntrk_mtru_H[i], D_t, i, false); 
+      Average(D_t); 
+      int f = ntrk_mtru_H[i][i] -> Integral(); 
+      ntrk_mtru_H[i][i] -> Reset(); 
+      ntrk_mtru_H[i][i] -> FillRandom(D_t, f); 
+      
       PlotHists(D_t, ntrk_mtru_H[i], can); 
       can -> Print("Fit.pdf"); 
+
+      delete D_t;
       if (x == iter -1)
       {
         TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
       }
-      delete D_t;
     }
     
+    if (x == iter -1){ break; }
+
     for (int i(0); i < ntrk_mtru_H.size(); i++)
     {
       for (int j(0); j < ntrk_mtru_H[i].size(); j++)
       {
-        if (j > Data.size()-1){ continue; }
+        if (j > Data.size()-1 && ntrk_mtru_H[j][i] -> Integral() < 50){ continue; }
         TH1F* Update = (TH1F*)ntrk_mtru_H[i][i] -> Clone("CX"); 
-
         float L = ntrk_mtru_H[j][i] -> Integral(); 
-        if (L <= 100){ continue; }
         ntrk_mtru_H[j][i] -> Reset(); 
         ntrk_mtru_H[j][i] -> FillRandom(Update, L); 
         delete Update;
       }
     }  
-    
-    for (int i(0); i < Data.size(); i++)
-    {
-      TH1F* D_t = (TH1F*)Data[i] -> Clone("D"); 
-      SubtractData(ntrk_mtru_H[i], D_t, i, false); 
-      Average(D_t);
-      ntrk_mtru_H[i][i] -> Reset(); 
-      ntrk_mtru_H[i][i] -> FillRandom(D_t, D_t -> Integral()); 
-      delete D_t; 
-    }
+
   }
 
   for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], JE + "/Experimental"); }

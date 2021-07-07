@@ -9,7 +9,7 @@
 #include<TGraphSmooth.h>
 #include<TMultiGraph.h>
 
-void Proxy(); 
+void Proxy( TString Sample = ""); 
 void SmoothingTest();
 
 const static std::vector<float> k1 = {0.1, 8.0}; 
@@ -20,84 +20,47 @@ const static std::vector<std::vector<float>> Ranges = {k1, k2, k3, k4};
 static std::vector<TH1F*> Graphs_1Tru; 
 static std::vector<TH1F*> Graphs_2Tru; 
 
-const float m = 0.5; 
+const float m = 0.4; 
+const int Mini = 10000; 
+const float delta = 20; 
 // Normalization parameters
 const MVF Params_N = { 
-  //{"Range_ntrk_1", Ranges[0]},  
-  //{"Range_ntrk_2", Ranges[1]},    
-  {"Minimizer", {100000}}, 
+  {"Minimizer", {Mini}}, 
   {"seek", {1}},
-  //{"GSL", {1}},
-  //{"Print", {3}},
 }; 
 
 // Normalization Shift parameters
 const MVF Params_NS = {
-  //{"Range_ntrk_1", Ranges[0]},  
-  //{"Range_ntrk_2", Ranges[1]},    
   {"dx_s", {-m, -m, -m, -m}},
   {"dx_e", {m, m, m, m}},
   {"dx_G", {0, 0, 0, 0}}, 
   {"dx_C", {0, 0, 0, 0}},
-  //{"fft_cache", {10000}},  
-  {"Minimizer", {10000}}, 
+  {"Minimizer", {Mini}}, 
   {"seek", {1}},
-  //{"GSL", {1}},
-  //{"Strategy", {2}},
-  //{"Print", {3}},
 };
 
 // Normalization Shift FFT parameters
 const MVF Params_FFT = {
-  //{"Range_ntrk_1", Ranges[0]},  
+  {"Range_ntrk_1", Ranges[0]},  
   //{"Range_ntrk_2", Ranges[1]},    
   {"m_s", {-m, -m, -m, -m}}, 
   {"m_e", {m, m, m, m}}, 
   {"m_G", {0, 0, 0, 0}}, 
   {"s_C", {1, 1, 1, 1}},
-  {"fft_cache", {10000}},  
-  {"Minimizer", {10000}},  
-  //{"Print", {1}},
+  {"fft_cache", {Mini}},  
+  {"Minimizer", {Mini}},  
 }; 
 
 // Normalization Shift Width FFT parameters
 const MVF Params_WidthFFT = {
-  //{"Range_ntrk_1", Ranges[0]},  
-  //{"Range_ntrk_2", Ranges[1]},    
   {"m_s", {-m, -m, -m, -m}}, 
   {"m_e", {m, m, m, m}}, 
   {"m_G", {0, 0, 0, 0}}, 
   {"s_s", {0.001, 0.001, 0.001, 0.001}}, 
-  {"s_e", {0.5, 0.5, 0.5, 0.5}}, 
-  {"fft_cache", {10000}},  
-  {"Minimizer", {10000}},
-  //{"seek", {1}},
-  //{"GSL", {1}},
-
-  //{"Print", {1}},
+  {"s_e", {0.01, 0.01, 0.01, 0.01}}, 
+  {"fft_cache", {Mini}},  
+  {"Minimizer", {Mini}},
 };
-
-const MVF Params_WidthDeFFT = {
-  //{"Range_ntrk_1", Ranges[0]},  
-  //{"Range_ntrk_2", Ranges[1]},    
-  {"m_s", {-m, -m, -m, -m}}, 
-  {"m_e", {m, m, m, m}}, 
-  {"m_G", {0, 0, 0, 0}}, 
-  {"s_s", {0.001, 0.001, 0.001, 0.001}}, 
-  {"s_e", {0.5, 0.5, 0.5, 0.5}}, 
-  {"fft_cache", {10000}},  
-  {"Minimizer", {10000}},
-  //{"seek", {1}},
-  //{"GSL", {1}},
-  {"G_Mean", {0., 0., 0., 0.}}, 
-  {"G_Stdev", {0.5, 0.5, 0.5, 0.5}}, 
-  {"LR", {100}}, 
-
-  //{"Print", {1}},
-};
-
-
-
 
 static void FitParameterError(std::vector<MVF> Params, std::vector<TString>* out, std::vector<TString> keys, std::vector<TString> Setting)
 {
@@ -233,7 +196,10 @@ static std::pair<std::vector<MVF>, std::vector<TString>> StepFit(TH1F* start_P, 
     {  
       TH1F* H = temp[k]; 
       TString n = H -> GetTitle(); n += (k+1); 
-      templ.push_back((TH1F*)H -> Clone(n)); 
+      TH1F* T = (TH1F*)H -> Clone(n); 
+      T -> Reset(); 
+      T -> FillRandom(H, start_P -> Integral());      
+      templ.push_back(T); 
     }
 
     std::cout << "=========== >" + title << std::endl;
@@ -243,11 +209,10 @@ static std::pair<std::vector<MVF>, std::vector<TString>> StepFit(TH1F* start_P, 
     ntrk_1 -> SetTitle(title);
     ntrk_1 -> SetLineColor(kBlack);
     MVF N_Res; 
-    if (alg == "Normal"){ N_Res = Normalization(ntrk_1, templ, Params_N, "Normal"); }
-    if (alg == "ShiftNormal"){ N_Res = NormalizationShift(ntrk_1, templ, Params_NS, "NormalShift"); }
+    if (alg == "Normal"){ N_Res = Normalization(ntrk_1, templ, Params_N); }
+    if (alg == "ShiftNormal"){ N_Res = NormalizationShift(ntrk_1, templ, Params_NS); }
     if (alg == "ShiftNormalFFT"){ N_Res = ConvolutionFFT(ntrk_1, templ, Params_FFT); }
     if (alg == "ShiftNormalWidthFFT"){ N_Res = ConvolutionFFT(ntrk_1, templ, Params_WidthFFT); }
-    if (alg == "ShiftNormalWidthDeFFT"){ N_Res = DeConvolutionFFT(ntrk_1, templ, Params_WidthDeFFT); } 
 
     PlotHists(ntrk_1, {truth[0], truth[1]}, templ, can); 
     can -> Print("Package.pdf"); 

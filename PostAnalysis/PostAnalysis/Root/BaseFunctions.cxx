@@ -208,8 +208,8 @@ void Average(TH1F* Data)
   for (int i(0); i < Data -> GetNbinsX(); i++)
   {
     float y = Data -> GetBinContent(i+1); 
-    if ( y <= 0){ y = 1e-10; } 
-    if ( std::isnan(y) ) { y = 1e-10; }
+    if ( y <= 0){ y = 1e-8; } 
+    if ( std::isnan(y) ) { y = 1e-8; }
     Data -> SetBinContent(i+1, y); 
   }
 }
@@ -405,7 +405,6 @@ void RevertSnipping(TH1F* Smaller, TH1F* Original)
 
   float r = bin_min_L_S / bin_min_L; 
   Original -> Scale(r); 
-  std::cout << r << " " << bin_min_L_S << " "<< bin_min_L << std::endl;
 
   for (int i(0); i < Smaller -> GetNbinsX(); i++)
   {

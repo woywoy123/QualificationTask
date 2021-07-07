@@ -77,15 +77,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   
   // Do a preliminary normalization fit:
   std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-  for (int i(0); i < Pre["Normalization"].size(); i++)
-  {
-    float f = Pre["Normalization"][i]; 
-    float er = Pre["Normalization_Error"][i]; 
-    
-    Params["l_G"].push_back(f); 
-    Params["l_e"].push_back(f + f*10); 
-    Params["l_s"].push_back(f - f*0.1); 
-  }
+  Params["l_G"] = Pre["Normalization"];
 
   // Normalization variables
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Copy_D -> Integral())); 
@@ -197,7 +189,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
  
   Average(PDF_H); 
   TH1F* Data = (TH1F*)Data_Org -> Clone("temp"); 
-
+  
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
@@ -211,24 +203,16 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
 
   // Do a preliminary normalization fit:
   std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-  for (int i(0); i < Pre["Normalization"].size(); i++)
-  {
-    float f = Pre["Normalization"][i]; 
-    float er = Pre["Normalization_Error"][i]; 
-    
-    Params["l_G"].push_back(f); 
-    Params["l_e"].push_back(f + f*10); 
-    Params["l_s"].push_back(f - f*0.1); 
-  }
+  Params["l_G"] = Pre["Normalization"]; 
   
   // Base Variables 
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
 
   // Create the resolution model: Gaussian 
   std::vector<TString> g_N = NameGenerator(PDF_H, "_Gx");
-  std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
+  std::vector<RooGaussModel*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
 
   // Convert the PDFs to RooPDFs
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -244,7 +228,8 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   RooArgList PxG; 
   for (int i(0); i < PxG_vars.size(); i++)
   {
-    PxG_vars[i] -> setBufferFraction(1); 
+    PxG_vars[i] -> setCacheObservables( RooArgSet(*x) );
+    PxG_vars[i] -> setBufferFraction(1.); 
     PxG.add(*PxG_vars[i]); 
     L.add(*l_vars[i]); 
   }
@@ -385,7 +370,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   
   // Create the resolution model: Gaussian 
   std::vector<TString> g_N = NameGenerator(PDF_H, "_Gx");
-  std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
+  std::vector<RooGaussModel*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
   
   // Convert the PDFs to RooPDFs
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -486,7 +471,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   std::vector<std::vector<RooRealVar*>> Lumi; 
   for (int i(0); i < PDF_H_V.size(); i++)
   {
-    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 1, Data[i] -> Integral()); 
+    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 0, Data[i] -> Integral()); 
     Lumi.push_back(l_var); 
     Average(PDF_H_V[i]); 
   } 
@@ -496,7 +481,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
 
   // Create the resolution model: Gaussian 
   std::vector<TString> g_N = NameGenerator(PDF_H, "_Gx");
-  std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_var, s_var); 
+  std::vector<RooGaussModel*> g_vars = RooGaussianVariable(g_N, x, m_var, s_var); 
   
   // Create the PDFs for the model 
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
