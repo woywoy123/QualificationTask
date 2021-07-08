@@ -9,7 +9,7 @@
 #include<TGraphSmooth.h>
 #include<TMultiGraph.h>
 
-void Proxy( TString Sample = ""); 
+void Proxy( TString Sample, TString Files); 
 void SmoothingTest();
 
 const static std::vector<float> k1 = {0.1, 8.0}; 

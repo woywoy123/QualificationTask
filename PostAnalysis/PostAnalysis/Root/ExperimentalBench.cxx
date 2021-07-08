@@ -207,7 +207,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
   float m = 0.5; 
-  float s_e = 0.01; 
+  float s_e = 0.05; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Minimizer"] = {100000};
@@ -311,7 +311,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)
     {
-      if (Proposed[i] -> GetEntries() < 500){continue;}
+      if (Proposed[i] -> GetEntries() < 1000){continue;}
       ToBeUsed.push_back(Proposed[i]); 
     }
  

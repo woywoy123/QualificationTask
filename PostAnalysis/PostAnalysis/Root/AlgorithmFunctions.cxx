@@ -248,7 +248,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
 
   TCanvas* can = new TCanvas(); 
   can -> SetLogy();
-  int iter = 3;
+  int iter = 2;
   for (int x(0); x < iter; x++)
   {
    
@@ -279,11 +279,11 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
     {
       for (int j(0); j < ntrk_mtru_H[i].size(); j++)
       {
-        if (j > Data.size()-1 && ntrk_mtru_H[j][i] -> Integral() < 50){ continue; }
+        if (j > Data.size()-1){ continue; }
         TH1F* Update = (TH1F*)ntrk_mtru_H[i][i] -> Clone("CX"); 
         float L = ntrk_mtru_H[j][i] -> Integral(); 
         ntrk_mtru_H[j][i] -> Reset(); 
-        ntrk_mtru_H[j][i] -> FillRandom(Update, L); 
+        ntrk_mtru_H[j][i] -> Add(Update); 
         delete Update;
       }
     }  
@@ -291,7 +291,6 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   }
 
   for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], JE + "/Experimental"); }
-  
   delete trk1; 
 
   return ntrk_mtru_H; 

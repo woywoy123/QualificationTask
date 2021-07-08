@@ -1,10 +1,10 @@
 #include<PostAnalysis/Debug.h>
 #include<PostAnalysis/DistributionGenerator.h>
 
-void Proxy(TString sample)
+void Proxy(TString sample, TString Files)
 {
 
-  std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE("Merged_MC.root"); 
+  std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(Files); 
   MVT M = F[sample]; 
   
   std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 

@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
   //std::cout << "+++" << JE << " " << Mode << std::endl;
   //ReadOutputFileToMap("Fit_Tracks.root"); 
     
-  if (Mode == "Debug"){ Proxy( JE ); }
+  if (Mode == "Debug"){ Proxy( JE , File); } 
   else { TestFits_AllTruth_ToTrack(JE, Mode, File); }
   
   
