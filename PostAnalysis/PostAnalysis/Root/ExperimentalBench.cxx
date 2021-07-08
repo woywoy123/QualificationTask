@@ -20,22 +20,9 @@ void RooFitBaseFunctionTest()
     std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 
     TH1F* ntrk_1_M = M["ntrk_1_M_I"][0]; 
 
-    //// Test the Normalization function out
     std::vector<TString> ntrk1_Name = NameGenerator(ntrk_1_T.size(), "dEdx_ntrk_1_tru_"); 
     std::vector<TH1F*> PDF_H = BulkClone(ntrk_1_T, ntrk1_Name); 
     
-    //std::map<TString, std::vector<float>> Params_N; 
-    //Params_N["Range"] = {0, 10}; 
-    //Params_N["r_value"] = {1.1};
-    
-    //Normalization(ntrk_1_M, PDF_H, Params_N, "Normal"); 
-  
-    //TCanvas* can = new TCanvas(); 
-    //can -> SetLogy();
-    //PlotHists(ntrk_1_T, PDF_H, can); 
-    //can -> Print("Example.pdf"); 
-    //delete can; 
-
     std::map<TString, std::vector<float>> Params_NS; 
     Params_NS["Range"] = {0.1, 8}; 
     Params_NS["r_value"] = {1.1};
@@ -48,7 +35,6 @@ void RooFitBaseFunctionTest()
     PlotHists(ntrk_1_T, PDF_H, can1); 
     can1 -> Print("ExampleS.pdf"); 
     delete can1; 
-
 
     ntrk1_Name = NameGenerator(ntrk_1_T.size(), "FFTdEdx_ntrk_1_tru_"); 
     std::vector<TH1F*> PDF_H_FFT = BulkClone(ntrk_1_T, ntrk1_Name); 
@@ -64,24 +50,6 @@ void RooFitBaseFunctionTest()
     Params_FFT["s_e"] = {0.05, 0.05, 0.05, 0.05};
     Params_FFT["fft_cache"] = {10000}; 
     Params_FFT["Minimizer"] = {100000}; 
-
-    //ConvolutionFFT(ntrk_1_M, PDF_H_FFT, Params_FFT, "NormalShiftFFT"); 
-    //TCanvas* can2 = new TCanvas(); 
-    //can2 -> SetLogy();
-    //PlotHists(ntrk_1_T, PDF_H_FFT, can2); 
-    //can2 -> Print("ExampleSFFT.pdf"); 
-    //delete can2; 
-
-    //TCanvas* can3 = new TCanvas(); 
-    //can3-> SetLogy();
-    //for (int i(0); i < 10; i++)
-    //{
-    //  DeConvolutionFFT(ntrk_1_M, PDF_H_FFT, Params_FFT, "DeConvolutionFFT"); 
-    //  PlotHists(ntrk_1_T, PDF_H_FFT, can3); 
-    //  can3 -> Print("ExampleSFFT.pdf"); 
-    //}
-
-
     break;
   }
 }
@@ -207,7 +175,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
   float m = 0.5; 
-  float s_e = 0.05; 
+  float s_e = 0.01; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Minimizer"] = {100000};
@@ -262,8 +230,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["s_e"] = {0.05, 0.05, 0.05, 0.05};
   Params_Exp["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_Exp["Minimizer"] = {10000}; 
-  //Params_Exp["Seek"] = {1};  
-  Params_Exp["Print"] = {1}; 
+  Params_Exp["Print"] = {-1}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
@@ -300,7 +267,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     TH1F* ntrk_3_M = M["ntrk_3_M_I"][0]; 
     TH1F* ntrk_4_M = M["ntrk_4_M_I"][0]; 
     std::vector<TH1F*> Proposed = {ntrk_1_M, ntrk_2_M, ntrk_3_M, ntrk_4_M};  
-    
+   
     TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
     TH1F* trk2_start = M["ntrk_2_M_O"][0];
     TH1F* trk3_start = M["ntrk_3_M_O"][0];
@@ -314,10 +281,11 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       if (Proposed[i] -> GetEntries() < 1000){continue;}
       ToBeUsed.push_back(Proposed[i]); 
     }
- 
-    if (ToBeUsed.size() == 0){std::cout << x -> first << std::endl; continue;}
+    if (ToBeUsed.size() == 0){continue;}
+    
     X -> mkdir(current); 
     X -> cd(current); 
+
     std::vector<TString> ntrk_String_T = {"ntrk_1_T", "ntrk_2_T", "ntrk_3_T", "ntrk_4_T"};  
     if (Mode == "Truth")
     { 
@@ -384,8 +352,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       Plotter(Fits, TruthVector, ToBeUsed, current, Mode);
     }
    
-    if (Mode == "Test"){FitWithRoot(ToBeUsed, trk1_start, TruthVector);}
-    
     if (Mode == "FitToTemplate")
     { 
       FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_N, "Normalization", current);

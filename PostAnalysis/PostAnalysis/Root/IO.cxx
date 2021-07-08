@@ -124,8 +124,15 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
         Merging(Trk_Tru["ntrk_3_M_I"], &Output[L]["ntrk_3_M_I"], Names_M[2]); 
         Merging(Trk_Tru["ntrk_4_M_I"], &Output[L]["ntrk_4_M_I"], Names_M[3]); 
        
-        TString na = "dEdx_ntrk_1_rgreater_1_" + L; 
-        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], {na});      
+        TString na1 = "dEdx_ntrk_1_rgreater_1_" + L; 
+        TString na2 = "dEdx_ntrk_2_rgreater_1_" + L; 
+        TString na3 = "dEdx_ntrk_3_rgreater_1_" + L; 
+        TString na4 = "dEdx_ntrk_4_rgreater_1_" + L; 
+        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], {na1});      
+        Merging(Trk_Tru["ntrk_2_M_O"], &Output[L]["ntrk_2_M_O"], {na2});
+        Merging(Trk_Tru["ntrk_3_M_O"], &Output[L]["ntrk_3_M_O"], {na3});     
+        Merging(Trk_Tru["ntrk_4_M_O"], &Output[L]["ntrk_4_M_O"], {na4});     
+      
       }
     }
 
@@ -162,8 +169,14 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
         Merging(Trk_Tru["ntrk_3_M_I"], &Output[L]["ntrk_3_M_I"], Names_M[2]); 
         Merging(Trk_Tru["ntrk_4_M_I"], &Output[L]["ntrk_4_M_I"], Names_M[3]); 
         
-        TString na = "dEdx_ntrk_1_rgreater_1_" + L; 
-        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], {na});      
+        TString na1 = "dEdx_ntrk_1_rgreater_1_" + L; 
+        TString na2 = "dEdx_ntrk_2_rgreater_1_" + L; 
+        TString na3 = "dEdx_ntrk_3_rgreater_1_" + L; 
+        TString na4 = "dEdx_ntrk_4_rgreater_1_" + L; 
+        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], {na1});      
+        Merging(Trk_Tru["ntrk_2_M_O"], &Output[L]["ntrk_2_M_O"], {na2});
+        Merging(Trk_Tru["ntrk_3_M_O"], &Output[L]["ntrk_3_M_O"], {na3});     
+        Merging(Trk_Tru["ntrk_4_M_O"], &Output[L]["ntrk_4_M_O"], {na4});  
       }
     }  
 
@@ -196,8 +209,14 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
     Merging(Trk_Tru["ntrk_3_M_I"], &Output["All"]["ntrk_3_M_I"], Names_AM[2]); 
     Merging(Trk_Tru["ntrk_4_M_I"], &Output["All"]["ntrk_4_M_I"], Names_AM[3]); 
     
-    TString na = "dEdx_ntrk_1_rgreater_1_All"; 
-    Merging(Trk_Tru["ntrk_1_M_O"], &Output["All"]["ntrk_1_M_O"], {na});      
+    TString na1 = "dEdx_ntrk_1_rgreater_1_All"; 
+    TString na2 = "dEdx_ntrk_2_rgreater_1_All"; 
+    TString na3 = "dEdx_ntrk_3_rgreater_1_All"; 
+    TString na4 = "dEdx_ntrk_4_rgreater_1_All"; 
+    Merging(Trk_Tru["ntrk_1_M_O"], &Output["All"]["ntrk_1_M_O"], {na1});      
+    Merging(Trk_Tru["ntrk_2_M_O"], &Output["All"]["ntrk_2_M_O"], {na2});
+    Merging(Trk_Tru["ntrk_3_M_O"], &Output["All"]["ntrk_3_M_O"], {na3});     
+    Merging(Trk_Tru["ntrk_4_M_O"], &Output["All"]["ntrk_4_M_O"], {na4});   
   }
 
   return Output; 
@@ -222,7 +241,9 @@ void TestReadCTIDE(TString dir)
     std::vector<TH1F*> ntrk_4_M = M["ntrk_4_M_I"]; 
     
     std::vector<TH1F*> ntrk_1 = M["ntrk_1_M_O"]; 
-    
+    std::vector<TH1F*> ntrk_2 = M["ntrk_2_M_O"]; 
+    std::vector<TH1F*> ntrk_3 = M["ntrk_3_M_O"]; 
+    std::vector<TH1F*> ntrk_4 = M["ntrk_4_M_O"]; 
   }
 }
 
@@ -264,7 +285,6 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TS
         if (!Alg_Folder.Contains("ntrk_2_T") && H_TS.Contains("ntrk_2")){ Algorithms_Map[Alg_Folder + "_ntrk_2"].push_back(H); }
         if (!Alg_Folder.Contains("ntrk_3_T") && H_TS.Contains("ntrk_3")){ Algorithms_Map[Alg_Folder + "_ntrk_3"].push_back(H); }
         if (!Alg_Folder.Contains("ntrk_4_T") && H_TS.Contains("ntrk_4")){ Algorithms_Map[Alg_Folder + "_ntrk_4"].push_back(H); }
-        
         
         // Truth for multitrack fit:
         if (Alg_Folder.Contains("ntrk_")){ Algorithms_Map[Alg_Folder + "ruth"].push_back(H); }
