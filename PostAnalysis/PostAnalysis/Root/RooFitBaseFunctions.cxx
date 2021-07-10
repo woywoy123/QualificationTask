@@ -207,7 +207,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   // Base Variables 
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
-  std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
+  std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.001, 0.002); 
 
   // Create the resolution model: Gaussian 
   std::vector<TString> g_N = NameGenerator(PDF_H, "_Gx");

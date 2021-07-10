@@ -249,56 +249,75 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   TCanvas* can = new TCanvas(); 
   can -> SetLogy();
   int iter = 2;
-
+  
+  std::vector<float> stats; 
   for (int x(0); x < iter; x++)
   {
    
     for (int i(0); i < Data.size(); i++)
     {
+
       TH1F* D_t = (TH1F*)Data[i] -> Clone("D"); 
       MVF Map = ConvolutionFFT(D_t, ntrk_mtru_H[i], Params, JE); 
+
       SubtractData(ntrk_mtru_H[i], D_t, i, false); 
       Average(D_t); 
+      Smooth({D_t});
       int f = ntrk_mtru_H[i][i] -> Integral(); 
       ntrk_mtru_H[i][i] -> Reset(); 
-      ntrk_mtru_H[i][i] -> FillRandom(D_t, f); 
-      
+      ntrk_mtru_H[i][i] -> Add(D_t); 
+      Normalize(ntrk_mtru_H[i][i]);
+      ntrk_mtru_H[i][i] -> Scale(f); 
+
       PlotHists(D_t, ntrk_mtru_H[i], can); 
       can -> Print("Fit.pdf"); 
 
       delete D_t;
       if (x == iter -1)
       {
+        stats.push_back(Map["fit_status"][0]); 
         TString trk_n = "ntrk_"; trk_n += (i+1); trk_n += ("_error"); 
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
-        for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], JE + "/Experimental"); }
       }
     }
     
     if (x == iter -1){ break; }
-
     std::vector<std::vector<TH1F*>> ntrk_mtru_t = BuildNtrkMtru(Data.size(), ntrk_mtru_H[0][0], "_t", Data.size());
     for (int i(0); i < ntrk_mtru_H.size(); i++)
     {
       for (int j(0); j < ntrk_mtru_H[i].size(); j++)
       {
-        ntrk_mtru_H[i][j] -> Reset(); 
-        ntrk_mtru_H[i][j] -> Add(ntrk_mtru_t[i][j]); 
-        delete ntrk_mtru_t[i][j];
+        //float L = ntrk_mtru_H[i][j] -> Integral(); 
+        //ntrk_mtru_H[i][j] -> Reset(); 
+        //ntrk_mtru_H[i][j] -> Add(ntrk_mtru_t[i][j]); 
+        //Normalize(ntrk_mtru_H[i][j]); 
+        //ntrk_mtru_H[i][j] -> Scale(L);
+        //Smooth({ntrk_mtru_H[i][j]}); 
+        //delete ntrk_mtru_t[i][j];
 
-        //if (j > Data.size()-1){ continue; }
-        //TH1F* Update = (TH1F*)ntrk_mtru_H[i][i] -> Clone("CX"); 
-        //float L = ntrk_mtru_H[j][i] -> Integral(); 
-        //ntrk_mtru_H[j][i] -> Reset(); 
-        //ntrk_mtru_H[j][i] -> Add(Update); 
-        //Normalize(ntrk_mtru_H[j][i]); 
-        //ntrk_mtru_H[j][i] -> Scale(L); 
-        //delete Update;
+        TH1F* Update = (TH1F*)ntrk_mtru_H[i][i] -> Clone("CX"); 
+        float L = ntrk_mtru_H[j][i] -> Integral(); 
+        ntrk_mtru_H[j][i] -> Reset(); 
+        ntrk_mtru_H[j][i] -> Add(Update); 
+        Normalize(ntrk_mtru_H[j][i]); 
+        ntrk_mtru_H[j][i] -> Scale(L); 
+        delete Update;
       }
+
     }  
 
   }
 
+  for (int i(0); i < ntrk_mtru_H.size(); i++)
+  {
+    for (int j(0); j < ntrk_mtru_H[i].size(); j++)
+    {
+      std::cout << ntrk_mtru_H[i][j] -> Integral() << std::endl; 
+    }
+    std::cout << "Status " << stats[i] << std::endl;
+  }  
+
+  for (int i(0); i < ntrk_mtru_H.size(); i++){ WriteHistsToFile(ntrk_mtru_H[i], JE + "/Experimental"); }
   delete trk1; 
 
   return ntrk_mtru_H; 

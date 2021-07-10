@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
   if (Mode == "Debug"){ Proxy(JE, 20); } 
   else { TestFits_AllTruth_ToTrack(JE, Mode, File); }
   
-  
+  //CompareToTruth(Mode, JE);  
   
   //SmoothingTest();
   //MultiTrackTruthComparison("MultiTrackFit.root"); 

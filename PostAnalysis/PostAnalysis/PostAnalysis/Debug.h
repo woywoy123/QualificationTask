@@ -197,8 +197,6 @@ static std::pair<std::vector<MVF>, std::vector<TString>> StepFit(TH1F* start_P, 
       TH1F* H = temp[k]; 
       TString n = H -> GetTitle(); n += (k+1); 
       TH1F* T = (TH1F*)H -> Clone(n); 
-      T -> Reset(); 
-      T -> FillRandom(H, start_P -> Integral());      
       templ.push_back(T); 
     }
 
@@ -308,13 +306,6 @@ static void CompareNormalization(std::vector<MVF> Normal, std::vector<MVF> Algo,
   }
 
 }
-
-
-
-
-
-
-
 
 
 #endif
