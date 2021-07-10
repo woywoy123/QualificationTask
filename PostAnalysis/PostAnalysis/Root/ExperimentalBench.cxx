@@ -174,8 +174,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<float> k = {0.1, 8.0}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
-  float m = 0.5; 
-  float s_e = 0.01; 
+  float m = 0.4; 
+  float s_e = 0.1; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Minimizer"] = {100000};
@@ -208,7 +208,6 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["s_e"] = {s_e, s_e, s_e, s_e};
   Params_WidthFFT["fft_cache"] = {10000}; 
   Params_WidthFFT["Minimizer"] = {10000};
-  Params_WidthFFT["Print"] = {1};
 
   // Simultaneous Fitting method 
   std::map<TString, std::vector<float>> Params_Sim; 
@@ -227,10 +226,11 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["m_e"] = {m, m, m, m};
   Params_Exp["m_G"] = {0, 0, 0, 0};
   Params_Exp["m_s"] = {-m, -m, -m, -m};
-  Params_Exp["s_e"] = {0.05, 0.05, 0.05, 0.05};
+  Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
   Params_Exp["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_Exp["Minimizer"] = {10000}; 
-  Params_Exp["Print"] = {-1}; 
+  //Params_Exp["Strategy"] = {2};
+  Params_Exp["Print"] = {1}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 

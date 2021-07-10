@@ -19,11 +19,11 @@
 #include<RooSimultaneous.h>
 #include<RooDataSet.h>
 #include<RooCategory.h>
-#include<RooRealSumFunc.h>
+#include<TFractionFitter.h>
 
 using namespace RooFit;
 const std::vector<TString> FitRanges_Names = {"Range_ntrk_1", "Range_ntrk_2", "Range_ntrk_3", "Range_ntrk_4"}; 
-const int n_cpu = 2; 
+const int n_cpu = 8; 
 
 
 // ==================  Basic RooFit Variables
@@ -97,7 +97,7 @@ static std::vector<RooHistPdf*> RooPdfVariable(std::vector<TString> Name, RooRea
   std::vector<RooHistPdf*> Out; 
   for (int i(0); i < Hist.size(); i++)
   {
-    RooHistPdf* H = new RooHistPdf(Name[i], Name[i], *domain, *Hist[i], 4); 
+    RooHistPdf* H = new RooHistPdf(Name[i], Name[i], *domain, *Hist[i]); 
     Out.push_back(H); 
   }
   return Out; 
@@ -120,7 +120,7 @@ static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, Roo
   for (int i(0); i < Name.size(); i++)
   {
     RooFFTConvPdf* H = new RooFFTConvPdf(Name[i], Name[i], *domain, *p[i], *g[i]); 
-    H -> setInterpolationOrder(4); 
+    //H -> setInterpolationOrder(2); 
     Out.push_back(H); 
   }
   return Out; 
@@ -187,25 +187,22 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
 
+    if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
     if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
     //pg -> setProfile(true);
     pg -> setOffsetting(true); 
     pg -> setEvalErrorWall(true); 
     pg -> optimizeConst(true); 
-    if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
     
-    int res = pg -> migrad();
-    for (int i(0); i < 2; i++)
-    {
-      pg -> improve(); 
-      pg -> simplex();
-      pg -> hesse();
-      if (Params["seek"].size() != 0){pg -> seek();}
-      pg -> minos();
-      res = pg -> migrad();
-      if (res == 0){break;}
-    } 
-    re = pg -> save(); 
+    //int res = pg -> migrad();
+    //pg -> improve(); 
+    ////pg -> simplex();
+    //pg -> hesse();
+    if (Params["seek"].size() != 0){pg -> seek();}
+    pg -> fit("mhr"); 
+    re = pg -> save();
+    ////pg -> minos();
+    int res = re -> status(); 
     pg -> cleanup(); 
    
     delete pg; 
@@ -237,6 +234,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data, std::vector<TH1
 std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = "");
 std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
 std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
+std::map<TString, std::vector<float>> FractionFitter(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name = ""); 
 
 
 #endif

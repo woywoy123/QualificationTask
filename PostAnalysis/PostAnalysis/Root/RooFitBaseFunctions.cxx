@@ -7,7 +7,6 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
   
-  std::cout << x_min << " " << x_max << std::endl;
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
 
   // Normalization variables
@@ -586,6 +585,40 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
 }
 
 
+std::map<TString, std::vector<float>> FractionFitter(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
+{
+  std::map<TString, std::vector<float>> Output; 
+  TObjArray* MC = new TObjArray(PDF_H.size()); 
+  for (int i(0); i < PDF_H.size(); i++){MC -> Add(PDF_H[i]);}
+  TFractionFitter* fit = new TFractionFitter(Data, MC);
+
+  for (int i(0); i < PDF_H.size(); i++)
+  {
+    fit -> Constrain(i, 0.0, Data -> Integral());
+  }
+  int s = fit -> Fit(); 
+  Double_t f[PDF_H.size()]; 
+  Double_t e[PDF_H.size()]; 
+
+  for (int i(0); i < PDF_H.size(); i++)
+  {
+    fit -> GetResult(i+1, f[i], e[i]); 
+    PDF_H[i] -> Scale(f[i]); 
+  }
+
+  std::cout << "status: " << s << std::endl;
+  
 
 
+
+
+
+
+
+
+
+  return Output;
+
+
+}
 

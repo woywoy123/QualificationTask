@@ -14,6 +14,8 @@ function CreateBatches_Local
   echo "source x86_64-centos7-gcc62-opt/setup.sh" >> Spawn.sh
   echo "cd $""cur" >> Spawn.sh
   echo "PostAnalysis $1 $2 $3/Merged_MC.root" >> Spawn.sh
+  echo "mkdir /eos/home-t/tnommens/Analysis/" >> Spawn.sh
+  echo "cp ./* /eos/home-t/tnommens/Analysis/" >> Spawn.sh
 }
 
 function CondorBuild
