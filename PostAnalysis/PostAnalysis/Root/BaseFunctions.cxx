@@ -186,8 +186,8 @@ void MatchBins(std::vector<TH1F*> In, TH1F* Data)
     if (std::isnan(r)){continue;}
     for (int c(0); c < In.size(); c++)
     {
-      float g = In[c] -> GetBinContent(c+1); 
-      In[c] -> SetBinContent(c+1, g*r); 
+      float g = In[c] -> GetBinContent(i+1); 
+      In[c] -> SetBinContent(i+1, g*r); 
     }
   }
 }
@@ -328,101 +328,18 @@ TString PrecisionString(float number, int precision, bool sci)
   return out; 
 }
 
-void ReplaceTail(TH1F* H, TH1F* R)
+float ChiSquareError(TH1F* Truth, TH1F* Pred)
 {
-  float L = R -> Integral(); 
-  Normalize(H); 
-  Normalize(R); 
-  float x; 
-  int b;
-  for (int i(0); i < H -> GetNbinsX(); i++)
-  {
-    float e  = H -> GetBinContent(i+1);
-    float f = R -> GetBinContent(i+1);
-    float delta = std::abs((e/f) -1);
-    if (std::isnan(delta)){ continue; }
-    if (i == 0){ x = delta; }
-    if (x > delta){ b = i; x = delta; }
-
-  }
-
-  float p = H -> GetBinContent(b+1); 
-  float q = R -> GetBinContent(b+1); 
-  float r = p/q; 
-
-  for (int i(b); i < H -> GetNbinsX(); i++)
-  {
-    float e = H -> GetBinContent(i+1); 
-    float f = R -> GetBinContent(i+1); 
-    
-    R -> SetBinContent(i+1,(1./r)*e);  
-  }
-
-  R -> Scale(L); 
-}
-
-void ReplaceTail(TH1F* H, TString File, TString dir, TString HName)
-{
-  TFile* F = new TFile(File, "READ");
-  F -> cd(dir); 
-  TH1F* G = (TH1F*)gDirectory -> Get(HName); 
-  ReplaceTail(G, H); 
-  delete G; 
-}
-
-TH1F* Snipping(TH1F* H, float x_min, float x_max)
-{
-  float min_b = H -> GetXaxis() -> FindBin(x_min); 
-  float max_b = H -> GetXaxis() -> FindBin(x_max); 
-  float bins = max_b - min_b;
+  int bins = Truth -> GetNbinsX(); 
   
-  TString name = H -> GetTitle();
-  TH1F* Small = new TH1F(name + "_S", name + "_S", bins, x_min, x_max); 
-  
+  float err = 0; 
   for (int i(0); i < bins; i++)
-  {
-    float e = H -> GetBinContent(min_b + i+1); 
-    Small -> SetBinContent(i+1, e); 
+  { 
+    float f = Truth -> GetBinContent(i+1) + Pred -> GetBinContent(i+1); 
+    if (f == 0){continue;}
+    err += std::pow(Truth -> GetBinContent(i+1) - Pred -> GetBinContent(i+1), 2) / f; 
   }
-  return Small; 
+  err = err *0.5; 
+  return err; 
 }
 
-
-void RevertSnipping(TH1F* Smaller, TH1F* Original)
-{
-  Normalize(Original);
-  float min = Smaller -> GetXaxis() -> GetXmin(); 
-  float max = Smaller -> GetXaxis() -> GetXmin(); 
-
-  float bin_min = Original -> GetXaxis() -> FindBin(min); 
-  float bin_max = Original -> GetXaxis() -> FindBin(max); 
-
-  float bin_min_L = Original -> GetBinContent(bin_min+2); 
-  float bin_max_L = Original -> GetBinContent(bin_max+2);  
-
-  float bin_min_L_S = Smaller -> GetBinContent(min+1);
-  float bin_max_L_S = Smaller -> GetBinContent(max+1);
-
-  float r = bin_min_L_S / bin_min_L; 
-  Original -> Scale(r); 
-
-  for (int i(0); i < Smaller -> GetNbinsX(); i++)
-  {
-    float e = Smaller -> GetBinContent(i+1); 
-    float err = Smaller -> GetBinError(i+1);  
-    Original -> SetBinContent(i+1 + bin_min, e);
-    Original -> SetBinError(i+1 + bin_min, err);
-  }
-}
-
-std::vector<TH1F*> Snipping(std::vector<TH1F*> H, float x_min, float x_max)
-{
-  std::vector<TH1F*> Output; 
-  for (TH1F* X : H){ Output.push_back(Snipping(X, x_min, x_max)); }
-  return Output; 
-}
-
-void RevertSnipping(std::vector<TH1F*> Small, std::vector<TH1F*> Ori)
-{
-  for (int i(0); i < Small.size(); i++){ RevertSnipping(Small[i], Ori[i]); }
-}

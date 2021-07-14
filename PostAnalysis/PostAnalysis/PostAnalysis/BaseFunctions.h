@@ -28,12 +28,6 @@ void MatchBins(std::vector<TH1F*> In, TH1F* Data);
 void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk = false); 
 void SmoothHist(TH1F* Hist, int iter); 
 void SmoothHist(TH1F* Hist, int order, float sigma); 
-void ReplaceTail(TH1F* H, TString File, TString dir, TString HName);
-void ReplaceTail(TH1F* H, TH1F* R);
-TH1F* Snipping(TH1F* H, float x_min, float x_max); 
-void RevertSnipping(TH1F* H, TH1F* Original); 
-std::vector<TH1F*> Snipping(std::vector<TH1F*> H, float x_min, float x_max); 
-void RevertSnipping(std::vector<TH1F*> H, std::vector<TH1F*> Original); 
 
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty); 
@@ -63,25 +57,29 @@ void Average(std::vector<TH1F*> Data);
 void CoutText(TString *Input, int v, TString Text = "");
 TString PrecisionString(float number, int precision, bool sci = false);
 
+// Similarity metric
+float ChiSquareError(TH1F* Truth, TH1F* Pred); 
+
+
+
+
+
+
+
+
+
 // Iterators that are used throughout the package 
 typedef std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>>::iterator MMMVFi;
 typedef std::map<TString, std::map<TString, std::map<TString, int>>>::iterator MMMSIi; 
 typedef std::map<TString, std::map<TString, std::vector<TH1F*>>>::iterator MMVi; 
 typedef std::map<TString, std::map<TString, std::vector<float>>>::iterator MMVFi; 
-
-
 typedef std::map<TString, std::map<TString, std::map<int, int>>>::iterator MMIIi; 
-
 typedef std::map<TString, std::vector<std::vector<TH1F*>>> MVVi; 
-
 typedef std::map<TString, std::vector<float>>::iterator MVFi; 
 typedef std::map<TString, std::vector<TH1F*>>::iterator MVi; 
-
 typedef std::map<TString, std::map<int, int>>::iterator MIIi; 
 typedef std::map<TString, std::map<TString, int>>::iterator MMSIi; 
 typedef std::map<TString, std::map<TString, float>>::iterator MMFi; 
-
-
 typedef std::map<TString, float>::iterator MFi;
 typedef std::map<TString, int>::iterator MIi; 
 typedef std::map<int, int>::iterator IIi; 

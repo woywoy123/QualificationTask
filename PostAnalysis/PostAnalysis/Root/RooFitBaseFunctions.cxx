@@ -55,31 +55,31 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
   BulkDelete(l_vars); 
   BulkDelete(pdf_D); 
-  BulkDelete(pdf_P); 
-  delete x; 
-  
-  return Output; 
+BulkDelete(pdf_P); 
+delete x; 
+
+return Output; 
 }
 
 
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
 
-  TH1F* Copy_D = (TH1F*)Data -> Clone("Temp");  
-  Average(PDF_H);
+TH1F* Copy_D = (TH1F*)Data -> Clone("Temp");  
+Average(PDF_H);
 
-  float x_min = Data -> GetXaxis() -> GetXmin(); 
-  float x_max = Data -> GetXaxis() -> GetXmax(); 
-  int bins = Data -> GetNbinsX(); 
+float x_min = Data -> GetXaxis() -> GetXmin(); 
+float x_max = Data -> GetXaxis() -> GetXmax(); 
+int bins = Data -> GetNbinsX(); 
 
-  RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  
-  // Do a preliminary normalization fit:
-  std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-  Params["l_G"] = Pre["Normalization"];
+RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
+
+// Do a preliminary normalization fit:
+std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
+Params["l_G"] = Pre["Normalization"];
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Copy_D -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Copy_D -> Integral())); 
 
   // Shift variables
   std::vector<RooRealVar*> d_vars = ProtectionRealVariable("dx", PDF_H, Params, -0.1, 0.1);   
@@ -98,7 +98,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     TString n = "dx_"; n+= (i+1); 
     RooFormulaVar* dx = new RooFormulaVar(n, "@0 - @1", RooArgList(*x, *d_vars[i])); 
     RooDataHist* DH = new RooDataHist(data_n[i], data_n[i], *x, PDF_H[i]); 
-    RooHistPdf* PH = new RooHistPdf(pdf_n[i], pdf_n[i], *dx, *x, *DH, 4); 
+    RooHistPdf* PH = new RooHistPdf(pdf_n[i], pdf_n[i], *dx, *x, *DH, 2); 
 
     pdf_D.push_back(DH); 
     pdf_P.push_back(PH); 

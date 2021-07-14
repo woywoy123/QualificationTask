@@ -9,7 +9,7 @@ std::vector<TString> ReturnCurrentDirs(bool FolderOnly = true)
     auto k = dynamic_cast<TKey*>(key); 
     TString dir = (TString)k -> GetName();
     
-    if (dir.Contains("CX") || dir.Contains("temp")){ continue;}
+    if (dir.Contains("_t")){ continue;}
     Output.push_back(dir); 
   }
   return Output; 
@@ -17,8 +17,54 @@ std::vector<TString> ReturnCurrentDirs(bool FolderOnly = true)
 
 std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
 {
+ 
+  auto Merging =[] (std::vector<TH1F*> In, std::vector<TH1F*>* out, std::vector<TString> Names)
+  {
+    if (out -> size() == 0)
+    {
+      for (int j(0); j < Names.size(); j++)
+      {
+        TH1F* H = (TH1F*)In[0] -> Clone(Names[j]); 
+        H -> Reset();
+        H -> SetTitle(Names[j]); 
+        out -> push_back(H); 
+      }
+    }
+    else 
+    {
+      for (int i(0); i < In.size(); i++)
+      {
+        for (int k(0); k < out -> size(); k++)
+        {
+          TString temp = (*out)[k] -> GetTitle();
+          if (temp.Contains(In[i] -> GetTitle())){(*out)[k] -> Add(In[i], 1);}
+        }
+      }
+    }
+  };  
+
+  auto GenerateNames =[&] ( TString L, TString radius )
+  {
+    std::vector<std::vector<TString>> Names; 
+    for (int i(0); i < 4; i++)
+    {
+      std::vector<TString> Temp; 
+      TString nam = "dEdx_ntrk_"; nam +=(i+1); nam +=(radius); nam+=("_"+L); 
+      if (!radius.Contains("ntru")){Temp.push_back(nam); Names.push_back(Temp); Temp.clear(); continue;}
+
+      for (int v(0); v < 4; v++)
+      {
+        TString na = "dEdx_ntrk_"; na += (i+1); na += (radius); na += (v+1); na += ("_" + L); 
+        Temp.push_back(na); 
+      }   
+      Names.push_back(Temp); 
+    }
+    return Names;
+  }; 
+
+
+
   std::map<TString, std::map<TString, std::vector<TH1F*>>> Output; 
-  
   TFile* F = new TFile(dir, "READ");
   for (TString L1 : Layer)
   {
@@ -31,23 +77,29 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
       for (TString x : Folders)
       {
         TH1F* H = (TH1F*)gDirectory -> Get(x); 
-        // Truth inside the jet core. 
-        if (x.Contains("ntrk_1") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_1_T_I"].push_back(H); }
-        if (x.Contains("ntrk_2") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_2_T_I"].push_back(H); }
-        if (x.Contains("ntrk_3") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_3_T_I"].push_back(H); }
-        if (x.Contains("ntrk_4") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_4_T_I"].push_back(H); }
-
         // Non Truth measurement. 
         if (x.Contains("ntrk_1") && !x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_1_M_I"].push_back(H); }
         if (x.Contains("ntrk_2") && !x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_2_M_I"].push_back(H); }
         if (x.Contains("ntrk_3") && !x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_3_M_I"].push_back(H); }
         if (x.Contains("ntrk_4") && !x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_4_M_I"].push_back(H); }
 
+        // Truth inside the jet core. 
+        if (x.Contains("ntrk_1") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_1_T_I"].push_back(H); }
+        if (x.Contains("ntrk_2") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_2_T_I"].push_back(H); }
+        if (x.Contains("ntrk_3") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_3_T_I"].push_back(H); }
+        if (x.Contains("ntrk_4") && x.Contains("ntru") && x.Contains("rless") ){ Trk_Tru["ntrk_4_T_I"].push_back(H); }
+
         // Outside jetcore measurement 
         if (x.Contains("ntrk_1") && x.Contains("rgreater") && !x.Contains("ntru")){ Trk_Tru["ntrk_1_M_O"].push_back(H); }
         if (x.Contains("ntrk_2") && x.Contains("rgreater") && !x.Contains("ntru")){ Trk_Tru["ntrk_2_M_O"].push_back(H); }
         if (x.Contains("ntrk_3") && x.Contains("rgreater") && !x.Contains("ntru")){ Trk_Tru["ntrk_3_M_O"].push_back(H); }
         if (x.Contains("ntrk_4") && x.Contains("rgreater") && !x.Contains("ntru")){ Trk_Tru["ntrk_4_M_O"].push_back(H); }
+
+        // Outside jetcore truth
+        if (x.Contains("ntrk_1") && x.Contains("rgreater") && x.Contains("ntru")){ Trk_Tru["ntrk_1_T_O"].push_back(H); }
+        if (x.Contains("ntrk_2") && x.Contains("rgreater") && x.Contains("ntru")){ Trk_Tru["ntrk_2_T_O"].push_back(H); }
+        if (x.Contains("ntrk_3") && x.Contains("rgreater") && x.Contains("ntru")){ Trk_Tru["ntrk_3_T_O"].push_back(H); }
+        if (x.Contains("ntrk_4") && x.Contains("rgreater") && x.Contains("ntru")){ Trk_Tru["ntrk_4_T_O"].push_back(H); }
       }
       Output[L1 + "_" + E1] = Trk_Tru; 
       F -> cd(); 
@@ -57,37 +109,6 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
   std::map<TString, std::vector<TH1F*>> All_Hists; 
   for (MMVi x = Output.begin(); x != Output.end(); x++)
   {
-    auto Merging =[] (std::vector<TH1F*> In, std::vector<TH1F*>* out, std::vector<TString> Names)
-    {
-      
-      if (out -> size() == 0)
-      {
-        for (int j(0); j < Names.size(); j++)
-        {
-          TH1F* H = (TH1F*)In[0] -> Clone(Names[j]); 
-          H -> Reset();
-          H -> SetTitle(Names[j]); 
-          out -> push_back(H); 
-        }
-      }
-      else 
-      {
-        for (int i(0); i < In.size(); i++)
-        {
-          for (int k(0); k < out -> size(); k++)
-          {
-            TString temp = (*out)[k] -> GetTitle();
-            if (temp.Contains(In[i] -> GetTitle()))
-            {
-              (*out)[k] -> Add(In[i], 1); 
-            }
-          }
-        }
-      }
-    }; 
-
-
-
     TString title = x -> first; 
     std::map<TString, std::vector<TH1F*>> Trk_Tru = x -> second; 
 
@@ -95,44 +116,31 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
     {
       if ( title.Contains(L) )
       {
-        std::vector<std::vector<TString>> Names_T; 
-        std::vector<std::vector<TString>> Names_M; 
-        for (int t(0); t < 4; t++)
-        {
-          std::vector<TString> Temp_T;  
-          for (int v(0); v < 4; v++)
-          {
-            // Inside truth
-            TString na = "dEdx_ntrk_"; na +=(t+1); na +=("_rless_005_ntru_"); na +=(v+1); na+=("_"+L); 
-            Temp_T.push_back(na); 
-          }
-          Names_T.push_back(Temp_T);
-          Temp_T.clear();
-          
-          TString nam = "dEdx_ntrk_"; nam +=(t+1); nam +=("_rless_005"); nam+=("_"+L); 
-          Temp_T.push_back(nam);  
-          Names_M.push_back(Temp_T);
-        }
+        std::vector<std::vector<TString>> Names_T_I = GenerateNames( L, "_rless_005_ntru_" ); 
+        std::vector<std::vector<TString>> Names_M_I = GenerateNames( L, "_rless_005" ); 
+        std::vector<std::vector<TString>> Names_T_O = GenerateNames( L, "_rgreater_1_ntru_" );  
+        std::vector<std::vector<TString>> Names_M_O = GenerateNames( L, "_rgreater_1" );  
 
-        Merging(Trk_Tru["ntrk_1_T_I"], &Output[L]["ntrk_1_T_I"], Names_T[0]); 
-        Merging(Trk_Tru["ntrk_2_T_I"], &Output[L]["ntrk_2_T_I"], Names_T[1]); 
-        Merging(Trk_Tru["ntrk_3_T_I"], &Output[L]["ntrk_3_T_I"], Names_T[2]); 
-        Merging(Trk_Tru["ntrk_4_T_I"], &Output[L]["ntrk_4_T_I"], Names_T[3]); 
+        Merging(Trk_Tru["ntrk_1_T_I"], &Output[L]["ntrk_1_T_I"], Names_T_I[0]); 
+        Merging(Trk_Tru["ntrk_2_T_I"], &Output[L]["ntrk_2_T_I"], Names_T_I[1]); 
+        Merging(Trk_Tru["ntrk_3_T_I"], &Output[L]["ntrk_3_T_I"], Names_T_I[2]); 
+        Merging(Trk_Tru["ntrk_4_T_I"], &Output[L]["ntrk_4_T_I"], Names_T_I[3]); 
 
-        Merging(Trk_Tru["ntrk_1_M_I"], &Output[L]["ntrk_1_M_I"], Names_M[0]); 
-        Merging(Trk_Tru["ntrk_2_M_I"], &Output[L]["ntrk_2_M_I"], Names_M[1]); 
-        Merging(Trk_Tru["ntrk_3_M_I"], &Output[L]["ntrk_3_M_I"], Names_M[2]); 
-        Merging(Trk_Tru["ntrk_4_M_I"], &Output[L]["ntrk_4_M_I"], Names_M[3]); 
-       
-        TString na1 = "dEdx_ntrk_1_rgreater_1_" + L; 
-        TString na2 = "dEdx_ntrk_2_rgreater_1_" + L; 
-        TString na3 = "dEdx_ntrk_3_rgreater_1_" + L; 
-        TString na4 = "dEdx_ntrk_4_rgreater_1_" + L; 
-        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], {na1});      
-        Merging(Trk_Tru["ntrk_2_M_O"], &Output[L]["ntrk_2_M_O"], {na2});
-        Merging(Trk_Tru["ntrk_3_M_O"], &Output[L]["ntrk_3_M_O"], {na3});     
-        Merging(Trk_Tru["ntrk_4_M_O"], &Output[L]["ntrk_4_M_O"], {na4});     
-      
+        Merging(Trk_Tru["ntrk_1_M_I"], &Output[L]["ntrk_1_M_I"], Names_M_I[0]); 
+        Merging(Trk_Tru["ntrk_2_M_I"], &Output[L]["ntrk_2_M_I"], Names_M_I[1]); 
+        Merging(Trk_Tru["ntrk_3_M_I"], &Output[L]["ntrk_3_M_I"], Names_M_I[2]); 
+        Merging(Trk_Tru["ntrk_4_M_I"], &Output[L]["ntrk_4_M_I"], Names_M_I[3]); 
+
+        Merging(Trk_Tru["ntrk_1_T_O"], &Output[L]["ntrk_1_T_O"], Names_T_O[0]);      
+        Merging(Trk_Tru["ntrk_2_T_O"], &Output[L]["ntrk_2_T_O"], Names_T_O[1]);
+        Merging(Trk_Tru["ntrk_3_T_O"], &Output[L]["ntrk_3_T_O"], Names_T_O[2]);     
+        Merging(Trk_Tru["ntrk_4_T_O"], &Output[L]["ntrk_4_T_O"], Names_T_O[3]);     
+
+        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], Names_M_O[0]);      
+        Merging(Trk_Tru["ntrk_2_M_O"], &Output[L]["ntrk_2_M_O"], Names_M_O[1]);
+        Merging(Trk_Tru["ntrk_3_M_O"], &Output[L]["ntrk_3_M_O"], Names_M_O[2]);     
+        Merging(Trk_Tru["ntrk_4_M_O"], &Output[L]["ntrk_4_M_O"], Names_M_O[3]);     
+
       }
     }
 
@@ -140,83 +148,58 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
     {
       if ( title.Contains(L) )
       {
-        std::vector<std::vector<TString>> Names_T; 
-        std::vector<std::vector<TString>> Names_M; 
-        for (int t(0); t < 4; t++)
-        {
-          std::vector<TString> Temp_T;  
-          for (int v(0); v < 4; v++)
-          {
-            // Inside truth
-            TString na = "dEdx_ntrk_"; na +=(t+1); na +=("_rless_005_ntru_"); na +=(v+1); na+=("_"+L); 
-            Temp_T.push_back(na); 
-          }
-          Names_T.push_back(Temp_T);
-          Temp_T.clear(); 
-          
-          TString nam = "dEdx_ntrk_"; nam +=(t+1); nam +=("_rless_005"); nam+=("_"+L); 
-          Temp_T.push_back(nam);  
-          Names_M.push_back(Temp_T);
-        }
+        std::vector<std::vector<TString>> Names_T_I = GenerateNames( L, "_rless_005_ntru_" ); 
+        std::vector<std::vector<TString>> Names_M_I = GenerateNames( L, "_rless_005" ); 
+        std::vector<std::vector<TString>> Names_T_O = GenerateNames( L, "_rgreater_1_ntru_" );  
+        std::vector<std::vector<TString>> Names_M_O = GenerateNames( L, "_rgreater_1" );  
 
-        Merging(Trk_Tru["ntrk_1_T_I"], &Output[L]["ntrk_1_T_I"], Names_T[0]); 
-        Merging(Trk_Tru["ntrk_2_T_I"], &Output[L]["ntrk_2_T_I"], Names_T[1]); 
-        Merging(Trk_Tru["ntrk_3_T_I"], &Output[L]["ntrk_3_T_I"], Names_T[2]); 
-        Merging(Trk_Tru["ntrk_4_T_I"], &Output[L]["ntrk_4_T_I"], Names_T[3]); 
+        Merging(Trk_Tru["ntrk_1_T_I"], &Output[L]["ntrk_1_T_I"], Names_T_I[0]); 
+        Merging(Trk_Tru["ntrk_2_T_I"], &Output[L]["ntrk_2_T_I"], Names_T_I[1]); 
+        Merging(Trk_Tru["ntrk_3_T_I"], &Output[L]["ntrk_3_T_I"], Names_T_I[2]); 
+        Merging(Trk_Tru["ntrk_4_T_I"], &Output[L]["ntrk_4_T_I"], Names_T_I[3]); 
 
-        Merging(Trk_Tru["ntrk_1_M_I"], &Output[L]["ntrk_1_M_I"], Names_M[0]); 
-        Merging(Trk_Tru["ntrk_2_M_I"], &Output[L]["ntrk_2_M_I"], Names_M[1]); 
-        Merging(Trk_Tru["ntrk_3_M_I"], &Output[L]["ntrk_3_M_I"], Names_M[2]); 
-        Merging(Trk_Tru["ntrk_4_M_I"], &Output[L]["ntrk_4_M_I"], Names_M[3]); 
-        
-        TString na1 = "dEdx_ntrk_1_rgreater_1_" + L; 
-        TString na2 = "dEdx_ntrk_2_rgreater_1_" + L; 
-        TString na3 = "dEdx_ntrk_3_rgreater_1_" + L; 
-        TString na4 = "dEdx_ntrk_4_rgreater_1_" + L; 
-        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], {na1});      
-        Merging(Trk_Tru["ntrk_2_M_O"], &Output[L]["ntrk_2_M_O"], {na2});
-        Merging(Trk_Tru["ntrk_3_M_O"], &Output[L]["ntrk_3_M_O"], {na3});     
-        Merging(Trk_Tru["ntrk_4_M_O"], &Output[L]["ntrk_4_M_O"], {na4});  
+        Merging(Trk_Tru["ntrk_1_M_I"], &Output[L]["ntrk_1_M_I"], Names_M_I[0]); 
+        Merging(Trk_Tru["ntrk_2_M_I"], &Output[L]["ntrk_2_M_I"], Names_M_I[1]); 
+        Merging(Trk_Tru["ntrk_3_M_I"], &Output[L]["ntrk_3_M_I"], Names_M_I[2]); 
+        Merging(Trk_Tru["ntrk_4_M_I"], &Output[L]["ntrk_4_M_I"], Names_M_I[3]); 
+
+        Merging(Trk_Tru["ntrk_1_T_O"], &Output[L]["ntrk_1_T_O"], Names_T_O[0]);      
+        Merging(Trk_Tru["ntrk_2_T_O"], &Output[L]["ntrk_2_T_O"], Names_T_O[1]);
+        Merging(Trk_Tru["ntrk_3_T_O"], &Output[L]["ntrk_3_T_O"], Names_T_O[2]);     
+        Merging(Trk_Tru["ntrk_4_T_O"], &Output[L]["ntrk_4_T_O"], Names_T_O[3]);     
+
+        Merging(Trk_Tru["ntrk_1_M_O"], &Output[L]["ntrk_1_M_O"], Names_M_O[0]);      
+        Merging(Trk_Tru["ntrk_2_M_O"], &Output[L]["ntrk_2_M_O"], Names_M_O[1]);
+        Merging(Trk_Tru["ntrk_3_M_O"], &Output[L]["ntrk_3_M_O"], Names_M_O[2]);     
+        Merging(Trk_Tru["ntrk_4_M_O"], &Output[L]["ntrk_4_M_O"], Names_M_O[3]);     
       }
     }  
 
-    std::vector<std::vector<TString>> Names_AT; 
-    std::vector<std::vector<TString>> Names_AM; 
-    for (int t(0); t < 4; t++)
-    {
-      std::vector<TString> Temp_T;  
-      for (int v(0); v < 4; v++)
-      {
-        // Inside truth
-        TString na = "dEdx_ntrk_"; na +=(t+1); na +=("_rless_005_ntru_"); na +=(v+1); na+=("_All"); 
-        Temp_T.push_back(na); 
-      }
-      Names_AT.push_back(Temp_T);
-      Temp_T.clear(); 
-      
-      TString nam = "dEdx_ntrk_"; nam +=(t+1); nam +=("_rless_005"); nam+=("_All"); 
-      Temp_T.push_back(nam);  
-      Names_AM.push_back(Temp_T);
-    }
 
-    Merging(Trk_Tru["ntrk_1_T_I"], &Output["All"]["ntrk_1_T_I"], Names_AT[0]); 
-    Merging(Trk_Tru["ntrk_2_T_I"], &Output["All"]["ntrk_2_T_I"], Names_AT[1]); 
-    Merging(Trk_Tru["ntrk_3_T_I"], &Output["All"]["ntrk_3_T_I"], Names_AT[2]); 
-    Merging(Trk_Tru["ntrk_4_T_I"], &Output["All"]["ntrk_4_T_I"], Names_AT[3]); 
-  
-    Merging(Trk_Tru["ntrk_1_M_I"], &Output["All"]["ntrk_1_M_I"], Names_AM[0]); 
-    Merging(Trk_Tru["ntrk_2_M_I"], &Output["All"]["ntrk_2_M_I"], Names_AM[1]); 
-    Merging(Trk_Tru["ntrk_3_M_I"], &Output["All"]["ntrk_3_M_I"], Names_AM[2]); 
-    Merging(Trk_Tru["ntrk_4_M_I"], &Output["All"]["ntrk_4_M_I"], Names_AM[3]); 
-    
-    TString na1 = "dEdx_ntrk_1_rgreater_1_All"; 
-    TString na2 = "dEdx_ntrk_2_rgreater_1_All"; 
-    TString na3 = "dEdx_ntrk_3_rgreater_1_All"; 
-    TString na4 = "dEdx_ntrk_4_rgreater_1_All"; 
-    Merging(Trk_Tru["ntrk_1_M_O"], &Output["All"]["ntrk_1_M_O"], {na1});      
-    Merging(Trk_Tru["ntrk_2_M_O"], &Output["All"]["ntrk_2_M_O"], {na2});
-    Merging(Trk_Tru["ntrk_3_M_O"], &Output["All"]["ntrk_3_M_O"], {na3});     
-    Merging(Trk_Tru["ntrk_4_M_O"], &Output["All"]["ntrk_4_M_O"], {na4});   
+    std::vector<std::vector<TString>> Names_T_I_A = GenerateNames( "_All", "_rless_005_ntru_" ); 
+    std::vector<std::vector<TString>> Names_M_I_A = GenerateNames( "_All", "_rless_005" ); 
+    std::vector<std::vector<TString>> Names_T_O_A = GenerateNames( "_All", "_rgreater_1_ntru_" );  
+    std::vector<std::vector<TString>> Names_M_O_A = GenerateNames( "_All", "_rgreater_1" );  
+
+    Merging(Trk_Tru["ntrk_1_T_I"], &Output["All"]["ntrk_1_T_I"], Names_T_I_A[0]); 
+    Merging(Trk_Tru["ntrk_2_T_I"], &Output["All"]["ntrk_2_T_I"], Names_T_I_A[1]); 
+    Merging(Trk_Tru["ntrk_3_T_I"], &Output["All"]["ntrk_3_T_I"], Names_T_I_A[2]); 
+    Merging(Trk_Tru["ntrk_4_T_I"], &Output["All"]["ntrk_4_T_I"], Names_T_I_A[3]); 
+
+    Merging(Trk_Tru["ntrk_1_M_I"], &Output["All"]["ntrk_1_M_I"], Names_M_I_A[0]); 
+    Merging(Trk_Tru["ntrk_2_M_I"], &Output["All"]["ntrk_2_M_I"], Names_M_I_A[1]); 
+    Merging(Trk_Tru["ntrk_3_M_I"], &Output["All"]["ntrk_3_M_I"], Names_M_I_A[2]); 
+    Merging(Trk_Tru["ntrk_4_M_I"], &Output["All"]["ntrk_4_M_I"], Names_M_I_A[3]); 
+
+    Merging(Trk_Tru["ntrk_1_T_O"], &Output["All"]["ntrk_1_T_O"], Names_T_O_A[0]);      
+    Merging(Trk_Tru["ntrk_2_T_O"], &Output["All"]["ntrk_2_T_O"], Names_T_O_A[1]);
+    Merging(Trk_Tru["ntrk_3_T_O"], &Output["All"]["ntrk_3_T_O"], Names_T_O_A[2]);     
+    Merging(Trk_Tru["ntrk_4_T_O"], &Output["All"]["ntrk_4_T_O"], Names_T_O_A[3]);     
+
+    Merging(Trk_Tru["ntrk_1_M_O"], &Output["All"]["ntrk_1_M_O"], Names_M_O_A[0]);      
+    Merging(Trk_Tru["ntrk_2_M_O"], &Output["All"]["ntrk_2_M_O"], Names_M_O_A[1]);
+    Merging(Trk_Tru["ntrk_3_M_O"], &Output["All"]["ntrk_3_M_O"], Names_M_O_A[2]);     
+    Merging(Trk_Tru["ntrk_4_M_O"], &Output["All"]["ntrk_4_M_O"], Names_M_O_A[3]);     
   }
 
   return Output; 

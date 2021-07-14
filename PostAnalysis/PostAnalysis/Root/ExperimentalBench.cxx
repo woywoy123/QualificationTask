@@ -15,7 +15,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<float> k = {0.1, 8.0}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
-  float m = 0.5; 
+  float m = 0.4; 
   float s_e = 0.1; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
@@ -27,39 +27,39 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_NS["dx_G"] = {0, 0, 0, 0}; 
   Params_NS["dx_e"] = {m, m, m, m}; 
   Params_NS["seek"] = {1};
-  Params_NS["Minimizer"] = {100000};
+  Params_NS["Minimizer"] = {10000};
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
   //Params_FFT["Range_ntrk_1"] = Ranges[0]; 
   Params_FFT["m_s"] = {-m, -m, -m, -m};
-  //Params_FFT["m_G"] = {0, 0, 0, 0};
+  Params_FFT["m_G"] = {0, 0, 0, 0};
   Params_FFT["m_e"] = {m, m, m, m};
   Params_FFT["s_C"] = {1, 1, 1, 1};
   Params_FFT["fft_cache"] = {10000}; 
-  Params_FFT["Minimizer"] = {100000}; 
+  Params_FFT["Minimizer"] = {10000}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
   //Params_WidthFFT["Range_ntrk_1"] = Ranges[0]; 
   Params_WidthFFT["m_s"] = {-m, -m, -m, -m};
-  //Params_WidthFFT["m_G"] = {0, 0, 0, 0};
+  Params_WidthFFT["m_G"] = {0, 0, 0, 0};
   Params_WidthFFT["m_e"] = {m, m, m, m};
-  Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
+  Params_WidthFFT["s_s"] = {0.0005, 0.0005, 0.0005, 0.0005};
   Params_WidthFFT["s_e"] = {s_e, s_e, s_e, s_e};
   Params_WidthFFT["fft_cache"] = {10000}; 
-  Params_WidthFFT["Minimizer"] = {100000};
+  Params_WidthFFT["Minimizer"] = {10000};
 
   // Simultaneous Fitting method 
   std::map<TString, std::vector<float>> Params_Sim; 
   //Params_Sim["Range_ntrk_1"] = Ranges[0]; 
   Params_Sim["m_e"] = {m, m, m, m};
-  //Params_Sim["m_G"] = {0, 0, 0, 0};
+  Params_Sim["m_G"] = {0, 0, 0, 0};
   Params_Sim["m_s"] = {-m, -m, -m, -m};
-  Params_Sim["s_s"] = {0.001, 0.001, 0.001, 0.001};
+  Params_Sim["s_s"] = {0.0005, 0.0005, 0.0005, 0.0005};
   Params_Sim["s_e"] = {s_e, s_e, s_e, s_e};
   Params_Sim["fft_cache"] = {10000}; 
-  Params_Sim["Minimizer"] = {100000}; 
+  Params_Sim["Minimizer"] = {10000}; 
 
   // Experimental Fitting method 
   std::map<TString, std::vector<float>> Params_Exp; 
@@ -68,12 +68,9 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["m_G"] = {0, 0, 0, 0};
   Params_Exp["m_s"] = {-m, -m, -m, -m};
   Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
-  Params_Exp["s_G"] = {0.05, 0.05, 0.05, 0.05};
-  Params_Exp["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  Params_Exp["Minimizer"] = {100000}; 
+  Params_Exp["s_s"] = {0.0005, 0.0005, 0.0005, 0.0005};
+  Params_Exp["Minimizer"] = {10000}; 
   Params_Exp["fft_cache"] = {10000};
-  //Params_Exp["Strategy"] = {2};
-  Params_Exp["Print"] = {1}; 
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
@@ -121,7 +118,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)
     {
-      if (Proposed[i] -> GetEntries() < 1000){continue;}
+      if (Proposed[i] -> GetEntries() < 20000){continue;}
       ToBeUsed.push_back(Proposed[i]); 
     }
     if (ToBeUsed.size() == 0){continue;}
@@ -230,7 +227,7 @@ void CompareToTruth(TString Mode, TString Energy)
   };
   std::vector<std::vector<TH1F*>> Fits; 
  
-  float m = 0.5; 
+  float m = 0.4; 
   float s_e = 0.1; 
   std::vector<float> k = {0.1, 8.0}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
@@ -240,14 +237,14 @@ void CompareToTruth(TString Mode, TString Energy)
   std::map<TString, std::vector<float>> Params_Exp; 
   //Params_Exp["Range_ntrk_1"] = Ranges[0];
   Params_Exp["m_e"] = {m, m, m, m};
-  //Params_Exp["dx_G"] = {0, 0, 0, 0};
+  Params_Exp["m_G"] = {0, 0, 0, 0};
   Params_Exp["m_s"] = {-m, -m, -m, -m};
   Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
-  Params_Exp["s_s"] = {0.001, 0.001, 0.001, 0.001};
-  Params_Exp["s_G"] = {0.05, 0.05, 0.05, 0.05};
-  Params_Exp["Minimizer"] = {100000}; 
+  Params_Exp["s_s"] = {0.0005, 0.0005, 0.0005, 0.0005};
+  //Params_Exp["s_G"] = {0.05, 0.05, 0.05, 0.05};
+  Params_Exp["Minimizer"] = {10000}; 
   Params_Exp["fft_cache"] = {10000};
-  //Params_Exp["Strategy"] = {2};
+  //Params_Exp["Seek"] = {1};
   Params_Exp["Print"] = {1}; 
 
 
@@ -259,7 +256,7 @@ void CompareToTruth(TString Mode, TString Energy)
   std::vector<TH1F*> ntrk_2_T = M["ntrk_2_T_I"]; 
   std::vector<TH1F*> ntrk_3_T = M["ntrk_3_T_I"]; 
   std::vector<TH1F*> ntrk_4_T = M["ntrk_4_T_I"]; 
-  std::vector<std::vector<TH1F*>> TruthVector = { ntrk_1_T,  ntrk_2_T, ntrk_3_T, ntrk_4_T };
+  std::vector<std::vector<TH1F*>> Truth = { ntrk_1_T,  ntrk_2_T, ntrk_3_T, ntrk_4_T };
 
   TH1F* ntrk_1_M = M["ntrk_1_M_I"][0]; 
   TH1F* ntrk_2_M = M["ntrk_2_M_I"][0]; 
@@ -277,20 +274,35 @@ void CompareToTruth(TString Mode, TString Energy)
   std::vector<TH1F*> ToBeUsed; 
   for ( int i(0); i < Proposed.size(); i++)
   {
-    if (Proposed[i] -> GetEntries() < 10){continue;}
+    if ( i == 3){continue;}
+    if (Proposed[i] -> GetEntries() < 200){continue;}
     ToBeUsed.push_back(Proposed[i]); 
   }
 
-  
-
-  Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_Exp, Energy);
-  Plotter(Fits, TruthVector, ToBeUsed, Energy, Mode); 
+  //auto Reb =[&] (std::vector<TH1F*> D)
+  //{
+  //  for (int i(0); i < D.size(); i++){ D[i] -> Rebin(2); }
+  //};
+  //
+  //Reb( Proposed ); 
+  //Reb( starter ); 
+  //for (int x(0); x < Truth.size(); x++){ Reb( Truth[x] ); }
 
   std::vector<std::vector<float>> Err;  
 
-  std::cout << Fits[0][0] -> GetTitle() << std::endl;
-  std::cout << "Flost 3 Predicted: " << Flost3(Fits, Err)[0] << " Flost 3 Truth: " << Flost3(TruthVector, Err)[0] << std::endl; 
-  std::cout << "Flost 2 Predicted: " << Flost2(Fits, Err)[0] << " Flost 2 Truth: " << Flost2(TruthVector, Err)[0] << std::endl;
+
+
+  Fits = Experimental_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_Exp, Energy);
+  Plotter(Fits, Truth, ToBeUsed, Energy, Mode); 
+  
+
+  std::cout << "Flost 3 Predicted: " << Flost3(Fits, Err)[0] << " Flost 3 Truth: " << Flost3(Truth, Err)[0] << std::endl; 
+  std::cout << "Flost 2 Predicted: " << Flost2(Fits, Err)[0] << " Flost 2 Truth: " << Flost2(Truth, Err)[0] << std::endl;
+    
+
+
+
+
 
 
 }

@@ -336,12 +336,27 @@ void GeneratePlot(TH1F* H, TString Title, TCanvas* can, Color_t color, ELineStyl
   can -> Update();  
 }
 
-TLegend* GenerateLegend(std::vector<TH1F*> Hist_V, TCanvas* can)
+TLegend* GenerateLegend(std::vector<TH1F*> Hist_V, TCanvas* can, float x_size, float x_position, float box_size, float size)
 {
-  TLegend* len = new TLegend(0.9, 0.9, 0.5, 0.8); 
+  TLegend* len = new TLegend(x_size, box_size, x_position, size); 
+  len -> SetBorderSize(0); 
   for (TH1F* H : Hist_V)
   {
     len -> AddEntry(H); 
+  }
+  len -> Draw("SAME");
+  can -> Update(); 
+  return len; 
+}
+
+TLegend* GenerateLegend(std::vector<TGraph*> Hist_V, TCanvas* can, float x_size, float x_position, float box_size, float size)
+{
+  TLegend* len = new TLegend(x_size, box_size, x_position, size); 
+  len -> SetBorderSize(0); 
+  for (TGraph* H : Hist_V)
+  {
+    len -> AddEntry(H);
+    std::cout << H -> GetTitle() << std::endl;
   }
   len -> Draw("SAME");
   can -> Update(); 
@@ -425,3 +440,65 @@ void PlotGraphs(std::vector<TH1F*> Hists, TString Title, TCanvas* can)
   can -> Update(); 
 }
 
+void GenerateNiceStacks(std::vector<TH1F*> vec, TString Title, TCanvas* can, TString x_axis, TString y_axis, TString options)
+{
+  can -> Clear(); 
+
+  THStack* he = new THStack("hs", Title); 
+  std::vector<Color_t> col = {kRed, kBlack, kBlue, kGreen}; 
+  for (int i(0); i < vec.size(); i++)
+  {
+    vec[i] -> SetFillColorAlpha(col[i], 0.2); 
+    vec[i] -> SetLineColor(col[i]); 
+    vec[i] -> GetYaxis() -> SetRangeUser(0.00001, 0.1); 
+    vec[i] -> GetXaxis() -> SetTitle(x_axis); 
+    vec[i] -> SetLineWidth(1); 
+    he -> Add(vec[i]); 
+  }
+
+  TH1F* Empty = (TH1F*)vec[0] -> Clone(Title); 
+  Empty -> SetTitle(Title); 
+  Empty -> GetXaxis() -> SetTitle(x_axis); 
+  Empty -> GetYaxis() -> SetTitle(y_axis); 
+  Empty -> GetYaxis() -> SetRangeUser(0.0001, 1); 
+  Empty -> SetLineColor(kWhite); 
+  Empty -> SetFillColorAlpha(kWhite, 0); 
+  Empty -> Draw("HIST"); 
+
+  he -> Draw(options);
+  he -> GetYaxis() -> SetRangeUser(0.0001, 1); 
+  he -> GetXaxis() -> SetTitle(x_axis); 
+  he -> Draw(options); 
+  can -> Update(); 
+
+  TLegend* le = GenerateLegend(vec, can, 0.89, 0.6, 0.89, 0.81); 
+  le -> Draw("SAME"); 
+}
+
+TGraph* GenerateGraph(std::vector<float> Input, TString name)
+{
+  Double_t x[Input.size()]; 
+  Double_t y[Input.size()]; 
+
+  for (int i(0); i < Input.size(); i++){ y[i] = Input[i]; x[i] = i; }
+  TGraph* Gr = new TGraph(Input.size(), x, y); 
+
+  return Gr; 
+}
+
+TGraph* GenerateGraph(std::map<TString, float> Input, TString name)
+{
+  TGraph* Gr = new TGraph(); 
+  int i = 0; 
+  for (MFi x = Input.begin(); x != Input.end(); x++){ Gr -> SetPoint(i, i+1, x -> second); i++; }
+  
+  TH1F* H = new TH1F(name, name, Input.size(), 0, Input.size()); 
+  Gr -> SetHistogram(H);
+  Gr -> SetTitle(name);
+  H -> SetTitle(name);
+
+  i = 0; 
+  for (MFi x = Input.begin(); x != Input.end(); x++){ H -> GetXaxis() -> SetBinLabel(i+1, (x -> first)); i++; }
+
+  return Gr; 
+}

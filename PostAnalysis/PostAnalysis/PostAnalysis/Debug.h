@@ -9,7 +9,7 @@
 #include<TGraphSmooth.h>
 #include<TMultiGraph.h>
 
-void Proxy( TString Sample, TString Files); 
+void Proxy( TString Sample, TString Files, TString Mode); 
 void SmoothingTest();
 
 const static std::vector<float> k1 = {0.1, 8.0}; 
@@ -119,7 +119,10 @@ static void FitParameterError(std::vector<MVF> Params, std::vector<TString>* out
 
 static std::pair<std::vector<MVF>, std::vector<TString>> StepFit(TH1F* start_P, std::vector<TH1F*> truth_P, float delta, TCanvas* can, TString alg, TString sample)
 {
- 
+  
+  gDirectory -> mkdir(alg); 
+  gDirectory -> cd(alg); 
+
   int min = truth_P[0] -> GetXaxis() -> GetXmin(); 
   int max = truth_P[0] -> GetXaxis() -> FindBin(5.)+1; 
   float max_n = truth_P[0] -> GetBinCenter(max); 
@@ -195,13 +198,16 @@ static std::pair<std::vector<MVF>, std::vector<TString>> StepFit(TH1F* start_P, 
     for (int k(0); k < temp.size(); k++)
     {  
       TH1F* H = temp[k]; 
-      TString n = H -> GetTitle(); n += (k+1); 
+      TString n = H -> GetTitle(); n += (k+1); n += ("_step_"); n += (cu); 
       TH1F* T = (TH1F*)H -> Clone(n); 
       templ.push_back(T); 
     }
+    
+    TString dirName = "step_"; dirName += (cu); 
+    gDirectory -> mkdir(dirName); 
+    gDirectory -> cd(dirName); 
 
     std::cout << "=========== >" + title << std::endl;
-
     truth[1] -> Scale(S_L*(cu / 100)); 
     TH1F* ntrk_1 = SumHists({truth[0], truth[1]}, title); 
     ntrk_1 -> SetTitle(title);
@@ -230,7 +236,6 @@ static std::pair<std::vector<MVF>, std::vector<TString>> StepFit(TH1F* start_P, 
     std::cout << "" << std::endl;
     std::cout << "" << std::endl;
 
-    Normalize(truth[1]); 
 
     // Collect Data Point for the performance plots 
     float r1 = (N_Res["Normalization"][0] / N_Res["Truth_Int"][0])*100; 
@@ -239,13 +244,21 @@ static std::pair<std::vector<MVF>, std::vector<TString>> StepFit(TH1F* start_P, 
     P2 -> SetBinContent(i+1, r2); 
     
     delete ntrk_1; 
-    BulkDelete(templ); 
+
+    BulkWrite(templ);
+    BulkWrite(truth);
+    gDirectory -> cd("../"); 
+
+    Normalize(truth[1]); 
   }
   
   truth[1] -> Scale(S_L); 
-  BulkDelete(truth); 
   delete start; 
   BulkDelete(temp); 
+  
+  BulkDelete(truth); 
+
+  gDirectory -> cd("../");
   return std::pair<std::vector<MVF>, std::vector<TString>>(out, setting); 
 }
 

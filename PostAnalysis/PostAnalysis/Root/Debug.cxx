@@ -1,12 +1,16 @@
 #include<PostAnalysis/Debug.h>
 #include<PostAnalysis/DistributionGenerator.h>
 
-void Proxy(TString sample, TString Files)
+void Proxy(TString sample, TString Files, TString Mode)
 {
-
-  std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(Files); 
-  MVT M = F[sample]; 
   
+  std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(Files); 
+
+  TFile* File = new TFile(Mode + ".root", "RECREATE"); 
+  File -> mkdir(sample); 
+  File -> cd(sample); 
+
+  MVT M = F[sample]; 
   std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 
   TH1F* ntrk_1_M = M["ntrk_1_M_I"][0]; 
   TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
@@ -14,7 +18,7 @@ void Proxy(TString sample, TString Files)
   TH1F* trk3_start = M["ntrk_3_M_O"][0];
   TH1F* trk4_start = M["ntrk_4_M_O"][0];
   std::vector<TH1F*> starter = {trk1_start, trk2_start, trk3_start, trk4_start};  
-  SubtractData(starter, trk1_start, 0, false); 
+  if (Mode.Contains("Subtract")) {SubtractData(starter, trk1_start, 0, false);}
 
   std::vector<TH1F*> trk1_templates = BuildNtrkMtru(1, trk1_start, "_template", 2)[0]; 
     
@@ -45,7 +49,7 @@ void Proxy(TString sample, TString Files)
   std::pair<std::vector<MVF>, std::vector<TString>> NormalShift; 
   std::pair<std::vector<MVF>, std::vector<TString>> NormalShiftFFT; 
   std::pair<std::vector<MVF>, std::vector<TString>> NormalShiftFFTWidth; 
-
+  
   Normal = StepFit(trk1_start, ntrk_1_T, delta, can, "NormalCase1", sample); 
   FitParameterError(Normal.first, &c_out, {"Normalization"}, Normal.second);  
  
@@ -95,6 +99,11 @@ void Proxy(TString sample, TString Files)
   FitParameterError(NormalShiftFFTWidth.first, &c_out, {"Normalization", "Mean", "Stdev"}, NormalShiftFFTWidth.second);  
   CompareNormalization(Normal.first, NormalShiftFFTWidth.first, NormalShiftFFTWidth.second, &c_normal); 
 
+  gDirectory -> mkdir("Results"); 
+  gDirectory -> cd("Results"); 
+  
+  BulkWrite(Graphs_1Tru); 
+  BulkWrite(Graphs_2Tru); 
 
   PlotGraphs(Graphs_1Tru, "Performance of Prediction vs Truth of 1-Track", can); 
   can -> Print("Package.pdf"); 
@@ -122,50 +131,16 @@ void Proxy(TString sample, TString Files)
     myNormal << S << "\n"; 
   }
   myNormal.close(); 
+
+  File -> Close();
 }
 
 void SmoothingTest()
 {
-  TString sample = "Blayer_1400_1600_GeV"; 
-  TString run = "Normalization"; 
-  std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE("Merged_MC.root"); 
-  MVT M = F[sample]; 
-  TH1F* trk1_start = M["ntrk_1_M_O"][0]; 
-  TH1F* trk1 = (TH1F*)trk1_start -> Clone("Clone"); 
-
-  TH1F* Small = Snipping(trk1, 0.4, 8); 
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-  can -> Print("Smooth.pdf["); 
-  Small -> Draw("HIST");  
-  can -> Print("Smooth.pdf");
-  can -> Clear(); 
-  trk1 -> Draw("HIST"); 
-  can -> Print("Smooth.pdf");
-  
-  TH1F* Ori = (TH1F*)trk1 -> Clone("Ori"); 
-  Ori -> SetLineColor(kBlack); 
-  RevertSnipping(Small, Ori);  
-  can -> Clear(); 
-  trk1 -> Draw("HIST"); 
-  Ori -> Draw("SAMEHIST");  
-  can -> Print("Smooth.pdf");
-
-  can -> Clear(); 
-  can -> Print("Smooth.pdf]");
-  
-  for (int i(0); i < Ori -> GetNbinsX(); i++)
-  {
-    float e = Ori -> GetBinContent(i+1); 
-    float f = trk1 -> GetBinContent(i+1); 
-    std::cout << e-f << std::endl;
-  }
 
 
 
 
-
-  delete can; 
 
 }
 
