@@ -270,9 +270,8 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
       }
     }
     
-    for (int i(0); i < Data.size(); i++)
+    for (int i(0); i < 3; i++)
     {
-
       TH1F* D_t = (TH1F*)Data[i] -> Clone("D"); 
       MVF Map = ConvolutionFFT(D_t, ntrk_mtru_H[i], Params, JE); 
       PlotHists(D_t, ntrk_mtru_H[i], can); 
@@ -285,6 +284,7 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
         WriteOutputMapToFile(Map, JE + "/Experimental", trk_n);  
       }
       
+      Smooth({D_t}); 
       SubtractData(ntrk_mtru_H[i], D_t, i, false); 
       ntrk_mtru_t[0][i] -> Reset(); 
       ntrk_mtru_t[0][i] -> Add(D_t); 

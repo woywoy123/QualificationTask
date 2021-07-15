@@ -16,17 +16,17 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
   float m = 0.4; 
-  float s_e = 0.1; 
+  float s_e = 0.05; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
-  Params_N["Minimizer"] = {100000};
+  Params_N["Minimizer"] = {10000};
 
   // Normalization Shift parameters
   std::map<TString, std::vector<float>> Params_NS; 
   Params_NS["dx_s"] = {-m, -m, -m, -m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0}; 
   Params_NS["dx_e"] = {m, m, m, m}; 
-  Params_NS["seek"] = {1};
+  Params_NS["Seek"] = {1};
   Params_NS["Minimizer"] = {10000};
   
   // Normalization Shift FFT parameters
@@ -121,7 +121,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       if (Proposed[i] -> GetEntries() < 20000){continue;}
       ToBeUsed.push_back(Proposed[i]); 
     }
-    if (ToBeUsed.size() == 0){continue;}
+    if (ToBeUsed.size() < 2){continue;}
     
     X -> mkdir(current); 
     X -> cd(current); 
@@ -228,14 +228,14 @@ void CompareToTruth(TString Mode, TString Energy)
   std::vector<std::vector<TH1F*>> Fits; 
  
   float m = 0.4; 
-  float s_e = 0.1; 
-  std::vector<float> k = {0.1, 8.0}; 
+  float s_e = 0.01; 
+  std::vector<float> k = {0.5, 8.0}; 
   std::vector<std::vector<float>> Ranges = {k, k, k, k}; 
 
 
   // Experimental Fitting method 
   std::map<TString, std::vector<float>> Params_Exp; 
-  //Params_Exp["Range_ntrk_1"] = Ranges[0];
+  Params_Exp["Range_ntrk_1"] = Ranges[0];
   Params_Exp["m_e"] = {m, m, m, m};
   Params_Exp["m_G"] = {0, 0, 0, 0};
   Params_Exp["m_s"] = {-m, -m, -m, -m};
@@ -274,7 +274,6 @@ void CompareToTruth(TString Mode, TString Energy)
   std::vector<TH1F*> ToBeUsed; 
   for ( int i(0); i < Proposed.size(); i++)
   {
-    if ( i == 3){continue;}
     if (Proposed[i] -> GetEntries() < 200){continue;}
     ToBeUsed.push_back(Proposed[i]); 
   }

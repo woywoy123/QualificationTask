@@ -293,34 +293,40 @@ static void CompileFLostTable(MMVT Results, MMMVF Errors, VS* Output, TString FL
   for (MMVi i = Results.begin(); i != Results.end(); i++)
   {
     MMVF Er = Errors[i -> first];
+    std::cout << "----" << FL << " " << i -> first << std::endl;
     for (MMVFi p = Er.begin(); p != Er.end(); p++)
     {
       TString Alg = p -> first;
+      std::cout << Alg << std::endl;
+      VT ntrk1 = (i -> second)[Alg + "_ntrk_1"]; 
+      VT ntrk2 = (i -> second)[Alg + "_ntrk_2"]; 
+      VT ntrk3 = (i -> second)[Alg + "_ntrk_3"]; 
+      VT ntrk4 = (i -> second)[Alg + "_ntrk_4"]; 
 
       VVF Errors_Vec; 
       if (!(Algos.find(Alg) !=  Algos.end())){ Algos.insert( Alg ); }
 
       for (MVFi g = (p -> second).begin(); g != (p -> second).end(); g++)
       {if ((g -> first).Contains("Normalization_Error")){ Errors_Vec.push_back(g -> second); }}
-      VT ntrk1 = (i -> second)[Alg + "_ntrk_1"]; 
-      VT ntrk2 = (i -> second)[Alg + "_ntrk_2"]; 
-      VT ntrk3 = (i -> second)[Alg + "_ntrk_3"]; 
-      VT ntrk4 = (i -> second)[Alg + "_ntrk_4"]; 
-      
+
       if (Alg.Contains("Truth"))
       {
         ntrk1 = (i -> second)["ntrk_1_" + Alg]; 
         ntrk2 = (i -> second)["ntrk_2_" + Alg]; 
         ntrk3 = (i -> second)["ntrk_3_" + Alg]; 
         ntrk4 = (i -> second)["ntrk_4_" + Alg]; 
+
+        TH1F* FL2_H = SumHists(ntrk2, "FL2_H"); 
+        TH1F* FL3_H = SumHists(ntrk3, "FL3_H"); 
+        if (FL.Contains("FL2") && FL2_H -> Integral() < 20000 ){ continue; }
+        if (FL.Contains("FL3") && FL3_H -> Integral() < 20000 ){ continue; }
       } 
-
       VVT ntrks = {ntrk1, ntrk2, ntrk3, ntrk4};  
-
+     
       VF FLost_Vec; 
       if ( FL == "FL2" ){ FLost_Vec = Flost2(ntrks, Errors_Vec); }
       if ( FL == "FL3" ){ FLost_Vec = Flost3(ntrks, Errors_Vec); }
-
+        
 
       Fl[i -> first][Alg] = FLost_Vec; 
     }
@@ -347,9 +353,9 @@ static void CompileFLostTable(MMVT Results, MMMVF Errors, VS* Output, TString FL
   for (MMVFi i = Fl.begin(); i != Fl.end(); i++)
   {
     Spacer(&out, i -> first, margin); 
-    
     VF t = Fl[i -> first]["Truth"];  
-    
+    if (t.size() == 0){out.Clear(); continue;} 
+
     float best = -1; 
     TString best_alg; 
     for (TString a : Algos_V)

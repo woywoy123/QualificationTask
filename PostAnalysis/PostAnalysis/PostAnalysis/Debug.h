@@ -26,7 +26,7 @@ const float delta = 20;
 // Normalization parameters
 const MVF Params_N = { 
   {"Minimizer", {Mini}}, 
-  {"seek", {1}},
+  {"Seek", {1}},
 }; 
 
 // Normalization Shift parameters
@@ -36,7 +36,7 @@ const MVF Params_NS = {
   {"dx_G", {0, 0, 0, 0}}, 
   {"dx_C", {0, 0, 0, 0}},
   {"Minimizer", {Mini}}, 
-  {"seek", {1}},
+  {"Seek", {1}},
 };
 
 // Normalization Shift FFT parameters

@@ -231,22 +231,15 @@ void MultiTrackTruthComparison(TString dir)
   };
   
 
-  int n_energy = 99;
   bool PlotOn = false; 
   MMVT Results = ReadAlgorithmResults(dir); 
   MMMVF Errors = ReadOutputFileToMap(dir); 
   MMVF Stats;
   MVF Scores; 
-  MVF Flost2_Map;
-  MVF Flost3_Map;
   VS Algo_Strings = {"Normal", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Incremental", "Experimental", "Simultaneous"};
   
-  int ip = 0; 
   for (MMVi x = Results.begin(); x != Results.end(); x++)
   {
-    if (ip > n_energy && n_energy != -1){continue;}
-    ip++;  
- 
     std::map<TString, std::vector<float>> Error_Map; 
     TString LE = x -> first; 
 
@@ -258,9 +251,6 @@ void MultiTrackTruthComparison(TString dir)
     VVT All_Truth = {ntrk_1_T, ntrk_2_T, ntrk_3_T, ntrk_4_T}; 
     VVF N_Err = GetNormalizationError(Errors[LE]["Truth"]); 
     
-    Flost2_Map[LE + "_Truth"] = Flost2(All_Truth, N_Err);  
-    Flost3_Map[LE + "_Truth"] = Flost3(All_Truth, N_Err); 
-   
     // Go over the algorithms 
     for (int i(0); i < Algo_Strings.size(); i++)
     {
@@ -271,22 +261,12 @@ void MultiTrackTruthComparison(TString dir)
       VT ntrk_4_Algo = Results[LE][Alg + "_ntrk_4"];
 
       VVT All_Algo = {ntrk_1_Algo, ntrk_2_Algo, ntrk_3_Algo, ntrk_4_Algo}; 
+      
       Plotting(All_Truth, All_Algo, LE + Alg, PlotOn); 
       Stats[LE + "_" + Alg] = Statistics(All_Truth, All_Algo); 
       CreateErrorBoard(&Error_Map, All_Truth, All_Algo); 
       VVF Algo_Error = GetNormalizationError(Errors[LE][Alg]); 
       
-      // Debugging line 
-      if (Alg != "x")
-      {
-        Flost2_Map[LE + "_" + Alg] = Flost2(All_Algo, Algo_Error);  
-        Flost3_Map[LE + "_" + Alg] = Flost3(All_Algo, Algo_Error); 
-      }
-      else
-      {
-        Flost2_Map[LE + "_" + Alg] = Flost2(All_Truth, N_Err);  
-        Flost3_Map[LE + "_" + Alg] = Flost3(All_Truth, N_Err); 
-      }
       GetScores(Error_Map, &Scores); 
     }
   }

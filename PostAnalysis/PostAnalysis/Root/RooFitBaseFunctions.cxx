@@ -10,7 +10,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
 
   // PDF Data variables 
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -65,18 +65,18 @@ return Output;
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
 
-TH1F* Copy_D = (TH1F*)Data -> Clone("Temp");  
-Average(PDF_H);
-
-float x_min = Data -> GetXaxis() -> GetXmin(); 
-float x_max = Data -> GetXaxis() -> GetXmax(); 
-int bins = Data -> GetNbinsX(); 
-
-RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-
-// Do a preliminary normalization fit:
-std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-Params["l_G"] = Pre["Normalization"];
+  TH1F* Copy_D = (TH1F*)Data -> Clone("Temp");  
+  Average(PDF_H);
+  
+  float x_min = Data -> GetXaxis() -> GetXmin(); 
+  float x_max = Data -> GetXaxis() -> GetXmax(); 
+  int bins = Data -> GetNbinsX(); 
+  
+  RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
+  
+  // Do a preliminary normalization fit:
+  std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
+  Params["l_G"] = Pre["Normalization"];
 
   // Normalization variables
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Copy_D -> Integral())); 

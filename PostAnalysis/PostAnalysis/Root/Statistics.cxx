@@ -77,8 +77,8 @@ std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
   float n_1_3 = fi[0];
   float n_2_3 = fi[1];
   float n_3_3 = fi[2];
-  float n_4_3 = fi[3]; 
-  float FLost3 = float(2*n_1_3 + n_2_3) / float(3.*(n_1_3 + n_2_3 + n_3_3)); 
+  float n_4_3 = 0; //fi[3]; 
+  float FLost3 = float(2*n_1_3 + n_2_3) / float(3.*(n_1_3 + n_2_3 + n_3_3 + n_4_3)); 
   
   std::vector<std::vector<float>> Error = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
   for (int i(0); i < Err.size(); i++)
@@ -92,7 +92,7 @@ std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
   float E_1_3 = Error[0][2];  
   float E_2_3 = Error[1][2];  
   float E_3_3 = Error[2][2];  
-  float E_4_3 = 0; //Error[3][2]; 
+  float E_4_3 = Error[3][2]; 
 
   float denom = std::pow((n_1_3 + n_2_3 + n_3_3 + n_4_3), 2); 
   float E_flost3 = (1 / denom) * std::pow(float(1/3)*std::pow((n_2_3 + 2*n_3_3 + n_4_3)*E_1_3, 2) + std::pow( (n_3_3 + n_4_3 - n_1_3) * E_2_3, 2) + std::pow( 2*n_1_3 + n_2_3, 2) * (std::pow(E_3_3, 2) + std::pow(E_4_3, 2)), 0.5); 
