@@ -62,12 +62,6 @@ float ChiSquareError(TH1F* Truth, TH1F* Pred);
 
 
 
-
-
-
-
-
-
 // Iterators that are used throughout the package 
 typedef std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>>::iterator MMMVFi;
 typedef std::map<TString, std::map<TString, std::map<TString, int>>>::iterator MMMSIi; 

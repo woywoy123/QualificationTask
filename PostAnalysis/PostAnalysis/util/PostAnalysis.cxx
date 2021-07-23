@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
   TString Mode = argv[2];  
   TString File = argv[3]; 
 
-  //Figure_Proxy();
+  Figure_Proxy();
 
   //File = "./Merged_MC.root"; 
   //Mode = "Simultaneous"; 

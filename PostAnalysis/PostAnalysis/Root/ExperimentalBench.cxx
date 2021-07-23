@@ -4,7 +4,6 @@
 #include<PostAnalysis/AlgorithmFunctions.h>
 #include<PostAnalysis/Plotting.h>
 
-#include<PostAnalysis/ROOT_Alternative.h>
 #include<PostAnalysis/SimpleExampleFits.h>
 
 void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
@@ -191,14 +190,42 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       Fits = Simultaneous_Fit_NtrkMtru(ToBeUsed, trk1_start, Params_Sim, current); 
       Plotter(Fits, TruthVector, ToBeUsed, current, Mode);
     }
-   
-    if (Mode == "FitToTemplate")
-    { 
+    
+
+    // ====== Simple tester Fits ====== //
+    if (Mode == "FitT_Normal")
+    {
+      gDirectory -> mkdir("Normalization");
+      gDirectory -> cd("Normalization");
       FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_N, "Normalization", current);
-      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "ConvolutionFFT", (current + "+ ShiftWidth")); 
-      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_FFT, "ConvolutionFFT", (current + " + ShiftOnly")); 
-      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_Sim, "IncrementalFFT", current); 
+    }
+    
+    if (Mode == "FitT_ShiftNormal")
+    {
+      gDirectory -> mkdir("ShiftNormal");
+      gDirectory -> cd("ShiftNormal");
       FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_NS, "NormalShift", current); 
+    }
+
+    if (Mode == "FitT_ShiftNormalFFT")
+    {
+      gDirectory -> mkdir("ShiftNormalFFT");
+      gDirectory -> cd("ShiftNormalFFT");
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_FFT, "ShiftNormalFFT", (current + " + ShiftOnly")); 
+    }
+
+    if (Mode == "FitT_ShiftNormalWidthFFT")
+    {
+      gDirectory -> mkdir("ShiftNormalWidthFFT");
+      gDirectory -> cd("ShiftNormalWidthFFT");
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "ConvolutionFFT", (current + "+ ShiftWidth")); 
+    }
+    
+    if (Mode == "FitT_Incremental")
+    {
+      gDirectory -> mkdir("Incremental");
+      gDirectory -> cd("Incremental");
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "IncrementalFFT", current); 
     }
 
     p++;

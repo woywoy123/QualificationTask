@@ -1,4 +1,5 @@
 #include<PostAnalysis/Plotting.h>
+#include<PostAnalysis/IO.h>
 
 void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style)
 {
@@ -96,6 +97,7 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TCanvas*
   truth[0] -> GetXaxis() -> SetRangeUser(0, 10);
   truth[0] -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  len -> SetBorderSize(0); 
   Populate(truth, can, len, kDashed); 
   Populate(prediction, can, len, kSolid); 
 
@@ -121,6 +123,8 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString 
   empty -> GetXaxis() -> SetRangeUser(0, 10);
   empty -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
+  len -> SetBorderSize(0); 
+
   Populate(truth, can, len, kDashed); 
   Populate(prediction, can, len, kSolid); 
 }
@@ -489,16 +493,28 @@ TGraph* GenerateGraph(std::vector<float> Input, TString name)
 TGraph* GenerateGraph(std::map<TString, float> Input, TString name)
 {
   TGraph* Gr = new TGraph(); 
-  int i = 0; 
-  for (MFi x = Input.begin(); x != Input.end(); x++){ Gr -> SetPoint(i, i+1, x -> second); i++; }
-  
-  TH1F* H = new TH1F(name, name, Input.size(), 0, Input.size()); 
+  int i = 0;
+  for (TString x : JetEnergy)
+  {
+    if (Input[x] == 0){continue;}
+    Gr -> SetPoint(i, i+0.5, float(Input[x]));
+    i++;
+  }
+
+
+  TH1F* H = new TH1F(name, name, Input.size()-2, 0, Input.size()-2); 
   Gr -> SetHistogram(H);
   Gr -> SetTitle(name);
   H -> SetTitle(name);
+  H -> GetYaxis() -> SetTitle("Percent Error %"); 
 
   i = 0; 
-  for (MFi x = Input.begin(); x != Input.end(); x++){ H -> GetXaxis() -> SetBinLabel(i+1, (x -> first)); i++; }
+  for (TString x : JetEnergy)
+  {
+    if (Input[x] == 0){continue;}
+    Gr -> GetXaxis() -> SetBinLabel(i+1, x);
+    i++;
+  }
 
   return Gr; 
 }

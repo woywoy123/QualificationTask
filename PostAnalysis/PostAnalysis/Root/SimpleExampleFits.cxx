@@ -53,6 +53,7 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
       std::map<TString, std::vector<float>> Pred_Tru;
       
       if ( Mode == "NormalShift"){    Pred_Tru = NormalizationShift(trk_tru_T, {trk_tru}, Params, "_Test"); }
+      if ( Mode == "ShiftNormalFFT"){ Pred_Tru = ConvolutionFFT(trk_tru_T, {trk_tru}, Params, "_Test"); }
       if ( Mode == "ConvolutionFFT"){ Pred_Tru = ConvolutionFFT(trk_tru_T, {trk_tru}, Params, "_Test"); }
       if ( Mode == "IncrementalFFT"){ Pred_Tru = IncrementalFFT(trk_tru_T, {trk_tru}, Params, "_Test"); }
       if ( Mode == "Normalization"){  Pred_Tru = Normalization(trk_tru_T, {trk_tru}, Params, "_Test"); }
@@ -67,10 +68,11 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     // Perform the full fit on the data
     std::vector<TH1F*> ntru_temp = ntrk_mtru_template[i]; 
     TH1F* ntrk_D = Data[i];
-    for (int b(0); b < ntrk_D -> GetNbinsX(); b++){ ntrk_D -> SetBinError(b+1,0.1); } 
+    //for (int b(0); b < ntrk_D -> GetNbinsX(); b++){ ntrk_D -> SetBinError(b+1,0.1); } 
 
     std::map<TString, std::vector<float>> Pred;   
     if ( Mode == "NormalShift"){ Pred = NormalizationShift(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
+    if ( Mode == "ShiftNormalFFT"){ Pred = ConvolutionFFT(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
     if ( Mode == "ConvolutionFFT"){ Pred = ConvolutionFFT(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
     if ( Mode == "IncrementalFFT"){ Pred = IncrementalFFT(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
     if ( Mode == "Normalization"){ Pred = Normalization(ntrk_D, ntru_temp, Params_TFit, "_Test"); }

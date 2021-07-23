@@ -10,11 +10,6 @@ void Figure_Proxy()
 
 }
 
-
-
-
-
-
 void Figure_N_TrackTemplates()
 {
 
@@ -97,6 +92,7 @@ void Figure_Trk1_Subtraction_Justification()
   for (MMVi x = M.begin(); x != M.end(); x++)
   {
     TString name = x -> first; 
+
     TH1F* trk1_inside = M[name]["ntrk_1_T_I"][0]; 
     TH1F* trk1_outside = M[name]["ntrk_1_M_O"][0]; 
     TH1F* trk2_outside = M[name]["ntrk_2_M_O"][0]; 
@@ -111,10 +107,10 @@ void Figure_Trk1_Subtraction_Justification()
     if (trk1_outside -> GetEntries() < 20000){continue;}
 
     float err = ChiSquareError(trk1_inside, H1); 
-    TString ibl = name; ibl = ibl.ReplaceAll("IBL_", ""); ibl = ibl.ReplaceAll("_", " ");
-    TString bl = name; bl = bl.ReplaceAll("Blayer_", ""); bl = bl.ReplaceAll("_", " ");
-    TString l1 = name; l1 = l1.ReplaceAll("Layer1_", ""); l1 = l1.ReplaceAll("_", " ");
-    TString l2 = name; l2 = l2.ReplaceAll("Layer2_", ""); l2 = l2.ReplaceAll("_", " ");
+    TString ibl = name; ibl = ibl.ReplaceAll("IBL_", "");// ibl = ibl.ReplaceAll("_", " ");
+    TString bl = name; bl = bl.ReplaceAll("Blayer_", "");// bl = bl.ReplaceAll("_", " ");
+    TString l1 = name; l1 = l1.ReplaceAll("layer1_", "");// l1 = l1.ReplaceAll("_", " ");
+    TString l2 = name; l2 = l2.ReplaceAll("layer2_", "");// l2 = l2.ReplaceAll("_", " ");
 
     //PlotHists(trk1_O_M, trk1_O_Truth, name, can);
     //can -> Print("Output.pdf"); 
@@ -138,8 +134,7 @@ void Figure_Trk1_Subtraction_Justification()
     if (name.Contains("layer1_")){ Layer1_Sub[l1] = err_s*100; }
     if (name.Contains("layer2_")){ Layer2_Sub[l2] = err_s*100; }
       
-    std::cout << err_s << " " << err << " " << name << " " << trk1_outside -> GetName() << std::endl;
-    
+    std::cout << name << std::endl;
     delete H1; 
 
   }
