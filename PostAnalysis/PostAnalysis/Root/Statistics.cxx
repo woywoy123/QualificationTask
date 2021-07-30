@@ -37,6 +37,7 @@ std::vector<float> Flost2(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
     if (ntrk[i].size() > 1 && i < fi.size())
     {  
       fi[i] = ntrk[i][1] -> Integral(); 
+      std::cout << "+---> " << fi[i] << std::endl;
     }
   }
 
@@ -70,6 +71,7 @@ std::vector<float> Flost3(std::vector<std::vector<TH1F*>> ntrk, std::vector<std:
     if (ntrk[i].size() > 2 && i < fi.size())
     {  
       fi[i] = ntrk[i][2] -> Integral(); 
+      std::cout << "+---> " << fi[i] << std::endl;
     }
   }
 

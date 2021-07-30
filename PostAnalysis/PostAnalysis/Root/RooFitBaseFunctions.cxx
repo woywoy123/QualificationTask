@@ -10,7 +10,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
 
   // PDF Data variables 
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -50,43 +50,55 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
     Output["Normalization"].push_back(n); 
     Output["Normalization_Error"].push_back(n_e); 
 
-    PDF_H[i] -> Scale(n); 
+    TH1F* Cop = (TH1F*)PDF_H[i] -> Clone("xc"); 
+    PDF_H[i] -> Reset(); 
+    PDF_H[i] -> FillRandom(Cop, n); 
+    delete Cop; 
   }
 
   BulkDelete(l_vars); 
   BulkDelete(pdf_D); 
-BulkDelete(pdf_P); 
-delete x; 
-
-return Output; 
+  BulkDelete(pdf_P); 
+  delete x; 
+  
+  return Output; 
 }
 
 
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
 
-  TH1F* Copy_D = (TH1F*)Data -> Clone("Temp");  
-  Average(PDF_H);
-  
+  TH1F* Copy_D = (TH1F*)Data -> Clone("Temp"); 
+
+  for (int i(0); i < PDF_H.size(); i++)
+  {
+    PDF_H[i] -> Scale(Copy_D -> Integral()); 
+    for (int j(0); j < PDF_H[i] -> GetNbinsX(); j++)
+    {
+      float e = PDF_H[i] -> GetBinContent(j+1); 
+      if (e <= 1){PDF_H[i] -> SetBinContent(j+1, 1); }
+    }
+  }
+
+  if (Params["Auto"].size() != 0){AutoRanges(&Params, PDF_H);}
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
   
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  
   // Do a preliminary normalization fit:
-  std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-  Params["l_G"] = Pre["Normalization"];
+  //std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
+  //Params["l_G"] = Pre["Normalization"];
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Copy_D -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
 
   // Shift variables
-  std::vector<RooRealVar*> d_vars = ProtectionRealVariable("dx", PDF_H, Params, -0.1, 0.1);   
+  std::vector<RooRealVar*> d_vars = ProtectionRealVariable("dx", PDF_H, Params, -0.5, 0.5);   
 
   RooArgList N; 
-  RooArgList All;
   RooArgList PDFs; 
+  std::vector<RooRealVar*> All;
   std::vector<RooDataHist*> pdf_D; 
   std::vector<RooHistPdf*> pdf_P; 
   std::vector<RooFormulaVar*> pdf_F; 
@@ -106,13 +118,14 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
 
     PDFs.add(*PH); 
     N.add(*l_vars[i]);
-    All.add(*l_vars[i]); 
-    All.add(*d_vars[i]); 
+    All.push_back(l_vars[i]); 
+    All.push_back(d_vars[i]); 
   }
-
-  // Fitting the PDFs to the Data 
-  RooDataHist D("data", "data", *x, Copy_D); 
   RooAddPdf model("model", "model", PDFs, N); 
+  
+  // Fitting the PDFs to the Data 
+  RooDataHist D("data", Data -> GetTitle(), *x, Copy_D, 2); 
+  model.fixAddCoefNormalization(N);
   
   RooFitResult* re = MinimizationCustom(model, &D, Params, x);
   std::map<TString, std::vector<float>> Output;  
@@ -138,7 +151,11 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
    
     CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 
-    PDF_H[i] -> Scale(n);
+
+    TH1F* Cop = (TH1F*)PDF_H[i] -> Clone("xc"); 
+    PDF_H[i] -> Reset(); 
+    PDF_H[i] -> FillRandom(Cop, n); 
+    delete Cop; 
   }
 
   delete Copy_D; 
@@ -186,9 +203,18 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
     }
   }; 
  
-  Average(PDF_H); 
   TH1F* Data = (TH1F*)Data_Org -> Clone("temp"); 
-  
+  if (Params["Auto"].size() != 0){AutoRanges(&Params, PDF_H);}
+  //for (int i(0); i < PDF_H.size(); i++)
+  //{
+  //  PDF_H[i] -> Scale(Data -> Integral()); 
+  //  for (int j(0); j < PDF_H[i] -> GetNbinsX(); j++)
+  //  {
+  //    float e = PDF_H[i] -> GetBinContent(j+1); 
+  //    if (e <= 0){PDF_H[i] -> SetBinContent(j+1, 1); }
+  //  }
+  //}
+
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
@@ -199,19 +225,19 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
     x -> setBins(Params["fft_cache"][0], "fft"); 
     x -> setBins(Params["fft_cache"][0], "cache");  
   }
-
+  
   // Do a preliminary normalization fit:
-  std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-  Params["l_G"] = Pre["Normalization"]; 
+  //std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
+  //Params["l_G"] = Pre["Normalization"]; 
   
   // Base Variables 
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
-  std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.001, 0.002); 
+  std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.005, 0.0051); 
 
   // Create the resolution model: Gaussian 
   std::vector<TString> g_N = NameGenerator(PDF_H, "_Gx");
-  std::vector<RooGaussModel*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
+  std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
 
   // Convert the PDFs to RooPDFs
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -237,6 +263,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Data); 
   RooAddPdf model("model", "model", PxG, L); 
+  //model.fixAddCoefNormalization(L);
   RooFitResult* re = MinimizationCustom(model, &D, Params, x);  
 
   std::map<TString, std::vector<float>> Output;
@@ -244,7 +271,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
 
   TString plot_t = Name; plot_t += "PULL.pdf"; 
   RooFitPullPlot(model, x, pdf_P, &D, plot_t); 
-  IntoOutput(&Output, l_vars, m_vars, s_vars, PDF_H, PxG_vars, x, Data); 
+  IntoOutput(&Output, l_vars, m_vars, s_vars, PDF_H, PxG_vars, x, Data_Org); 
   
   BulkDelete(l_vars); 
   BulkDelete(m_vars); 
@@ -348,7 +375,11 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   
       CopyPDFToTH1F(PxG[i], x, PDF_H[i], Data); 
       Normalize(PDF_H[i]); 
-      PDF_H[i] -> Scale(n); 
+      
+      TH1F* Cop = (TH1F*)PDF_H[i] -> Clone("xc"); 
+      PDF_H[i] -> Reset(); 
+      PDF_H[i] -> FillRandom(Cop, n); 
+      delete Cop; 
     }
   }; 
   
@@ -369,7 +400,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   
   // Create the resolution model: Gaussian 
   std::vector<TString> g_N = NameGenerator(PDF_H, "_Gx");
-  std::vector<RooGaussModel*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
+  std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_vars, s_vars); 
   
   // Convert the PDFs to RooPDFs
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -480,7 +511,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
 
   // Create the resolution model: Gaussian 
   std::vector<TString> g_N = NameGenerator(PDF_H, "_Gx");
-  std::vector<RooGaussModel*> g_vars = RooGaussianVariable(g_N, x, m_var, s_var); 
+  std::vector<RooGaussian*> g_vars = RooGaussianVariable(g_N, x, m_var, s_var); 
   
   // Create the PDFs for the model 
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -548,7 +579,11 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
       CopyPDFToTH1F(PxG_vars[j], x, PDF_H_V[i][j], Data[0]); 
       float e = Lumi[i][j] -> getVal(); 
       Normalize(PDF_H_V[i][j]); 
-      PDF_H_V[i][j] -> Scale(e); 
+
+      TH1F* Cop = (TH1F*)PDF_H_V[i][j] -> Clone("xc"); 
+      PDF_H_V[i][j] -> Reset(); 
+      PDF_H_V[i][j] -> FillRandom(Cop, e); 
+      delete Cop; 
     } 
   }
   
@@ -608,13 +643,6 @@ std::map<TString, std::vector<float>> FractionFitter(TH1F* Data, std::vector<TH1
 
   std::cout << "status: " << s << std::endl;
   
-
-
-
-
-
-
-
 
 
   return Output;

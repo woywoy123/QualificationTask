@@ -46,11 +46,12 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     for (int j(0); j < ntru_T.size(); j++)
     {
       
-      TH1F* trk_tru = ntru_P[j]; 
+      TH1F* trk_tru = ntru_P[j];  
       TH1F* trk_tru_T = ntru_T[j]; 
-      
+
       // Fit to the truth and get the parameters
       std::map<TString, std::vector<float>> Pred_Tru;
+      Params["AUTO"] = {1};
       
       if ( Mode == "NormalShift"){    Pred_Tru = NormalizationShift(trk_tru_T, {trk_tru}, Params, "_Test"); }
       if ( Mode == "ShiftNormalFFT"){ Pred_Tru = ConvolutionFFT(trk_tru_T, {trk_tru}, Params, "_Test"); }
@@ -63,12 +64,18 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
       if (Pred_Tru["Normalization"].size() != 0){ Params_TFit["l_G"].push_back(Pred_Tru["Normalization"][0]); }
       if (Pred_Tru["Mean"].size() != 0)         { Params_TFit["m_G"].push_back(Pred_Tru["Mean"][0]); }
       if (Pred_Tru["Stdev"].size() != 0)        { Params_TFit["s_G"].push_back(Pred_Tru["Stdev"][0]); }
+
+
+      PlotHists({trk_tru}, {trk_tru_T}, can); 
+      can -> Print(Mode + ".pdf");
+      can -> Print("Debug.pdf");
+
+      std::cout << "------> " << Pred_Tru["fit_status"][0] << std::endl;
     }
    
     // Perform the full fit on the data
     std::vector<TH1F*> ntru_temp = ntrk_mtru_template[i]; 
     TH1F* ntrk_D = Data[i];
-    //for (int b(0); b < ntrk_D -> GetNbinsX(); b++){ ntrk_D -> SetBinError(b+1,0.1); } 
 
     std::map<TString, std::vector<float>> Pred;   
     if ( Mode == "NormalShift"){ Pred = NormalizationShift(ntrk_D, ntru_temp, Params_TFit, "_Test"); }

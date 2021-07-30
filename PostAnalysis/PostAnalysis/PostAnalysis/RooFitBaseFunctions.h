@@ -7,7 +7,7 @@
 #include<RooAddPdf.h>
 #include<RooFormulaVar.h>
 #include<TF1.h>
-#include<RooGaussModel.h>
+#include<RooGaussian.h>
 #include<RooLandau.h>
 #include<RooFitResult.h>
 #include<RooFFTConvPdf.h>
@@ -103,18 +103,18 @@ static std::vector<RooHistPdf*> RooPdfVariable(std::vector<TString> Name, RooRea
   return Out; 
 }
 
-static std::vector<RooGaussModel*> RooGaussianVariable(std::vector<TString> Name, RooRealVar* domain, std::vector<RooRealVar*> m, std::vector<RooRealVar*> s)
+static std::vector<RooGaussian*> RooGaussianVariable(std::vector<TString> Name, RooRealVar* domain, std::vector<RooRealVar*> m, std::vector<RooRealVar*> s)
 {
-  std::vector<RooGaussModel*> Out; 
+  std::vector<RooGaussian*> Out; 
   for (int i(0); i < Name.size(); i++)
   {
-    RooGaussModel* H = new RooGaussModel(Name[i], Name[i], *domain, *m[i], *s[i]); 
+    RooGaussian* H = new RooGaussian(Name[i], Name[i], *domain, *m[i], *s[i]); 
     Out.push_back(H); 
   }
   return Out; 
 }
 
-static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, RooRealVar* domain, std::vector<RooGaussModel*> g, std::vector<RooHistPdf*> p)
+static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, RooRealVar* domain, std::vector<RooGaussian*> g, std::vector<RooHistPdf*> p)
 {
   std::vector<RooFFTConvPdf*> Out; 
   for (int i(0); i < Name.size(); i++)
@@ -124,6 +124,20 @@ static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, Roo
     Out.push_back(H); 
   }
   return Out; 
+}
+
+static void AutoRanges(std::map<TString, std::vector<float>>* Params, std::vector<TH1F*> PDF)
+{
+  for (int i(0); i < PDF.size(); i++)
+  {
+    int bin = PDF[i] -> GetMaximumBin();
+    float e = PDF[i] -> GetXaxis() -> GetBinCenter(bin+1); 
+    float l_s = e - 1.0; 
+    float l_e = e + 1; 
+    TString name = "Range_ntrk_"; name += (i+1); 
+    (*Params)[name] = {l_s, l_e};
+  }
+
 }
 
 static void CopyPDFToTH1F(RooHistPdf* pdf, RooRealVar* domain, TH1F* Out, TH1F* Data)
@@ -180,13 +194,12 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     RooAbsReal* nll = model.createNLL(*data, Range(Ranges), NumCPU(n_cpu, 1), Extended(true)); 
 
     RooMinimizer* pg = new RooMinimizer(*nll);
-    int print = -1; 
+    int print = 1; 
     if (Params["Print"].size() != 0){print = Params["Print"][0]; }
     pg -> setPrintLevel(print); 
     pg -> setPrintEvalErrors(print);
     pg -> setMaxFunctionCalls(Params["Minimizer"][0]); 
     pg -> setMaxIterations(Params["Minimizer"][0]); 
-
     if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
     if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
     //pg -> setProfile(true);
@@ -194,21 +207,18 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     pg -> setEvalErrorWall(true); 
     pg -> optimizeConst(true); 
     
-    //pg -> migrad();
-    //pg -> simplex();
-    //pg -> hesse();
     if (Params["Seek"].size() != 0){pg -> seek();}
-    pg -> fit("mhr"); 
-    for (int i(0); i < 20; i++)
+    for (int i(0); i < 5; i++)
     {
+    
+      //re = pg -> fit("mhr");
+      pg -> migrad();
       //pg -> improve();
+      //pg -> migrad();
       //pg -> minos(); 
-      pg -> migrad(); 
       re = pg -> save();
-      //pg -> minos();
       int res = re -> status(); 
       if (res == 0){break;}
-      //pg -> minos();
     }
     pg -> cleanup(); 
    
@@ -223,7 +233,7 @@ static void BulkDelete(std::vector<RooDataHist*> var){ for (int i(0); i < var.si
 static void BulkDelete(std::vector<RooRealVar*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 static void BulkDelete(std::vector<RooHistPdf*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 static void BulkDelete(std::vector<RooFormulaVar*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
-static void BulkDelete(std::vector<RooGaussModel*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
+static void BulkDelete(std::vector<RooGaussian*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 static void BulkDelete(std::vector<RooFFTConvPdf*> var){ for (int i(0); i < var.size(); i++){ delete var[i]; }}
 
 static std::vector<float> MultiplyByConstant(std::vector<float> Vec, float c)

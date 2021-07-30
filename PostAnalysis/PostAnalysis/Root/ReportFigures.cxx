@@ -2,6 +2,7 @@
 #include<PostAnalysis/BaseFunctions.h>
 #include<PostAnalysis/AlgorithmFunctions.h>
 #include<PostAnalysis/IO.h>
+#include<TGraphSmooth.h>
 
 void Figure_Proxy()
 {
@@ -54,7 +55,7 @@ void Figure_Trk1_Subtraction_Justification()
   {
     TH1F* T = tmp_T[i]; 
     TH1F* M = tmp[i]; 
-    if (M -> GetEntries() < 50){continue;}
+    if (M -> GetEntries() < 200){continue;}
     Blayer_trk1_O_Truth.push_back(T); 
     Blayer_trk1_O_M.push_back(M); 
     
@@ -65,13 +66,13 @@ void Figure_Trk1_Subtraction_Justification()
     T -> SetTitle(n_M); 
   }
 
-  TCanvas* can = new TCanvas(); 
+  TCanvas* can = new TCanvas();  
   can -> SetLogy(); 
   Blayer_trk1_O_Truth[0] -> GetYaxis() -> SetTitle("Entries");
   PlotHists(Blayer_trk1_O_M, Blayer_trk1_O_Truth, "1-Track Truth Composition Superimposed with n-Track Cluster Measurements at \\DeltaR > 0.1", can);
   can -> Print("ExampleContamination.pdf"); 
   can -> Clear();
-  //can -> Print("Output.pdf["); 
+  can -> Print("Output.pdf["); 
   
   std::map<TString, float> IBL_noSub; 
   std::map<TString, float> IBL_Sub;
@@ -85,9 +86,32 @@ void Figure_Trk1_Subtraction_Justification()
   std::map<TString, float> Layer2_noSub; 
   std::map<TString, float> Layer2_Sub;
 
+
+  auto Smooth =[&] (std::vector<TH1F*> Hists)
+  {
+    for (int i(0); i < Hists.size(); i++)
+    {
+      TGraph* gr = new TGraph(Hists[i]); 
+      TGraphSmooth* g = new TGraphSmooth("Smoother"); 
+      TGraph* h = g -> SmoothKern(gr, "normal", 0.05); 
+
+      int n = h -> GetN(); 
+      for (int p(0); p < n; p++)
+      {
+        double x, y; 
+        h -> GetPoint(p, x, y); 
+        Hists[i] -> SetBinContent(p+1, y);
+      }
+      Average(Hists[i]);
+
+      delete gr; 
+      delete h;
+    }
+  }; 
+
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
-  Params_N["Minimizer"] = {100000};
+  //Params_N["Minimizer"] = {100000};
 
   for (MMVi x = M.begin(); x != M.end(); x++)
   {
@@ -104,7 +128,7 @@ void Figure_Trk1_Subtraction_Justification()
 
     std::vector<TH1F*> trk1_O_Truth = M[name]["ntrk_1_T_O"]; 
     std::vector<TH1F*> trk1_O_M = {trk1_outside, trk2_outside, trk3_outside, trk4_outside};
-    if (trk1_outside -> GetEntries() < 20000){continue;}
+    if (trk1_outside -> GetEntries() < 1000){continue;}
 
     float err = ChiSquareError(trk1_inside, H1); 
     TString ibl = name; ibl = ibl.ReplaceAll("IBL_", "");// ibl = ibl.ReplaceAll("_", " ");
@@ -112,21 +136,20 @@ void Figure_Trk1_Subtraction_Justification()
     TString l1 = name; l1 = l1.ReplaceAll("layer1_", "");// l1 = l1.ReplaceAll("_", " ");
     TString l2 = name; l2 = l2.ReplaceAll("layer2_", "");// l2 = l2.ReplaceAll("_", " ");
 
-    //PlotHists(trk1_O_M, trk1_O_Truth, name, can);
-    //can -> Print("Output.pdf"); 
-    //can -> Clear(); 
 
     if (name.Contains("IBL_")){  IBL_noSub[ibl] = err*100; }
     if (name.Contains("Blayer_")){ Blayer_noSub[bl] = err*100; }
     if (name.Contains("layer1_")){ Layer1_noSub[l1] = err*100; }
     if (name.Contains("layer2_")){ Layer2_noSub[l2] = err*100; }
 
+    Normalization(trk1_outside, trk1_O_M, Params_N); 
     SubtractData(trk1_O_M, trk1_outside, 0, false); 
-    //trk1_outside -> Add(trk2_outside, -1); 
-    //trk1_outside -> Add(trk3_outside, -1); 
-    //trk1_outside -> Add(trk4_outside, -1); 
-    Normalize(trk1_outside); 
+
+    PlotHists(trk1_O_M, trk1_O_Truth, name, can);
+    can -> Print("Output.pdf"); 
+    can -> Clear(); 
     
+    Normalize(trk1_outside); 
     float err_s = ChiSquareError(trk1_inside, trk1_outside); 
     
     if (name.Contains("IBL_")){ IBL_Sub[ibl] = err_s*100; }
@@ -139,9 +162,8 @@ void Figure_Trk1_Subtraction_Justification()
 
   }
   
-  TMultiGraph* Gr = new TMultiGraph(); 
   
-  //can -> Print("Output.pdf]"); 
+  can -> Print("Output.pdf]"); 
   can -> Clear(); 
   can -> SetLogy(false);
   

@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
   TString Mode = argv[2];  
   TString File = argv[3]; 
 
-  Figure_Proxy();
+  //Figure_Proxy();
 
   //File = "./Merged_MC.root"; 
   //Mode = "Simultaneous"; 
@@ -24,10 +24,10 @@ int main(int argc, char* argv[])
   //std::cout << "+++" << JE << " " << Mode << std::endl;
   //ReadOutputFileToMap("Fit_Tracks.root"); 
     
+  //CompareToTruth(Mode, JE);  
   if (Mode.Contains("Debug")){ Proxy(JE, File, Mode); } 
   else { TestFits_AllTruth_ToTrack(JE, Mode, File); }
   
-  //CompareToTruth(Mode, JE);  
   
   //SmoothingTest();
   //MultiTrackTruthComparison("MultiTrackFit.root"); 

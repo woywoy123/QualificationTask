@@ -14,8 +14,8 @@ function CreateBatches_Local
   echo "source x86_64-centos7-gcc62-opt/setup.sh" >> Spawn.sh
   echo "cd $""cur" >> Spawn.sh
   echo "PostAnalysis $1 $2 $3/Merged_MC.root" >> Spawn.sh
-  echo "mkdir /eos/home-t/tnommens/Analysis/" >> Spawn.sh
-  echo "cp ./* /eos/home-t/tnommens/Analysis/" >> Spawn.sh
+  #echo "mkdir /eos/home-t/tnommens/Analysis/" >> Spawn.sh
+  #echo "cp ./* /eos/home-t/tnommens/Analysis/" >> Spawn.sh
 }
 
 function CondorBuild
@@ -25,7 +25,7 @@ function CondorBuild
   echo "error =  ./results.error.$""(ClusterID)"  >> example.submit
   echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
   echo "Request_Cpus = 1"  >> example.submit
-  echo "Request_Memory = 100MB" >> example.submit
+  echo "Request_Memory = 200MB" >> example.submit
   echo "+RequestRunTime= 172800"  >> example.submit
   echo "queue 1"  >> example.submit
 }
@@ -33,7 +33,7 @@ function CondorBuild
 
 #Constants that we need to generate the names 
 Condor_active=true
-compiler="PostAnalysisCompiler"
+compiler="PostAnalysisCompiler_Subtract"
 Layer=("IBL" "Blayer" "layer1" "layer2") 
 JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
 
