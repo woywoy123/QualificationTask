@@ -114,7 +114,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     TH1F* trk3_start = M["ntrk_3_M_O"][0];
     TH1F* trk4_start = M["ntrk_4_M_O"][0];
     std::vector<TH1F*> starter = {trk1_start, trk2_start, trk3_start, trk4_start};  
-    SubtractData(starter, trk1_start, 0, false); 
+    //SubtractData(starter, trk1_start, 0, false); 
 
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)

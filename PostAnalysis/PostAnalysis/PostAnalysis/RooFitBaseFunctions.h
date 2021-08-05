@@ -23,7 +23,7 @@
 
 using namespace RooFit;
 const std::vector<TString> FitRanges_Names = {"Range_ntrk_1", "Range_ntrk_2", "Range_ntrk_3", "Range_ntrk_4"}; 
-const int n_cpu = 1; 
+const int n_cpu = 8; 
 
 
 // ==================  Basic RooFit Variables
