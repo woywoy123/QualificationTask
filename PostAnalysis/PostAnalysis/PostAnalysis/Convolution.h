@@ -13,14 +13,13 @@
 // Convolution 
 void Convolution(TH1F* H1, TH1F* H2, TH1F* Out); 
 std::vector<float> ConvolutionSum(std::vector<float> V1, std::vector<float> V2, int ZeroPointBin); 
-std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, TString extension); 
+std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, std::vector<TString> base, TString extension); 
 
 // Deconvolution 
 std::vector<float> LucyRichardson(std::vector<float> G, std::vector<float> H, std::vector<float> F, float y); 
-std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter); 
-void DeconvolutionExperimental(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter); 
-
+void Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter); 
 void MultiThreadingDeconvolution(std::vector<TH1F*> Data, std::vector<TH1F*> PSF, std::vector<TH1F*> Result, int Iter); 
-void MultiThreadingDeconvolutionExperimental(std::vector<TH1F*> Data, std::vector<TH1F*> PSF, std::vector<TH1F*> Result, int Iter); 
+
+void Smooth1Trk(TH1F* trk1_start, int iter); 
 
 #endif

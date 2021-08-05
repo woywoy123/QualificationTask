@@ -19,22 +19,24 @@ std::vector<float> ConvolutionSum(std::vector<float> V1, std::vector<float> V2, 
   return result; 
 }
 
-std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, TString extension)
+std::vector<TH1F*> ConvolveNTimes(TH1F* Start, int n, std::vector<TString> base, TString extension)
 {
   std::vector<TString> Names;  
   for (int i(0); i < n; i++)
   {
-    TString name = "TRK_"; name +=(i+1); name +=("_"); name += (extension);  
-    Names.push_back(name);  
+    base[i] += (extension);  
   }
-  std::vector<TH1F*> Hist_V = CloneTH1F(Start, Names);
-  Hist_V[0] -> Add(Start, 1);  
-  
+  std::vector<TH1F*> Hist_V = CloneTH1F(Start, base);
+  for (int i(0); i < Start -> GetNbinsX(); i++)
+  {
+    Hist_V[0] -> SetBinContent(i+1, Start -> GetBinContent(i+1)); 
+  }
+
   for (int i(0); i < n-1; i++)
   {
     Convolution(Hist_V[i], Start, Hist_V[i+1]); 
   }
-
+  
   Normalize(Hist_V); 
   return Hist_V; 
 }
@@ -59,6 +61,7 @@ void Convolution(TH1F* Hist1, TH1F* Hist2, TH1F* conv)
     conv -> SetBinContent(i+1, Conv.at(Padding+i)); 
   }
 }
+
 // ============================ Deconvolution Stuff ======================== //
 std::vector<float> LucyRichardson(std::vector<float> data, std::vector<float> psf, std::vector<float> current, float damp)
 {
@@ -87,93 +90,11 @@ std::vector<float> LucyRichardson(std::vector<float> data, std::vector<float> ps
   return next;
 }
 
-std::vector<float> Deconvolution(TH1F* PDF, TH1F* PSF, TH1F* Output, int Max_Iter)
-{
-  int pdf_bins = PDF -> GetNbinsX(); 
-  int psf_bins = PSF -> GetNbinsX(); 
-  int out_bins = Output -> GetNbinsX();
-
-  // Domain of PDF and PSF 
-  float pdf_min = PDF -> GetXaxis() -> GetXmin(); 
-  float pdf_max = PDF -> GetXaxis() -> GetXmax(); 
-  float psf_min = PSF -> GetXaxis() -> GetXmin();  
-  float psf_max = PSF -> GetXaxis() -> GetXmax(); 
-  float out_min = Output -> GetXaxis() -> GetXmin();  
-  float out_max = Output -> GetXaxis() -> GetXmax(); 
-  
-  // Get out of the function - Cant deconvolve 
-  std::vector<float> Converge;
-
-  if ((pdf_bins != psf_bins || pdf_min != psf_min || pdf_max != psf_max) || (out_bins != psf_bins || out_min != psf_min || out_max != psf_max))
-  {
-    Converge.push_back(0);
-    std::cout << "###################################" << std::endl;
-    std::cout << "Check the centering of the bins...." << std::endl;
-    std::cout << pdf_bins << " psf ->: " << psf_bins << " \n " << 
-    pdf_min << " psf ->: " << psf_min << " \n " << 
-    pdf_max << " :: psf ->: " << psf_max << std::endl;
-    std::cout << "###################################" << std::endl;
-    return Converge;
-  }
-  int bins = pdf_bins; 
-
-  // Find the zero bin of the x-axis 
-  int bin_0 = PDF -> GetXaxis() -> FindBin(0.) -1; 
-  
-  // Convert histograms to vectors
-  std::vector<float> Temp1 = ToVector(PSF); 
-  std::vector<float> Temp2 = ToVector(PDF);
-  std::vector<float> PSF_V;  
-  std::vector<float> PDF_V; 
-  
-  for ( int i(0); i < bins*2; i++)
-  { 
-    if (i < bins)
-    { 
-      PSF_V.push_back(Temp1.at(i)); 
-    }
-    else { PSF_V.push_back(0.); }
-
-    if (i >= bins )
-    { 
-      PDF_V.push_back(Temp2.at(i-bins)); 
-    }
-    else { PDF_V.push_back(0.); }
-  } 
-
-  std::vector<float> Deconv_V(bins*2, 0.5);
-  float d_old = 100; 
-  float d = 100; 
-
-  for (int i(0); i < Max_Iter; i++)
-  {
-    d_old = d; 
-    std::vector<float> Deconv_Vold = Deconv_V; 
-    Deconv_V = LucyRichardson(PDF_V, PSF_V, Deconv_V, 0.95); 
-
-    d = Pythagoras(Deconv_Vold, Deconv_V); 
-    Converge.push_back(d);  
-    //if (d_old - d == 1e-8){break;} 
-  }
-  
-  // Find the bin where the X axis is 0 
-  int out_0 = Output -> GetXaxis() -> FindBin(0.)-1;  
-  
-  // Populate the output  
-  for (int i(0); i < Deconv_V.size(); i++)
-  {
-    Output -> SetBinContent(-bins + out_0 + i+1, Deconv_V[i]); 
-  }
- 
-  return Converge;
-}
-
-void DeconvolutionExperimental(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
+void Deconvolution(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
 {
   auto ToVector =[](TH1F* H, int bins)
   {
     int bins_H = H -> GetNbinsX(); 
-    int Padding = (bins - bins_H); 
 
     std::vector<float> Output; 
     for (int i(0); i < bins_H; i++)
@@ -181,30 +102,23 @@ void DeconvolutionExperimental(TH1F* Signal, TH1F* PSF, TH1F* Out, int iter)
       float e = H -> GetBinContent(i+1);
       Output.push_back(e); 
     }
-    for (int i(0); i < Padding; i++)
-    {
-      float e = H -> GetBinContent(bins_H - i - 1); 
-      Output.push_back(e); 
-    }
     return Output; 
   };
 
-  float r = 1.1; 
   int bins = Signal -> GetNbinsX(); 
-  int bin_0 = Signal -> GetXaxis() -> FindBin(0.) -1; 
-  std::vector<float> Signal_V = ToVector(Signal, bins*r); 
-  std::vector<float> PSF_V = ToVector(PSF, bins*r); 
-  std::vector<float> Deconv_V = std::vector<float>(bins*r, 0.5); 
+  std::vector<float> Signal_V = ToVector(Signal, bins); 
+  std::vector<float> PSF_V = ToVector(PSF, bins); 
+  std::vector<float> Deconv_V = std::vector<float>(bins, 1.); 
 
   for (int i(0); i < iter; i++)
   {
-    Deconv_V = LucyRichardson(Signal_V, PSF_V, Deconv_V, 0.75); 
+    Deconv_V = LucyRichardson(Signal_V, PSF_V, Deconv_V, 0.95); 
   }
 
-  int Padding = ((r - 1)*bins)/2; 
+  int bin_0 = Signal -> GetXaxis() -> FindBin(0.) -1; 
   for (int i(0); i < bins; i++)
   {
-    Out -> SetBinContent(i+1 + bin_0, Deconv_V[i]);
+    Out -> SetBinContent(i+bin_0+1, Deconv_V[i]);
   }
 }
 
@@ -217,12 +131,38 @@ void MultiThreadingDeconvolution(std::vector<TH1F*> Data, std::vector<TH1F*> PSF
 
 }
 
-void MultiThreadingDeconvolutionExperimental(std::vector<TH1F*> Data, std::vector<TH1F*> PSF, std::vector<TH1F*> Result, int Iter)
+void Smooth1Trk(TH1F* trk1_start, int iter)
 {
-  std::vector<std::thread> th; 
-  for (int i(0); i < Result.size(); i++){th.push_back(std::thread(DeconvolutionExperimental, Data[i], PSF[i], Result[i], Iter));}
-  for (std::thread &t : th){t.join();}
+  float L = trk1_start -> Integral(); 
+
+  int bins = trk1_start -> GetNbinsX(); 
+  float min = trk1_start -> GetXaxis() -> GetXmin(); 
+  float max = trk1_start -> GetXaxis() -> GetXmax(); 
+  float w = (max - min) / float(bins); 
+  float new_min = min - w*bins; 
+  float new_max = max + w*bins; 
+
+  TString name = "Dec_"; 
+  TH1F* G = new TH1F(name, name, bins+2*bins, new_min, new_max); 
+  
+  TString name_L = "L_";
+  TH1F* X = new TH1F(name_L, name_L, bins+2*bins, new_min, new_max); 
+
+  for (int j(0); j < bins; j++)
+  {
+    X -> SetBinContent(j+1+bins, trk1_start -> GetBinContent(j+1)); 
+  }
+
+  Convolution(X, X, G); 
+  Deconvolution(G, X, G, iter);
+
+  for (int j(0); j < bins; j++)
+  {
+    float e = G -> GetBinContent(j+1+bins); 
+    trk1_start -> SetBinContent(j+1, e);    
+  }
+  Normalize(trk1_start); 
+  trk1_start -> Scale(L); 
+  
+  delete G, X; 
 }
-
-
-

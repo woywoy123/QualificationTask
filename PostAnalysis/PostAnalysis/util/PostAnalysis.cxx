@@ -1,70 +1,35 @@
-#include<PostAnalysis/BaseFunctionTest.h>
-#include<PostAnalysis/Experimental.h>
-#include<PostAnalysis/PresentationFigures.h>
-#include<PostAnalysis/AlgorithmTest.h>
-#include<TFile.h>
+#include<PostAnalysis/BaseFunctions.h>
+#include<PostAnalysis/ExperimentalBench.h>
+#include<PostAnalysis/Evaluate.h>
+#include<PostAnalysis/Debug.h>
+#include<PostAnalysis/ReportFigures.h>
 
-int main(int argc, char** argv)
+int main(int argc, char* argv[])
 {
-  bool rewrite = true; 
-  int option = -3;
+  TString JE = argv[1]; 
+  TString Mode = argv[2];  
+  TString File = argv[3]; 
 
-  TFile* F; 
-  if (rewrite == true)
-  {
-    F = new TFile("output.root", "RECREATE");
-    option = -2; 
-  }
-  else 
-  {
-    F = new TFile("output.root", "READ");
-  }
+  //Figure_Proxy();
 
-  // Run Tests 
-  if (option == -2)
-  {
-    //TestLandau(F); 
-    //TestGaussian(F); 
-    //TestGaussianXGaussian(F);
-    //TestLandauXLandau(F); 
-    //TestLandauXGaussian(F); 
-    //TestDeconvGausXGaus(F); 
-    //TestDeconvLandauXLandau(F); 
-    //TestDeconvLandauXGaussian(F); 
-    //TestGaussianDeconvolutionFit(F); 
-    //TestLandauXGausFit(F); 
-    //TestNLandauXNGausFit(F);
-    //TestDeconvolutionFit(F);  
-    //TestComparisonBinCenteringLandauXLandau(F); 
-    //TestOscillationLucyRichardson(F); 
-    //TestReadFile(F); 
-    //TestReadFileTrackEnergy(F); 
-    //TestMonteCarloMatchConvolution(F); 
-    //TestMonteCarloFit(F); 
-
-    TestAlgorithmMonteCarlo(); 
-    //DataAlgorithm(); 
-  }
-
-  // Run Experimental
-  if (option == -3 && rewrite == false)
-  {
-    AlgorithmMonteCarlo();
-  }
+  //File = "./Merged_MC.root"; 
+  //Mode = "Simultaneous"; 
+  //JE = "x";
+  //std::cout << File << std::endl;
+  //IOTest(); 
+  //RooFitBaseFunctionTest();  
+  //TestFits_NTruth_NTrack();  
+  //TestRead(); 
+  //CompareToTruth("ntrk_ntru.root"); 
+  //std::cout << "+++" << JE << " " << Mode << std::endl;
+  //ReadOutputFileToMap("Fit_Tracks.root"); 
+    
+  //CompareToTruth(Mode, JE);  
+  if (Mode.Contains("Debug")){ Proxy(JE, File, Mode); } 
+  else { TestFits_AllTruth_ToTrack(JE, Mode, File); }
   
-  if (option == -4)
-  {
-    // Compile the figures  
-    FigureCompiler(F);   
-  } 
-  F -> Close();   
- 
-  if (option == -2)
-  {
-    //ProcessDataResults(); 
-    ProcessMonteCarloResults(); 
-
-  }
-  std::cout << "fin" << std::endl;
-  return 0; 
+  
+  //SmoothingTest();
+  //MultiTrackTruthComparison("MultiTrackFit.root"); 
+  std::cout << "fin" << std::endl; 
 }

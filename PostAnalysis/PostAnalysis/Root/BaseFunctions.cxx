@@ -1,4 +1,5 @@
 #include<PostAnalysis/BaseFunctions.h>
+#include<TMath.h>
 
 
 // Creates Histograms from vector names - Used for bulk generation 
@@ -123,82 +124,156 @@ std::vector<TString> NameGenerator(int number, TString shorty)
   return Output; 
 }
 
-// Benchmark function 
-float Pythagoras(std::vector<float> v1, std::vector<float> v2)
+std::vector<TString> NameGenerator(std::vector<TH1F*> Hists, TString append)
 {
-  float sum = 0; 
-  for (int i(0); i < v1.size(); i++)
+  std::vector<TString> Output; 
+  for ( TH1F* H : Hists )
   {
-    float diff = pow(v1[i] - v2[i], 2); 
-    sum += diff;  
+    TString name = H -> GetTitle(); name += ("_" + append); 
+    Output.push_back(name); 
   }
-  return pow(sum, 0.5); 
+  return Output;  
 }
 
-float SquareError(TH1F* Hist1, TH1F* Hist2, float x_min, float x_max)
+std::vector<TH1F*> BulkClone(std::vector<TH1F*> Hists, std::vector<TString> Name)
 {
-  int bins = Hist1 -> GetNbinsX(); 
-  int bin_min = Hist1 -> GetXaxis() -> FindBin(x_min);
-  int bin_max = Hist1 -> GetXaxis() -> FindBin(x_max);
+  std::vector<TH1F*> Output; 
+  for (int i(0); i < Hists.size(); i++)
+  {
+    TH1F* H = (TH1F*)Hists[i] -> Clone(Name[i]);
+    H -> SetTitle(Name[i]); 
+    Output.push_back(H);  
+  }
+  return Output; 
+}
+
+
+void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool DeletePointer)
+{
+  if (F_C.size() != ntrk_Conv.size()) {std::cout << "!!!!!!!!!!!!!!!!!" << std::endl; return;}
+  for (int i(0); i < F_C.size(); i++)
+  {
+    float HL = F_C[i] -> Integral(); 
+    float OL = ntrk_Conv[i] -> Integral(); 
+    
+    F_C[i] -> Scale(1. / HL); 
+    ntrk_Conv[i] -> Scale(1. / OL); 
+    for (int x(0); x < F_C[i] -> GetNbinsX(); x++)
+    {
+      float e = F_C[i] -> GetBinContent(x+1); 
+      float f = ntrk_Conv[i] -> GetBinContent(x+1); 
+      ntrk_Conv[i] -> SetBinContent(x+1, e);
+    }
+    F_C[i] -> Scale(HL); 
+    ntrk_Conv[i] -> Scale(OL); 
+    
+    
+    if (DeletePointer){delete F_C[i];}
+  }
+}
+
+void MatchBins(std::vector<TH1F*> In, TH1F* Data)
+{
+  int bins = In[0] -> GetNbinsX(); 
+  for (int i(0); i < bins; i++)
+  {
+    float e = Data -> GetBinContent(i+1); 
+    
+    float s = 0; 
+    for (int c(0); c < In.size(); c++){s += In[c] -> GetBinContent(i+1);}
+    
+    float r = e / s; 
+    if (std::isnan(r)){continue;}
+    for (int c(0); c < In.size(); c++)
+    {
+      float g = In[c] -> GetBinContent(i+1); 
+      In[c] -> SetBinContent(i+1, g*r); 
+    }
+  }
+}
+
+void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk)
+{
+  for (int i(0); i < In.size(); i++)
+  {
+    Average(In[i]); 
+    if (i != trk && trutrk == false){ Data -> Add(In[i], -1);}
+    if (i == trk && trutrk){ Data -> Add(In[i], -1);}
+  }
+  Average(Data); 
+}
+
+void Average(TH1F* Data)
+{
+  for (int i(0); i < Data -> GetNbinsX(); i++)
+  {
+    float y = Data -> GetBinContent(i+1); 
+    if ( y <= 0){ y = 1e-8; } 
+    if ( std::isnan(y) ) { y = 1e-8; }
+    Data -> SetBinContent(i+1, y); 
+  }
+}
+
+void SmoothHist(TH1F* Hist, int order, float sigma)
+{
+  TF1 gaus("mygaus", "gaus", -200, 200); 
+  gaus.SetNpx(10000); 
+  gaus.SetParameters(1., 0., sigma); 
   
-  if (x_min == x_max)
-  {
-    bin_min = 0; 
-    bin_max = bins; 
-  }
- 
-  std::vector<float> v1, v2; 
-  for (int i(bin_min); i < bin_max; i++)
-  {
-    v1.push_back(Hist1 -> GetBinContent(i+1)); 
-    v2.push_back(Hist2 -> GetBinContent(i+1)); 
-  }
-  return Pythagoras(v1, v2); 
-}
+  const int ndata = Hist -> GetNbinsX(); 
+  
+  std::vector<float> x(ndata, 0); 
+  std::vector<float> y(ndata, 0); 
+  std::vector<float> sig(ndata, 0); 
+  std::vector<float> wt2(ndata, 0); 
 
-float ErrorByIntegral(TH1F* Hist1, TH1F* Hist2, float x_min, float x_max)
-{ 
-  int bins = Hist1 -> GetNbinsX(); 
-  int bin_min = Hist1 -> GetXaxis() -> FindBin(x_min); 
-  int bin_max = Hist1 -> GetXaxis() -> FindBin(x_max); 
-
-  if (x_min == x_max)
+  for (int j(0); j < ndata; j++)
   {
-    bin_min = 0; 
-    bin_max = bins; 
+    int j1 = j+1; 
+    x[j] = Hist -> GetBinCenter(j1); 
+    y[j] = Hist -> GetBinContent(j1); 
+  
+    if (y[j] != 0)
+    {
+      sig[j] = Hist -> GetBinError(j1); 
+      wt2[j] = pow(sig[j], -2); 
+    }
+    else
+    {
+      sig[j] = 1.; 
+      wt2[j] = 1.; 
+    }
   }
   
-  // Calculate the total error from Hist1, compared to Hist2
-  float sum = 0; 
-  for (int i(bin_min); i < bin_max; i++)
+  for (int j(0); j < ndata; j++)
   {
-    float h1 = Hist1 -> GetBinContent(i+1); 
-    float h2 = Hist2 -> GetBinContent(i+1); 
-    sum += std::abs(h1 - h2);
-  } 
-  float A = Hist2 -> Integral(bin_min, bin_max); 
-  return sum/A; 
+    TMatrixD A(ndata, order+1); 
+    TMatrixDSym W(ndata); 
+    TVectorD m(ndata); 
 
-}
+    for (int i(0); i < ndata; i++)
+    {
+      float dx = x[i] - x[j]; 
+      float gausval = gaus.Eval(dx); 
+      A(i, 0) = 1; 
+      for (int k(1); k < order +1; k++){A(i, k) = A(i, k-1)*dx;}
+      
+      W(i, i) = gausval*wt2[i]; 
+      m(i) = y[i]; 
+    }
 
-void Statistics(TH1F* H1, TH1F* H2, float x_min, float x_max)
-{
-  float max = H1 -> GetXaxis() -> GetXmax(); 
-  float min = H1 -> GetXaxis() -> GetXmin(); 
+    TMatrixD ATW = A.T() * W; 
+    TMatrixD C = ATW * A.T(); 
+    C.Invert(); 
 
-  if (x_min == x_max) 
-  {
-    x_max = max; 
-    x_min = min;   
+    auto results = C*ATW*m; 
+
+    Hist -> SetBinContent(j+1, results(0)); 
+    Hist -> SetBinError(j+1, sqrt(C(0, 0)));
   }
-
-  std::cout << "H1: " << H1 -> GetTitle() << " ::::: H2: " << H2 -> GetTitle() << std::endl;
-  std::cout << "Domain selected: " << x_min << " -> " << x_max << std::endl;
-  std::cout << "- Absolute Error / Integral of H2: " << ErrorByIntegral(H1, H2, x_min, x_max)*100 << "%" << std::endl;
-  std::cout << "- KolmogorovTest: " << H2 -> KolmogorovTest(H1) << std::endl;
-  std::cout << "- Normalization: H1: " << H1 -> Integral() << " :::: H2: " << H2 -> Integral() << " :::: H1/H2: " << float(H1 -> Integral())*100 / float(H2 -> Integral()) << "%" << std::endl; 
-  std::cout << std::endl;
 }
+
+void Average(std::vector<TH1F*> Data){for (TH1F* H : Data){ Average(H); }}
 
 float GetMaxValue(TH1F* H)
 {
@@ -232,9 +307,39 @@ void BulkDelete(std::map<TString, std::vector<TH1F*>> Hists)
   }
 }
 
+void CoutText(TString *Input, int v, TString Text)
+{
+  
+  for (int c(0); c < v; c++)
+  {
+    *Input += (Text); 
+  }
+}
 
+TString PrecisionString(float number, int precision, bool sci)
+{
+  TString out; 
+  std::ostringstream o; 
+  o.precision(precision); 
+  
+  if (sci){o << std::scientific << number;}
+  else {o << std::fixed << number;}
+  out += (o.str()); 
+  return out; 
+}
 
-
-
-
+float ChiSquareError(TH1F* Truth, TH1F* Pred)
+{
+  int bins = Truth -> GetNbinsX(); 
+  
+  float err = 0; 
+  for (int i(0); i < bins; i++)
+  { 
+    float f = Truth -> GetBinContent(i+1) + Pred -> GetBinContent(i+1); 
+    if (f == 0){continue;}
+    err += std::pow(Truth -> GetBinContent(i+1) - Pred -> GetBinContent(i+1), 2) / f; 
+  }
+  err = err *0.5; 
+  return err; 
+}
 
