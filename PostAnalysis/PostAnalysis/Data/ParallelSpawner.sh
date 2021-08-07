@@ -34,11 +34,15 @@ function CondorBuild
 #Constants that we need to generate the names 
 Condor_active=false
 compiler="PostAnalysisCompiler_NoSubtract"
-Layer=("IBL" "Blayer" "layer1" "layer2") 
-JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
+#Layer=("IBL" "Blayer" "layer1" "layer2") 
+#JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
 
 #Mode=("Truth" "Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental" "Simultaneous" "Experimental" "Debug", "DebugSubtract")
-Mode=("Truth" "FitT_Normal" "FitT_ShiftNormal" "FitT_ShiftNormalFFT" "FitT_ShiftNormalWidthFFT" "FitT_Incremental")
+
+
+Layer=("Blayer" "layer2") 
+JetEnergy=("200_400_GeV" "400_600_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2600_2800_GeV")
+Mode=("Truth" "FitT_ShiftNormal" "FitT_ShiftNormalFFT" "FitT_ShiftNormalWidthFFT" "FitT_Incremental")
 
 
 root_dir=$PWD
