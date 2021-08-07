@@ -49,11 +49,8 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
     float n_e = l_vars[i] -> getError(); 
     Output["Normalization"].push_back(n); 
     Output["Normalization_Error"].push_back(n_e); 
-
-    TH1F* Cop = (TH1F*)PDF_H[i] -> Clone("xc"); 
-    PDF_H[i] -> Reset(); 
-    PDF_H[i] -> FillRandom(Cop, n); 
-    delete Cop; 
+  
+    PDF_H[i] -> Scale(n);
   }
 
   BulkDelete(l_vars); 
@@ -152,10 +149,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 
 
-    TH1F* Cop = (TH1F*)PDF_H[i] -> Clone("xc"); 
-    PDF_H[i] -> Reset(); 
-    PDF_H[i] -> FillRandom(Cop, n); 
-    delete Cop; 
+    PDF_H[i] -> Scale(n);
   }
 
   delete Copy_D; 
@@ -263,7 +257,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Data); 
   RooAddPdf model("model", "model", PxG, L); 
-  //model.fixAddCoefNormalization(L);
+  model.fixAddCoefNormalization(L);
   RooFitResult* re = MinimizationCustom(model, &D, Params, x);  
 
   std::map<TString, std::vector<float>> Output;
@@ -375,11 +369,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   
       CopyPDFToTH1F(PxG[i], x, PDF_H[i], Data); 
       Normalize(PDF_H[i]); 
-      
-      TH1F* Cop = (TH1F*)PDF_H[i] -> Clone("xc"); 
-      PDF_H[i] -> Reset(); 
-      PDF_H[i] -> FillRandom(Cop, n); 
-      delete Cop; 
+      PDF_H[i] -> Scale(n);
     }
   }; 
   
@@ -579,11 +569,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
       CopyPDFToTH1F(PxG_vars[j], x, PDF_H_V[i][j], Data[0]); 
       float e = Lumi[i][j] -> getVal(); 
       Normalize(PDF_H_V[i][j]); 
-
-      TH1F* Cop = (TH1F*)PDF_H_V[i][j] -> Clone("xc"); 
-      PDF_H_V[i][j] -> Reset(); 
-      PDF_H_V[i][j] -> FillRandom(Cop, e); 
-      delete Cop; 
+      PDF_H_V[i][j] -> Scale(n);
     } 
   }
   

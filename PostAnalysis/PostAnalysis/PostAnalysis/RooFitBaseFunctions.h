@@ -208,12 +208,12 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     pg -> optimizeConst(true); 
     
     if (Params["Seek"].size() != 0){pg -> seek();}
-    for (int i(0); i < 5; i++)
+    for (int i(0); i < 2; i++)
     {
     
       //re = pg -> fit("mhr");
       pg -> migrad();
-      //pg -> improve();
+      pg -> improve();
       //pg -> migrad();
       //pg -> minos(); 
       re = pg -> save();
