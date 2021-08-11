@@ -14,7 +14,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<float> k1 = {0.1, 9.9}; 
   std::vector<std::vector<float>> Ranges = {k1}; 
 
-  float m = 0.2; 
+  float m = 0.4; 
   float s_e = 0.05; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
@@ -27,10 +27,9 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   //Params_NS["dx_G"] = {0, 0, 0, 0}; 
   Params_NS["dx_e"] = {m, m, m, m}; 
   Params_NS["Seek"] = {1};
-  Params_NS["Minimizer"] = {10000};
+  Params_NS["Minimizer"] = {50000};
   //Params_NS["GSL"] = {1};
-
-  m = m*2;
+  
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
   Params_FFT["Range_ntrk_1"] = Ranges[0]; 
@@ -38,7 +37,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   //Params_FFT["m_G"] = {0, 0, 0, 0};
   Params_FFT["m_e"] = {m, m, m, m};
   Params_FFT["s_C"] = {1, 1, 1, 1};
-  Params_FFT["fft_cache"] = {50000}; 
+  Params_FFT["fft_cache"] = {100000}; 
   Params_FFT["Minimizer"] = {50000}; 
 
   // Normalization Shift Width FFT parameters
@@ -49,7 +48,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["m_e"] = {m, m, m, m};
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {s_e, s_e, s_e, s_e};
-  Params_WidthFFT["fft_cache"] = {50000}; 
+  Params_WidthFFT["fft_cache"] = {100000}; 
   Params_WidthFFT["Minimizer"] = {50000};
   
   // Simultaneous Fitting method 
@@ -60,8 +59,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["m_s"] = {-m, -m, -m, -m};
   Params_Sim["s_s"] = {0.0005, 0.0005, 0.0005, 0.0005};
   Params_Sim["s_e"] = {s_e, s_e, s_e, s_e};
-  Params_Sim["fft_cache"] = {10000}; 
-  Params_Sim["Minimizer"] = {10000}; 
+  Params_Sim["fft_cache"] = {50000}; 
+  Params_Sim["Minimizer"] = {50000}; 
 
   // Experimental Fitting method 
   std::map<TString, std::vector<float>> Params_Exp; 

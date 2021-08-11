@@ -64,7 +64,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
-
+  Average(PDF_H);
   TH1F* Copy_D = (TH1F*)Data -> Clone("Temp"); 
 
   for (int i(0); i < PDF_H.size(); i++)
@@ -83,9 +83,6 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   int bins = Data -> GetNbinsX(); 
   
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  // Do a preliminary normalization fit:
-  //std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-  //Params["l_G"] = Pre["Normalization"];
 
   // Normalization variables
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
@@ -121,7 +118,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   RooAddPdf model("model", "model", PDFs, N); 
   
   // Fitting the PDFs to the Data 
-  RooDataHist D("data", Data -> GetTitle(), *x, Copy_D, 2); 
+  RooDataHist D("data", Data -> GetTitle(), *x, Copy_D); 
   model.fixAddCoefNormalization(N);
   
   RooFitResult* re = MinimizationCustom(model, &D, Params, x);
@@ -196,18 +193,10 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
       PDF_H[i] -> Scale(n); 
     }
   }; 
- 
+  
+  Average(PDF_H);
   TH1F* Data = (TH1F*)Data_Org -> Clone("temp"); 
   if (Params["Auto"].size() != 0){AutoRanges(&Params, PDF_H);}
-  //for (int i(0); i < PDF_H.size(); i++)
-  //{
-  //  PDF_H[i] -> Scale(Data -> Integral()); 
-  //  for (int j(0); j < PDF_H[i] -> GetNbinsX(); j++)
-  //  {
-  //    float e = PDF_H[i] -> GetBinContent(j+1); 
-  //    if (e <= 0){PDF_H[i] -> SetBinContent(j+1, 1); }
-  //  }
-  //}
 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
@@ -219,10 +208,6 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
     x -> setBins(Params["fft_cache"][0], "fft"); 
     x -> setBins(Params["fft_cache"][0], "cache");  
   }
-  
-  // Do a preliminary normalization fit:
-  //std::map<TString, std::vector<float>> Pre = Normalization(Data, PDF_H, Params);
-  //Params["l_G"] = Pre["Normalization"]; 
   
   // Base Variables 
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
@@ -569,7 +554,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
       CopyPDFToTH1F(PxG_vars[j], x, PDF_H_V[i][j], Data[0]); 
       float e = Lumi[i][j] -> getVal(); 
       Normalize(PDF_H_V[i][j]); 
-      PDF_H_V[i][j] -> Scale(n);
+      PDF_H_V[i][j] -> Scale(e);
     } 
   }
   

@@ -43,15 +43,17 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     std::vector<TH1F*> ntru_T = Truth[i]; 
     
     // Fit to individual Truth
+    TString na = Mode + "_"; na += (i+1); na += (".pdf");
+    can -> Print(na + "[");  
     for (int j(0); j < ntru_T.size(); j++)
     {
-      
       TH1F* trk_tru = ntru_P[j];  
       TH1F* trk_tru_T = ntru_T[j]; 
 
+      if (trk_tru_T -> GetEntries() < 100){continue;}
+
       // Fit to the truth and get the parameters
       std::map<TString, std::vector<float>> Pred_Tru;
-      Params["AUTO"] = {1};
       
       if ( Mode == "NormalShift"){    Pred_Tru = NormalizationShift(trk_tru_T, {trk_tru}, Params, "_Test"); }
       if ( Mode == "ShiftNormalFFT"){ Pred_Tru = ConvolutionFFT(trk_tru_T, {trk_tru}, Params, "_Test"); }
@@ -68,6 +70,7 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
 
       PlotHists({trk_tru}, {trk_tru_T}, can); 
       can -> Print(Mode + ".pdf");
+      can -> Print(na);
       can -> Print("Debug.pdf");
 
       std::cout << "------> " << Pred_Tru["fit_status"][0] << std::endl;
@@ -95,7 +98,9 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
 
     PlotHists(Truth[i], ntrk_mtru_template[i], can); 
     can -> Print(Mode + ".pdf"); 
+    can -> Print(na);
     can -> Clear();
+    can -> Print(na + "]");
   }
  
   std::vector<std::vector<float>> f; 

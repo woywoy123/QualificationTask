@@ -23,7 +23,7 @@
 
 using namespace RooFit;
 const std::vector<TString> FitRanges_Names = {"Range_ntrk_1", "Range_ntrk_2", "Range_ntrk_3", "Range_ntrk_4"}; 
-const int n_cpu = 8; 
+const int n_cpu = 4; 
 
 
 // ==================  Basic RooFit Variables
@@ -120,7 +120,7 @@ static std::vector<RooFFTConvPdf*> RooFFTVariable(std::vector<TString> Name, Roo
   for (int i(0); i < Name.size(); i++)
   {
     RooFFTConvPdf* H = new RooFFTConvPdf(Name[i], Name[i], *domain, *p[i], *g[i]); 
-    //H -> setInterpolationOrder(2); 
+    H -> setInterpolationOrder(2); 
     Out.push_back(H); 
   }
   return Out; 
@@ -187,7 +187,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
   for (TString F : FitRanges_Names){if (Params[F].size() != 0){x -> setRange(F, Params[F][0], Params[F][1]); Ranges += (F+ ",");}}
   if (Params["Minimizer"].size() == 0)
   {
-    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Save(), Extended(true));
+    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Save(), Extended(true), EvalErrorWall(true));
   }
   else
   {
@@ -208,13 +208,14 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     pg -> optimizeConst(true); 
     
     if (Params["Seek"].size() != 0){pg -> seek();}
-    for (int i(0); i < 2; i++)
+    for (int i(0); i < 1; i++)
     {
     
-      //re = pg -> fit("mhr");
-      pg -> migrad();
-      pg -> improve();
       //pg -> migrad();
+      pg -> improve();
+      pg -> simplex();
+      //re = pg -> fit("mr");
+      pg -> migrad();
       //pg -> minos(); 
       re = pg -> save();
       int res = re -> status(); 

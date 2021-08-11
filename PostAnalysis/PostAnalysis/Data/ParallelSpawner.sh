@@ -25,25 +25,23 @@ function CondorBuild
   echo "error =  ./results.error.$""(ClusterID)"  >> example.submit
   echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
   echo "Request_Cpus = 1"  >> example.submit
-  echo "Request_Memory = 200MB" >> example.submit
+  echo "Request_Memory = 1024MB" >> example.submit
   echo "+RequestRunTime= 172800"  >> example.submit
   echo "queue 1"  >> example.submit
 }
 
-
 #Constants that we need to generate the names 
-Condor_active=false
+Condor_active=true
 compiler="PostAnalysisCompiler_NoSubtract"
-#Layer=("IBL" "Blayer" "layer1" "layer2") 
-#JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
+filename="Merged_MC.root"
+Layer=("IBL" "Blayer" "layer1" "layer2") 
+JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
+Mode=("Truth" "Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental" "Simultaneous" "Experimental" "Debug", "DebugSubtract")
 
-#Mode=("Truth" "Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental" "Simultaneous" "Experimental" "Debug", "DebugSubtract")
 
-
-Layer=("Blayer" "layer2") 
-JetEnergy=("200_400_GeV" "400_600_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2600_2800_GeV")
-Mode=("Truth" "FitT_ShiftNormal" "FitT_ShiftNormalFFT" "FitT_ShiftNormalWidthFFT" "FitT_Incremental")
-
+#Layer=("Blayer" "layer2") 
+#JetEnergy=("200_400_GeV" "400_600_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2600_2800_GeV")
+#Mode=("Truth" "FitT_ShiftNormal" "FitT_ShiftNormalFFT" "FitT_ShiftNormalWidthFFT" "FitT_Incremental")
 
 root_dir=$PWD
 echo $root_dir
@@ -56,7 +54,7 @@ PostAnalysis_root_dir=$PWD
 echo $PostAnalysis_root_dir
 
 echo "You have 30 seconds to cancel the deleting of $compiler !"
-sleep 30
+sleep 10
 
 cd $HOME
 rm -r $compiler
@@ -72,7 +70,7 @@ cd build
 cmake ../PostAnalysis 
 make -j12 
 cd ../
-cp $root_dir/Merged_MC.root ./
+cp $root_dir/$filename ./
 File=$PWD
 for L in ${Layer[@]}
 do
