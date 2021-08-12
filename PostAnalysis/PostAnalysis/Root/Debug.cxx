@@ -135,12 +135,60 @@ void Proxy(TString sample, TString Files, TString Mode)
   File -> Close();
 }
 
-void SmoothingTest()
+void SplitTest(TString Sample)
 {
 
+  std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(Sample); 
 
+  TString name = "SplitAnalysis.pdf"; 
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+  can -> Print(name + "["); 
+  for (MMVi x = F.begin(); x != F.end(); x++)
+  {
+    auto Plotter =[&] (std::vector<TH1F*> Fits, std::vector<TH1F*> Truth, TString current, TString Mode)
+    {
+      TString name = "SplitAnalysis.pdf"; 
+      TCanvas* can = new TCanvas(); 
+      can -> SetLogy(); 
+      PlotHists(Fits, Truth, current + "_" + Mode, can); 
+      can -> Print(name); 
+      can -> Clear();
+    };
 
+    std::map<TString, std::vector<TH1F*>> M = F[x -> first]; 
+    std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 
+    std::vector<TH1F*> ntrk_2_T = M["ntrk_2_T_I"]; 
+    std::vector<TH1F*> ntrk_3_T = M["ntrk_3_T_I"]; 
+    std::vector<TH1F*> ntrk_4_T = M["ntrk_4_T_I"]; 
+    std::vector<std::vector<TH1F*>> TruthVector = { ntrk_1_T,  ntrk_2_T, ntrk_3_T, ntrk_4_T };
 
+    std::vector<TH1F*> ntrk_1_T_IsSplit = M["ntrk_1_T_I_IsSplit"]; 
+    std::vector<TH1F*> ntrk_2_T_IsSplit = M["ntrk_2_T_I_IsSplit"]; 
+    std::vector<TH1F*> ntrk_3_T_IsSplit = M["ntrk_3_T_I_IsSplit"]; 
+    std::vector<TH1F*> ntrk_4_T_IsSplit = M["ntrk_4_T_I_IsSplit"]; 
+    std::vector<std::vector<TH1F*>> TruthVector_Split = { ntrk_1_T_IsSplit,  ntrk_2_T_IsSplit, ntrk_3_T_IsSplit, ntrk_4_T_IsSplit };
+
+    std::vector<TH1F*> ntrk_1_T_NotSplit = M["ntrk_1_T_I_NotSplit"]; 
+    std::vector<TH1F*> ntrk_2_T_NotSplit = M["ntrk_2_T_I_NotSplit"]; 
+    std::vector<TH1F*> ntrk_3_T_NotSplit = M["ntrk_3_T_I_NotSplit"]; 
+    std::vector<TH1F*> ntrk_4_T_NotSplit = M["ntrk_4_T_I_NotSplit"]; 
+    std::vector<std::vector<TH1F*>> TruthVector_NoSplit = { ntrk_1_T_NotSplit,  ntrk_2_T_NotSplit, ntrk_3_T_NotSplit, ntrk_4_T_NotSplit };
+    
+    bool Skip = false; 
+    for (int i(0); i < TruthVector.size(); i++)
+    {
+      for (int j(0); j < TruthVector[i].size(); j++)
+      {
+        if (TruthVector[i][j] -> GetEntries() < 1000){Skip = true;}
+      }
+      if (Skip){continue;}
+      Plotter(TruthVector_Split[i], TruthVector_NoSplit[i], x -> first, "Split vs Not Split"); 
+      Plotter(TruthVector[i], TruthVector_NoSplit[i], x -> first, "Nominal vs Not Split"); 
+      Plotter(TruthVector[i], TruthVector_Split[i], x -> first, "Nominal vs Split"); 
+    }
+  }
+  can -> Print(name + "]"); 
 
 }
 

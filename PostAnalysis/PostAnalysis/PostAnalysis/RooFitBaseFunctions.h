@@ -23,7 +23,7 @@
 
 using namespace RooFit;
 const std::vector<TString> FitRanges_Names = {"Range_ntrk_1", "Range_ntrk_2", "Range_ntrk_3", "Range_ntrk_4"}; 
-const int n_cpu = 4; 
+const int n_cpu = 6; 
 
 
 // ==================  Basic RooFit Variables
@@ -191,7 +191,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
   }
   else
   {
-    RooAbsReal* nll = model.createNLL(*data, Range(Ranges), NumCPU(n_cpu, 1), Extended(true)); 
+    RooAbsReal* nll = model.createNLL(*data, Range(Ranges), Extended(true)); 
 
     RooMinimizer* pg = new RooMinimizer(*nll);
     int print = 1; 
@@ -208,7 +208,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     pg -> optimizeConst(true); 
     
     if (Params["Seek"].size() != 0){pg -> seek();}
-    for (int i(0); i < 1; i++)
+    for (int i(0); i < 3; i++)
     {
     
       //pg -> migrad();

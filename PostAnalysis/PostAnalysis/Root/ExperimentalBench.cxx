@@ -3,7 +3,6 @@
 #include<PostAnalysis/RooFitBaseFunctions.h>
 #include<PostAnalysis/AlgorithmFunctions.h>
 #include<PostAnalysis/Plotting.h>
-
 #include<PostAnalysis/SimpleExampleFits.h>
 
 void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
@@ -11,7 +10,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
-  std::vector<float> k1 = {0.1, 9.9}; 
+  std::vector<float> k1 = {0.05, 13}; 
   std::vector<std::vector<float>> Ranges = {k1}; 
 
   float m = 0.4; 
@@ -21,13 +20,14 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_N["Minimizer"] = {10000};
 
   // Normalization Shift parameters
+  int Minim = 50000; 
   std::map<TString, std::vector<float>> Params_NS; 
   Params_NS["Range_ntrk_1"] = Ranges[0]; 
   Params_NS["dx_s"] = {-m, -m, -m, -m}; 
   //Params_NS["dx_G"] = {0, 0, 0, 0}; 
   Params_NS["dx_e"] = {m, m, m, m}; 
   Params_NS["Seek"] = {1};
-  Params_NS["Minimizer"] = {50000};
+  Params_NS["Minimizer"] = {Minim};
   //Params_NS["GSL"] = {1};
   
   // Normalization Shift FFT parameters
@@ -37,8 +37,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   //Params_FFT["m_G"] = {0, 0, 0, 0};
   Params_FFT["m_e"] = {m, m, m, m};
   Params_FFT["s_C"] = {1, 1, 1, 1};
-  Params_FFT["fft_cache"] = {100000}; 
-  Params_FFT["Minimizer"] = {50000}; 
+  Params_FFT["fft_cache"] = {Minim}; 
+  Params_FFT["Minimizer"] = {Minim}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
@@ -48,8 +48,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["m_e"] = {m, m, m, m};
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {s_e, s_e, s_e, s_e};
-  Params_WidthFFT["fft_cache"] = {100000}; 
-  Params_WidthFFT["Minimizer"] = {50000};
+  Params_WidthFFT["fft_cache"] = {Minim}; 
+  Params_WidthFFT["Minimizer"] = {Minim};
   
   // Simultaneous Fitting method 
   std::map<TString, std::vector<float>> Params_Sim; 
@@ -59,8 +59,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["m_s"] = {-m, -m, -m, -m};
   Params_Sim["s_s"] = {0.0005, 0.0005, 0.0005, 0.0005};
   Params_Sim["s_e"] = {s_e, s_e, s_e, s_e};
-  Params_Sim["fft_cache"] = {50000}; 
-  Params_Sim["Minimizer"] = {50000}; 
+  Params_Sim["fft_cache"] = {Minim}; 
+  Params_Sim["Minimizer"] = {Minim}; 
 
   // Experimental Fitting method 
   std::map<TString, std::vector<float>> Params_Exp; 
@@ -70,8 +70,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["m_s"] = {-m, -m, -m, -m};
   Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
   Params_Exp["s_s"] = {0.0005, 0.0005, 0.0005, 0.0005};
-  Params_Exp["Minimizer"] = {10000}; 
-  Params_Exp["fft_cache"] = {10000};
+  Params_Exp["Minimizer"] = {Minim}; 
+  Params_Exp["fft_cache"] = {Minim};
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
@@ -122,6 +122,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       if (Proposed[i] -> GetEntries() < 100){continue;}
       ToBeUsed.push_back(Proposed[i]); 
     }
+
     if (ToBeUsed.size() < 2){continue;}
     
     X -> mkdir(current); 
@@ -139,6 +140,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
         gDirectory -> cd(current); 
       }
     }
+    
 
     std::vector<std::vector<TH1F*>> Fits; 
     bool All = false; 
