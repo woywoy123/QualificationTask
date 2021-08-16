@@ -187,7 +187,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
   for (TString F : FitRanges_Names){if (Params[F].size() != 0){x -> setRange(F, Params[F][0], Params[F][1]); Ranges += (F+ ",");}}
   if (Params["Minimizer"].size() == 0)
   {
-    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), NumCPU(n_cpu, 1), Save(), Extended(true), EvalErrorWall(true));
+    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), Save(), Extended(true), EvalErrorWall(true));
   }
   else
   {
@@ -207,16 +207,17 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     pg -> setEvalErrorWall(true); 
     pg -> optimizeConst(true); 
     
-    if (Params["Seek"].size() != 0){pg -> seek();}
-    for (int i(0); i < 3; i++)
+    for (int i(0); i < 1; i++)
     {
     
-      //pg -> migrad();
-      pg -> improve();
-      pg -> simplex();
-      //re = pg -> fit("mr");
       pg -> migrad();
-      //pg -> minos(); 
+      pg -> improve();
+      //pg -> minimize("Minuit2");
+      if (Params["Seek"].size() != 0){pg -> seek(); std::cout << "SEEEK" << std::endl;}
+      //pg -> simplex();
+      //pg -> setEps(1e-14); 
+      //re = pg -> fit("r");
+      pg -> migrad();
       re = pg -> save();
       int res = re -> status(); 
       if (res == 0){break;}

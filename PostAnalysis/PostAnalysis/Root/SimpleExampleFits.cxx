@@ -50,7 +50,7 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
       TH1F* trk_tru = ntru_P[j];  
       TH1F* trk_tru_T = ntru_T[j]; 
 
-      if (trk_tru_T -> GetEntries() < 100){continue;}
+      if (trk_tru_T -> GetEntries() < 1000){continue;}
 
       // Fit to the truth and get the parameters
       std::map<TString, std::vector<float>> Pred_Tru;

@@ -273,6 +273,24 @@ void SmoothHist(TH1F* Hist, int order, float sigma)
   }
 }
 
+void Smooth(TH1F* Hist, float kern )
+{
+  TGraph* gr = new TGraph(Hist); 
+  TGraphSmooth* g = new TGraphSmooth("Smoother"); 
+  TGraph* h = g -> SmoothKern(gr, "normal", kern); 
+
+  int n = h -> GetN(); 
+  for (int p(0); p < n; p++)
+  {
+    double x, y; 
+    h -> GetPoint(p, x, y); 
+    Hist -> SetBinContent(p+1, y);
+  }
+
+  delete gr; 
+  delete h;
+} 
+
 void Average(std::vector<TH1F*> Data){for (TH1F* H : Data){ Average(H); }}
 
 float GetMaxValue(TH1F* H)
@@ -343,3 +361,35 @@ float ChiSquareError(TH1F* Truth, TH1F* Pred)
   return err; 
 }
 
+TH1F* ExpandTH1F(TH1F* Hist, float min, float max)
+{
+
+  int bins = Hist -> GetNbinsX(); 
+  float min_o = Hist -> GetXaxis() -> GetXmin(); 
+  float max_o = Hist -> GetXaxis() -> GetXmax(); 
+
+  float w = (max_o - min_o) / float(bins); 
+  int b = 0; 
+  while (min <= min_o - w) 
+  {
+    b++; 
+    min_o = min_o - w; 
+  }
+  
+  TString name = Hist -> GetTitle(); name += ("_ext"); 
+  TH1F* X = new TH1F(name, name, bins+b, min_o, max_o); 
+  
+  X -> FillRandom(Hist, Hist -> Integral()); 
+  return X; 
+}
+
+std::vector<TH1F*> ExpandTH1F(std::vector<TH1F*> Hists, float min, float max)
+{
+  std::vector<TH1F*> Out; 
+  for (int i(0); i < Hists.size(); i++)
+  {
+    TH1F* x = ExpandTH1F(Hists[i], min, max);  
+    Out.push_back(x); 
+  }
+  return Out; 
+}

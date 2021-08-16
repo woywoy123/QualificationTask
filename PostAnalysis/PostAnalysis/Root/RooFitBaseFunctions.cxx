@@ -64,28 +64,29 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
 
 std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
-  Average(PDF_H);
   TH1F* Copy_D = (TH1F*)Data -> Clone("Temp"); 
 
-  for (int i(0); i < PDF_H.size(); i++)
-  {
-    PDF_H[i] -> Scale(Copy_D -> Integral()); 
-    for (int j(0); j < PDF_H[i] -> GetNbinsX(); j++)
-    {
-      float e = PDF_H[i] -> GetBinContent(j+1); 
-      if (e <= 1){PDF_H[i] -> SetBinContent(j+1, 1); }
-    }
-  }
+  //for (int i(0); i < PDF_H.size(); i++)
+  //{
+  //  PDF_H[i] -> Scale(Copy_D -> Integral()); 
+  //  for (int j(0); j < PDF_H[i] -> GetNbinsX(); j++)
+  //  {
+  //    float e = PDF_H[i] -> GetBinContent(j+1); 
+  //    if (e <= 1){PDF_H[i] -> SetBinContent(j+1, 1); }
+  //  }
+  //}
+  Average(PDF_H);
 
-  if (Params["Auto"].size() != 0){AutoRanges(&Params, PDF_H);}
+  Normalize(Copy_D); 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
   
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
+  x -> setBins(100000, "cache"); 
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, 1.1); //(Data -> Integral())); 
 
   // Shift variables
   std::vector<RooRealVar*> d_vars = ProtectionRealVariable("dx", PDF_H, Params, -0.5, 0.5);   
@@ -104,7 +105,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     TString n = "dx_"; n+= (i+1); 
     RooFormulaVar* dx = new RooFormulaVar(n, "@0 - @1", RooArgList(*x, *d_vars[i])); 
     RooDataHist* DH = new RooDataHist(data_n[i], data_n[i], *x, PDF_H[i]); 
-    RooHistPdf* PH = new RooHistPdf(pdf_n[i], pdf_n[i], *dx, *x, *DH, 2); 
+    RooHistPdf* PH = new RooHistPdf(pdf_n[i], pdf_n[i], *dx, *x, *DH, 1); 
 
     pdf_D.push_back(DH); 
     pdf_P.push_back(PH); 
@@ -119,7 +120,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   
   // Fitting the PDFs to the Data 
   RooDataHist D("data", Data -> GetTitle(), *x, Copy_D); 
-  model.fixAddCoefNormalization(N);
+  //model.fixAddCoefNormalization(N);
   
   RooFitResult* re = MinimizationCustom(model, &D, Params, x);
   std::map<TString, std::vector<float>> Output;  
@@ -146,7 +147,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 
 
-    PDF_H[i] -> Scale(n);
+    PDF_H[i] -> Scale(n * (Data -> Integral()));
   }
 
   delete Copy_D; 
@@ -210,7 +211,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   }
   
   // Base Variables 
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.005, 0.0051); 
 
@@ -242,7 +243,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   // Fitting the PDFs to the Data 
   RooDataHist D("data", "data", *x, Data); 
   RooAddPdf model("model", "model", PxG, L); 
-  model.fixAddCoefNormalization(L);
+  //model.fixAddCoefNormalization(L);
   RooFitResult* re = MinimizationCustom(model, &D, Params, x);  
 
   std::map<TString, std::vector<float>> Output;

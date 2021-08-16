@@ -14,6 +14,8 @@
 #include<PostAnalysis/Convolution.h>
 #include<PostAnalysis/DistributionGenerator.h>
 #include<TFile.h>
+#include<TGraph.h>
+#include<TGraphSmooth.h>
 
 // Histogram Generators
 std::vector<TH1F*> MakeTH1F(std::vector<TString> Names, int bins, float min, float max, TString Extension = "");
@@ -26,8 +28,10 @@ void Normalize(std::vector<TH1F*> Hists);
 void Shift(TH1F* Hist, int shift);
 void MatchBins(std::vector<TH1F*> In, TH1F* Data); 
 void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk = false); 
-void SmoothHist(TH1F* Hist, int iter); 
+void Smooth(TH1F* Hist, float kern); 
 void SmoothHist(TH1F* Hist, int order, float sigma); 
+TH1F* ExpandTH1F(TH1F* Hist, float min, float max); 
+std::vector<TH1F*> ExpandTH1F(std::vector<TH1F*> Hists, float min, float max); 
 
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty); 
