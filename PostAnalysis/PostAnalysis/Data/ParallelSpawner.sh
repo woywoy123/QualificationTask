@@ -36,11 +36,15 @@ compiler="PostAnalysisCompiler_NoSubtract_Negative"
 filename="Merged_MC_Negative.root"
 Layer=("IBL" "Blayer" "layer1" "layer2") 
 JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
-Mode=("Truth" "Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental" "Simultaneous" "Experimental" "Debug", "DebugSubtract")
+Mode=("Truth" "FitT_Normal" "FitT_ShiftNormal" "FitT_ShiftNormalFFT" "FitT_ShiftNormalWidthFFT" "FitT_Incremental" "FitT_Simultaneous")
+Mode2=("FitT_Normal_Smooth" "FitT_ShiftNormal_Smooth" "FitT_ShiftNormalFFT_Smooth" "FitT_ShiftNormalWidthFFT_Smooth" "FitT_Incremental_Smooth" "FitT_Simultaneous_Smooth")
+Mode3=("FitT_Normal_Smooth_FitTo" "FitT_ShiftNormal_Smooth_FitTo" "FitT_ShiftNormalFFT_Smooth_FitTo" "FitT_ShiftNormalWidthFFT_Smooth_FitTo" "FitT_Incremental_Smooth_FitTo" "FitT_Simultaneous_Smooth_FitTo")
+Mode4=("FitT_Normal_FitTo" "FitT_ShiftNormal_FitTo" "FitT_ShiftNormalFFT_FitTo" "FitT_ShiftNormalWidthFFT_FitTo" "FitT_Incremental_FitTo" "FitT_Simultaneous_FitTo")
 
-Layer=("Blayer" "layer2") 
-JetEnergy=("200_400_GeV" "400_600_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2600_2800_GeV")
-Mode=("Truth" "FitT_ShiftNormal" "FitT_ShiftNormalFFT" "FitT_ShiftNormalWidthFFT" "FitT_Incremental")
+Mode+=(${Mode2[@]})
+Mode+=(${Mode3[@]})
+
+
 
 root_dir=$PWD
 echo $root_dir

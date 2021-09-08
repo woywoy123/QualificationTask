@@ -37,6 +37,7 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> truth, std::vector<TH1F*> predicti
 void PlotHists(TH1F* Data, std::vector<TH1F*> truth, TCanvas* can); 
 void PlotHists(TH1F* Data, std::vector<TH1F*> Prediction, std::vector<TH1F*> Truth, TString Title, float FLost_P, float FLost_T, TCanvas* can);
 void PlotHists(std::vector<TH1F*> truth, std::vector<TH1F*> prediction, TString title, TCanvas* can); 
+void PlotHists(TH1F* Data, TH1F* Hist, TString Title, TCanvas* can);
 
 void RatioPlot(TH1F* H1, TH1F* H2, TCanvas* can); 
 void RooFitPullPlot(RooAddPdf model, RooRealVar* Domain, std::vector<RooFFTConvPdf*> PDFs, RooDataHist* Data, TString Name);
@@ -53,6 +54,11 @@ void GenerateRatioPlot(TH1F* H1, TH1F* H2, TCanvas* can, TString Title, TString 
 void PlotLikelyHood(RooAbsReal* nll, RooRealVar* var, TString name); 
 void PlotGraphs(std::vector<TH1F*>, TString Title, TCanvas* can);
 void GenerateNiceStacks(std::vector<TH1F*> vec, TString Title, TCanvas* can, TString x_axis, TString y_axis, TString options); 
+void GeneratePerformanceGraphs(std::vector<TGraph*> Graphs, TString title, TString x_axis, TString y_axis, float min, float max, TCanvas* can); 
 TGraph* GenerateGraph(std::vector<float> Input, TString name); 
 TGraph* GenerateGraph(std::map<TString, float> Input, TString name); 
+
+static std::vector<Color_t> Colors_F = {kRed, kGreen, kBlue, kCyan, kViolet, kOrange, kCoffee, kAurora}; 
+
+
 #endif

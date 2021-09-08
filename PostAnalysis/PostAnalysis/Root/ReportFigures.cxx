@@ -36,203 +36,193 @@ void Figure_N_TrackTemplates()
   can -> Print("ExampleTemplates.pdf"); 
 }
 
-
-
 void Figure_Trk1_Subtraction_Justification()
 {
   std::map<TString, std::map<TString, std::vector<TH1F*>>> M = ReadCTIDE("Merged_MC.root");  
-  TH1F* Blayer_trk1_outside = M[example]["ntrk_1_M_O"][0]; 
-  TH1F* Blayer_trk2_outside = M[example]["ntrk_2_M_O"][0]; 
-  TH1F* Blayer_trk3_outside = M[example]["ntrk_3_M_O"][0]; 
-  TH1F* Blayer_trk4_outside = M[example]["ntrk_4_M_O"][0]; 
-
-  std::vector<TH1F*> Blayer_trk1_O_Truth; 
-  std::vector<TH1F*> Blayer_trk1_O_M; 
- 
-  std::vector<TH1F*> tmp_T = M[example]["ntrk_1_T_O"]; 
-  std::vector<TH1F*> tmp = {Blayer_trk1_outside, Blayer_trk2_outside, Blayer_trk3_outside, Blayer_trk4_outside};
-  for (int i(0); i < tmp_T.size(); i++)
-  {
-    TH1F* T = tmp_T[i]; 
-    TH1F* M = tmp[i]; 
-    if (M -> GetEntries() < 200){continue;}
-    Blayer_trk1_O_Truth.push_back(T); 
-    Blayer_trk1_O_M.push_back(M); 
-    
-    TString n_M = "dE/dx of "; n_M += (i+1); n_M += ("-Track Measured"); 
-    M -> SetTitle(n_M); 
-
-    n_M = "dE/dx of 1-Track,"; n_M += (i+1); n_M += ("-Truth"); 
-    T -> SetTitle(n_M); 
-  }
-
-  TCanvas* can = new TCanvas();  
+  TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
-  Blayer_trk1_O_Truth[0] -> GetYaxis() -> SetTitle("Entries");
-  PlotHists(Blayer_trk1_O_M, Blayer_trk1_O_Truth, "1-Track Truth Composition Superimposed with n-Track Cluster Measurements at \\DeltaR > 0.1", can);
-  can -> Print("ExampleContamination.pdf"); 
-  can -> Clear();
-  can -> Print("Output.pdf["); 
+  TString name = "Outside_Subtraction_Justification.pdf"; 
+  can -> Print(name + "["); 
+
+  // per layer error maps 
+  std::map<TString, float> IBL_Error_GS; 
+  std::map<TString, float> IBL_Error_GNS; 
+  std::map<TString, float> IBL_Error_Smo; 
   
-  std::map<TString, float> IBL_noSub; 
-  std::map<TString, float> IBL_Sub;
+  std::map<TString, float> Blayer_Error_GS; 
+  std::map<TString, float> Blayer_Error_GNS; 
+  std::map<TString, float> Blayer_Error_Smo; 
 
-  std::map<TString, float> Blayer_noSub; 
-  std::map<TString, float> Blayer_Sub;
+  std::map<TString, float> Layer1_Error_GS; 
+  std::map<TString, float> Layer1_Error_GNS; 
+  std::map<TString, float> Layer1_Error_Smo; 
 
-  std::map<TString, float> Layer1_noSub; 
-  std::map<TString, float> Layer1_Sub;
+  std::map<TString, float> Layer2_Error_GS; 
+  std::map<TString, float> Layer2_Error_GNS; 
+  std::map<TString, float> Layer2_Error_Smo; 
 
-  std::map<TString, float> Layer2_noSub; 
-  std::map<TString, float> Layer2_Sub;
+  std::map<TString, float> Combined_Error_GS; 
+  std::map<TString, float> Combined_Error_GNS; 
+  std::map<TString, float> Combined_Error_Smo; 
 
-
-  auto Smooth =[&] (std::vector<TH1F*> Hists)
+  for (MMVi h = M.begin(); h != M.end(); h++)
   {
-    for (int i(0); i < Hists.size(); i++)
-    {
-      TGraph* gr = new TGraph(Hists[i]); 
-      TGraphSmooth* g = new TGraphSmooth("Smoother"); 
-      TGraph* h = g -> SmoothKern(gr, "normal", 0.05); 
+    // Outside 1-track: We use this to initialize the fitting procedure 
+    std::map<TString, std::vector<TH1F*>> Hists = M[h -> first]; 
+    TH1F* ntrk1_O = Hists["ntrk_1_M_O"][0]; 
+    TH1F* ntrk2_O = Hists["ntrk_2_M_O"][0]; 
+    TH1F* ntrk3_O = Hists["ntrk_3_M_O"][0]; 
+    TH1F* ntrk4_O = Hists["ntrk_4_M_O"][0]; 
+    std::vector<TH1F*> Outside_v = {ntrk1_O, ntrk2_O, ntrk3_O, ntrk4_O}; 
+    
+    TString n_ = "No Subtraction ntrk-1"; 
+    ntrk1_O -> SetTitle(n_); 
 
-      int n = h -> GetN(); 
-      for (int p(0); p < n; p++)
-      {
-        double x, y; 
-        h -> GetPoint(p, x, y); 
-        Hists[i] -> SetBinContent(p+1, y);
-      }
-      Average(Hists[i]);
+    TString n_temp = "Subtraction - ntrk 1"; 
+    TH1F* ntrk1_O_S = (TH1F*)ntrk1_O -> Clone(n_temp); 
+    ntrk1_O_S -> SetTitle(n_temp); 
 
-      delete gr; 
-      delete h;
-    }
-  }; 
+    TH1F* ntrk1_O_Smo = (TH1F*)ntrk1_O -> Clone("No Subtract ntrk-1 SMOOTH"); 
+    ntrk1_O_Smo -> SetTitle("No Subtract ntrk-1 SMOOTH");
 
-  // Normalization parameters
-  std::map<TString, std::vector<float>> Params_N; 
-  //Params_N["Minimizer"] = {100000};
+    // Inside 1-track 1-Truth: Check how well the histograms match 
+    TH1F* trk1_tru1 = Hists["ntrk_1_T_I"][0]; 
+    if (trk1_tru1 -> Integral() == 0) { continue; }
 
-  for (MMVi x = M.begin(); x != M.end(); x++)
-  {
-    TString name = x -> first; 
+    // Subtraction of 1-track outside 
+    SubtractData(Outside_v, ntrk1_O_S, 0); 
+    
+    // Scale the outside measured histograms to the same integral as truth 
+    TH1F* tmp = (TH1F*)ntrk1_O_S -> Clone("TMP"); 
+    Normalize(tmp); 
+    ntrk1_O_S -> Reset(); 
+    ntrk1_O_S -> FillRandom(tmp, trk1_tru1 -> GetEntries()); 
+    delete tmp; 
 
-    TH1F* trk1_inside = M[name]["ntrk_1_T_I"][0]; 
-    TH1F* trk1_outside = M[name]["ntrk_1_M_O"][0]; 
-    TH1F* trk2_outside = M[name]["ntrk_2_M_O"][0]; 
-    TH1F* trk3_outside = M[name]["ntrk_3_M_O"][0]; 
-    TH1F* trk4_outside = M[name]["ntrk_4_M_O"][0];
-    Normalize(trk1_inside);
-    TH1F* H1 = (TH1F*)trk1_outside -> Clone("H1"); 
-    Normalize(H1);  
+    tmp = (TH1F*)ntrk1_O -> Clone("TMP"); 
+    Normalize(tmp); 
+    ntrk1_O -> Reset(); 
+    ntrk1_O -> FillRandom(tmp, trk1_tru1 -> GetEntries()); 
+    delete tmp; 
 
-    std::vector<TH1F*> trk1_O_Truth = M[name]["ntrk_1_T_O"]; 
-    std::vector<TH1F*> trk1_O_M = {trk1_outside, trk2_outside, trk3_outside, trk4_outside};
-    if (trk1_outside -> GetEntries() < 1000){continue;}
+    tmp = (TH1F*)ntrk1_O_Smo -> Clone("TMP"); 
+    Normalize(tmp); 
+    ntrk1_O_Smo -> Reset(); 
+    ntrk1_O_Smo -> FillRandom(tmp, trk1_tru1 -> GetEntries()); 
+    Smooth(ntrk1_O_Smo, 0.1); 
+    delete tmp; 
 
-    float err = ChiSquareError(trk1_inside, H1); 
-    TString ibl = name; ibl = ibl.ReplaceAll("IBL_", "");// ibl = ibl.ReplaceAll("_", " ");
-    TString bl = name; bl = bl.ReplaceAll("Blayer_", "");// bl = bl.ReplaceAll("_", " ");
-    TString l1 = name; l1 = l1.ReplaceAll("layer1_", "");// l1 = l1.ReplaceAll("_", " ");
-    TString l2 = name; l2 = l2.ReplaceAll("layer2_", "");// l2 = l2.ReplaceAll("_", " ");
-
-
-    if (name.Contains("IBL_")){  IBL_noSub[ibl] = err*100; }
-    if (name.Contains("Blayer_")){ Blayer_noSub[bl] = err*100; }
-    if (name.Contains("layer1_")){ Layer1_noSub[l1] = err*100; }
-    if (name.Contains("layer2_")){ Layer2_noSub[l2] = err*100; }
-
-    Normalization(trk1_outside, trk1_O_M, Params_N); 
-    SubtractData(trk1_O_M, trk1_outside, 0, false); 
-
-    PlotHists(trk1_O_M, trk1_O_Truth, name, can);
-    can -> Print("Output.pdf"); 
+    PlotHists(trk1_tru1, {ntrk1_O, ntrk1_O_S, ntrk1_O_Smo}, can); 
+    can -> Print(name); 
     can -> Clear(); 
-    
-    Normalize(trk1_outside); 
-    float err_s = ChiSquareError(trk1_inside, trk1_outside); 
-    
-    if (name.Contains("IBL_")){ IBL_Sub[ibl] = err_s*100; }
-    if (name.Contains("Blayer_")){ Blayer_Sub[bl] = err_s*100; }
-    if (name.Contains("layer1_")){ Layer1_Sub[l1] = err_s*100; }
-    if (name.Contains("layer2_")){ Layer2_Sub[l2] = err_s*100; }
-      
-    std::cout << name << std::endl;
-    delete H1; 
 
+    // Normalize hists 
+    Normalize(trk1_tru1); 
+    Normalize(ntrk1_O_S); 
+    Normalize(ntrk1_O); 
+    Normalize(ntrk1_O_Smo); 
+
+    // Compare subtracted vs non subtracted to truth 
+    float err_s = ChiSquareError(trk1_tru1, ntrk1_O_S) * 100; 
+    float err_ns = ChiSquareError(trk1_tru1, ntrk1_O) * 100;
+    float err_ns_smo = ChiSquareError(trk1_tru1, ntrk1_O_Smo) * 100; 
+   
+    TString L_JPT = h -> first;
+    if (L_JPT.Contains("IBL"))
+    {
+      TString l = L_JPT.ReplaceAll("IBL_", "");
+      IBL_Error_GS[l] = err_s; 
+      IBL_Error_GNS[l] = err_ns; 
+      IBL_Error_Smo[l] = err_ns_smo; 
+      continue; 
+    }
+
+    if (L_JPT.Contains("Blayer"))
+    {
+      TString l = L_JPT.ReplaceAll("Blayer_", ""); 
+      Blayer_Error_GS[l] = err_s; 
+      Blayer_Error_GNS[l] = err_ns; 
+      Blayer_Error_Smo[l] = err_ns_smo; 
+      continue; 
+    }
+
+    if (L_JPT.Contains("layer1"))
+    {
+      TString l = L_JPT.ReplaceAll("layer1_", ""); 
+      Layer1_Error_GS[l] = err_s; 
+      Layer1_Error_GNS[l] = err_ns; 
+      Layer1_Error_Smo[l] = err_ns_smo; 
+      continue; 
+    }
+
+    if (L_JPT.Contains("layer2"))
+    {
+      TString l = L_JPT.ReplaceAll("layer2_", ""); 
+      Layer2_Error_GS[l] = err_s; 
+      Layer2_Error_GNS[l] = err_ns; 
+      Layer2_Error_Smo[l] = err_ns_smo; 
+      continue; 
+    }
+
+    if (L_JPT.Contains("_"))
+    {
+      TString l = L_JPT; //.ReplaceAll("_", " "); 
+      Combined_Error_GS[l] = err_s; 
+      Combined_Error_GNS[l] = err_ns; 
+      Combined_Error_Smo[l] = err_ns_smo; 
+      continue; 
+    }
   }
-  
-  
-  can -> Print("Output.pdf]"); 
-  can -> Clear(); 
+
+  float min = 1e-4;
+  float max = 1000; 
+  can -> Print(name + "]"); 
+  can -> Clear();
   can -> SetLogy(false);
+  can -> Print("ShapeToInsideTruth.pdf[");
+  gStyle -> SetOptStat(false); 
+
+  TGraph* IBL = GenerateGraph(IBL_Error_GNS, "IBL No Subtraction"); 
+  TGraph* IBL_sub = GenerateGraph(IBL_Error_GS, "IBL Subtraction"); 
+  TGraph* IBL_Smo = GenerateGraph(IBL_Error_Smo, "IBL No Subtraction Smooth"); 
+  std::vector<TGraph*> ng = {IBL, IBL_sub, IBL_Smo}; 
+  GeneratePerformanceGraphs(ng, "IBL Shape Performance", "Jet Energy (GeV)", "Error (%)", min, max, can);
+  can -> Print("ShapeToInsideTruth.pdf");
+  can -> Clear(); 
   
-  can -> Print("ShapeToInsideTruth.pdf["); 
-
-  TGraph* IBL = GenerateGraph(IBL_noSub, "IBL Track Jet-PT Ranges");
-  TGraph* IBL_sub = GenerateGraph(IBL_Sub, "IBL Track Jet-PT Ranges (Subtract)"); 
-
-  TGraph* Blayer = GenerateGraph(Blayer_noSub, "Blayer Track Jet-PT Ranges");
-  TGraph* Blayer_sub = GenerateGraph(Blayer_Sub, "Blayer Track Jet-PT Ranges (Subtract)"); 
- 
-  TGraph* Layer1 = GenerateGraph(Layer1_noSub, "Layer1 Track Jet-PT Ranges");
-  TGraph* Layer1_sub = GenerateGraph(Layer1_Sub, "Layer1 Track Jet-PT Ranges (Subtract)"); 
-  
-  TGraph* Layer2 = GenerateGraph(Layer2_noSub, "Layer2 Track Jet-PT Ranges");
-  TGraph* Layer2_sub = GenerateGraph(Layer2_Sub, "Layer2 Track Jet-PT Ranges (Subtract)"); 
-  
-  IBL -> SetLineColor(kBlue); 
-  IBL_sub -> SetLineColor(kRed); 
-
-  Blayer -> SetLineColor(kBlue); 
-  Blayer_sub -> SetLineColor(kRed); 
-
-  Layer1 -> SetLineColor(kBlue); 
-  Layer1_sub -> SetLineColor(kRed); 
-
-  Layer2 -> SetLineColor(kBlue); 
-  Layer2_sub -> SetLineColor(kRed); 
-
-  std::vector<TGraph*> ng = {IBL, IBL_sub}; 
-  IBL -> GetYaxis() -> SetRangeUser(0., 0.5); 
-  IBL -> Draw("ALPSAME");
-  IBL_sub -> Draw("SAME");
-  GenerateLegend(ng, can); 
+  can -> SetLogy(false);
+  TGraph* Blayer = GenerateGraph(Blayer_Error_GNS, "BLayer No Subtraction"); 
+  TGraph* Blayer_sub = GenerateGraph(Blayer_Error_GS, "BLayer Subtraction"); 
+  TGraph* Blayer_Smo = GenerateGraph(Blayer_Error_Smo, "BLayer No Subtraction Smooth"); 
+  ng = {Blayer, Blayer_sub, Blayer_Smo}; 
+  GeneratePerformanceGraphs(ng, "BLayer Shape Performance", "Jet Energy (GeV)", "Error (%)", min, max, can);
   can -> Print("ShapeToInsideTruth.pdf");
   can -> Clear(); 
 
-  ng = {Blayer, Blayer_sub}; 
-  Blayer -> GetYaxis() -> SetRangeUser(0., 0.5); 
-  Blayer -> Draw("ALPSAME");
-  Blayer_sub -> Draw("SAME");
-  GenerateLegend(ng, can); 
+  can -> SetLogy(false);
+  TGraph* Layer1 = GenerateGraph(Layer1_Error_GNS, "Layer1 No Subtraction"); 
+  TGraph* Layer1_sub = GenerateGraph(Layer1_Error_GS, "Layer1 Subtraction"); 
+  TGraph* Layer1_Smo = GenerateGraph(Layer1_Error_Smo, "Layer1 No Subtraction Smooth"); 
+  ng = {Layer1, Layer1_sub, Layer1_Smo}; 
+  GeneratePerformanceGraphs(ng, "Layer1 Shape Performance", "Jet Energy (GeV)", "Error (%)", min, max, can);
   can -> Print("ShapeToInsideTruth.pdf");
   can -> Clear(); 
 
-  ng = {Layer1, Layer1_sub}; 
-  Layer1 -> GetYaxis() -> SetRangeUser(0., 0.5); 
-  Layer1 -> Draw("ALPSAME");
-  Layer1_sub -> Draw("SAME");
-  GenerateLegend(ng, can); 
+  can -> SetLogy(false);
+  TGraph* Layer2 = GenerateGraph(Layer2_Error_GNS, "Layer2 No Subtraction"); 
+  TGraph* Layer2_sub = GenerateGraph(Layer2_Error_GS, "Layer2 Subtraction"); 
+  TGraph* Layer2_Smo = GenerateGraph(Layer2_Error_Smo, "Layer2 No Subtraction Smooth"); 
+  ng = {Layer2, Layer2_sub, Layer2_Smo}; 
+  GeneratePerformanceGraphs(ng, "Layer2 Shape Performance", "Jet Energy (GeV)", "Error (%)", min, max, can);
   can -> Print("ShapeToInsideTruth.pdf");
-  can -> Clear(); 
 
-  ng = {Layer2, Layer2_sub}; 
-  Layer2 -> GetYaxis() -> SetRangeUser(0., 0.5); 
-  Layer2 -> Draw("ALPSAME");
-  Layer2_sub -> Draw("SAME");
-  GenerateLegend(ng, can); 
+  can -> SetLogy(false);
+  TGraph* Comb = GenerateGraph(Combined_Error_GNS, "Combined Layers No Subtraction"); 
+  TGraph* Comb_sub = GenerateGraph(Combined_Error_GS, "Combined Layers Subtraction"); 
+  TGraph* Comb_Smo = GenerateGraph(Combined_Error_Smo, "Combined Layers No Subtraction Smooth"); 
+  ng = {Comb, Comb_sub, Comb_Smo}; 
+  GeneratePerformanceGraphs(ng, "Combined Shape Performance", "Jet Energy (GeV)", "Error (%)", min, max, can);
   can -> Print("ShapeToInsideTruth.pdf");
 
   can -> Print("ShapeToInsideTruth.pdf]"); 
-
-
-
-
-
-
-
-
-
-
 }

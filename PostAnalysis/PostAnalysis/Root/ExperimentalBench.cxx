@@ -197,35 +197,41 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     
 
     // ====== Simple tester Fits ====== //
-    if (Mode == "FitT_Normal")
+    // String settings 
+    if (Mode.Contains("Smooth")){Smooth(trk1_start, 0.1); }
+    if (Mode.Contains("FitTo")){Params["Minimizer"] = {}; }
+    if (Mode.Contains("Subtract")){ SubtractData(starter, trk1_start, 0, false); }
+    
+    // Fit calls
+    if (Mode.Contains("FitT_Normal"))
     {
       gDirectory -> mkdir("Normalization");
       gDirectory -> cd("Normalization");
       FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_N, "Normalization", current);
     }
     
-    if (Mode == "FitT_ShiftNormal")
+    if (Mode.Contains("FitT_ShiftNormal"))
     {
       gDirectory -> mkdir("ShiftNormal");
       gDirectory -> cd("ShiftNormal");
       FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_NS, "NormalShift", current); 
     }
 
-    if (Mode == "FitT_ShiftNormalFFT")
+    if (Mode.Contains("FitT_ShiftNormalFFT"))
     {
       gDirectory -> mkdir("ShiftNormalFFT");
       gDirectory -> cd("ShiftNormalFFT");
       FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_FFT, "ShiftNormalFFT", (current + " + ShiftOnly")); 
     }
 
-    if (Mode == "FitT_ShiftNormalWidthFFT")
+    if (Mode.Contains("FitT_ShiftNormalWidthFFT"))
     {
       gDirectory -> mkdir("ShiftNormalWidthFFT");
       gDirectory -> cd("ShiftNormalWidthFFT");
       FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "ConvolutionFFT", (current + "+ ShiftWidth")); 
     }
     
-    if (Mode == "FitT_Incremental")
+    if (Mode.Contains("FitT_Incremental"))
     {
       gDirectory -> mkdir("Incremental");
       gDirectory -> cd("Incremental");

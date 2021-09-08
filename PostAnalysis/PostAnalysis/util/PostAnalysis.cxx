@@ -26,11 +26,11 @@ int main(int argc, char* argv[])
     
   //CompareToTruth(Mode, JE);  
   //SplitTest(JE);
+  
+  
   if (Mode.Contains("Debug")){ Proxy(JE, File, Mode); } 
   else {TestFits_AllTruth_ToTrack(JE, Mode, File); }
 
-  
-  
   //MultiTrackTruthComparison("MultiTrackFit.root"); 
   std::cout << "fin" << std::endl; 
 }

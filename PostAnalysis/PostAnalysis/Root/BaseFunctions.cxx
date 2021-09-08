@@ -196,7 +196,7 @@ void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk)
 {
   for (int i(0); i < In.size(); i++)
   {
-    Average(In[i]); 
+    //Average(In[i]); 
     if (i != trk && trutrk == false){ Data -> Add(In[i], -1);}
     if (i == trk && trutrk){ Data -> Add(In[i], -1);}
   }
@@ -355,10 +355,27 @@ float ChiSquareError(TH1F* Truth, TH1F* Pred)
   { 
     float f = Truth -> GetBinContent(i+1) + Pred -> GetBinContent(i+1); 
     if (f == 0){continue;}
-    err += std::pow(Truth -> GetBinContent(i+1) - Pred -> GetBinContent(i+1), 2) / f; 
+    err += std::pow(Truth -> GetBinContent(i+1) - Pred -> GetBinContent(i+1), 2); 
   }
-  err = err *0.5; 
   return err; 
+}
+
+float ChiSquareNormalized(TH1F* Truth, TH1F* Pred)
+{
+  
+  int bins = Truth -> GetNbinsX();
+  
+  float d = 0; 
+  float x = 0; 
+  for (int i(0); i < bins; i++)
+  {
+    float t = Truth -> GetBinContent(i+1); 
+    float p = Pred -> GetBinContent(i+1); 
+    
+    if (t == 0 && p == 0){ continue; }
+    d += std::pow(t - p, 2) / (t + p); 
+  }
+  return 0.5*d; 
 }
 
 TH1F* ExpandTH1F(TH1F* Hist, float min, float max)

@@ -3,11 +3,10 @@
 
 void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle Style)
 {
-  std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kViolet, kOrange, kCoffee, kAurora}; 
   for (int i(0); i < Hists.size(); i++)
   {
     TH1F* H = Hists[i];
-    H -> SetLineColor(Colors[i]);
+    H -> SetLineColor(Colors_F[i]);
     H -> SetLineStyle(Style);
     H -> SetLineWidth(1);
     H -> Draw("SAMEHIST");
@@ -65,6 +64,19 @@ void PlotHists(TH1F* Data, std::vector<TH1F*> Hists, TCanvas* can)
   Data -> Draw("HIST"); 
   TLegend* len = new TLegend(0.9, 0.9, 0.6, 0.75); 
   Populate(Hists, can, len, kSolid); 
+}
+
+void PlotHists(TH1F* Data, TH1F* Hist, TString Title, TCanvas* can)
+{
+  int bin = Data -> GetMaximumBin(); 
+  float m = Data -> GetBinContent(bin+1); 
+  
+  can -> Clear();
+  gStyle -> SetOptStat(0); 
+  Data -> GetYaxis() -> SetRangeUser(1, m);  
+  Data -> SetTitle(Title); 
+  Data -> Draw("HIST"); 
+  Hist -> Draw("HIST"); 
 }
 
 void PlotHists(TH1F* Data, std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TCanvas* can)
@@ -308,11 +320,11 @@ void PlotRooFit(RooAddPdf model, RooRealVar* Domain, std::vector<RooHistPdf*> PD
   Data -> plotOn(xframe); 
   
   Data -> plotOn(xframe, RooFit::Name("Data")); 
-  std::vector<Color_t> Colors = {kRed, kGreen, kOrange, kBlue}; 
+  std::vector<Color_t> Colors_F = {kRed, kGreen, kOrange, kBlue}; 
   for (int i(0); i < PDFs.size(); i++)
   {
     TString name = "trk-"; name += (i+1); 
-    model.plotOn(xframe, RooFit::Name(name), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Colors[i])); 
+    model.plotOn(xframe, RooFit::Name(name), RooFit::Components(*PDFs[i]), RooFit::LineStyle(kDotted), RooFit::LineColor(Colors_F[i])); 
   }
   TCanvas* can = new TCanvas(); 
   gPad -> SetLogy(); 
@@ -431,7 +443,7 @@ void PlotGraphs(std::vector<TH1F*> Hists, TString Title, TCanvas* can)
   for (int i(0); i < Hists.size(); i++)
   {
     TGraph* G1 = new TGraph(Hists[i]); 
-    G1 -> SetLineColor(i+1); 
+    G1 -> SetLineColor(Colors_F[i]); 
     mg -> Add(G1); 
     len -> AddEntry(G1);
   }
@@ -512,9 +524,36 @@ TGraph* GenerateGraph(std::map<TString, float> Input, TString name)
   for (TString x : JetEnergy)
   {
     if (Input[x] == 0){continue;}
-    Gr -> GetXaxis() -> SetBinLabel(i+1, x);
+    Gr -> GetXaxis() -> SetBinLabel(i+1, x.ReplaceAll("_GeV", "").ReplaceAll("_", "-"));
     i++;
   }
 
   return Gr; 
 }
+
+void GeneratePerformanceGraphs(std::vector<TGraph*> Graphs, TString title, TString x_axis, TString y_axis, float min, float max, TCanvas* can)
+{
+  can -> Clear(); 
+  can -> SetLogy(false); 
+  TGraph* Empt = (TGraph*)Graphs[0] -> Clone("TMP");
+  Empt -> SetTitle(title); 
+
+  //Empt -> Clear(); 
+  Empt -> GetYaxis() -> SetRangeUser(min, max); 
+  Empt -> GetXaxis() -> SetTitle(x_axis); 
+  Empt -> GetYaxis() -> SetTitle(y_axis);
+  Empt -> SetLineColor(Colors_F[0]); 
+  can -> SetLogy(true); 
+  can -> SetLogx(false); 
+  Empt -> Draw("ALP"); 
+  for (int i(0); i < Graphs.size(); i++)
+  {
+    TGraph* G = Graphs[i]; 
+    G -> SetLineColor(Colors_F[i]); 
+    G -> Draw("SAME");
+  }
+  GenerateLegend(Graphs, can); 
+}
+
+
+

@@ -63,7 +63,7 @@ TString PrecisionString(float number, int precision, bool sci = false);
 
 // Similarity metric
 float ChiSquareError(TH1F* Truth, TH1F* Pred); 
-
+float ChiSquareNormalized(TH1F* Truth, TH1F* Pred); 
 
 
 // Iterators that are used throughout the package 
