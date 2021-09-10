@@ -20,14 +20,14 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_N["Minimizer"] = {10000};
 
   // Normalization Shift parameters
-  int Minim = 50000; 
+  int Minim = 1000; 
   std::map<TString, std::vector<float>> Params_NS; 
-  Params_NS["Range_ntrk_1"] = Ranges[0]; 
+  //Params_NS["Range_ntrk_1"] = Ranges[0]; 
   Params_NS["dx_s"] = {-m, -m, -m, -m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0}; 
   Params_NS["dx_e"] = {m, m, m, m}; 
   //Params_NS["Seek"] = {1};
-  Params_NS["Minimizer"] = {Minim};
+  //Params_NS["Minimizer"] = {Minim};
   //Params_NS["GSL"] = {1};
   
   // Normalization Shift FFT parameters
@@ -38,7 +38,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_FFT["m_e"] = {m, m, m, m};
   Params_FFT["s_C"] = {1, 1, 1, 1};
   Params_FFT["fft_cache"] = {Minim}; 
-  Params_FFT["Minimizer"] = {Minim}; 
+  //Params_FFT["Minimizer"] = {Minim}; 
 
   // Normalization Shift Width FFT parameters
   std::map<TString, std::vector<float>> Params_WidthFFT; 
@@ -49,7 +49,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_WidthFFT["s_s"] = {0.001, 0.001, 0.001, 0.001};
   Params_WidthFFT["s_e"] = {s_e, s_e, s_e, s_e};
   Params_WidthFFT["fft_cache"] = {Minim}; 
-  Params_WidthFFT["Minimizer"] = {Minim};
+  //Params_WidthFFT["Minimizer"] = {Minim};
   
   // Simultaneous Fitting method 
   std::map<TString, std::vector<float>> Params_Sim; 
@@ -60,7 +60,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Sim["s_s"] = {0.0005, 0.0005, 0.0005, 0.0005};
   Params_Sim["s_e"] = {s_e, s_e, s_e, s_e};
   Params_Sim["fft_cache"] = {Minim}; 
-  Params_Sim["Minimizer"] = {Minim}; 
+  //Params_Sim["Minimizer"] = {Minim}; 
 
   // Experimental Fitting method 
   std::map<TString, std::vector<float>> Params_Exp; 
@@ -71,7 +71,7 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   Params_Exp["s_e"] = {s_e, s_e, s_e, s_e};
   Params_Exp["s_s"] = {0.0005, 0.0005, 0.0005, 0.0005};
   Params_Exp["Minimizer"] = {Minim}; 
-  Params_Exp["fft_cache"] = {Minim};
+  //Params_Exp["fft_cache"] = {Minim};
 
   TFile* X = new TFile("Fit_Tracks.root", "RECREATE"); 
   int p = 0; 
@@ -199,43 +199,59 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     // ====== Simple tester Fits ====== //
     // String settings 
     if (Mode.Contains("Smooth")){Smooth(trk1_start, 0.1); }
-    if (Mode.Contains("FitTo")){Params["Minimizer"] = {}; }
+    if (Mode.Contains("FitTo"))
+    {
+      Params_N["Minimizer"] = {}; 
+      Params_NS["Minimizer"] = {}; 
+      Params_FFT["Minimizer"] = {}; 
+      Params_WidthFFT["Minimizer"] = {}; 
+    }
+    if (Mode.Contains("Minimizer"))
+    {
+      Params_N["Minimizer"] = {Minim}; 
+      Params_NS["Minimizer"] = {Minim}; 
+      Params_FFT["Minimizer"] = {Minim}; 
+      Params_WidthFFT["Minimizer"] = {Minim}; 
+    }
     if (Mode.Contains("Subtract")){ SubtractData(starter, trk1_start, 0, false); }
     
-    // Fit calls
+    TString Perfect = ""; 
+    if (Mode.Contains("TRUTH")){ Perfect = "TRUTH"; }
+
+    // ------- Fit calls
     if (Mode.Contains("FitT_Normal"))
     {
-      gDirectory -> mkdir("Normalization");
-      gDirectory -> cd("Normalization");
-      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_N, "Normalization", current);
-    }
-    
-    if (Mode.Contains("FitT_ShiftNormal"))
-    {
-      gDirectory -> mkdir("ShiftNormal");
-      gDirectory -> cd("ShiftNormal");
-      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_NS, "NormalShift", current); 
+      gDirectory -> mkdir("Normalization"+Perfect);
+      gDirectory -> cd("Normalization"+Perfect);
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_N, "Normalization"+Perfect, current);
     }
 
-    if (Mode.Contains("FitT_ShiftNormalFFT"))
+    else if (Mode.Contains("FitT_ShiftNormalFFT"))
     {
-      gDirectory -> mkdir("ShiftNormalFFT");
-      gDirectory -> cd("ShiftNormalFFT");
-      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_FFT, "ShiftNormalFFT", (current + " + ShiftOnly")); 
+      gDirectory -> mkdir("ShiftNormalFFT"+Perfect);
+      gDirectory -> cd("ShiftNormalFFT"+Perfect);
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_FFT, "ShiftNormalFFT"+Perfect, (current + " + ShiftOnly")); 
     }
 
-    if (Mode.Contains("FitT_ShiftNormalWidthFFT"))
+    else if (Mode.Contains("FitT_ShiftNormal"))
     {
-      gDirectory -> mkdir("ShiftNormalWidthFFT");
-      gDirectory -> cd("ShiftNormalWidthFFT");
-      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "ConvolutionFFT", (current + "+ ShiftWidth")); 
+      gDirectory -> mkdir("ShiftNormal"+Perfect);
+      gDirectory -> cd("ShiftNormal"+Perfect);
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_NS, "NormalShift"+Perfect, current); 
+    }
+
+    else if (Mode.Contains("FitT_ShiftNormalWidthFFT"))
+    {
+      gDirectory -> mkdir("ShiftNormalWidthFFT"+Perfect);
+      gDirectory -> cd("ShiftNormalWidthFFT"+Perfect);
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "ConvolutionFFT"+Perfect, (current + "+ ShiftWidth")); 
     }
     
-    if (Mode.Contains("FitT_Incremental"))
+    else if (Mode.Contains("FitT_Incremental"))
     {
-      gDirectory -> mkdir("Incremental");
-      gDirectory -> cd("Incremental");
-      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "IncrementalFFT", current); 
+      gDirectory -> mkdir("Incremental"+Perfect);
+      gDirectory -> cd("Incremental"+Perfect);
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "IncrementalFFT"+Perfect, current); 
     }
 
     p++;

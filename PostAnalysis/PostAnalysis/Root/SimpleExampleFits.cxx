@@ -31,8 +31,31 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
   can -> SetLogy(); 
   can -> Print(Mode + ".pdf["); 
 
-  std::vector<std::vector<TH1F*>> ntrk_mtru = BuildNtrkMtru(4, trk1_Start, "_Test_" + Mode, 4); 
-  std::vector<std::vector<TH1F*>> ntrk_mtru_template = BuildNtrkMtru(4, trk1_Start, "_Template_" + Mode, 4); 
+  std::vector<std::vector<TH1F*>> ntrk_mtru; 
+  std::vector<std::vector<TH1F*>> ntrk_mtru_template; 
+  if (Mode.Contains("TRUTH"))
+  {
+    for (int trk(0); trk < 4; trk++)
+    {
+      std::vector<TString> names_Test; 
+      std::vector<TString> names_Templ;
+      for (int tru(0); tru < 4; tru++)
+      {
+        TString base = "dEdx_ntrk_"; base += (trk+1); base += ("_ntru_"); base += (tru+1); 
+        names_Test.push_back(base + "_Test_" + Mode); 
+        names_Templ.push_back(base + "_Template_" + Mode); 
+      }
+      ntrk_mtru.push_back(BulkClone(Truth[trk], names_Test)); 
+      ntrk_mtru_template.push_back(BulkClone(Truth[trk], names_Templ));
+    }
+    Mode = Mode.ReplaceAll("TRUTH", "");
+  }
+  else
+  {
+    ntrk_mtru = BuildNtrkMtru(4, trk1_Start, "_Test_" + Mode, 4); 
+    ntrk_mtru_template = BuildNtrkMtru(4, trk1_Start, "_Template_" + Mode, 4); 
+  }
+
 
   std::vector<TString> Out; 
   for (int i(0); i < Data.size(); i++)
