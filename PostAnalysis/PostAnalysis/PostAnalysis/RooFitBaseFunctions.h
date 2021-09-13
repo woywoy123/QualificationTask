@@ -187,7 +187,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
   for (TString F : FitRanges_Names){if (Params[F].size() != 0){x -> setRange(F, Params[F][0], Params[F][1]); Ranges += (F+ ",");}}
   if (Params["Minimizer"].size() == 0)
   {
-    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), Save(), Extended(true), EvalErrorWall(true));
+    re = model.fitTo(*data, Range(Ranges), SumW2Error(true), Save(), Extended(true), EvalErrorWall(true)); //, NumCPU(n_cpu, 1));
   }
   else
   {

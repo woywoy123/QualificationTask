@@ -33,7 +33,7 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
 
   std::vector<std::vector<TH1F*>> ntrk_mtru; 
   std::vector<std::vector<TH1F*>> ntrk_mtru_template; 
-  if (Mode.Contains("TRUTH"))
+  if (Mode.Contains("_TRUTH"))
   {
     for (int trk(0); trk < 4; trk++)
     {
@@ -48,7 +48,7 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
       ntrk_mtru.push_back(BulkClone(Truth[trk], names_Test)); 
       ntrk_mtru_template.push_back(BulkClone(Truth[trk], names_Templ));
     }
-    Mode = Mode.ReplaceAll("TRUTH", "");
+    Mode = Mode.ReplaceAll("_TRUTH", "");
   }
   else
   {

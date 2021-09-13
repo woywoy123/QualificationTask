@@ -31,7 +31,7 @@ function CondorBuild
 }
 
 #Constants that we need to generate the names 
-Condor_active=false
+Condor_active=true
 compiler="PostAnalysisCompiler_Negative"
 filename="Merged_MC_Negative.root"
 Layer=("IBL" "Blayer" "layer1" "layer2") 
@@ -39,20 +39,26 @@ JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_G
 Mode=("Truth")
 
 # Default no subtract
-Mode1=("FitT_Normal_Minimizer" "FitT_ShiftNormal_Minimizer" "FitT_ShiftNormalFFT_Minimizer" "FitT_ShiftNormalWidthFFT_Minimizer" "FitT_Incremental_Minimizer" "FitT_Simultaneous_Minimizer")
-Mode2=("FitT_Normal_Minimizer_Smooth" "FitT_ShiftNormal_Minimizer_Smooth" "FitT_ShiftNormalFFT_Minimizer_Smooth" "FitT_ShiftNormalWidthFFT_Minimizer_Smooth" "FitT_Incremental_Minimizer_Smooth" "FitT_Simultaneous_Minimizer_Smooth")
-Mode3=("FitT_Normal_Smooth_FitTo" "FitT_ShiftNormal_Smooth_FitTo" "FitT_ShiftNormalFFT_Smooth_FitTo" "FitT_ShiftNormalWidthFFT_Smooth_FitTo" "FitT_Incremental_Smooth_FitTo" "FitT_Simultaneous_Smooth_FitTo")
-Mode4=("FitT_Normal_FitTo" "FitT_ShiftNormal_FitTo" "FitT_ShiftNormalFFT_FitTo" "FitT_ShiftNormalWidthFFT_FitTo" "FitT_Incremental_FitTo" "FitT_Simultaneous_FitTo")
-
-# Subtraction
-Mode5=("FitT_Normal_Subtract_Minimizer" "FitT_ShiftNormal_Subtract_Minimizer" "FitT_ShiftNormalFFT_Subtract_Minimizer" "FitT_ShiftNormalWidthFFT_Subtract_Minimizer" "FitT_Incremental_Subtract_Minimizer" "FitT_Simultaneous_Subtract_Minimizer")
-Mode6=("FitT_Normal_Subtract_Minimizer_Smooth" "FitT_ShiftNormal_Subtract_Minimizer_Smooth" "FitT_ShiftNormalFFT_Subtract_Minimizer_Smooth" "FitT_ShiftNormalWidthFFT_Subtract_Minimizer_Smooth" "FitT_Incremental_Subtract_Minimizer_Smooth" "FitT_Simultaneous_Subtract_Minimizer_Smooth")
-Mode7=("FitT_Normal_Subtract_Smooth_FitTo" "FitT_ShiftNormal_Subtract_Smooth_FitTo" "FitT_ShiftNormalFFT_Subtract_Smooth_FitTo" "FitT_ShiftNormalWidthFFT_Subtract_Smooth_FitTo" "FitT_Incremental_Subtract_Smooth_FitTo" "FitT_Simultaneous_Subtract_Smooth_FitTo")
+Mode1=("FitT_Normal_Minimizer" "FitT_ShiftNormal_Minimizer" "FitT_ShiftNormalFFT_Minimizer" "FitT_ShiftNormalWidthFFT_Minimizer" "FitT_Incremental_Minimizer")
+Mode2=("FitT_Normal_Minimizer_Smooth" "FitT_ShiftNormal_Minimizer_Smooth" "FitT_ShiftNormalFFT_Minimizer_Smooth" "FitT_ShiftNormalWidthFFT_Minimizer_Smooth" "FitT_Incremental_Minimizer_Smooth")
+Mode3=("FitT_Normal_Smooth_FitTo" "FitT_ShiftNormal_Smooth_FitTo" "FitT_ShiftNormalFFT_Smooth_FitTo" "FitT_ShiftNormalWidthFFT_Smooth_FitTo" "FitT_Incremental_Smooth_FitTo")
+Mode4=("FitT_Normal_FitTo" "FitT_ShiftNormal_FitTo" "FitT_ShiftNormalFFT_FitTo" "FitT_ShiftNormalWidthFFT_FitTo" "FitT_Incremental_FitTo")
+#
+## Subtraction
+Mode5=("FitT_Normal_Subtract_Minimizer" "FitT_ShiftNormal_Subtract_Minimizer" "FitT_ShiftNormalFFT_Subtract_Minimizer" "FitT_ShiftNormalWidthFFT_Subtract_Minimizer" "FitT_Incremental_Subtract_Minimizer")
+Mode6=("FitT_Normal_Subtract_Minimizer_Smooth" "FitT_ShiftNormal_Subtract_Minimizer_Smooth" "FitT_ShiftNormalFFT_Subtract_Minimizer_Smooth" "FitT_ShiftNormalWidthFFT_Subtract_Minimizer_Smooth" "FitT_Incremental_Subtract_Minimizer_Smooth")
+Mode7=("FitT_Normal_Subtract_Smooth_FitTo" "FitT_ShiftNormal_Subtract_Smooth_FitTo" "FitT_ShiftNormalFFT_Subtract_Smooth_FitTo" "FitT_ShiftNormalWidthFFT_Subtract_Smooth_FitTo" "FitT_Incremental_Subtract_Smooth_FitTo")
 Mode8=("FitT_Normal_Subtract_FitTo" "FitT_ShiftNormal_Subtract_FitTo" "FitT_ShiftNormalFFT_Subtract_FitTo" "FitT_ShiftNormalWidthFFT_Subtract_FitTo" "FitT_Incremental_Subtract_FitTo" "FitT_Simultaneous_Subtract_FitTo")
+#
+## Truth Fits 
+Mode9=("FitT_Normal_TRUTH_Minimizer" "FitT_ShiftNormal_TRUTH_Minimizer" "FitT_ShiftNormalFFT_TRUTH_Minimizer" "FitT_ShiftNormalWidthFFT_TRUTH_Minimizer" "FitT_Incremental_TRUTH_Minimizer")
+Mode10=("FitT_Normal_TRUTH_FitTo" "FitT_ShiftNormal_TRUTH_FitTo" "FitT_ShiftNormalFFT_TRUTH_FitTo" "FitT_ShiftNormalWidthFFT_TRUTH_FitTo" "FitT_Incremental_TRUTH_FitTo")
 
-# Truth Fits 
-Mode9=("FitT_NormalTRUTH_Minimizer" "FitT_ShiftNormalTRUTH_Minimizer" "FitT_ShiftNormalFFTTRUTH_Minimizer" "FitT_ShiftNormalWidthFFTTRUTH_Minimizer" "FitT_IncrementalTRUTH_Minimizer" "FitT_SimultaneousTRUTH_Minimizer")
-Mode10=("FitT_NormalTRUTH_FitTo" "FitT_ShiftNormalTRUTH_FitTo" "FitT_ShiftNormalFFTTRUTH_FitTo" "FitT_ShiftNormalWidthFFTTRUTH_FitTo" "FitT_IncrementalTRUTH_FitTo" "FitT_SimultaneousTRUTH_FitTo")
+# Default Range Fits
+Mode11=("FitT_Normal_Minimizer_Range" "FitT_ShiftNormal_Minimizer_Range" "FitT_ShiftNormalFFT_Minimizer_Range" "FitT_ShiftNormalWidthFFT_Minimizer_Range" "FitT_Incremental_Minimizer_Range")
+Mode12=("FitT_Normal_Minimizer_Smooth_Range" "FitT_ShiftNormal_Minimizer_Smooth_Range" "FitT_ShiftNormalFFT_Minimizer_Smooth_Range" "FitT_ShiftNormalWidthFFT_Minimizer_Smooth_Range" "FitT_Incremental_Minimizer_Smooth_Range")
+Mode13=("FitT_Normal_Smooth_FitTo_Range" "FitT_ShiftNormal_Smooth_FitTo_Range" "FitT_ShiftNormalFFT_Smooth_FitTo_Range" "FitT_ShiftNormalWidthFFT_Smooth_FitTo_Range" "FitT_Incremental_Smooth_FitTo_Range")
+Mode14=("FitT_Normal_FitTo" "FitT_ShiftNormal_FitTo_Range" "FitT_ShiftNormalFFT_FitTo_Range" "FitT_ShiftNormalWidthFFT_FitTo_Range" "FitT_Incremental_FitTo_Range")
 
 Mode+=(${Mode1[@]})
 Mode+=(${Mode2[@]})
