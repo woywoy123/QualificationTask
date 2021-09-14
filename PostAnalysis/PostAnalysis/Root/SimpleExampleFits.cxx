@@ -85,18 +85,16 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
       if ( Mode == "Normalization"){  Pred_Tru = Normalization(trk_tru_T, {trk_tru}, Params, "_Test"); }
 
       // Update the parameters of the PARAMS as guess 
-      if (Pred_Tru["Shift"].size() != 0)        { Params_TFit["dx_G"].push_back(Pred_Tru["Shift"][0]); }
-      if (Pred_Tru["Normalization"].size() != 0){ Params_TFit["l_G"].push_back(Pred_Tru["Normalization"][0]); }
-      if (Pred_Tru["Mean"].size() != 0)         { Params_TFit["m_G"].push_back(Pred_Tru["Mean"][0]); }
-      if (Pred_Tru["Stdev"].size() != 0)        { Params_TFit["s_G"].push_back(Pred_Tru["Stdev"][0]); }
-
+      //if (Pred_Tru["Shift"].size() != 0)        { Params_TFit["dx_G"].push_back(Pred_Tru["Shift"][0]); }
+      //if (Pred_Tru["Normalization"].size() != 0){ Params_TFit["l_G"].push_back(Pred_Tru["Normalization"][0]); }
+      //if (Pred_Tru["Mean"].size() != 0)         { Params_TFit["m_G"].push_back(Pred_Tru["Mean"][0]); }
+      //if (Pred_Tru["Stdev"].size() != 0)        { Params_TFit["s_G"].push_back(Pred_Tru["Stdev"][0]); }
 
       PlotHists({trk_tru}, {trk_tru_T}, can); 
       can -> Print(Mode + ".pdf");
       can -> Print(na);
       can -> Print("Debug.pdf");
 
-      std::cout << "------> " << Pred_Tru["fit_status"][0] << std::endl;
     }
    
     // Perform the full fit on the data
@@ -104,11 +102,11 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     TH1F* ntrk_D = Data[i];
 
     std::map<TString, std::vector<float>> Pred;   
-    if ( Mode == "NormalShift"){ Pred = NormalizationShift(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
-    if ( Mode == "ShiftNormalFFT"){ Pred = ConvolutionFFT(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
-    if ( Mode == "ConvolutionFFT"){ Pred = ConvolutionFFT(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
-    if ( Mode == "IncrementalFFT"){ Pred = IncrementalFFT(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
-    if ( Mode == "Normalization"){ Pred = Normalization(ntrk_D, ntru_temp, Params_TFit, "_Test"); }
+    if ( Mode == "NormalShift"){ Pred = NormalizationShift(ntrk_D, ntru_temp, Params_TFit, "_Template"); }
+    if ( Mode == "ShiftNormalFFT"){ Pred = ConvolutionFFT(ntrk_D, ntru_temp, Params_TFit, "_Template"); }
+    if ( Mode == "ConvolutionFFT"){ Pred = ConvolutionFFT(ntrk_D, ntru_temp, Params_TFit, "_Template"); }
+    if ( Mode == "IncrementalFFT"){ Pred = IncrementalFFT(ntrk_D, ntru_temp, Params_TFit, "_Template"); }
+    if ( Mode == "Normalization"){ Pred = Normalization(ntrk_D, ntru_temp, Params_TFit, "_Template"); }
   
     // Get the values from the fits and find the delta of the fit. 
     Out.push_back(""); 

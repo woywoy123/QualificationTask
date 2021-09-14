@@ -70,6 +70,10 @@ Mode+=(${Mode7[@]})
 Mode+=(${Mode8[@]})
 Mode+=(${Mode9[@]})
 Mode+=(${Mode10[@]})
+Mode+=(${Mode11[@]})
+Mode+=(${Mode12[@]})
+Mode+=(${Mode13[@]})
+Mode+=(${Mode14[@]})
 
 root_dir=$PWD
 echo $root_dir
