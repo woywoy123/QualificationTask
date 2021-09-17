@@ -18,7 +18,8 @@ void Proxy(TString sample, TString Files, TString Mode)
   TH1F* trk3_start = M["ntrk_3_M_O"][0];
   TH1F* trk4_start = M["ntrk_4_M_O"][0];
   std::vector<TH1F*> starter = {trk1_start, trk2_start, trk3_start, trk4_start};  
-  if (Mode.Contains("Subtract")) {SubtractData(starter, trk1_start, 0, false);}
+  if (Mode.Contains("_Subtract")) {SubtractData(starter, trk1_start, 0, false);}
+  if (Mode.Contains("_Smooth")) { Smooth(trk1_start, 0.1); }
 
   std::vector<TH1F*> trk1_templates = BuildNtrkMtru(1, trk1_start, "_template", 2)[0]; 
     

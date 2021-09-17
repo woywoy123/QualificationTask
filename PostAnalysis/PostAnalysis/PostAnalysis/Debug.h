@@ -12,15 +12,15 @@
 void Proxy( TString Sample, TString Files, TString Mode); 
 void SplitTest(TString Sample);
 
-const static std::vector<float> k1 = {0.1, 8.0}; 
-const static std::vector<float> k2 = {0.1, 8.0}; 
-const static std::vector<float> k3 = {0.1, 8.0}; 
-const static std::vector<float> k4 = {0.1, 8.0}; 
+const static std::vector<float> k1 = {0., 13.0}; 
+const static std::vector<float> k2 = {0., 13.0}; 
+const static std::vector<float> k3 = {0., 13.0}; 
+const static std::vector<float> k4 = {0., 13.0}; 
 const static std::vector<std::vector<float>> Ranges = {k1, k2, k3, k4}; 
 static std::vector<TH1F*> Graphs_1Tru; 
 static std::vector<TH1F*> Graphs_2Tru; 
 
-const float m = 0.4; 
+const float m = 0.25; 
 const int Mini = 10000; 
 const float delta = 20; 
 // Normalization parameters
