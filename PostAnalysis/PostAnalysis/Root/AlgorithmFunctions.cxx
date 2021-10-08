@@ -361,6 +361,45 @@ std::vector<std::vector<TH1F*>> Experimental_Fit_NtrkMtru(std::vector<TH1F*> Dat
   return ntrk_mtru_H; 
 }
 
+void Experimental(std::vector<TH1F*> Data, std::vector<std::vector<TH1F*>> ntrk_mtru, std::map<TString, std::vector<float>> Params)
+{
+
+  for (int it(0); it < 3; it++)
+  {
+    for (int i(0); i < Data.size(); i++)
+    {
+      TH1F* data = (TH1F*)Data[i] -> Clone("Data_TMP"); 
+
+      ConvolutionFFT(data, ntrk_mtru[i], Params); 
+
+      // Check if the bins are messed 
+      Average(ntrk_mtru[i]);
+      
+      SubtractData(ntrk_mtru[i], data, i, false); 
+      Average(data); 
+    
+      float L = ntrk_mtru[i][i] -> Integral(); 
+      ntrk_mtru[i][i] -> Reset(); 
+      ntrk_mtru[i][i] -> FillRandom(data, L); 
+
+      delete data;
+    }
+    
+    for (int i(0); i < ntrk_mtru.size(); i++)
+    {
+      
+      TH1F* ntrkmtru = (TH1F*)ntrk_mtru[i][i] -> Clone("TMP");
+      for (int x(0); x < ntrk_mtru.size(); x++)
+      {
+        float L = ntrk_mtru[x][i] -> Integral(); 
+        ntrk_mtru[x][i] -> Reset(); 
+        ntrk_mtru[x][i] -> FillRandom(ntrkmtru, L); 
+      }
+      delete ntrkmtru; 
+    }
+  }
+}
+
 std::vector<std::vector<TH1F*>> Simultaneous_Fit_NtrkMtru(std::vector<TH1F*> Data, TH1F* trk1_start, std::map<TString, std::vector<float>> Params, TString JE)
 {
   TString ext = "_" + JE + "_Simultaneous_NtrkMtru";

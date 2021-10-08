@@ -13,8 +13,8 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
   std::vector<float> k1 = {0.0, 13.6}; 
   std::vector<std::vector<float>> Ranges = {k1}; 
 
-  float m = 0.25; 
-  float s_e = 0.05; 
+  float m = 0.3; 
+  float s_e = 0.005; 
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Minimizer"] = {10000};
@@ -104,11 +104,11 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
     std::vector<TH1F*> ToBeUsed; 
     for ( int i(0); i < Proposed.size(); i++)
     {
-      if (Proposed[i] -> GetEntries() < 100){continue;}
+      //if (Proposed[i] -> GetEntries() < 100){continue;}
       ToBeUsed.push_back(Proposed[i]); 
     }
 
-    if (ToBeUsed.size() < 2){continue;}
+    //if (ToBeUsed.size() < 2){continue;}
     
     X -> mkdir(current); 
     X -> cd(current); 
@@ -245,6 +245,13 @@ void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
       gDirectory -> mkdir("Incremental"+Perfect);
       gDirectory -> cd("Incremental"+Perfect);
       FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "IncrementalFFT"+Perfect, current); 
+    }
+    
+    else if (Mode.Contains("FitT_Experimental_"))
+    {
+      gDirectory -> mkdir("Experimental" + Perfect); 
+      gDirectory -> cd("Experimental" + Perfect); 
+      FitTemplateToTruth( TruthVector, trk1_start, ToBeUsed, Params_WidthFFT, "Experimental" + Perfect, current); 
     }
 
     p++;

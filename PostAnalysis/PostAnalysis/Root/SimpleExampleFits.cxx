@@ -1,4 +1,5 @@
 #include<PostAnalysis/SimpleExampleFits.h>
+#include<PostAnalysis/AlgorithmFunctions.h>
 #include<PostAnalysis/Plotting.h>
 
 void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start, std::vector<TH1F*> Data, std::map<TString, std::vector<float>> Params, TString Mode, TString JE)
@@ -27,9 +28,9 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     }
   }; 
 
-  TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
-  can -> Print(Mode + ".pdf["); 
+  //TCanvas* can = new TCanvas(); 
+  //can -> SetLogy(); 
+  //can -> Print(Mode + ".pdf["); 
 
   std::vector<std::vector<TH1F*>> ntrk_mtru; 
   std::vector<std::vector<TH1F*>> ntrk_mtru_template; 
@@ -66,8 +67,8 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     std::vector<TH1F*> ntru_T = Truth[i]; 
     
     // Fit to individual Truth
-    TString na = Mode + "_"; na += (i+1); na += (".pdf");
-    can -> Print(na + "[");  
+    //TString na = Mode + "_"; na += (i+1); na += (".pdf");
+    //Can -> Print(na + "[");  
     for (int j(0); j < ntru_T.size(); j++)
     {
       TH1F* trk_tru = ntru_P[j];  
@@ -84,16 +85,10 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
       if ( Mode == "IncrementalFFT"){ Pred_Tru = IncrementalFFT(trk_tru_T, {trk_tru}, Params, "_Test"); }
       if ( Mode == "Normalization"){  Pred_Tru = Normalization(trk_tru_T, {trk_tru}, Params, "_Test"); }
 
-      // Update the parameters of the PARAMS as guess 
-      //if (Pred_Tru["Shift"].size() != 0)        { Params_TFit["dx_G"].push_back(Pred_Tru["Shift"][0]); }
-      //if (Pred_Tru["Normalization"].size() != 0){ Params_TFit["l_G"].push_back(Pred_Tru["Normalization"][0]); }
-      //if (Pred_Tru["Mean"].size() != 0)         { Params_TFit["m_G"].push_back(Pred_Tru["Mean"][0]); }
-      //if (Pred_Tru["Stdev"].size() != 0)        { Params_TFit["s_G"].push_back(Pred_Tru["Stdev"][0]); }
-
-      PlotHists({trk_tru}, {trk_tru_T}, can); 
-      can -> Print(Mode + ".pdf");
-      can -> Print(na);
-      can -> Print("Debug.pdf");
+      //PlotHists({trk_tru}, {trk_tru_T}, can); 
+      //can -> Print(Mode + ".pdf");
+      //can -> Print(na);
+      //can -> Print("Debug.pdf");
 
     }
    
@@ -117,13 +112,15 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     if (Pred["Mean"].size() != 0){Compare(Pred, Params_TFit, "Mean", "m_G", &Out);}
     if (Pred["Stdev"].size() != 0){Compare(Pred, Params_TFit, "Stdev", "s_G", &Out);}
 
-    PlotHists(Truth[i], ntrk_mtru_template[i], can); 
-    can -> Print(Mode + ".pdf"); 
-    can -> Print(na);
-    can -> Clear();
-    can -> Print(na + "]");
+    //PlotHists(Truth[i], ntrk_mtru_template[i], can); 
+    //can -> Print(Mode + ".pdf"); 
+    //can -> Print(na);
+    //can -> Clear();
+    //can -> Print(na + "]");
   }
- 
+  
+  if ( Mode == "Experimental" ){ Experimental(Data, ntrk_mtru_template, Params); }
+
   std::vector<std::vector<float>> f; 
   float F2_P = Flost2(ntrk_mtru_template, f)[0]; 
   float F2_T = Flost2(Truth, f)[0]; 
@@ -149,5 +146,5 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
   }
   myfile.close(); 
   
-  can -> Print(Mode + ".pdf]"); 
+  //can -> Print(Mode + ".pdf]"); 
 }

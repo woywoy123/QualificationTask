@@ -77,16 +77,14 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   //}
   Average(PDF_H);
 
-  Normalize(Copy_D); 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
   
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
-  x -> setBins(100000, "cache"); 
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, 1.1); //(Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
 
   // Shift variables
   std::vector<RooRealVar*> d_vars = ProtectionRealVariable("dx", PDF_H, Params, -0.5, 0.5);   
@@ -105,7 +103,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     TString n = "dx_"; n+= (i+1); 
     RooFormulaVar* dx = new RooFormulaVar(n, "@0 - @1", RooArgList(*x, *d_vars[i])); 
     RooDataHist* DH = new RooDataHist(data_n[i], data_n[i], *x, PDF_H[i]); 
-    RooHistPdf* PH = new RooHistPdf(pdf_n[i], pdf_n[i], *dx, *x, *DH, 1); 
+    RooHistPdf* PH = new RooHistPdf(pdf_n[i], pdf_n[i], *dx, *x, *DH, 2); 
 
     pdf_D.push_back(DH); 
     pdf_P.push_back(PH); 
@@ -147,7 +145,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
     CopyPDFToTH1F(pdf_P[i], x, PDF_H[i], Data); 
     Normalize(PDF_H[i]); 
 
-    PDF_H[i] -> Scale(n * (Data -> Integral()));
+    PDF_H[i] -> Scale(n);
   }
 
   delete Copy_D; 
@@ -212,7 +210,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   
   // Base Variables 
   std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
-  std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
+  std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.01, 0.01); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.005, 0.0051); 
 
   // Create the resolution model: Gaussian 

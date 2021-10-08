@@ -194,7 +194,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     RooAbsReal* nll = model.createNLL(*data, Range(Ranges), Extended(true)); 
 
     RooMinimizer* pg = new RooMinimizer(*nll);
-    int print = 1; 
+    int print = -1; 
     if (Params["Print"].size() != 0){print = Params["Print"][0]; }
     pg -> setPrintLevel(print); 
     pg -> setPrintEvalErrors(print);
@@ -207,21 +207,12 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     pg -> setEvalErrorWall(true); 
     pg -> optimizeConst(true); 
     
-    for (int i(0); i < 1; i++)
-    {
-    
-      pg -> migrad();
-      pg -> improve();
-      //pg -> minimize("Minuit2");
-      if (Params["Seek"].size() != 0){pg -> seek(); std::cout << "SEEEK" << std::endl;}
-      //pg -> simplex();
-      //pg -> setEps(1e-14); 
-      //re = pg -> fit("r");
-      pg -> migrad();
-      re = pg -> save();
-      int res = re -> status(); 
-      if (res == 0){break;}
-    }
+    pg -> simplex();
+    pg -> migrad();
+    pg -> improve();
+    if (Params["Seek"].size() != 0){pg -> seek();}
+    re = pg -> save();
+    int res = re -> status(); 
     pg -> cleanup(); 
    
     delete pg; 
