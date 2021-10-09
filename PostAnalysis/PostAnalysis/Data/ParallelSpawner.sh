@@ -31,7 +31,7 @@ function CondorBuild
 }
 
 #Constants that we need to generate the names 
-Condor_active=false
+Condor_active=true
 compiler="PostAnalysisCompiler_Negative"
 filename="Merged_MC_Negative.root"
 Layer=("IBL" "Blayer" "layer1" "layer2") 
