@@ -19,10 +19,10 @@ function CreateBatches_Local
 
 function CondorBuild
 {
-  echo "executable = Spawn.sh" >> example.submit
+  echo "executable = ./$1/Spawn.sh" >> example.submit
   #echo "output = ./results.output.$""(ClusterID)"  >> example.submit
-  echo "error =  ./results.error.$""(ClusterID)"  >> example.submit
-  echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
+  echo "error =  ./$1/results.error.$""(ClusterID)"  >> example.submit
+  echo "log =  ./$1/results.log.$""(ClusterID)"  >> example.submit
   echo "Request_Cpus = 1"  >> example.submit
   echo "Request_Memory = 1024MB" >> example.submit
   echo "+RequestRunTime= 172800"  >> example.submit
@@ -31,12 +31,15 @@ function CondorBuild
 
 
 #Constants that we need to generate the names 
-Condor_active=true
-compiler="PostAnalysisCompiler_Test"
+Condor_active=false
+compiler="PostAnalysisCompiler_IBL"
 filename="Merged_MC_Negative.root"
-Layer=("IBL" "Blayer"  "layer1" "layer2") 
+Layer=("IBL") #("IBL" "Blayer"  "layer1" "layer2") 
 JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
-Algos=("ShiftNormal" "Normal" "Experimental" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental")
+
+
+Algos=("ShiftNormal" "Normal" "ShiftNormalFFT")
+#Algos=("ShiftNormal" "Normal" "Experimental" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental")
 
 # Default templates - No Subtract
 Nominal=("FitTo" "Minimizer" "Minimizer_Smooth" "FitTo_Smooth")
@@ -126,19 +129,20 @@ do
         fi 
 
         echo $Line
+       
+        CondorBuild $Line
         mkdir $Line
         cd $Line 
         LJE=$L"_"$E
         
         CreateBatches_Local $LJE $T $File $PWD $filename
-        CondorBuild
         chmod +x Spawn.sh
         
         if [[ $Condor_active == true ]]
         then 
-          condor_submit example.submit 
+          :  
         else
-          bash Spawn.sh 
+          bash Spawn.sh
         fi 
 
         cd ../

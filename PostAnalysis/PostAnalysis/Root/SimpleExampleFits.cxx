@@ -62,6 +62,7 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
   for (int i(0); i < Data.size(); i++)
   {
     MVF Params_TFit = Params; 
+    Params_TFit["Range_ntrk_1"] = {};
 
     std::vector<TH1F*> ntru_P = ntrk_mtru[i];
     std::vector<TH1F*> ntru_T = Truth[i]; 
@@ -79,11 +80,11 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
       // Fit to the truth and get the parameters
       std::map<TString, std::vector<float>> Pred_Tru;
       
-      if ( Mode == "NormalShift"){    Pred_Tru = NormalizationShift(trk_tru_T, {trk_tru}, Params, "_Test"); }
-      if ( Mode == "ShiftNormalFFT"){ Pred_Tru = ConvolutionFFT(trk_tru_T, {trk_tru}, Params, "_Test"); }
-      if ( Mode == "ConvolutionFFT"){ Pred_Tru = ConvolutionFFT(trk_tru_T, {trk_tru}, Params, "_Test"); }
-      if ( Mode == "IncrementalFFT"){ Pred_Tru = IncrementalFFT(trk_tru_T, {trk_tru}, Params, "_Test"); }
-      if ( Mode == "Normalization"){  Pred_Tru = Normalization(trk_tru_T, {trk_tru}, Params, "_Test"); }
+      if ( Mode == "NormalShift"){    Pred_Tru = NormalizationShift(trk_tru_T, {trk_tru}, Params_TFit, "_Test"); }
+      if ( Mode == "ShiftNormalFFT"){ Pred_Tru = ConvolutionFFT(trk_tru_T, {trk_tru}, Params_TFit, "_Test"); }
+      if ( Mode == "ConvolutionFFT"){ Pred_Tru = ConvolutionFFT(trk_tru_T, {trk_tru}, Params_TFit, "_Test"); }
+      if ( Mode == "IncrementalFFT"){ Pred_Tru = IncrementalFFT(trk_tru_T, {trk_tru}, Params_TFit, "_Test"); }
+      if ( Mode == "Normalization"){  Pred_Tru = Normalization(trk_tru_T, {trk_tru}, Params_TFit, "_Test"); }
 
       //PlotHists({trk_tru}, {trk_tru_T}, can); 
       //can -> Print(Mode + ".pdf");
@@ -148,3 +149,4 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
   
   //can -> Print(Mode + ".pdf]"); 
 }
+

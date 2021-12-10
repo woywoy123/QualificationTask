@@ -20,13 +20,13 @@ const static std::vector<std::vector<float>> Ranges = {k1, k2, k3, k4};
 static std::vector<TH1F*> Graphs_1Tru; 
 static std::vector<TH1F*> Graphs_2Tru; 
 
-const float m = 0.25; 
+const float m = 0.5; 
 const int Mini = 10000; 
 const float delta = 20; 
 // Normalization parameters
 const MVF Params_N = { 
   {"Minimizer", {Mini}}, 
-  {"Seek", {1}},
+  //{"Seek", {1}},
 }; 
 
 // Normalization Shift parameters
@@ -34,9 +34,8 @@ const MVF Params_NS = {
   {"dx_s", {-m, -m, -m, -m}},
   {"dx_e", {m, m, m, m}},
   {"dx_G", {0, 0, 0, 0}}, 
-  {"dx_C", {0, 0, 0, 0}},
   {"Minimizer", {Mini}}, 
-  {"Seek", {1}},
+  //{"Seek", {1}},
 };
 
 // Normalization Shift FFT parameters
@@ -220,6 +219,7 @@ static std::pair<std::vector<MVF>, std::vector<TString>> StepFit(TH1F* start_P, 
 
     PlotHists(ntrk_1, {truth[0], truth[1]}, templ, can); 
     can -> Print("Package.pdf"); 
+    can -> Print("Debugging.pdf");
     can -> Clear(); 
     
     N_Res["Truth_Int"].push_back(truth[0] -> Integral()); 

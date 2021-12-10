@@ -102,9 +102,6 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
         if (x.Contains("ntrk_3") && x.Contains("rgreater") && x.Contains("ntru") && !x.Contains("Split")){ Trk_Tru["ntrk_3_T_O"].push_back(H); }
         if (x.Contains("ntrk_4") && x.Contains("rgreater") && x.Contains("ntru") && !x.Contains("Split")){ Trk_Tru["ntrk_4_T_O"].push_back(H); }
 
-
-
-
         // Split
         // Non Truth measurement. 
         if (x.Contains("ntrk_1") && !x.Contains("ntru") && x.Contains("rless") && x.Contains("IsSplit")){ Trk_Tru["ntrk_1_M_I_IsSplit"].push_back(H); }
@@ -161,6 +158,26 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
       F -> cd(); 
     }
   }
+  
+  for (MMVi n = Output.begin(); n != Output.end(); n++)
+  {
+    for (MVi h = Output[n -> first].begin(); h != Output[n -> first].end(); h++)
+    {
+      std::vector<TH1F*> H = Output[n -> first][h -> first]; 
+
+      for (TH1F* h : H)
+      {
+        if (h -> GetNbinsX() == 1500){h -> Rebin(3);}
+      }
+    }
+
+
+  }
+
+
+
+  
+  return Output; // <<<< --------------------------- Premature close
 
   std::map<TString, std::vector<TH1F*>> All_Hists; 
   for (MMVi x = Output.begin(); x != Output.end(); x++)

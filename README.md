@@ -1,5 +1,7 @@
-# Qualification Task Attack Plan 
+# Qualification Task - FLost2 and 3 Fit 
+- To Run 
 
-## Stuff that needs to be fixed 
-1. TailReplace needs a much better version 
-2. Need to finalize the different closure tests
+cd PostAnalysis/PostAnalysis/Data
+
+bash QuickSpawn.sh
+

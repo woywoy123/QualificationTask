@@ -29,7 +29,9 @@ int main(int argc, char* argv[])
   
   
   if (Mode.Contains("Debug")){ Proxy(JE, File, Mode); } 
-  else {TestFits_AllTruth_ToTrack(JE, Mode, File); }
+  else {FastFits(JE, Mode, File);} 
+  
+  //else {TestFits_AllTruth_ToTrack(JE, Mode, File); }
 
   //MultiTrackTruthComparison("MultiTrackFit.root"); 
   std::cout << "fin" << std::endl; 

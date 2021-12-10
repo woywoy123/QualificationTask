@@ -51,14 +51,14 @@ void Proxy(TString sample, TString Files, TString Mode)
   std::pair<std::vector<MVF>, std::vector<TString>> NormalShiftFFT; 
   std::pair<std::vector<MVF>, std::vector<TString>> NormalShiftFFTWidth; 
   
-  Normal = StepFit(trk1_start, ntrk_1_T, delta, can, "NormalCase1", sample); 
-  FitParameterError(Normal.first, &c_out, {"Normalization"}, Normal.second);  
+  //Normal = StepFit(trk1_start, ntrk_1_T, delta, can, "NormalCase1", sample); 
+  //FitParameterError(Normal.first, &c_out, {"Normalization"}, Normal.second);  
  
-  Normal = StepFit(trk1_start, ntrk_1_T, delta, can, "NormalCase2", sample); 
-  FitParameterError(Normal.first, &c_out, {"Normalization"}, Normal.second);  
+  //Normal = StepFit(trk1_start, ntrk_1_T, delta, can, "NormalCase2", sample); 
+  //FitParameterError(Normal.first, &c_out, {"Normalization"}, Normal.second);  
  
-  Normal = StepFit(trk1_start, ntrk_1_T, delta, can, "NormalCase3", sample); 
-  FitParameterError(Normal.first, &c_out, {"Normalization"}, Normal.second);  
+  //Normal = StepFit(trk1_start, ntrk_1_T, delta, can, "NormalCase3", sample); 
+  //FitParameterError(Normal.first, &c_out, {"Normalization"}, Normal.second);  
   
   
   // ======================== Normalization + Shift x-a ====================== //

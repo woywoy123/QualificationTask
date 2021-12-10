@@ -6,6 +6,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   float x_min = Data -> GetXaxis() -> GetXmin(); 
   float x_max = Data -> GetXaxis() -> GetXmax(); 
   int bins = Data -> GetNbinsX(); 
+  std::cout << bins << std::endl;
   
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
 

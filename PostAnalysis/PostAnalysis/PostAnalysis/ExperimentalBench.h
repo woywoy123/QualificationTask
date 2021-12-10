@@ -4,4 +4,5 @@
 
 void TestFits_AllTruth_ToTrack(TString JE = "x", TString Mode = "x", TString MCFile = "x"); 
 void CompareToTruth(TString Mode, TString Energy);
+void FastFits(TString JE, TString Mode, TString MCFile);
 #endif

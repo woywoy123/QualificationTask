@@ -1,4 +1,0 @@
-[ libPackageLib.so ]
-# List of selected classes
-class Functions
-header PostAnalysis/Functions.h

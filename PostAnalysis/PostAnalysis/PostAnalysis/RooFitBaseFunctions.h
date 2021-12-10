@@ -202,7 +202,7 @@ static RooFitResult* MinimizationCustom(mod model, RooDataHist* data, std::map<T
     pg -> setMaxIterations(Params["Minimizer"][0]); 
     if (Params["Strategy"].size() != 0){pg -> setStrategy(Params["Strategy"][0]); }
     if (Params["GSL"].size() != 0){pg -> setMinimizerType("GSLMultiMin");}
-    //pg -> setProfile(true);
+    pg -> setProfile(true);
     pg -> setOffsetting(true); 
     pg -> setEvalErrorWall(true); 
     pg -> optimizeConst(true); 
