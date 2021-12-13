@@ -167,7 +167,7 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
 
       for (TH1F* h : H)
       {
-        if (h -> GetNbinsX() == 1500){h -> Rebin(3);}
+        if (h -> GetNbinsX() == 1500){h -> Rebin(5);}
       }
     }
 

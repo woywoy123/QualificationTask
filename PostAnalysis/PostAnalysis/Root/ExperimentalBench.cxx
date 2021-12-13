@@ -290,7 +290,7 @@ void CompareToTruth(TString Mode, TString Energy)
   //Params_Exp["s_G"] = {0.05, 0.05, 0.05, 0.05};
   Params_Exp["Minimizer"] = {10000}; 
   Params_Exp["fft_cache"] = {10000};
-  //Params_Exp["Seek"] = {1};
+  Params_Exp["Seek"] = {1};
   Params_Exp["Print"] = {1}; 
 
 
@@ -323,15 +323,6 @@ void CompareToTruth(TString Mode, TString Energy)
     if (Proposed[i] -> GetEntries() < 200){continue;}
     ToBeUsed.push_back(Proposed[i]); 
   }
-
-  //auto Reb =[&] (std::vector<TH1F*> D)
-  //{
-  //  for (int i(0); i < D.size(); i++){ D[i] -> Rebin(2); }
-  //};
-  //
-  //Reb( Proposed ); 
-  //Reb( starter ); 
-  //for (int x(0); x < Truth.size(); x++){ Reb( Truth[x] ); }
 
   std::vector<std::vector<float>> Err;  
 
@@ -510,7 +501,6 @@ void FastFits(TString JE, TString Mode, TString MCFile)
       Settings += ("_Smooth");
     }
     
-    std::cout << "here" << std::endl;
     if (Tracks > -1)
     {
       for (int trk(0); trk < ntrk_mtru_template.size(); trk++)
@@ -535,6 +525,7 @@ void FastFits(TString JE, TString Mode, TString MCFile)
       if ( alg == "ShiftNormalWidthFFT"){ ConvolutionFFT(DataVector[Tracks], ntrk_mtru_template[Tracks], Params_WidthFFT, "_Template"); }
       if ( alg == "Incremental"){ IncrementalFFT(DataVector[Tracks], ntrk_mtru_template[Tracks], Params_WidthFFT, "_Template"); }
       if ( alg == "Normalization"){  Normalization(DataVector[Tracks], ntrk_mtru_template[Tracks], Params_N, "_Template"); }
+      std::cout << "here" << std::endl;
       WriteHistsToFile(ntrk_mtru_template[Tracks], current + "/" + alg); 
       WriteHistsToFile(ntrk_mtru[Tracks], current + "/" + alg); 
     }

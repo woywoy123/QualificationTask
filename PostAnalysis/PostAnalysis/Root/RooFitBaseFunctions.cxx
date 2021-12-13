@@ -11,7 +11,7 @@ std::map<TString, std::vector<float>> Normalization(TH1F* Data, std::vector<TH1F
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1e-9, (Data -> Integral() +1)); 
 
   // PDF Data variables 
   std::vector<TString> pdf_N_D = NameGenerator(PDF_H, "_D"); 
@@ -67,15 +67,6 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
 {
   TH1F* Copy_D = (TH1F*)Data -> Clone("Temp"); 
 
-  //for (int i(0); i < PDF_H.size(); i++)
-  //{
-  //  PDF_H[i] -> Scale(Copy_D -> Integral()); 
-  //  for (int j(0); j < PDF_H[i] -> GetNbinsX(); j++)
-  //  {
-  //    float e = PDF_H[i] -> GetBinContent(j+1); 
-  //    if (e <= 1){PDF_H[i] -> SetBinContent(j+1, 1); }
-  //  }
-  //}
   Average(PDF_H);
 
   float x_min = Data -> GetXaxis() -> GetXmin(); 
@@ -85,7 +76,7 @@ std::map<TString, std::vector<float>> NormalizationShift(TH1F* Data, std::vector
   RooRealVar* x = new RooRealVar("x", "x", x_min, x_max); 
 
   // Normalization variables
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1e-9, (Data -> Integral() +1)); 
 
   // Shift variables
   std::vector<RooRealVar*> d_vars = ProtectionRealVariable("dx", PDF_H, Params, -0.5, 0.5);   
@@ -210,7 +201,7 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   }
   
   // Base Variables 
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1e-9, (Data -> Integral() +1)); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.01, 0.01); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.005, 0.0051); 
 
@@ -359,7 +350,7 @@ std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1
   }; 
   
   Average(PDF_H);   
-  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 0, (Data -> Integral())); 
+  std::vector<RooRealVar*> l_vars = ProtectionRealVariable("l", PDF_H, Params, 1e-9, (Data -> Integral() +1)); 
   std::vector<RooRealVar*> m_vars = ProtectionRealVariable("m", PDF_H, Params, -0.001, 0.001); 
   std::vector<RooRealVar*> s_vars = ProtectionRealVariable("s", PDF_H, Params, 0.0001, 0.001); 
  
@@ -476,7 +467,7 @@ std::map<TString, std::vector<float>> SimultaneousFFT(std::vector<TH1F*> Data, s
   std::vector<std::vector<RooRealVar*>> Lumi; 
   for (int i(0); i < PDF_H_V.size(); i++)
   {
-    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 0, Data[i] -> Integral()); 
+    std::vector<RooRealVar*> l_var = ProtectionRealVariable("l", PDF_H_V[i], Params, 1e-9, Data[i] -> Integral() +1); 
     Lumi.push_back(l_var); 
     Average(PDF_H_V[i]); 
   } 
@@ -600,7 +591,7 @@ std::map<TString, std::vector<float>> FractionFitter(TH1F* Data, std::vector<TH1
 
   for (int i(0); i < PDF_H.size(); i++)
   {
-    fit -> Constrain(i, 0.0, Data -> Integral());
+    fit -> Constrain(i, 1e-9, Data -> Integral() +1);
   }
   int s = fit -> Fit(); 
   Double_t f[PDF_H.size()]; 
