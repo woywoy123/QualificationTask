@@ -166,18 +166,9 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
       std::vector<TH1F*> H = Output[n -> first][h -> first]; 
       
       if ((h -> first).Contains("NotSplit") || (h -> first).Contains("IsSplit")){continue;}
-      for (TH1F* k : H)
-      {
-        k -> Rebin(5);
-      }
-
+      for (TH1F* k : H){k -> Rebin(5);}
     }
-
-
   }
-
-
-
   
   return Output; // <<<< --------------------------- Premature close
 
