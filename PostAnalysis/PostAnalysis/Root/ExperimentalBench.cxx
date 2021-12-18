@@ -339,6 +339,7 @@ void FastFits(TString JE, TString Mode, TString MCFile)
   if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
+  
   std::vector<float> k1 = {0.0, 13.6}; 
   std::vector<std::vector<float>> Ranges = {k1}; 
 
@@ -525,7 +526,6 @@ void FastFits(TString JE, TString Mode, TString MCFile)
       if ( alg == "ShiftNormalWidthFFT"){ ConvolutionFFT(DataVector[Tracks], ntrk_mtru_template[Tracks], Params_WidthFFT, "_Template"); }
       if ( alg == "Incremental"){ IncrementalFFT(DataVector[Tracks], ntrk_mtru_template[Tracks], Params_WidthFFT, "_Template"); }
       if ( alg == "Normalization"){  Normalization(DataVector[Tracks], ntrk_mtru_template[Tracks], Params_N, "_Template"); }
-      std::cout << "here" << std::endl;
       WriteHistsToFile(ntrk_mtru_template[Tracks], current + "/" + alg); 
       WriteHistsToFile(ntrk_mtru[Tracks], current + "/" + alg); 
     }

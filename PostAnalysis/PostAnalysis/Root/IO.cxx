@@ -164,11 +164,13 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
     for (MVi h = Output[n -> first].begin(); h != Output[n -> first].end(); h++)
     {
       std::vector<TH1F*> H = Output[n -> first][h -> first]; 
-
-      for (TH1F* h : H)
+      
+      if ((h -> first).Contains("NotSplit") || (h -> first).Contains("IsSplit")){continue;}
+      for (TH1F* k : H)
       {
-        if (h -> GetNbinsX() == 1500){h -> Rebin(5);}
+        k -> Rebin(5);
       }
+
     }
 
 

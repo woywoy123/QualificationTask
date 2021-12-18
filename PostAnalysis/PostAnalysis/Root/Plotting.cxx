@@ -6,6 +6,7 @@ void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle S
   for (int i(0); i < Hists.size(); i++)
   {
     TH1F* H = Hists[i];
+    std::cout << H -> GetTitle() << std::endl;
     H -> SetLineColor(Colors_F[i]);
     H -> SetLineStyle(Style);
     H -> SetLineWidth(1);

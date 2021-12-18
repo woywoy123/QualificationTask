@@ -28,9 +28,9 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     }
   }; 
 
-  //TCanvas* can = new TCanvas(); 
-  //can -> SetLogy(); 
-  //can -> Print(Mode + ".pdf["); 
+  TCanvas* can = new TCanvas(); 
+  can -> SetLogy(); 
+  can -> Print(Mode + ".pdf["); 
 
   std::vector<std::vector<TH1F*>> ntrk_mtru; 
   std::vector<std::vector<TH1F*>> ntrk_mtru_template; 
@@ -68,7 +68,7 @@ void FitTemplateToTruth( std::vector<std::vector<TH1F*>> Truth, TH1F* trk1_Start
     std::vector<TH1F*> ntru_T = Truth[i]; 
     
     // Fit to individual Truth
-    //TString na = Mode + "_"; na += (i+1); na += (".pdf");
+    TString na = Mode + "_"; na += (i+1); na += (".pdf");
     //Can -> Print(na + "[");  
     for (int j(0); j < ntru_T.size(); j++)
     {
