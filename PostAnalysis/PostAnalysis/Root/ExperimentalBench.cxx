@@ -7,7 +7,7 @@
 
 void TestFits_AllTruth_ToTrack(TString JE, TString Mode, TString MCFile)
 {
-  if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
+  if (MCFile == "x"){ MCFile = "Merged.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
   std::vector<float> k1 = {0.0, 13.6}; 

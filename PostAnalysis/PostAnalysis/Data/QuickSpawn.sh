@@ -31,19 +31,18 @@ function CondorBuild
 
 
 #Constants that we need to generate the names 
-Condor_active=true
-compiler="PostAnalysisCompiler_300_Bins"
-filename="Merged_MC_Negative.root"
+Condor_active=false
+compiler="PostAnalysisCompiler"
+filename="Merged.root"
 Layer=("IBL" "Blayer"  "layer1" "layer2") 
 JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
 
-Algos=("ShiftNormal") # "Normal" "ShiftNormalFFT")
-#Algos=("ShiftNormal" "Normal" "Experimental" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental")
+Algos=("ShiftNormal" "Normal" "Experimental" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental")
 
 # Default templates - No Subtract
 Nominal=("FitTo" "Minimizer" "Minimizer_Smooth" "FitTo_Smooth")
 Subtract=("Minimizer_Subtract" "FitTo_Subtract" "Minimizer_Subtract_Smooth" "FitTo_Subtract_Smooth")
-TRU=("TRUTH_Minimizer" "TRUTH_FitTo")
+#TRU=("TRUTH_Minimizer" "TRUTH_FitTo")
 Range=("Minimizer_Range" "FitTo_Range" "Minimizer_Range_Smooth" "FitTo_Range_Smooth")
 Tracks=("1" "2" "3" "4")
 

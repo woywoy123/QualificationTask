@@ -4,7 +4,7 @@
 void CompareToTruth(TString dir)
 {
   std::map<TString, std::map<TString, std::vector<TH1F*>>> Fits = ReadAlgorithmResults(dir); 
-  std::map<TString, std::map<TString, std::vector<TH1F*>>> Truth = ReadCTIDE("Merged_MC.root");
+  std::map<TString, std::map<TString, std::vector<TH1F*>>> Truth = ReadCTIDE("Merged.root");
   std::vector<std::map<TString, std::map<TString, std::vector<float>>>> Collector; 
   std::vector<TString> JetEnergy; 
   std::vector<TString> Algo_Strings; 

@@ -12,7 +12,7 @@ const std::vector<TString> JetEnergy = {"200_up_GeV", "200_400_GeV", "400_600_Ge
                                     "higher_GeV"}; 
 
 std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir);
-void TestReadCTIDE(TString dir = "Merged_MC.root"); 
+void TestReadCTIDE(TString dir = "Merged.root"); 
 void WriteHistsToFile(std::vector<TH1F*> ntrk_ntru, TString dir); 
 std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TString dir = "ntrk_ntru.root"); 
 void TestReadAlgorithm(); 
