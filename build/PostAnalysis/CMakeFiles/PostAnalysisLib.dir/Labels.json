@@ -1,0 +1,83 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/AlgorithmFunctions.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/BaseFunctions.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/Convolution.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/Debug.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/Evaluate.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/ExperimentalBench.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/IO.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/Plotting.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/ReportFigures.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/PostAnalysis/RooFitBaseFunctions.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/AlgorithmFunctions.cxx"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/BaseFunctions.cxx"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/Convolution.cxx"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/Debug.cxx"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/ExperimentalBench.cxx"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/IO.cxx"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/Plotting.cxx"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/ReportFigures.cxx"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/RooFitBaseFunctions.cxx"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/PostAnalysis/PostAnalysis/Root/LinkDef.h"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/build/PostAnalysis/CMakeFiles/PostAnalysisLibCintDict.cxx",
+			"labels" : 
+			[
+				"PostAnalysis"
+			]
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/build/PostAnalysis/CMakeFiles/PostAnalysisLibCintDict.cxx.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"PostAnalysis"
+		],
+		"name" : "PostAnalysisLib"
+	}
+}

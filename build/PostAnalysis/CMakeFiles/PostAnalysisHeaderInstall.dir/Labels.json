@@ -1,0 +1,19 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/tnom6927/QualificationTask/build/x86_64-centos7-gcc62-opt/include/PostAnalysis"
+		},
+		{
+			"file" : "/home/tnom6927/QualificationTask/build/x86_64-centos7-gcc62-opt/include/PostAnalysis.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"PostAnalysis"
+		],
+		"name" : "PostAnalysisHeaderInstall"
+	}
+}

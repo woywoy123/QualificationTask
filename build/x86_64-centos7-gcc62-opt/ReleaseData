@@ -1,0 +1,8 @@
+[release_metadata]
+release:
+nightly name:Unknown
+project name:WorkDir
+nightly release:b98d779
+date:2022-03-10T1503
+compiler:GNU-6.2.0
+cxxpath:/cvmfs/sft.cern.ch/lcg/releases/gcc/6.2.0-2bc78/x86_64-slc6-gcc62-opt/bin/g++
