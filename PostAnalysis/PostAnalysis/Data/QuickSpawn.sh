@@ -110,6 +110,7 @@ chmod +x Spawn.sh
 bash Spawn.sh
 cd ../
 
+exit
 for L in ${Layer[@]}
 do
   for E in ${JetEnergy[@]}
