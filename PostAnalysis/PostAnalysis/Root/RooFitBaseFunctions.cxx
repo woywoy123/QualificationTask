@@ -255,66 +255,6 @@ std::map<TString, std::vector<float>> ConvolutionFFT(TH1F* Data_Org, std::vector
   return Output; 
 }
 
-
-std::map<TString, std::vector<float>> DeConvolutionFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
-{
-
-  std::vector<TString> Names_Dec; 
-  float r = 0.5; 
-  int bins = Data -> GetNbinsX(); 
-  float min = Data -> GetXaxis() -> GetXmin(); 
-  float max = Data -> GetXaxis() -> GetXmax(); 
-  float w = (max - min) / float(bins); 
-  float new_min = min - w*bins*r; 
-  float new_max = max + w*bins*r; 
-
-  std::vector<TH1F*> PDF_D;
-  std::vector<TH1F*> PSF;  
-  std::vector<TH1F*> PDF; 
-  for (int i(0); i < PDF_H.size(); i++)
-  {
-    TString nameG = "Gx_"; nameG+=(i+1); 
-    TH1F* Gaus = Gaussian(Params["G_Mean"][i], Params["G_Stdev"][i], bins+2*bins*r, new_min, new_max, nameG); 
-    PSF.push_back(Gaus);  
-
-    TString name = "Dec_"; name += (PDF_H[i] -> GetTitle()); 
-    TH1F* H = new TH1F(name, name, bins+2*bins*r, new_min, new_max); 
-    PDF_D.push_back(H); 
-  
-    TString name_L = "L_"; name_L += (PDF_H[i] -> GetTitle()); 
-    TH1F* X = new TH1F(name_L, name_L, bins+2*bins*r, new_min, new_max); 
-
-    for (int j(0); j < bins; j++)
-    {
-      X -> SetBinContent(j+1+r*bins, PDF_H[i] -> GetBinContent(j+1)); 
-    }
-
-    PDF.push_back(X); 
-  }
- 
-  Normalize(PDF); 
-  Normalize(PSF); 
-  MultiThreadingDeconvolution(PDF, PSF, PDF_D, Params["LR"][0]); 
-  
-  for (int i(0); i < PDF_H.size(); i++)
-  {
-    std::vector<float> vec; 
-    for (int j(0); j < bins; j++)
-    {
-      float e = PDF_D[i] -> GetBinContent(j+1+r*bins); 
-      PDF_H[i] -> SetBinContent(j+1, e);    
-    }
-
-    delete PDF[i]; 
-    delete PSF[i]; 
-    delete PDF_D[i]; 
-  }
-  std::map<TString, std::vector<float>> Output = ConvolutionFFT(Data, PDF_H, Params);
-  
-  return Output;
-}
-
-
 std::map<TString, std::vector<float>> IncrementalFFT(TH1F* Data, std::vector<TH1F*> PDF_H, std::map<TString, std::vector<float>> Params, TString Name)
 {
   auto IntoOutput =[&] (std::map<TString, std::vector<float>>* output, 

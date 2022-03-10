@@ -1,4 +1,5 @@
-#!/bin/bash 
+#!/bin/bash
+
 
 function CreateBatches_Local
 {
@@ -19,32 +20,34 @@ function CreateBatches_Local
 
 function CondorBuild
 {
-  echo "executable = ./$1/Spawn.sh" >> example.submit
+  echo "executable = Spawn.sh" >> example.submit
   #echo "output = ./results.output.$""(ClusterID)"  >> example.submit
-  echo "error =  ./$1/results.error.$""(ClusterID)"  >> example.submit
-  echo "log =  ./$1/results.log.$""(ClusterID)"  >> example.submit
+  echo "error =  ./results.error.$""(ClusterID)"  >> example.submit
+  echo "log =  ./results.log.$""(ClusterID)"  >> example.submit
   echo "Request_Cpus = 1"  >> example.submit
   echo "Request_Memory = 1024MB" >> example.submit
   echo "+RequestRunTime= 172800"  >> example.submit
   echo "queue 1"  >> example.submit
 }
 
-
 #Constants that we need to generate the names 
 Condor_active=false
 compiler="PostAnalysisCompiler"
-filename="Merged.root"
-Layer=("IBL" "Blayer"  "layer1" "layer2") 
+filename="Merger.root"
+Layer=("IBL" "Blayer" "layer1" "layer2") 
 JetEnergy=("200_400_GeV" "400_600_GeV" "600_800_GeV" "800_1000_GeV" "1000_1200_GeV" "1200_1400_GeV" "1400_1600_GeV" "1600_1800_GeV" "1800_2000_GeV" "2000_2200_GeV" "2200_2400_GeV" "2400_2600_GeV" "2600_2800_GeV" "2800_3000_GeV" "higher_GeV")
-Algos=("ShiftNormal" "Normal" "Experimental" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental")
-Mode=("Debug" "Debug_Subtract" "Debug_Subtract_Smooth" "Debug_Smooth")
+
+Mode=("Truth")
+#Algos=("Experimental" "Normal" "ShiftNormal" "ShiftNormalFFT" "ShiftNormalWidthFFT" "Incremental")
+Algos=("Normal")
 
 # Default templates - No Subtract
-Nominal=("FitTo" "Minimizer" "Minimizer_Smooth" "FitTo_Smooth")
-Subtract=("Minimizer_Subtract" "FitTo_Subtract" "Minimizer_Subtract_Smooth" "FitTo_Subtract_Smooth")
-TRU=("TRUTH_Minimizer" "TRUTH_FitTo")
-Range=("Minimizer_Range" "FitTo_Range" "Minimizer_Range_Smooth" "FitTo_Range_Smooth")
-Tracks=("1" "2" "3" "4")
+Nominal=("Minimizer" "FitTo" "Minimizer_Smooth" "FitTo_Smooth")
+#Subtract=("Minimizer_Subtract" "FitTo_Subtract" "Minimizer_Subtract_Smooth" "FitTo_Subtract_Smooth")
+#TRU=("TRUTH_Minimizer" "TRUTH_FitTo")
+#Range=("Minimizer_Range" "FitTo_Range" "Minimizer_Range_Smooth" "FitTo_Range_Smooth")
+
+
 
 for m in ${Algos[@]}
 do
@@ -73,6 +76,7 @@ do
   done
 done
 
+#Mode=("Debug" "Debug_Subtract" "Debug_Subtract_Smooth" "Debug_Smooth")
 
 root_dir=$PWD
 echo $root_dir
@@ -83,18 +87,17 @@ source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
 cd ../../
 PostAnalysis_root_dir=$PWD
 echo $PostAnalysis_root_dir
-
 cd $HOME
 rm -r $compiler
 mkdir $compiler
 
 cd $compiler
-rm -rf PostAnalysis
+rm -r PostAnalysis
+rm -r build
 cp -r $PostAnalysis_root_dir . 
 
 cd PostAnalysis && asetup AnalysisBase,21.2.58,here
 cd ../
-rm -rf build
 mkdir build 
 cd build 
 cmake ../PostAnalysis 
@@ -102,67 +105,34 @@ make -j12
 cd ../
 cp $root_dir/$filename ./
 File=$PWD
-
-mkdir Truth
-cd Truth
-CreateBatches_Local "x" "Truth" $File $PWD $filename
-chmod +x Spawn.sh
-bash Spawn.sh
-cd ../
-
 for L in ${Layer[@]}
 do
+
   for E in ${JetEnergy[@]}
   do
     for M in ${Mode[@]}
     do
+      Line=$L"_"$E"_"$M
+     
+      echo $Line
+      mkdir $Line
+      cd $Line 
+      LJE=$L"_"$E
       
-      x=0
-      for trk in ${Tracks[@]}
-      do
-        if [[ $M == *"Experimental"* || $M == "Truth" ]]
-        then 
-          Line=$L"_"$E"_"$M
-          T=$M
-        else
-          Line=$L"_"$E"_"$M"_ntrk"$trk
-          T="$M""_ntrk"$trk
-        fi 
-
-        echo $Line
-       
-        CondorBuild $Line
-        mkdir $Line
-        cd $Line 
-        LJE=$L"_"$E
-        
-        rm Spawn.sh
-        CreateBatches_Local $LJE $T $File $PWD $filename
-        chmod +x Spawn.sh
-        
-        if [[ $Condor_active == true ]]
-        then 
-          :  
-        else
-          bash Spawn.sh
-        fi 
-
-        cd ../
-        if [[ "$M" == *"Experimental"* ]]
-        then 
-          break
-        fi
-        
-        if [[ $x == 4 ]]
-        then 
-          wait
-          x=0
-        fi
-        
-        x=$((x+1))
-      done
+      rm Spawn.sh
+      CreateBatches_Local $LJE $M $File $PWD $filename
+      CondorBuild
+      chmod +x Spawn.sh
+      
+      if [[ $Condor_active == true && $M != "Truth" ]]
+      then 
+        condor_submit example.submit 
+      else
+        bash Spawn.sh
+      fi 
+      
+      cd ../
     done 
   done 
 done
-
 

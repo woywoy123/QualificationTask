@@ -441,32 +441,6 @@ std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadCTIDE(TString dir)
   return Output; 
 }
 
-void TestReadCTIDE(TString dir)
-{
-  std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(dir); 
-  
-  for (MMVi x = F.begin(); x != F.end(); x++)
-  {
-    std::map<TString, std::vector<TH1F*>> M = F[x -> first]; 
-    
-    std::vector<TH1F*> ntrk_1_T = M["ntrk_1_T_I"]; 
-    std::vector<TH1F*> ntrk_2_T = M["ntrk_2_T_I"]; 
-    std::vector<TH1F*> ntrk_3_T = M["ntrk_3_T_I"]; 
-    std::vector<TH1F*> ntrk_4_T = M["ntrk_4_T_I"]; 
-
-    std::vector<TH1F*> ntrk_1_M = M["ntrk_1_M_I"]; 
-    std::vector<TH1F*> ntrk_2_M = M["ntrk_2_M_I"]; 
-    std::vector<TH1F*> ntrk_3_M = M["ntrk_3_M_I"]; 
-    std::vector<TH1F*> ntrk_4_M = M["ntrk_4_M_I"]; 
-    
-    std::vector<TH1F*> ntrk_1 = M["ntrk_1_M_O"]; 
-    std::vector<TH1F*> ntrk_2 = M["ntrk_2_M_O"]; 
-    std::vector<TH1F*> ntrk_3 = M["ntrk_3_M_O"]; 
-    std::vector<TH1F*> ntrk_4 = M["ntrk_4_M_O"]; 
-  }
-}
-
-
 void WriteHistsToFile(std::vector<TH1F*> ntrk_ntru, TString dir)
 {
   gDirectory -> cd("/");
@@ -476,60 +450,6 @@ void WriteHistsToFile(std::vector<TH1F*> ntrk_ntru, TString dir)
   gDirectory -> cd("/"); 
 }
 
-
-std::map<TString, std::map<TString, std::vector<TH1F*>>> ReadAlgorithmResults(TString dir)
-{
-  std::map<TString, std::map<TString, std::vector<TH1F*>>> Output; 
-  TFile* F = new TFile(dir, "READ");
-  std::vector<TString> JetEnergy_Layer_Folder = ReturnCurrentDirs(); 
-  
-  for (TString Folder : JetEnergy_Layer_Folder)
-  {
-    F -> cd(Folder);
-    std::map<TString, std::vector<TH1F*>> Algorithms_Map;  
-    
-    std::vector<TString> Algorithm_Folder = ReturnCurrentDirs(); 
-    for (TString Alg_Folder : Algorithm_Folder)
-    {
-      F -> cd(Folder + "/" + Alg_Folder); 
-      
-      std::vector<TString> Alg_V = ReturnCurrentDirs(); 
-      for (TString H_TS : Alg_V)
-      {
-        if (H_TS.Contains("_error")){continue;}
-        TH1F* H = (TH1F*)gDirectory -> Get(H_TS);
-
-        // Truth inside the jet core. 
-        if (!Alg_Folder.Contains("ntrk_1_T") && H_TS.Contains("ntrk_1")){ Algorithms_Map[Alg_Folder + "_ntrk_1"].push_back(H); }
-        if (!Alg_Folder.Contains("ntrk_2_T") && H_TS.Contains("ntrk_2")){ Algorithms_Map[Alg_Folder + "_ntrk_2"].push_back(H); }
-        if (!Alg_Folder.Contains("ntrk_3_T") && H_TS.Contains("ntrk_3")){ Algorithms_Map[Alg_Folder + "_ntrk_3"].push_back(H); }
-        if (!Alg_Folder.Contains("ntrk_4_T") && H_TS.Contains("ntrk_4")){ Algorithms_Map[Alg_Folder + "_ntrk_4"].push_back(H); }
-        
-        // Truth for multitrack fit:
-        if (Alg_Folder.Contains("ntrk_")){ Algorithms_Map[Alg_Folder + "ruth"].push_back(H); }
-      }
-    }
-    Output[Folder] = Algorithms_Map; 
-    F -> cd(); 
-  }
-
-  return Output;  
-}
-
-void TestReadAlgorithm()
-{
-  std::map<TString, std::map<TString, std::vector<TH1F*>>> Map = ReadAlgorithmResults();
-  for (MMVi x = Map.begin(); x != Map.end(); x++)
-  {
-    TString current = x -> first; 
-    std::map<TString, std::vector<TH1F*>> Algs = x -> second; 
-    
-    for ( MVi p = Algs.begin(); p != Algs.end(); p++)
-    {
-      std::vector<TH1F*> Hists = Algs[p -> first]; 
-    }
-  }
-}
 
 void WriteOutputMapToFile(std::map<TString, std::vector<float>> Map, TString dir, TString name)
 {
@@ -547,72 +467,3 @@ void WriteOutputMapToFile(std::map<TString, std::vector<float>> Map, TString dir
 
   delete tree;
 }
-
-std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> ReadOutputFileToMap(TString dir) 
-{
-  std::map<TString, std::map<TString, std::map<TString, std::vector<float>>>> Output; 
-  TFile* F = new TFile(dir, "READ");
-  std::vector<TString> JetEnergy_Layer_Folder = ReturnCurrentDirs(); 
-  
-  for (TString Folder : JetEnergy_Layer_Folder)
-  {
-    F -> cd(Folder);
-    std::map<TString, std::map<TString, std::vector<float>>> Algorithms_Map;  
-    
-    std::vector<TString> Algorithm_Folder = ReturnCurrentDirs(); 
-    for (TString Alg_Folder : Algorithm_Folder)
-    {
-      F -> cd(Folder + "/" + Alg_Folder); 
-      
-      std::vector<TString> Alg_V = ReturnCurrentDirs(false); 
-      std::map<TString, std::vector<float>> key_map; 
-      for (TString H_TS : Alg_V)
-      {
-        if (H_TS.Contains("_error")) 
-        {
-          TTree* T = (TTree*)F -> Get(Folder + "/" + Alg_Folder + "/" + H_TS); 
-         
-          std::vector<TString> keys; 
-          TObjArray* List = T -> GetListOfBranches(); 
-          for (int i(0); i < List -> GetEntries(); i++){keys.push_back( (List -> At(i)) -> GetName() );}
-          
-          for (TString k : keys)
-          {
-            std::vector<float>* v = 0; 
-            T -> SetBranchAddress(k, &v); 
-            for (int t(0); t < (int)T -> GetEntries(); t++)
-            {
-              T -> GetEntry(t); 
-              key_map[k] = *v; 
-            }
-            delete v;  
-          }
-        }
-      }
-      if (Alg_Folder.Contains("ntrk")){continue;}
-      Algorithms_Map[Alg_Folder] = key_map; 
-    }
-    Output[Folder] = Algorithms_Map; 
-    F -> cd(); 
-  }
-  delete F;
-
-  return Output;  
-}
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -14,7 +14,7 @@ void Figure_Proxy()
 void Figure_N_TrackTemplates()
 {
 
-  std::map<TString, std::map<TString, std::vector<TH1F*>>> M = ReadCTIDE("Merged_MC.root");  
+  std::map<TString, std::map<TString, std::vector<TH1F*>>> M = ReadCTIDE("Merged.root");  
   TH1F* Blayer_trk1_outside = M[example]["ntrk_1_M_O"][0]; 
   TH1F* Blayer_trk2_outside = M[example]["ntrk_2_M_O"][0]; 
   TH1F* Blayer_trk3_outside = M[example]["ntrk_3_M_O"][0]; 

@@ -1,5 +1,4 @@
 #include<PostAnalysis/Debug.h>
-#include<PostAnalysis/DistributionGenerator.h>
 
 void Proxy(TString sample, TString Files, TString Mode)
 {
@@ -135,5 +134,4 @@ void Proxy(TString sample, TString Files, TString Mode)
 
   File -> Close();
 }
-
 

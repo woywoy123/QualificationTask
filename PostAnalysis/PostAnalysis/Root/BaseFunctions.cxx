@@ -72,45 +72,6 @@ std::vector<float> Normalize(std::vector<float> V1)
   return V1; 
 }
 
-// TH1F to vector
-std::vector<float> ToVector(TH1F* Hist)
-{
-  int bins = Hist -> GetNbinsX(); 
-  std::vector<float> Output; 
-   
-  for (int i(0); i < bins; i++)
-  {
-    Output.push_back(Hist -> GetBinContent(i+1));   
-  }
-  return Output; 
-}
-
-// Vector to TH1F
-void ToTH1F(std::vector<float> Input, TH1F* Hist)
-{
-  for (int i(0); i < Input.size(); i++)
-  {
-    Hist -> SetBinContent(i+1, Input[i]); 
-  }
-}
-
-// Shift a histogram using bins 
-void Shift(TH1F* Hist, int shift)
-{
-  std::vector<float> Content; 
-  for (int i(0); i < Hist -> GetNbinsX(); i++)
-  {
-    float e = Hist -> GetBinContent(i+1); 
-    Content.push_back(e); 
-  }
-
-  Hist -> Reset(); 
-  for (int i(0); i < Hist -> GetNbinsX(); i++)
-  {
-    Hist -> SetBinContent(i+1+shift, Content[i]);  
-  }
-}
-
 //Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty)
 {
@@ -172,31 +133,10 @@ void Flush(std::vector<TH1F*> F_C, std::vector<TH1F*> ntrk_Conv, bool DeletePoin
   }
 }
 
-void MatchBins(std::vector<TH1F*> In, TH1F* Data)
-{
-  int bins = In[0] -> GetNbinsX(); 
-  for (int i(0); i < bins; i++)
-  {
-    float e = Data -> GetBinContent(i+1); 
-    
-    float s = 0; 
-    for (int c(0); c < In.size(); c++){s += In[c] -> GetBinContent(i+1);}
-    
-    float r = e / s; 
-    if (std::isnan(r)){continue;}
-    for (int c(0); c < In.size(); c++)
-    {
-      float g = In[c] -> GetBinContent(i+1); 
-      In[c] -> SetBinContent(i+1, g*r); 
-    }
-  }
-}
-
 void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk)
 {
   for (int i(0); i < In.size(); i++)
   {
-    //Average(In[i]); 
     if (i != trk && trutrk == false){ Data -> Add(In[i], -1);}
     if (i == trk && trutrk){ Data -> Add(In[i], -1);}
   }
@@ -211,65 +151,6 @@ void Average(TH1F* Data)
     if ( y <= 0){ y = 1e-8; } 
     if ( std::isnan(y) ) { y = 1e-8; }
     Data -> SetBinContent(i+1, y); 
-  }
-}
-
-void SmoothHist(TH1F* Hist, int order, float sigma)
-{
-  TF1 gaus("mygaus", "gaus", -200, 200); 
-  gaus.SetNpx(10000); 
-  gaus.SetParameters(1., 0., sigma); 
-  
-  const int ndata = Hist -> GetNbinsX(); 
-  
-  std::vector<float> x(ndata, 0); 
-  std::vector<float> y(ndata, 0); 
-  std::vector<float> sig(ndata, 0); 
-  std::vector<float> wt2(ndata, 0); 
-
-  for (int j(0); j < ndata; j++)
-  {
-    int j1 = j+1; 
-    x[j] = Hist -> GetBinCenter(j1); 
-    y[j] = Hist -> GetBinContent(j1); 
-  
-    if (y[j] != 0)
-    {
-      sig[j] = Hist -> GetBinError(j1); 
-      wt2[j] = pow(sig[j], -2); 
-    }
-    else
-    {
-      sig[j] = 1.; 
-      wt2[j] = 1.; 
-    }
-  }
-  
-  for (int j(0); j < ndata; j++)
-  {
-    TMatrixD A(ndata, order+1); 
-    TMatrixDSym W(ndata); 
-    TVectorD m(ndata); 
-
-    for (int i(0); i < ndata; i++)
-    {
-      float dx = x[i] - x[j]; 
-      float gausval = gaus.Eval(dx); 
-      A(i, 0) = 1; 
-      for (int k(1); k < order +1; k++){A(i, k) = A(i, k-1)*dx;}
-      
-      W(i, i) = gausval*wt2[i]; 
-      m(i) = y[i]; 
-    }
-
-    TMatrixD ATW = A.T() * W; 
-    TMatrixD C = ATW * A.T(); 
-    C.Invert(); 
-
-    auto results = C*ATW*m; 
-
-    Hist -> SetBinContent(j+1, results(0)); 
-    Hist -> SetBinError(j+1, sqrt(C(0, 0)));
   }
 }
 
@@ -359,23 +240,3 @@ float ChiSquareError(TH1F* Truth, TH1F* Pred)
   }
   return err; 
 }
-
-float ChiSquareNormalized(TH1F* Truth, TH1F* Pred)
-{
-  
-  int bins = Truth -> GetNbinsX();
-  
-  float d = 0; 
-  float x = 0; 
-  for (int i(0); i < bins; i++)
-  {
-    float t = Truth -> GetBinContent(i+1); 
-    float p = Pred -> GetBinContent(i+1); 
-    
-    if (t == 0 && p == 0){ continue; }
-    d += std::pow(t - p, 2) / (t + p); 
-  }
-  return 0.5*d; 
-}
-
-

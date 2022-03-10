@@ -3,7 +3,6 @@
 #include<PostAnalysis/RooFitBaseFunctions.h>
 #include<PostAnalysis/AlgorithmFunctions.h>
 #include<PostAnalysis/Plotting.h>
-#include<PostAnalysis/SimpleExampleFits.h>
 
 void FastFits(TString JE, TString Mode, TString MCFile)
 {
