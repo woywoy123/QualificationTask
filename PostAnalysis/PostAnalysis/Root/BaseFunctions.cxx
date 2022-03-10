@@ -378,35 +378,4 @@ float ChiSquareNormalized(TH1F* Truth, TH1F* Pred)
   return 0.5*d; 
 }
 
-TH1F* ExpandTH1F(TH1F* Hist, float min, float max)
-{
 
-  int bins = Hist -> GetNbinsX(); 
-  float min_o = Hist -> GetXaxis() -> GetXmin(); 
-  float max_o = Hist -> GetXaxis() -> GetXmax(); 
-
-  float w = (max_o - min_o) / float(bins); 
-  int b = 0; 
-  while (min <= min_o - w) 
-  {
-    b++; 
-    min_o = min_o - w; 
-  }
-  
-  TString name = Hist -> GetTitle(); name += ("_ext"); 
-  TH1F* X = new TH1F(name, name, bins+b, min_o, max_o); 
-  
-  X -> FillRandom(Hist, Hist -> Integral()); 
-  return X; 
-}
-
-std::vector<TH1F*> ExpandTH1F(std::vector<TH1F*> Hists, float min, float max)
-{
-  std::vector<TH1F*> Out; 
-  for (int i(0); i < Hists.size(); i++)
-  {
-    TH1F* x = ExpandTH1F(Hists[i], min, max);  
-    Out.push_back(x); 
-  }
-  return Out; 
-}

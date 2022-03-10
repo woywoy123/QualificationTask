@@ -20,19 +20,14 @@ int main(int argc, char* argv[])
   //RooFitBaseFunctionTest();  
   //TestFits_NTruth_NTrack();  
   //TestRead(); 
-  //CompareToTruth("ntrk_ntru.root"); 
-  //std::cout << "+++" << JE << " " << Mode << std::endl;
   //ReadOutputFileToMap("Fit_Tracks.root"); 
     
-  //CompareToTruth(Mode, JE);  
   //SplitTest(JE);
   
   
   if (Mode.Contains("Debug")){ Proxy(JE, File, Mode); } 
   else {FastFits(JE, Mode, File);} 
   
-  //else {TestFits_AllTruth_ToTrack(JE, Mode, File); }
-
   //MultiTrackTruthComparison("MultiTrackFit.root"); 
   std::cout << "fin" << std::endl; 
 }

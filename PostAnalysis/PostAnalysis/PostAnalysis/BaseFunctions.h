@@ -30,8 +30,6 @@ void MatchBins(std::vector<TH1F*> In, TH1F* Data);
 void SubtractData(std::vector<TH1F*> In, TH1F* Data, int trk, bool trutrk = false); 
 void Smooth(TH1F* Hist, float kern); 
 void SmoothHist(TH1F* Hist, int order, float sigma); 
-TH1F* ExpandTH1F(TH1F* Hist, float min, float max); 
-std::vector<TH1F*> ExpandTH1F(std::vector<TH1F*> Hists, float min, float max); 
 
 // Variable Name Generator 
 std::vector<TString> NameGenerator(int number, TString shorty); 
