@@ -10,7 +10,6 @@
 #include<TMultiGraph.h>
 
 void Proxy( TString Sample, TString Files, TString Mode); 
-void SplitTest(TString Sample);
 
 const static std::vector<float> k1 = {0., 13.0}; 
 const static std::vector<float> k2 = {0., 13.0}; 
