@@ -1,5 +1,0 @@
-# Target labels
- PostAnalysis
-# Source files and their labels
-/home/tnom6927/QualificationTask/build/x86_64-centos7-gcc62-opt/include/PostAnalysis
-/home/tnom6927/QualificationTask/build/x86_64-centos7-gcc62-opt/include/PostAnalysis.rule
