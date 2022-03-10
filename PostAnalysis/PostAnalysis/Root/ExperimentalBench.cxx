@@ -336,7 +336,7 @@ void CompareToTruth(TString Mode, TString Energy)
 
 void FastFits(TString JE, TString Mode, TString MCFile)
 {
-  if (MCFile == "x"){ MCFile = "Merged_MC.root"; }
+  if (MCFile == "x"){ MCFile = "Merged.root"; }
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
   
@@ -355,7 +355,7 @@ void FastFits(TString JE, TString Mode, TString MCFile)
   Params_NS["dx_s"] = {-m, -m, -m, -m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0}; 
   Params_NS["dx_e"] = {m, m, m, m}; 
-  Params_NS["Seek"] = {1};
+  //Params_NS["Seek"] = {1};
   
   // Normalization Shift FFT parameters
   std::map<TString, std::vector<float>> Params_FFT; 
