@@ -2,7 +2,6 @@
 #define ALGORITHM_FUNCTIONS_H
 
 #include<PostAnalysis/BaseFunctions.h>
-#include<PostAnalysis/Convolution.h>
 #include<PostAnalysis/RooFitBaseFunctions.h>
 #include<PostAnalysis/IO.h>
 
