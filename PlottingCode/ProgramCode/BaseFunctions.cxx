@@ -19,7 +19,10 @@ VTH1F GetSubVector(std::vector<TH1F*> Input, int start, int end)
 VF ShapeComparison(VTH1F Hists, VTH1F Truth)
 {
   VF Output; 
-  for (int i(0); i < Hists.size(); i++)
+  int n = 0;
+  if (Hists.size() < 4){ n = Hists.size(); }
+  else {n = 4;}
+  for (int i(0); i < n; i++)
   {
     TH1F* H = (TH1F*)Hists[i] -> Clone("H"); 
     TH1F* H_T = (TH1F*)Truth[i] -> Clone("T"); 

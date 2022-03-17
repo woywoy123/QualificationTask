@@ -44,6 +44,49 @@ void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle S
   }
 }
 
+void Residual(VTF pred, VTF truth)
+{
+  
+  std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kViolet, kOrange, kCoffee, kAurora}; 
+  for (int i(0); i < pred.size(); i++)
+  {
+    TString name = pred[i] -> GetTitle(); 
+    TH1F* R1 = (TH1F*)pred[i] -> Clone(name + "_R"); 
+    R1 -> Reset();
+    R1 -> GetYaxis() -> SetRangeUser(-3, 3);
+    R1 -> SetFillColor(kWhite);
+    R1 -> SetTitle("");
+    R1 -> GetYaxis() -> SetTitle("log(fit/truth)");
+    R1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^{2}]");
+    R1 -> GetXaxis() -> CenterTitle();
+    R1 -> GetYaxis() -> CenterTitle();
+    R1 -> GetXaxis() -> SetLabelSize(0.075);
+    R1 -> GetYaxis() -> SetLabelSize(0.075);
+    R1 -> SetTitleOffset(0.4, "Y");
+    R1 -> GetXaxis() -> SetTitleSize(0.075);
+    R1 -> GetYaxis() -> SetTitleSize(0.075);
+
+
+    R1 -> SetMarkerStyle(kMultiply); 
+    R1 -> SetMarkerSize(0.8); 
+    R1 -> SetMarkerColor(Colors[i]);
+    //R1 -> SetLineWidth(0);
+    
+    for (int j(0); j < R1 -> GetNbinsX(); j++)
+    {
+      float t = truth[i] -> GetBinContent(j+1); 
+      float p = pred[i] -> GetBinContent(j+1);    
+      float r = 1;
+      if (t != 0){ r = p/t; }
+      R1 -> SetBinError(j+1, 0);
+      R1 -> SetBinContent(j+1, std::log(r));
+    }
+    R1 -> Draw("SAMEP");
+  }
+
+}
+
+
 void PlotHists(TH1F* Hist, TCanvas* can)
 {
   can -> SetLogy(); 
@@ -117,7 +160,7 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TCanvas*
     float m = prediction[i] -> GetBinContent(bin+1); 
     sum += m;  
   }
-
+  
   can -> Clear();
   gStyle -> SetOptStat(0); 
   truth[0] -> GetYaxis() -> SetRangeUser(1, sum*2);
@@ -127,7 +170,7 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TCanvas*
   len -> SetBorderSize(0); 
   Populate(truth, can, len, kDashed); 
   Populate(prediction, can, len, kSolid); 
-
+  
 }
 
 void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString title, TCanvas* can)
@@ -143,11 +186,25 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString 
   can -> Clear();
   gStyle -> SetOptStat(0); 
   gStyle -> SetOptTitle(1); 
+  TPad *P1 = new TPad("P1", "P1", 0, 0.3, 1, 1);
+  P1 -> SetBottomMargin(0.0001); 
+  P1 -> SetBorderMode(0); 
+  
+  TPad *P2 = new TPad("P2", "P2", 0, 0, 1, 0.3);
+  P2 -> SetTopMargin(0.0001); 
+  P2 -> SetBorderMode(0);
+  P2 -> SetBottomMargin(0.25); 
+  
+  P1 -> Draw(); 
+  P2 -> Draw(); 
+  P1 -> cd(); 
+
+  P1 -> SetLogy(); 
   TH1F* empty = (TH1F*)truth[0] -> Clone(title); 
   empty -> SetTitle(title); 
   empty -> Reset();
 
-  empty -> GetYaxis() -> SetRangeUser(1, sum*2);
+  empty -> GetYaxis() -> SetRangeUser(1, sum*1.2);
   empty -> GetYaxis() -> SetTitle("Clusters");
   empty -> GetYaxis() -> CenterTitle();
 
@@ -172,6 +229,12 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString 
 
   Populate(truth, can, len, kDashed); 
   Populate(prediction, can, len, kSolid); 
+
+  P2 -> cd();
+  Residual(prediction, truth); 
+  can -> cd();
+
+
 }
 
 void PlotHists(TH1F* Data, std::vector<TH1F*> Prediction, std::vector<TH1F*> Truth, TString Title, float FLost_P, float FLost_T, TCanvas* can)

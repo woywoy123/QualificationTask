@@ -26,12 +26,11 @@ void ShapePerformance(TString direct, TString Mode)
   TString PDF = Mode + "Fits.pdf"; 
 
   TCanvas* can = new TCanvas(); 
-  can -> SetLogy(); 
+
   can -> Print(PDF + "["); 
   gStyle -> SetOptStat(0); 
   gStyle -> SetImageScaling(3);
   can -> SetTopMargin(0.1); 
-  
   for (MMVTH1Fi x = F.begin(); x != F.end(); x++)
   {
    
@@ -47,7 +46,6 @@ void ShapePerformance(TString direct, TString Mode)
     for (TString k : JetEnergy){ if (k == L_JE){Skip = false; break;} }
     if (!L_JE.Contains("GeV") || Layer == "" || Skip == true){continue;}
 
-
     MVTH1F M = F[x -> first];
     
     //Truth Histograms 
@@ -56,7 +54,6 @@ void ShapePerformance(TString direct, TString Mode)
     VTH1F ntrk3_T = M["ntrk_3_Truth"];
     VTH1F ntrk4_T = M["ntrk_4_Truth"];
     
-    std::cout << ntrk1_T.size() << std::endl;
     if (ntrk1_T.size() == 0){continue;}
     int a = 0; 
 
@@ -227,7 +224,6 @@ void ShapePerformance(TString direct, TString Mode)
   gr = GenerateMultiGraph(Trk1_ShapePerformance["IBL"], "1-Track " + Mode + " Shape Performance For Different Algorithms: IBL", Lan, min, max, "Error"); 
   Lan -> Print(dir + "trk1/" + Mode + "-trk1_IBL_Shape_ERROR.png"); 
   Lan -> Print(PER);
-  BulkDelete(gr); 
   Lan -> Clear(); 
   
   gr = GenerateMultiGraph(Trk1_ShapePerformance["Blayer"], "1-Track " + Mode + " Shape Performance For Different Algorithms: Blayer", Lan, min, max, "Error"); 

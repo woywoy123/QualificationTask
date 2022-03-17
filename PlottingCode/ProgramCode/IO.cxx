@@ -35,6 +35,8 @@ MMVTH1F ReadAlgorithmResults(TString dir)
       for (TString H_TS : Alg_V)
       {
         if (H_TS.Contains("_error")){continue;}
+        if ( H_TS.Contains("_ntru_5")){continue;}
+        
         TH1F* H = (TH1F*)gDirectory -> Get(H_TS);
 
         // Truth inside the jet core. 
