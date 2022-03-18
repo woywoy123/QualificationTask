@@ -48,42 +48,41 @@ void Residual(VTF pred, VTF truth)
 {
   
   std::vector<Color_t> Colors = {kRed, kGreen, kBlue, kCyan, kViolet, kOrange, kCoffee, kAurora}; 
-  for (int i(0); i < pred.size(); i++)
+  
+  TH1F* R1 = (TH1F*)pred[0] -> Clone("Residual"); 
+  R1 -> Reset();
+  R1 -> GetYaxis() -> SetRangeUser(-1.2, 1.2);
+  R1 -> SetFillColor(kWhite);
+  R1 -> SetTitle("");
+  R1 -> GetYaxis() -> SetTitle("log(Fit/Truth)");
+  R1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^{2}]");
+  R1 -> GetXaxis() -> CenterTitle();
+  R1 -> GetYaxis() -> CenterTitle();
+  R1 -> GetXaxis() -> SetLabelSize(0.075);
+  R1 -> GetYaxis() -> SetLabelSize(0.075);
+  R1 -> SetTitleOffset(0.4, "Y");
+  R1 -> GetXaxis() -> SetTitleSize(0.075);
+  R1 -> GetYaxis() -> SetTitleSize(0.075);
+  R1 -> SetMarkerStyle(kCircle); 
+  R1 -> SetMarkerSize(0.3); 
+  R1 -> SetLineColor(kBlack);
+
+  for (int j(0); j < R1 -> GetNbinsX(); j++)
   {
-    TString name = pred[i] -> GetTitle(); 
-    TH1F* R1 = (TH1F*)pred[i] -> Clone(name + "_R"); 
-    R1 -> Reset();
-    R1 -> GetYaxis() -> SetRangeUser(-3, 3);
-    R1 -> SetFillColor(kWhite);
-    R1 -> SetTitle("");
-    R1 -> GetYaxis() -> SetTitle("log(fit/truth)");
-    R1 -> GetXaxis() -> SetTitle("dE/dx [MeV g^{-1} cm^{2}]");
-    R1 -> GetXaxis() -> CenterTitle();
-    R1 -> GetYaxis() -> CenterTitle();
-    R1 -> GetXaxis() -> SetLabelSize(0.075);
-    R1 -> GetYaxis() -> SetLabelSize(0.075);
-    R1 -> SetTitleOffset(0.4, "Y");
-    R1 -> GetXaxis() -> SetTitleSize(0.075);
-    R1 -> GetYaxis() -> SetTitleSize(0.075);
-
-
-    R1 -> SetMarkerStyle(kMultiply); 
-    R1 -> SetMarkerSize(0.8); 
-    R1 -> SetMarkerColor(Colors[i]);
-    //R1 -> SetLineWidth(0);
-    
-    for (int j(0); j < R1 -> GetNbinsX(); j++)
+    float sum_t = 0; 
+    float sum_f = 0; 
+    for (int i(0); i < pred.size(); i++)
     {
-      float t = truth[i] -> GetBinContent(j+1); 
-      float p = pred[i] -> GetBinContent(j+1);    
-      float r = 1;
-      if (t != 0){ r = p/t; }
-      R1 -> SetBinError(j+1, 0);
-      R1 -> SetBinContent(j+1, std::log(r));
+      sum_t += truth[i] -> GetBinContent(j+1); 
+      sum_f += pred[i] -> GetBinContent(j+1);    
     }
-    R1 -> Draw("SAMEP");
-  }
 
+    R1 -> SetBinError(j+1, 0.0001);
+    if (sum_t == 0 || sum_f == 0){continue;}
+    R1 -> SetBinContent(j+1, std::log(sum_f/sum_t));
+
+  }
+  R1 -> Draw("PE3");
 }
 
 
@@ -231,6 +230,7 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString 
   Populate(prediction, can, len, kSolid); 
 
   P2 -> cd();
+  P2 -> SetGrid();
   Residual(prediction, truth); 
   can -> cd();
 

@@ -10,7 +10,7 @@ VTH1F GetSubVector(std::vector<TH1F*> Input, int start, int end)
     for (int i = 0; i < H -> GetNbinsX(); i++)
     {
       float k = H -> GetBinContent(i+1);
-      if (std::isnan(k)) { H -> SetBinContent(i+1, 1e-9); }
+      if (std::isnan(std::abs(k))) { H -> SetBinContent(i+1, 1e-9); }
     }
   }
   return Out; 
@@ -28,9 +28,11 @@ VF ShapeComparison(VTH1F Hists, VTH1F Truth)
     TH1F* H_T = (TH1F*)Truth[i] -> Clone("T"); 
     
     float l_H = H -> Integral();
+    if (l_H == 0){l_H = 1;}
     H -> Scale(1./l_H); 
 
     float l_T = H_T -> Integral();
+    if (l_T == 0){l_T = 1;}
     H_T -> Scale(1./l_T); 
 
     float chi2 = ChiSquareDistanceSym(H, H_T);  
@@ -53,6 +55,7 @@ float ChiSquareDistanceSym(TH1F* H1, TH1F* H2)
     if (sum == 0){continue;}
     chi2 += std::pow(dif, 2)/sum; 
   }
+
   chi2 = 0.5*chi2; 
   return chi2;
 }

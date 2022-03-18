@@ -79,7 +79,7 @@ void ShapePerformance(TString direct, TString Mode)
     Trk2_ShapePerformance[Layer]["Normalization"][L_JE] = trk2_Normal_Test;
     Trk3_ShapePerformance[Layer]["Normalization"][L_JE] = trk3_Normal_Test;
     Trk4_ShapePerformance[Layer]["Normalization"][L_JE] = trk4_Normal_Test;
-    
+
     // ShiftNormal Histograms 
     a++; 
     VTH1F ntrk1_ShiftNormal_Test = GetSubVector(M[Algos[a]+"_ntrk_1"], start, end); 
@@ -95,15 +95,13 @@ void ShapePerformance(TString direct, TString Mode)
     Trk3_ShapePerformance[Layer]["ShiftNormal"][L_JE] = trk3_ShiftNormal_Test;
     Trk4_ShapePerformance[Layer]["ShiftNormal"][L_JE] = trk4_ShiftNormal_Test;
 
+    std::cout << "-> " << L_JE << " -> " << Layer << " -> " << Algos[a] << std::endl;
     // ShiftNormalFFT Histograms
     a++;
     VTH1F ntrk1_ShiftNormalFFT_Test = GetSubVector(M[Algos[a]+"_ntrk_1"], start, end); 
     VTH1F ntrk2_ShiftNormalFFT_Test = GetSubVector(M[Algos[a]+"_ntrk_2"], start, end); 
     VTH1F ntrk3_ShiftNormalFFT_Test = GetSubVector(M[Algos[a]+"_ntrk_3"], start, end); 
     VTH1F ntrk4_ShiftNormalFFT_Test = GetSubVector(M[Algos[a]+"_ntrk_4"], start, end); 
-    
-
-
     float trk1_ShiftNormalFFT_Test = WeightedComparisonToTruth(ntrk1_ShiftNormalFFT_Test, ntrk1_T); 
     float trk2_ShiftNormalFFT_Test = WeightedComparisonToTruth(ntrk2_ShiftNormalFFT_Test, ntrk2_T); 
     float trk3_ShiftNormalFFT_Test = WeightedComparisonToTruth(ntrk3_ShiftNormalFFT_Test, ntrk3_T); 
@@ -113,6 +111,7 @@ void ShapePerformance(TString direct, TString Mode)
     Trk3_ShapePerformance[Layer]["ShiftNormalFFT"][L_JE] = trk3_ShiftNormalFFT_Test;
     Trk4_ShapePerformance[Layer]["ShiftNormalFFT"][L_JE] = trk4_ShiftNormalFFT_Test;
 
+    std::cout << "-> " << L_JE << " -> " << Layer << " -> " << Algos[a] << std::endl;
     // ShiftNormalWidthFFT Histograms
     a++;
     VTH1F ntrk1_ShiftNormalWidthFFT_Test = GetSubVector(M[Algos[a]+"_ntrk_1"], start, end); 
@@ -128,6 +127,7 @@ void ShapePerformance(TString direct, TString Mode)
     Trk3_ShapePerformance[Layer]["ShiftNormalWidthFFT"][L_JE] = trk3_ShiftNormalWidthFFT_Test;
     Trk4_ShapePerformance[Layer]["ShiftNormalWidthFFT"][L_JE] = trk4_ShiftNormalWidthFFT_Test;
 
+    std::cout << "-> " << L_JE << " -> " << Layer << " -> " << Algos[a] << std::endl;
     // ShiftNormalWidthFFT Histograms
     a++;
     VTH1F ntrk1_Incremental_Test = GetSubVector(M[Algos[a]+"_ntrk_1"], start, end); 
@@ -143,18 +143,21 @@ void ShapePerformance(TString direct, TString Mode)
     Trk3_ShapePerformance[Layer]["Incremental"][L_JE] = trk3_Incremental_Test;
     Trk4_ShapePerformance[Layer]["Incremental"][L_JE] = trk4_Incremental_Test;
 
-    // ShiftNormalWidthFFT Histograms
+    std::cout << "-> " << L_JE << " -> " << Layer << " -> " << Algos[a] << std::endl;
+    // Experimental Histograms
     a++;
-    VTH1F ntrk1_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_1"], start, end); 
-    VTH1F ntrk2_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_2"], start, end); 
-    VTH1F ntrk3_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_3"], start, end); 
-    VTH1F ntrk4_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_4"], start, end); 
+    VTH1F ntrk1_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_1"], 0, 4); 
+    VTH1F ntrk2_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_2"], 0, 4); 
+    VTH1F ntrk3_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_3"], 0, 4); 
+    VTH1F ntrk4_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_4"], 0, 4); 
     float trk1_Experimental_Test = WeightedComparisonToTruth(ntrk1_Experimental_Test, ntrk1_T); 
     float trk2_Experimental_Test = WeightedComparisonToTruth(ntrk2_Experimental_Test, ntrk2_T); 
     float trk3_Experimental_Test = WeightedComparisonToTruth(ntrk3_Experimental_Test, ntrk3_T); 
     float trk4_Experimental_Test = WeightedComparisonToTruth(ntrk4_Experimental_Test, ntrk4_T); 
+    
     if (trk1_Experimental_Test != -1 && Mode != "Test")
     {
+      std::cout << "-> " << L_JE << " -> " << Layer << " -> " << Algos[a] << std::endl;
       Trk1_ShapePerformance[Layer]["Experimental"][L_JE] = trk1_Experimental_Test;
       Trk2_ShapePerformance[Layer]["Experimental"][L_JE] = trk2_Experimental_Test;
       Trk3_ShapePerformance[Layer]["Experimental"][L_JE] = trk3_Experimental_Test;
@@ -202,6 +205,7 @@ void ShapePerformance(TString direct, TString Mode)
     Printer(can, Fitter, "./Histograms/" + Mode + "/trk4/" + Fitter + "/" + Layer + "_" + L_JE + ".png", ntrk4_Incremental_Test, ntrk4_T, "Normalization Shift Width FFT Incremental Fit: " + Layer + " " + L_JE + " -> Track-4", PDF);
 
     Fitter = "Experimental"; 
+    if (trk1_Experimental_Test == -1 && Mode == "Test") {continue;}
     Printer(can, Fitter, "./Histograms/" + Mode + "/trk1/" + Fitter + "/" + Layer + "_" + L_JE + ".png", ntrk1_Experimental_Test, ntrk1_T, "Experimental Fit: " + Layer + " " + L_JE + " -> Track-1", PDF);
     Printer(can, Fitter, "./Histograms/" + Mode + "/trk2/" + Fitter + "/" + Layer + "_" + L_JE + ".png", ntrk2_Experimental_Test, ntrk2_T, "Experimental Fit: " + Layer + " " + L_JE + " -> Track-2", PDF);
     Printer(can, Fitter, "./Histograms/" + Mode + "/trk3/" + Fitter + "/" + Layer + "_" + L_JE + ".png", ntrk3_Experimental_Test, ntrk3_T, "Experimental Fit: " + Layer + " " + L_JE + " -> Track-3", PDF); 
@@ -213,8 +217,8 @@ void ShapePerformance(TString direct, TString Mode)
   
   TString PER = Mode + "-Performance.pdf"; 
   TString dir = "./ShapePerformance/";
-  float min = 0.0002; 
-  float max = 1;
+  float min = 0.0001; 
+  float max = 10;
   TCanvas* Lan = new TCanvas(); 
   Lan -> Print(PER + "["); 
   gStyle -> SetOptStat(0); 
@@ -292,7 +296,6 @@ void ShapePerformance(TString direct, TString Mode)
   Lan -> Print(PER);
   BulkDelete(gr); 
   Lan -> Clear(); 
-
 
   gr = GenerateMultiGraph(Trk4_ShapePerformance["IBL"], "4-Track " + Mode + " Shape Performance For Different Algorithms: IBL", Lan, min, max, "Error"); 
   Lan -> Print(dir + "trk4/" + Mode + "-trk4_IBL_Shape_ERROR.png"); 

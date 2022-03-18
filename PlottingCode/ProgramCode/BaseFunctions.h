@@ -12,12 +12,14 @@
 #include<fstream>
 #include<TH3F.h>
 #include<TH1D.h>
+#include<chrono>
+#include<thread>
 
 const std::vector<TString> Layer = {"IBL", "Blayer", "layer1", "layer2"}; 
 const std::vector<TString> JetEnergy = {"200_400_GeV", "400_600_GeV", "600_800_GeV", "800_1000_GeV", 
                                     "1000_1200_GeV", "1200_1400_GeV", "1400_1600_GeV", "1600_1800_GeV", "1800_2000_GeV", 
                                     "2000_2200_GeV", "2200_2400_GeV", "2400_2600_GeV"}; 
-const std::vector<TString> Algos = {"Normalization_TRUTH", "ShiftNormal_TRUTH", "ShiftNormalFFT_TRUTH", "ShiftNormalWidthFFT_TRUTH", "Incremental_TRUTH", "Exponential_TRUTH", "Normalization", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Incremental", "Experimental"};
+const std::vector<TString> Algos = {"Normalization", "ShiftNormal", "ShiftNormalFFT", "ShiftNormalWidthFFT", "Incremental", "Experimental"};
 
 
 
@@ -96,6 +98,11 @@ static void BulkDelete(std::vector<TGraph*> graph)
 {
   for (int i(0); i < graph.size(); i++){ delete graph[i]; }
 }
+static void BulkDelete(std::vector<TH1F*> graph)
+{
+  for (int i(0); i < graph.size(); i++){ delete graph[i]; }
+}
+
 
 float Flost2(std::vector<std::vector<TH1F*>> ntrk); 
 float Flost3(std::vector<std::vector<TH1F*>> ntrk); 
