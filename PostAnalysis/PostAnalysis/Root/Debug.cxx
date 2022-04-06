@@ -24,17 +24,17 @@ void Proxy(TString sample, TString Files, TString Mode)
     
   TCanvas* can = new TCanvas(); 
   can -> SetLogy(); 
-  can -> Print("Package.pdf["); 
-  ntrk_1_M -> SetTitle(sample); 
-  PlotHists(ntrk_1_M, ntrk_1_T, can); 
-  can -> Print("Package.pdf"); 
+  //can -> Print("Package.pdf["); 
+  //ntrk_1_M -> SetTitle(sample); 
+  //PlotHists(ntrk_1_M, ntrk_1_T, can); 
+  //can -> Print("Package.pdf"); 
   
-  TH1F* titlePage = (TH1F*)trk1_templates[0] -> Clone("example"); 
-  titlePage -> Clear();  
-  titlePage -> SetTitle("Example Templates for ntruth fits"); 
-  PlotHists(titlePage, trk1_templates, can); 
-  can -> Print("Package.pdf");
-  can -> Clear(); 
+  //TH1F* titlePage = (TH1F*)trk1_templates[0] -> Clone("example"); 
+  //titlePage -> Clear();  
+  //titlePage -> SetTitle("Example Templates for ntruth fits"); 
+  //PlotHists(titlePage, trk1_templates, can); 
+  //can -> Print("Package.pdf");
+  //can -> Clear(); 
 
   std::vector<TString> c_out; 
   for (int i(0); i < FitRanges_Names.size(); i++)
@@ -105,14 +105,14 @@ void Proxy(TString sample, TString Files, TString Mode)
   BulkWrite(Graphs_1Tru); 
   BulkWrite(Graphs_2Tru); 
 
-  PlotGraphs(Graphs_1Tru, "Performance of Prediction vs Truth of 1-Track", can); 
-  can -> Print("Package.pdf"); 
+  //PlotGraphs(Graphs_1Tru, "Performance of Prediction vs Truth of 1-Track", can); 
+  //can -> Print("Package.pdf"); 
 
-  PlotGraphs(Graphs_2Tru, "Performance of Prediction vs Truth of 2-Track", can); 
-  can -> Print("Package.pdf"); 
+  //PlotGraphs(Graphs_2Tru, "Performance of Prediction vs Truth of 2-Track", can); 
+  //can -> Print("Package.pdf"); 
 
 
-  can -> Print("Package.pdf]");
+  //can -> Print("Package.pdf]");
   
   std::ofstream myfile; 
   myfile.open("NormalizationWithRanges.txt"); 
