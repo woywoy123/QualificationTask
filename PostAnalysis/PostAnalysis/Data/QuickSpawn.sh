@@ -42,7 +42,6 @@ Mode=("Debug" "Debug_Subtract" "Debug_Subtract_Smooth" "Debug_Smooth")
 # Default templates - No Subtract
 Nominal=("FitTo" "Minimizer" "Minimizer_Smooth" "FitTo_Smooth")
 Subtract=("Minimizer_Subtract" "FitTo_Subtract" "Minimizer_Subtract_Smooth" "FitTo_Subtract_Smooth")
-TRU=("TRUTH_Minimizer" "TRUTH_FitTo")
 Range=("Minimizer_Range" "FitTo_Range" "Minimizer_Range_Smooth" "FitTo_Range_Smooth")
 Tracks=("1" "2" "3" "4")
 
@@ -55,12 +54,6 @@ do
   done
 
   for i in ${Subtract[@]}
-  do
-      str="FitT_""$m""_$i"
-      Mode+=("$str")
-  done
-
-  for i in ${TRU[@]}
   do
       str="FitT_""$m""_$i"
       Mode+=("$str")
@@ -120,7 +113,7 @@ do
       x=0
       for trk in ${Tracks[@]}
       do
-        if [[ $M == *"Experimental"* || $M == "Truth" ]]
+        if [[ $M == *"Experimental"* || $M == "Truth" || $M == *"Debug"* ]]
         then 
           Line=$L"_"$E"_"$M
           T=$M

@@ -149,6 +149,12 @@ CollectCommonROOT()
       if [[ $k == *"$i""_ntrk"* ]]
       then 
         cp $k/Fit_Tracks.root $OUTPUT_DIR/Appendix/Common/$i/ROOT/$k.root
+        continue
+      fi
+
+      if [[ $k == *"$i" ]]
+      then 
+        cp $k/Fit_Tracks.root $OUTPUT_DIR/Appendix/Common/$i/ROOT/$k.root
       fi
     done
   done
@@ -170,21 +176,21 @@ MakeTestToTruthShape(){
   mkdir $OUTPUT_DIR/Appendix/TestToTruthShape
   for i in ${Modes[@]}
   do
-    #mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i
-    #mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions
+    mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i
+    mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions
     
     cd $OUTPUT_DIR/Appendix/TestToTruthShape/$i/
     cp -f $CODE_DIR/Binaries/TestToTruthShape $OUTPUT_DIR/Appendix/TestToTruthShape/$i/TestToTruthShape 
     chmod +x TestToTruthShape     
    
-    #for j in ${Algs[@]}
-    #do
-    #  mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j 
-    #  mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-1
-    #  mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-2
-    #  mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-3
-    #  mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-4
-    #done
+    for j in ${Algs_CPP[@]}
+    do
+      mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j 
+      mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-1
+      mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-2
+      mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-3
+      mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-4
+    done
     
     ./TestToTruthShape $OUTPUT_DIR/Appendix/Common/$i/Output.root $OUTPUT_DIR/Appendix/Common/Merged.root
     

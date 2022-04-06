@@ -12,17 +12,17 @@ source ~/.bashrc
 source $CODE_DIR/ShellCode/Functions.sh
 source $CODE_DIR/ShellCode/Algorithms.sh
 
-#CleanWorkspace
+CleanWorkspace
 mkdir $CODE_DIR/Binaries
 mkdir $root_dir/Output
 
-#source $CODE_DIR/ShellCode/CompileClusterContent.sh
-#source $CODE_DIR/ShellCode/CompileDebugging.sh
+source $CODE_DIR/ShellCode/CompileClusterContent.sh
+source $CODE_DIR/ShellCode/CompileDebugging.sh
 source $CODE_DIR/ShellCode/CompileTestToTruth.sh
 
 MakeOutputDir
-#CollectCommonROOT
-#MakeClusterContent
-#MakeDebuggingContent
+CollectCommonROOT
+MakeClusterContent
+MakeDebuggingContent
 MakeTestToTruthShape
 

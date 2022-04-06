@@ -47,5 +47,6 @@ static void ConformCanvas(TCanvas* can)
   can -> SetTopMargin(0.1);
 };
 
+float WeightedShapeError(std::vector<TH1F*> Pred, std::vector<TH1F*> Truth);
 
 #endif

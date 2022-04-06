@@ -37,10 +37,13 @@ std::map<_TS, std::vector<TH1F*>> ReadCTIDE(_TS dir)
         TString d = L + "/" + E + "/"; 
         d.ReplaceAll("_radius", "");  
         
-        if (n.Contains("rless_") && n.Contains("ntru")){ Output[d + n + "/InsideTruth"].push_back(H); }
-        if (n.Contains("rless_") && !n.Contains("ntru")){ Output[d + n + "/InsideData"].push_back(H); }
-        if (n.Contains("rgreater_") && n.Contains("ntru")){ Output[d + n + "/OutsideTruth"].push_back(H); }
-        if (n.Contains("rgreater_") && !n.Contains("ntru")){ Output[d + n + "/OutsideData"].push_back(H); }
+        _TS k = n; 
+        std::vector<_TS> v = Split(k, "_"); 
+        k = v[1] + v[2]; 
+        if (n.Contains("rless_") && n.Contains("ntru") && !n.Contains("ntru_5")){ Output[d + k + "/InsideTruth"].push_back(H); }
+        if (n.Contains("rless_") && !n.Contains("ntru")){ Output[d + k + "/InsideData"].push_back(H); }
+        if (n.Contains("rgreater_") && n.Contains("ntru") && !n.Contains("ntru_5")){ Output[d + k + "/OutsideTruth"].push_back(H); }
+        if (n.Contains("rgreater_") && !n.Contains("ntru")){ Output[d + k + "/OutsideData"].push_back(H); }
       }
     }
   }
@@ -86,28 +89,38 @@ std::map<_TS, std::map<_TS, std::map<_TS, std::map<_TS, TH1F*>>>> ReadDebugging(
   return Output;
 }
 
-void ReadPostAnalysis(_TS dir)
+std::map<_TS, std::map<_TS, std::vector<TH1F*>>> ReadPostAnalysis(_TS dir)
 {
   TFile* f = new TFile(dir);
   std::vector<_TS> Layer_Energy = ReturnCurrentDirs();
+  std::map<_TS, std::map<_TS, std::vector<TH1F*>>> Output; 
   for (_TS LE : Layer_Energy)
   {
-    f -> cd(LE); 
+    f -> cd(LE);
+    _TS L = Split(LE, "_")[0]; 
+    _TS E = LE; 
+    E.ReplaceAll(L + "_", ""); 
+
     std::vector<_TS> Algos = ReturnCurrentDirs();
     for (_TS A : Algos)
     {
       f -> cd(LE + "/" + A); 
       std::vector<_TS> Hists = ReturnCurrentDirs(); 
 
-      std::cout << LE + "/" + A << std::endl;
       for (_TS H : Hists)
       {
-        std::cout << "-> " << H << std::endl;
+        TH1F* gH = (TH1F*)gDirectory -> Get(H); 
+        if (H.Contains("Template") && H.Contains("ntrk_1")){ Output[L + "/" + E + "/" + A]["Template_ntrk1"].push_back(gH); }
+        if (H.Contains("Template") && H.Contains("ntrk_2")){ Output[L + "/" + E + "/" + A]["Template_ntrk2"].push_back(gH); }
+        if (H.Contains("Template") && H.Contains("ntrk_3")){ Output[L + "/" + E + "/" + A]["Template_ntrk3"].push_back(gH); }
+        if (H.Contains("Template") && H.Contains("ntrk_4")){ Output[L + "/" + E + "/" + A]["Template_ntrk4"].push_back(gH); }
         
-
+        if (H.Contains("Test") && H.Contains("ntrk_1")){ Output[L + "/" + E + "/" + A]["Test_ntrk1"].push_back(gH); }
+        if (H.Contains("Test") && H.Contains("ntrk_2")){ Output[L + "/" + E + "/" + A]["Test_ntrk2"].push_back(gH); }
+        if (H.Contains("Test") && H.Contains("ntrk_3")){ Output[L + "/" + E + "/" + A]["Test_ntrk3"].push_back(gH); }
+        if (H.Contains("Test") && H.Contains("ntrk_4")){ Output[L + "/" + E + "/" + A]["Test_ntrk4"].push_back(gH); }
       }
-
-
     }
   }
+  return Output;
 }

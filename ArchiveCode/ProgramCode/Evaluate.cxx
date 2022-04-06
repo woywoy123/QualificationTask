@@ -12,12 +12,12 @@ void ShapePerformance(TString direct, TString Mode)
 
   int start; 
   int end; 
-  if (Mode == "Test")
+  if (Mode == "Template")
   {
     start = 0; 
     end = 4; 
   }
-  if (Mode == "Template")
+  if (Mode == "Test")
   {
     start = 4; 
     end = 8; 
@@ -96,6 +96,7 @@ void ShapePerformance(TString direct, TString Mode)
     Trk4_ShapePerformance[Layer]["ShiftNormal"][L_JE] = trk4_ShiftNormal_Test;
 
     std::cout << "-> " << L_JE << " -> " << Layer << " -> " << Algos[a] << std::endl;
+
     // ShiftNormalFFT Histograms
     a++;
     VTH1F ntrk1_ShiftNormalFFT_Test = GetSubVector(M[Algos[a]+"_ntrk_1"], start, end); 
@@ -154,7 +155,7 @@ void ShapePerformance(TString direct, TString Mode)
     float trk2_Experimental_Test = WeightedComparisonToTruth(ntrk2_Experimental_Test, ntrk2_T); 
     float trk3_Experimental_Test = WeightedComparisonToTruth(ntrk3_Experimental_Test, ntrk3_T); 
     float trk4_Experimental_Test = WeightedComparisonToTruth(ntrk4_Experimental_Test, ntrk4_T); 
-    
+
     if (trk1_Experimental_Test != -1 && Mode != "Test")
     {
       std::cout << "-> " << L_JE << " -> " << Layer << " -> " << Algos[a] << std::endl;
@@ -417,11 +418,11 @@ MMVTH1F FLostPerformance(TString direct, TString Mode, bool Plotting)
     
     // Experimental 
     a++;
-    VTH1F ntrk1_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_1"], start, end); 
-    VTH1F ntrk2_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_2"], start, end); 
-    VTH1F ntrk3_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_3"], start, end); 
-    VTH1F ntrk4_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_4"], start, end); 
-    
+    VTH1F ntrk1_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_1"], 4, 8); 
+    VTH1F ntrk2_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_2"], 4, 8); 
+    VTH1F ntrk3_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_3"], 4, 8); 
+    VTH1F ntrk4_Experimental_Test = GetSubVector(M[Algos[a]+"_ntrk_4"], 4, 8); 
+
     // FLost2
     float FL2_Normal = Flost2({ntrk1_Normal_Test, ntrk2_Normal_Test}); 
     float FL3_Normal = Flost3({ntrk1_Normal_Test, ntrk2_Normal_Test, ntrk3_Normal_Test, ntrk4_Normal_Test}); 
@@ -492,7 +493,7 @@ MMVTH1F FLostPerformance(TString direct, TString Mode, bool Plotting)
   Lan -> SetRightMargin(0.01); 
   Lan -> SetTopMargin(0.1); 
 
-  float min = 0.001; 
+  float min = 0.000001; 
   float max = 2; 
   std::vector<TGraph*> gr; 
   gr = GenerateMultiGraph(FLost2_Performance["IBL"], "FLost2 Performance in the IBL", Lan, min, max, "FLost2"); 
@@ -557,6 +558,7 @@ void WriteFLostFile(TString Input, TString Output)
   TFile* F = new TFile(Output + ".root", "RECREATE"); 
   for (MMVTH1Fi dir = Out.begin(); dir != Out.end(); dir++)
   {
+    std::cout << dir -> first << std::endl;
     TString key = (dir -> first); 
     TString L; 
     TString FL; 
@@ -599,7 +601,7 @@ void ErrorFlostAlgo(TString dir)
       for (MMMFi a_k = FL_Err[L].begin(); a_k != FL_Err[L].end(); a_k++)
       {
         MMF Mini = FL_Err[L][a_k -> first]; 
-        std::vector<TGraph*> mini = GenerateMultiGraph(Mini,"Minimizer Comparison: " + L + " " + (a_k -> first), can, 0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+        std::vector<TGraph*> mini = GenerateMultiGraph(Mini,"Minimizer Comparison: " + L + " " + (a_k -> first), can, 0.00001, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
         can -> Print(pdf); 
         can -> Print("Minimizer/FLost" + FL + "_" + L + "_" + (a_k -> first) + ".png"); 
         
@@ -779,7 +781,8 @@ void ErrorFlostAlgo(TString dir)
   TString Lay = "IBL"; 
   TString FL = "2"; 
   TString out = "FLost"+FL+"_Error/";
-  GR = GenerateMultiGraph(FL2_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL2_Best[Lay] + " - " + Lay, can,  0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+  float Low = 0.000001; 
+  GR = GenerateMultiGraph(FL2_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL2_Best[Lay] + " - " + Lay, can,  Low, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
   can -> Print(out + "FLost" + FL + "_" + Lay + "_Best.png");
   can -> Print(pdf);
   can -> Clear(); 
@@ -787,7 +790,7 @@ void ErrorFlostAlgo(TString dir)
 
   Lay = "Blayer"; 
   FL = "2"; 
-  GR = GenerateMultiGraph(FL2_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL2_Best[Lay] + " - " + Lay, can,  0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+  GR = GenerateMultiGraph(FL2_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL2_Best[Lay] + " - " + Lay, can,  Low, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
   can -> Print(out + "FLost" + FL + "_" + Lay + "_Best.png");
   can -> Print(pdf);
   can -> Clear(); 
@@ -795,7 +798,7 @@ void ErrorFlostAlgo(TString dir)
 
   Lay = "layer1"; 
   FL = "2"; 
-  GR = GenerateMultiGraph(FL2_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL2_Best[Lay] + " - " + Lay, can,  0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+  GR = GenerateMultiGraph(FL2_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL2_Best[Lay] + " - " + Lay, can,  Low, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
   can -> Print(out + "FLost" + FL + "_" + Lay + "_Best.png");
   can -> Print(pdf);
   can -> Clear(); 
@@ -803,7 +806,7 @@ void ErrorFlostAlgo(TString dir)
 
   Lay = "layer2"; 
   FL = "2"; 
-  GR = GenerateMultiGraph(FL2_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL2_Best[Lay] + " - " + Lay, can,  0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+  GR = GenerateMultiGraph(FL2_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL2_Best[Lay] + " - " + Lay, can,  Low, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
   can -> Print(out + "FLost" + FL + "_" + Lay + "_Best.png");
   can -> Print(pdf);
   can -> Clear(); 
@@ -813,7 +816,7 @@ void ErrorFlostAlgo(TString dir)
   Lay = "IBL"; 
   FL = "3"; 
   out = "FLost"+FL+"_Error/";
-  GR = GenerateMultiGraph(FL3_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL3_Best[Lay] + " - " + Lay, can,  0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+  GR = GenerateMultiGraph(FL3_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL3_Best[Lay] + " - " + Lay, can,  Low, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
   can -> Print(out + "FLost" + FL + "_" + Lay + "_Best.png");
   can -> Print(pdf);
   can -> Clear(); 
@@ -821,7 +824,7 @@ void ErrorFlostAlgo(TString dir)
 
   Lay = "Blayer"; 
   FL = "3"; 
-  GR = GenerateMultiGraph(FL3_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL3_Best[Lay] + " - " + Lay, can,  0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+  GR = GenerateMultiGraph(FL3_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL3_Best[Lay] + " - " + Lay, can,  Low, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
   can -> Print(out + "FLost" + FL + "_" + Lay + "_Best.png");
   can -> Print(pdf);
   can -> Clear(); 
@@ -829,7 +832,7 @@ void ErrorFlostAlgo(TString dir)
 
   Lay = "layer1"; 
   FL = "3"; 
-  GR = GenerateMultiGraph(FL3_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL3_Best[Lay] + " - " + Lay, can,  0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+  GR = GenerateMultiGraph(FL3_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL3_Best[Lay] + " - " + Lay, can,  Low, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
   can -> Print(out + "FLost" + FL + "_" + Lay + "_Best.png");
   can -> Print(pdf);
   can -> Clear(); 
@@ -837,7 +840,7 @@ void ErrorFlostAlgo(TString dir)
 
   Lay = "layer2"; 
   FL = "3"; 
-  GR = GenerateMultiGraph(FL3_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL3_Best[Lay] + " - " + Lay, can,  0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+  GR = GenerateMultiGraph(FL3_Best_Mini[Lay], "FLost" + FL + " Error Using the Best Minimizer: " + FL3_Best[Lay] + " - " + Lay, can,  Low, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
   can -> Print(out + "FLost" + FL + "_" + Lay + "_Best.png");
   can -> Print(pdf);
   can -> Clear(); 
@@ -887,7 +890,7 @@ void BestMinimizerAlgo(TString dir)
       TString Min = BestMiniForAlgo(FL_Error[Lay])[a];  
       FLost[Min + "+" + a] = FL_Error[Lay][a][Min];   
     }
-    std::vector<TGraph*> GR = GenerateMultiGraph(FLost, "FLost" + FL + " Error of Algorithm with optimal Minimizer: " + Lay, can,  0.01, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
+    std::vector<TGraph*> GR = GenerateMultiGraph(FLost, "FLost" + FL + " Error of Algorithm with optimal Minimizer: " + Lay, can,  0.00001, 10000, "#frac{#Delta F_{L" + FL + "}}{F_{T}} #times 100 (%)");
     can -> Print(out + "FLost" + FL + "_" + Lay + "_AlgoWithBestMin.png");
     can -> Print(PDF);
     can -> Clear(); 
