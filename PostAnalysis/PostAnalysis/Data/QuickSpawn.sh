@@ -3,7 +3,7 @@
 function CreateBatches_Local
 {
   
-  echo "#!/bin/bash" >> Spawn.sh
+  echo "#!/bin/bash" > Spawn.sh
   echo "export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase" >> Spawn.sh
   echo "source $""{ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh" >> Spawn.sh
   echo "cd $4" >> Spawn.sh
@@ -13,8 +13,6 @@ function CreateBatches_Local
   echo "source x86_64-centos7-gcc62-opt/setup.sh" >> Spawn.sh
   echo "cd $""cur" >> Spawn.sh
   echo "PostAnalysis $1 $2 $3/$5" >> Spawn.sh
-  #echo "mkdir /eos/home-t/tnommens/Analysis/" >> Spawn.sh
-  #echo "cp ./* /eos/home-t/tnommens/Analysis/" >> Spawn.sh
 }
 
 function CondorBuild
@@ -31,7 +29,8 @@ function CondorBuild
 
 
 #Constants that we need to generate the names 
-Condor_active=true
+Condor_active=false
+ConvertToLocal=true
 compiler="PostAnalysisCompiler"
 filename="Merged.root"
 Layer=("IBL" "Blayer"  "layer1" "layer2") 
@@ -78,8 +77,12 @@ PostAnalysis_root_dir=$PWD
 echo $PostAnalysis_root_dir
 
 cd $HOME
-rm -r $compiler
-mkdir $compiler
+
+if [[ $ConvertToLocal == false ]];
+then 
+  rm -r $compiler
+  mkdir $compiler
+fi
 
 cd $compiler
 rm -rf PostAnalysis
@@ -120,14 +123,14 @@ do
         cd $Line 
         LJE=$L"_"$E
         
-        #rm Spawn.sh
         CreateBatches_Local $LJE $T $File $PWD $filename
         chmod +x Spawn.sh
         
         if [[ $Condor_active == true ]]
         then 
           :  
-        else
+        elif [[ $ConvertToLocal == false ]]
+        then 
           bash Spawn.sh
         fi 
 
@@ -135,7 +138,6 @@ do
         continue
       fi
 
-      #x=0
       for trk in ${Tracks[@]}
       do
 
@@ -149,26 +151,18 @@ do
         cd $Line 
         LJE=$L"_"$E
         
-        #rm Spawn.sh
         CreateBatches_Local $LJE $T $File $PWD $filename
         chmod +x Spawn.sh
         
         if [[ $Condor_active == true ]]
         then 
           :  
-        else
+        elif [[ $ConvertToLocal == false ]]
+        then 
           bash Spawn.sh
         fi 
 
         cd ../
-        
-        #if [[ $x == 4 ]]
-        #then 
-        #  wait
-        #  x=0
-        #fi
-        
-        #x=$((x+1))
       done
     done 
     mv example.submit $L$E.submit 
