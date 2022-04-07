@@ -109,27 +109,18 @@ do
   do
     for M in ${Mode[@]}
     do
+    
+      if [[ $M == *"Experimental"* || $M == *"Debug"*  ]]
+      then 
+        Line=$L"_"$E"_"$M
+        T=$M
       
-      x=0
-      for trk in ${Tracks[@]}
-      do
-        if [[ $M == *"Experimental"* || $M == "Truth" || $M == *"Debug"* ]]
-        then 
-          Line=$L"_"$E"_"$M
-          T=$M
-        else
-          Line=$L"_"$E"_"$M"_ntrk"$trk
-          T="$M""_ntrk"$trk
-        fi 
-
-        echo $Line
-       
         CondorBuild $Line
         mkdir $Line
         cd $Line 
         LJE=$L"_"$E
         
-        rm Spawn.sh
+        #rm Spawn.sh
         CreateBatches_Local $LJE $T $File $PWD $filename
         chmod +x Spawn.sh
         
@@ -141,22 +132,47 @@ do
         fi 
 
         cd ../
-        if [[ "$M" == *"Experimental"* ]]
-        then 
-          break
-        fi
+        continue
+      fi
+
+      #x=0
+      for trk in ${Tracks[@]}
+      do
+
+        Line=$L"_"$E"_"$M"_ntrk"$trk
+        T="$M""_ntrk"$trk
+
+        echo $Line
+       
+        CondorBuild $Line
+        mkdir $Line
+        cd $Line 
+        LJE=$L"_"$E
         
-        if [[ $x == 4 ]]
-        then 
-          wait
-          x=0
-        fi
+        #rm Spawn.sh
+        CreateBatches_Local $LJE $T $File $PWD $filename
+        chmod +x Spawn.sh
         
-        x=$((x+1))
+        if [[ $Condor_active == true ]]
+        then 
+          :  
+        else
+          bash Spawn.sh
+        fi 
+
+        cd ../
+        
+        #if [[ $x == 4 ]]
+        #then 
+        #  wait
+        #  x=0
+        #fi
+        
+        #x=$((x+1))
       done
     done 
+    mv example.submit $L$E.submit 
+    condor_submit $L$E.submit
   done 
-  condor_submit example.submit
 done
-
 
