@@ -216,10 +216,10 @@ static std::pair<std::vector<MVF>, std::vector<TString>> StepFit(TH1F* start_P, 
     if (alg == "ShiftNormalFFT"){ N_Res = ConvolutionFFT(ntrk_1, templ, Params_FFT); }
     if (alg == "ShiftNormalWidthFFT"){ N_Res = ConvolutionFFT(ntrk_1, templ, Params_WidthFFT); }
 
-    PlotHists(ntrk_1, {truth[0], truth[1]}, templ, can); 
-    can -> Print("Package.pdf"); 
-    can -> Print("Debugging.pdf");
-    can -> Clear(); 
+    //PlotHists(ntrk_1, {truth[0], truth[1]}, templ, can); 
+    //can -> Print("Package.pdf"); 
+    //can -> Print("Debugging.pdf");
+    //can -> Clear(); 
     
     N_Res["Truth_Int"].push_back(truth[0] -> Integral()); 
     N_Res["Truth_Int"].push_back(truth[1] -> Integral()); 

@@ -10,17 +10,19 @@ void FastFits(TString JE, TString Mode, TString MCFile)
   std::map<TString, std::map<TString, std::vector<TH1F*>>> F = ReadCTIDE(MCFile); 
   
   
-  std::vector<float> k1 = {0.0, 13.6}; 
+  std::vector<float> k1 = {0.01, 8.0}; 
   std::vector<std::vector<float>> Ranges = {k1}; 
 
   float m = 0.4; 
   float s_e = 0.005; 
+  int Minim = 50000; //50000; 
+  if (Mode.Contains("_Range") && Mode.Contains("ShiftNormal")) { Minim = 5000; }
+
   // Normalization parameters
   std::map<TString, std::vector<float>> Params_N; 
   Params_N["Minimizer"] = {10000};
 
   // Normalization Shift parameters
-  int Minim = 10000; //50000; 
   std::map<TString, std::vector<float>> Params_NS; 
   Params_NS["dx_s"] = {-m, -m, -m, -m}; 
   Params_NS["dx_G"] = {0, 0, 0, 0}; 
@@ -127,11 +129,15 @@ void FastFits(TString JE, TString Mode, TString MCFile)
 
     if (Mode.Contains("Range"))
     {
-      Params_N["Range_ntrk_1"] = Ranges[0];
-      Params_NS["Range_ntrk_1"] = Ranges[0];
-      Params_FFT["Range_ntrk_1"] = Ranges[0];
-      Params_WidthFFT["Range_ntrk_1"] = Ranges[0];
-      Settings += ("_Range");
+      float Data = DataVector[Tracks] -> Integral();
+      if (Data < 10000 && alg == "ShiftNormal"){}
+      else
+      {
+        Params_N["Range_ntrk_1"] = Ranges[0];
+        Params_NS["Range_ntrk_1"] = Ranges[0];
+        Params_FFT["Range_ntrk_1"] = Ranges[0];
+        Params_WidthFFT["Range_ntrk_1"] = Ranges[0];
+      }
     }
     
     // Create the templates 
@@ -182,7 +188,7 @@ void FastFits(TString JE, TString Mode, TString MCFile)
           BulkDelete(ntrk_mtru[trk]); 
         }
       }
-      
+     
       for (int trk(0); trk < ntrk_mtru[Tracks].size(); trk++)
       {
         if ( alg == "ShiftNormal"){    NormalizationShift(TruthVector[Tracks][trk], {ntrk_mtru[Tracks][trk]}, Params_NS, "_Test"); }
@@ -204,7 +210,6 @@ void FastFits(TString JE, TString Mode, TString MCFile)
       if (alg == "Experimental")
       {
         Experimental(DataVector, ntrk_mtru_template, Params_WidthFFT);
-        
         for (int c(0); c < ntrk_mtru_template.size(); c++)
         {
           WriteHistsToFile(ntrk_mtru_template[c], current + "/" + alg); 
@@ -212,7 +217,6 @@ void FastFits(TString JE, TString Mode, TString MCFile)
         }
       }
     }
-
 
     p++;
   }
