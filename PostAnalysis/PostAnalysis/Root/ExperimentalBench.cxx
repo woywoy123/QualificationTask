@@ -129,11 +129,15 @@ void FastFits(TString JE, TString Mode, TString MCFile)
 
     if (Mode.Contains("Range"))
     {
-      Params_N["Range_ntrk_1"] = Ranges[0];
-      Params_NS["Range_ntrk_1"] = Ranges[0];
-      Params_FFT["Range_ntrk_1"] = Ranges[0];
-      Params_WidthFFT["Range_ntrk_1"] = Ranges[0];
-      Settings += ("_Range");
+      float Data = DataVector[Tracks] -> Integral();
+      if (Data < 10000 && alg == "ShiftNormal"){}
+      else
+      {
+        Params_N["Range_ntrk_1"] = Ranges[0];
+        Params_NS["Range_ntrk_1"] = Ranges[0];
+        Params_FFT["Range_ntrk_1"] = Ranges[0];
+        Params_WidthFFT["Range_ntrk_1"] = Ranges[0];
+      }
     }
     
     // Create the templates 
@@ -184,7 +188,7 @@ void FastFits(TString JE, TString Mode, TString MCFile)
           BulkDelete(ntrk_mtru[trk]); 
         }
       }
-      
+     
       for (int trk(0); trk < ntrk_mtru[Tracks].size(); trk++)
       {
         if ( alg == "ShiftNormal"){    NormalizationShift(TruthVector[Tracks][trk], {ntrk_mtru[Tracks][trk]}, Params_NS, "_Test"); }

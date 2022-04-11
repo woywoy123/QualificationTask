@@ -10,7 +10,7 @@ function CreateBatches_Local
   echo "cur=$""PWD" >> Spawn.sh
   echo "cd ../PostAnalysis && asetup --restore" >> Spawn.sh
   echo "cd ../build/" >> Spawn.sh
-  echo "source x86_64-centos7-gcc62-opt/setup.sh" >> Spawn.sh
+  echo "source ./*/setup.sh" >> Spawn.sh
   echo "cd $""cur" >> Spawn.sh
   echo "PostAnalysis $1 $2 $3/$5" >> Spawn.sh
 }
@@ -88,7 +88,7 @@ cd $compiler
 rm -rf PostAnalysis
 cp -r $PostAnalysis_root_dir . 
 
-cd PostAnalysis && asetup AnalysisBase,21.2.58,here
+cd PostAnalysis && asetup AnalysisBase,21.2.197,here
 cd ../
 rm -rf build
 mkdir build 
@@ -98,6 +98,7 @@ make -j12
 cd ../
 cp $root_dir/$filename ./
 File=$PWD
+exit
 
 mkdir Truth
 cd Truth
