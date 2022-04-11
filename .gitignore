@@ -1,2 +1,5 @@
 **/Input
+**/Output
+**/Binaries
+**/*.tar
 build

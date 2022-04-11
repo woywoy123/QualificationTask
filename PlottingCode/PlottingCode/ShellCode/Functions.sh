@@ -20,39 +20,41 @@ MakeClusterContent(){
 }
 
 MergeROOT(){
-  local r=$PWD 
+  local r=$PWD
   cd $1
-  
-  local k=0
-  local b=0
-  local str=""
+  mkdir ../TMP
+  x=0
+  it=0
+  mkdir ../TMP/$x
   for i in *
   do
-    str="$i $str"
-    
-    k=$((k+1))
-    
-    if [[ "$k" == "30" ]]
+    mv $i ../TMP/$x
+    if [[ $it -gt 100 ]]
     then 
-      $ROOT_MERGE x$b.root $str > /dev/null
-      b=$((b+1))
-      str=""
-      k=0
+      x=$((x+1))
+      it=0
+      mkdir ../TMP/$x
     fi
+    it=$((it+1))
   done
-  $ROOT_MERGE x$((b+1)).root $str
+  cd ../TMP
   
-  str=""
+  str_tmp=""
   for i in *
   do
-    if [[ "$i" == *"x"* ]]
-    then 
-      str="$i $str" 
-    fi
+    cd $i
+    str=""
+    for j in *
+    do
+      str="$str $j"
+    done
+    $ROOT_MERGE $i.root $str > /dev/null
+    mv $i.root ../
+    str_out="$str_out $i.root"
+    cd ../
   done
-  $ROOT_MERGE Output.root $str > /dev/null
-  rm ./x*
-  mv Output.root ../Output.root
+  $ROOT_MERGE Output.root $str_out > /dev/null
+  mv Output.root ../
 }
 
 CollectDebuggingROOT(){
@@ -63,15 +65,21 @@ CollectDebuggingROOT(){
     do
       mod=${TRKTEMPLATE_D[j]}
       dir=${TRKTEMPLATE_F[j]}
-
-      n="Debug$mod""ntrk1"
+      
+      if [[ "$mod" == "_" ]]
+      then 
+        n="Debug"
+      else
+        n="Debug$mod"
+      fi
+      
       if [[ "$i" == *"$n" ]]
       then 
         cp $PWD/$i/*.root $OUTPUT_DIR/Appendix/Debugging/$dir/ROOT/$i.root
       fi
     done
   done 
-
+  
   cd $OUTPUT_DIR
 
   for i in ${TRKTEMPLATE_F[@]}
@@ -150,9 +158,7 @@ CollectCommonROOT()
       then 
         cp $k/Fit_Tracks.root $OUTPUT_DIR/Appendix/Common/$i/ROOT/$k.root
         continue
-      fi
-
-      if [[ $k == *"$i" ]]
+      elif [[ $k == *"$i" ]]
       then 
         cp $k/Fit_Tracks.root $OUTPUT_DIR/Appendix/Common/$i/ROOT/$k.root
       fi
@@ -192,6 +198,10 @@ MakeTestToTruthShape(){
       mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-4
     done
     
+    if [[ "$i" != "_Minimizer" ]]
+    then 
+      continue
+    fi
     ./TestToTruthShape $OUTPUT_DIR/Appendix/Common/$i/Output.root $OUTPUT_DIR/Appendix/Common/Merged.root
     
     exit

@@ -106,7 +106,6 @@ std::map<_TS, std::map<_TS, std::vector<TH1F*>>> ReadPostAnalysis(_TS dir)
     {
       f -> cd(LE + "/" + A); 
       std::vector<_TS> Hists = ReturnCurrentDirs(); 
-
       for (_TS H : Hists)
       {
         TH1F* gH = (TH1F*)gDirectory -> Get(H); 

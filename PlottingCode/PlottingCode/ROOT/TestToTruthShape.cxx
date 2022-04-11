@@ -5,7 +5,7 @@ void Analysis_TestFits(_TS Layer, std::map<_TS, std::vector<TH1F*>> CTIDE_C,
                                   bool Plot
 )
 {
-
+  
   TCanvas* can = new TCanvas(); 
   for (_TS E : Energy_H)
   {
@@ -13,7 +13,7 @@ void Analysis_TestFits(_TS Layer, std::map<_TS, std::vector<TH1F*>> CTIDE_C,
     std::vector<TH1F*> ntrk2_T = CTIDE_C[Layer + "/" + E + "/ntrk2/InsideTruth"]; 
     std::vector<TH1F*> ntrk3_T = CTIDE_C[Layer + "/" + E + "/ntrk3/InsideTruth"]; 
     std::vector<TH1F*> ntrk4_T = CTIDE_C[Layer + "/" + E + "/ntrk4/InsideTruth"]; 
-
+    
     for (_TS Alg : Algos_H)
     {
       _TS Mode = "Test"; 
@@ -23,6 +23,7 @@ void Analysis_TestFits(_TS Layer, std::map<_TS, std::vector<TH1F*>> CTIDE_C,
       std::vector<TH1F*> ntrk2_Fit = POST_C[Layer + "/" + E + "/" + Alg][Mode + "_ntrk2"]; 
       std::vector<TH1F*> ntrk3_Fit = POST_C[Layer + "/" + E + "/" + Alg][Mode + "_ntrk3"]; 
       std::vector<TH1F*> ntrk4_Fit = POST_C[Layer + "/" + E + "/" + Alg][Mode + "_ntrk4"]; 
+
       if (Plot)
       {
         ConformCanvas(can);
