@@ -50,10 +50,10 @@ MergeROOT(){
     done
     $ROOT_MERGE $i.root $str > /dev/null
     mv $i.root ../
-    str_out="$str_out $i.root"
+    str_tmp="$str_tmp $i.root"
     cd ../
   done
-  $ROOT_MERGE Output.root $str_out > /dev/null
+  $ROOT_MERGE Output.root $str_tmp > /dev/null
   mv Output.root ../
 }
 
