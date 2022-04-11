@@ -210,7 +210,6 @@ void FastFits(TString JE, TString Mode, TString MCFile)
       if (alg == "Experimental")
       {
         Experimental(DataVector, ntrk_mtru_template, Params_WidthFFT);
-        
         for (int c(0); c < ntrk_mtru_template.size(); c++)
         {
           WriteHistsToFile(ntrk_mtru_template[c], current + "/" + alg); 
@@ -218,7 +217,6 @@ void FastFits(TString JE, TString Mode, TString MCFile)
         }
       }
     }
-
 
     p++;
   }
