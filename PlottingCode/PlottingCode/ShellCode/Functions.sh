@@ -23,12 +23,12 @@ MergeROOT(){
   local r=$PWD
   cd $1
   mkdir ../TMP
-  x=0
-  it=0
+  local x=0
+  local it=0
   mkdir ../TMP/$x
   for i in *
   do
-    mv $i ../TMP/$x
+    cp $i ../TMP/$x
     if [[ $it -gt 100 ]]
     then 
       x=$((x+1))
@@ -39,11 +39,11 @@ MergeROOT(){
   done
   cd ../TMP
   
-  str_tmp=""
+  local str_tmp=""
   for i in *
   do
     cd $i
-    str=""
+    local str=""
     for j in *
     do
       str="$str $j"
@@ -55,9 +55,18 @@ MergeROOT(){
   done
   $ROOT_MERGE Output.root $str_tmp > /dev/null
   mv Output.root ../
+  cd ../
+  rm -rf TMP
 }
 
 CollectDebuggingROOT(){
+  mkdir $OUTPUT_DIR/Appendix/Debugging
+  for i in ${TRKTEMPLATE_F[@]}
+  do
+    mkdir $OUTPUT_DIR/Appendix/Debugging/$i
+    mkdir $OUTPUT_DIR/Appendix/Debugging/$i/ROOT
+  done
+
   cd $INPUT_DIR
   for i in *
   do 
@@ -90,12 +99,10 @@ CollectDebuggingROOT(){
 }
 
 MakeDebuggingContent(){
-  mkdir $OUTPUT_DIR/Appendix/Debugging
+  #mkdir $OUTPUT_DIR/Appendix/Debugging
   
   for i in ${TRKTEMPLATE_F[@]}
   do
-    mkdir $OUTPUT_DIR/Appendix/Debugging/$i
-    mkdir $OUTPUT_DIR/Appendix/Debugging/$i/ROOT
     cp -f $CODE_DIR/Binaries/Debugging $OUTPUT_DIR/Appendix/Debugging/$i/Debugging
    
     mkdir $OUTPUT_DIR/Appendix/Debugging/$i/Ratio_2Truth
@@ -126,8 +133,6 @@ MakeDebuggingContent(){
     done
   done
   
-  CollectDebuggingROOT
-
   for i in ${TRKTEMPLATE_F[@]}
   do
     cd $OUTPUT_DIR/Appendix/Debugging/$i
@@ -198,23 +203,94 @@ MakeTestToTruthShape(){
       mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/Distributions/$j/Track-4
     done
     
-    if [[ "$i" != "_Minimizer" ]]
-    then 
-      continue
-    fi
-    ./TestToTruthShape $OUTPUT_DIR/Appendix/Common/$i/Output.root $OUTPUT_DIR/Appendix/Common/Merged.root
+    mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/ShapePerformance
+    for j in ${Layer[@]}
+    do
+      mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/ShapePerformance/$j
+    done
     
-    exit
-
+    ./TestToTruthShape $OUTPUT_DIR/Appendix/Common/$i/Output.root $OUTPUT_DIR/Appendix/Common/Merged.root
   done
-
-
-
-
-
-
-
+  cd $root_dir
 }
+
+MakeTestToDataShape(){
+  mkdir $OUTPUT_DIR/Appendix/TestToDataShape
+  for i in ${Modes[@]}
+  do
+    mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i
+    mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i/Distributions
+    
+    cd $OUTPUT_DIR/Appendix/TestToDataShape/$i/
+    cp -f $CODE_DIR/Binaries/TestToDataShape $OUTPUT_DIR/Appendix/TestToDataShape/$i/TestToDataShape 
+    chmod +x TestToDataShape     
+   
+    for j in ${Algs_CPP[@]}
+    do
+      mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i/Distributions/$j 
+      mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i/Distributions/$j/Track-1
+      mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i/Distributions/$j/Track-2
+      mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i/Distributions/$j/Track-3
+      mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i/Distributions/$j/Track-4
+    done
+    
+    mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i/ShapePerformance
+    for j in ${Layer[@]}
+    do
+      mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i/ShapePerformance/$j
+    done
+    
+    ./TestToDataShape $OUTPUT_DIR/Appendix/Common/$i/Output.root $OUTPUT_DIR/Appendix/Common/Merged.root
+  done
+  cd $root_dir
+}
+
+MakeFindBestTruthShape(){
+  mkdir $OUTPUT_DIR/Appendix/BestTruthShape
+  DIR_NAME=$OUTPUT_DIR/Appendix/BestTruthShape
+  cd $DIR_NAME
+
+  local str=""
+  #mkdir $DIR_NAME/FittingAlgorithm 
+  #for l in ${Layer[@]}
+  #do 
+  #  mkdir $DIR_NAME/FittingAlgorithm/$l
+  #  mkdir $DIR_NAME/FittingAlgorithm/$l/Track-1
+  #  mkdir $DIR_NAME/FittingAlgorithm/$l/Track-2
+  #  mkdir $DIR_NAME/FittingAlgorithm/$l/Track-3
+  #  mkdir $DIR_NAME/FittingAlgorithm/$l/Track-4
+  #done
+
+  #for i in ${Modes[@]}
+  #do
+  #  for l in ${Layer[@]}
+  #  do 
+  #    mkdir $DIR_NAME/FittingAlgorithm/$l/Track-1/$i
+  #    mkdir $DIR_NAME/FittingAlgorithm/$l/Track-2/$i
+  #    mkdir $DIR_NAME/FittingAlgorithm/$l/Track-3/$i
+  #    mkdir $DIR_NAME/FittingAlgorithm/$l/Track-4/$i
+  #  done
+  #done
+
+
+  for i in ${Modes[@]}
+  do
+    str="$OUTPUT_DIR/Appendix/Common/$i/Output.root $str"
+  done
+  
+  cp -f $CODE_DIR/Binaries/BestTruthShape $DIR_NAME/BestTruthShape 
+  chmod +x BestTruthShape 
+  ./BestTruthShape $OUTPUT_DIR/Appendix/Common/Merged.root $str
+
+  cd $root_dir
+}
+
+
+
+
+
+
+
 
 
 

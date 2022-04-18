@@ -1,5 +1,5 @@
-#ifndef TEST_TO_TRUTH_SHAPE_H
-#define TEST_TO_TRUTH_SHAPE_H
+#ifndef TEST_TO_DATA_SHAPE_H
+#define TEST_TO_DATA_SHAPE_H
 
 #include "../PlottingCode/SharedFunctions.h"
 #include "../PlottingCode/IO.h"
@@ -33,7 +33,7 @@ void Populate(std::vector<TH1F*> Hists, TCanvas* can, TLegend* len, ELineStyle S
   }
 }
 
-void Residual(std::vector<TH1F*> pred, std::vector<TH1F*> truth)
+void Residual(std::vector<TH1F*> pred, TH1F* Data)
 {
   
   TH1F* R1 = (TH1F*)pred[0] -> Clone("Residual"); 
@@ -56,11 +56,10 @@ void Residual(std::vector<TH1F*> pred, std::vector<TH1F*> truth)
 
   for (int j(0); j < R1 -> GetNbinsX(); j++)
   {
-    float sum_t = 0; 
     float sum_f = 0; 
+    float sum_t = Data -> GetBinContent(j+1); 
     for (int i(0); i < pred.size(); i++)
     {
-      sum_t += truth[i] -> GetBinContent(j+1); 
       sum_f += pred[i] -> GetBinContent(j+1);    
     }
 
@@ -73,7 +72,7 @@ void Residual(std::vector<TH1F*> pred, std::vector<TH1F*> truth)
 }
 
 
-void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString title, TCanvas* can)
+void PlotHists(TH1F* Data, std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString title, TCanvas* can)
 {
   float sum = 0; 
   for (int i(0); i < prediction.size(); i++)
@@ -116,15 +115,10 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString 
   TLegend* len = new TLegend(0.9, 0.89, 0.75, 0.65); 
   len -> SetBorderSize(0); 
 
-  TH1F* Data = (TH1F*)prediction[0] -> Clone("Data"); 
-  Data -> Reset();  
-  Data -> SetTitle("Summed Distribution"); 
+  Data -> SetTitle("Cluster Measurements"); 
   Data -> SetLineColor(kBlack); 
   Data -> SetLineWidth(2); 
-  
-
-  for (TH1F* H : truth){ Data -> Add(H); }
-  if (!((TString)truth[0] -> GetTitle()).Contains("Excess")){len -> AddEntry(Data, Data -> GetTitle());}
+  len -> AddEntry(Data, Data -> GetTitle());
   Data -> Draw("SAMEHIST"); 
 
   Populate(truth, can, len, kDashed); 
@@ -132,7 +126,7 @@ void PlotHists(std::vector<TH1F*> prediction, std::vector<TH1F*> truth, TString 
 
   P2 -> cd();
   P2 -> SetGrid();
-  Residual(prediction, truth); 
+  Residual(prediction, Data); 
   can -> cd();
 }
 
@@ -200,4 +194,24 @@ void PlotMultiGraph(std::vector<TGraph*>* GR, _TS Title, float min, float max, _
   delete can; 
   (*GR)={};
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #endif

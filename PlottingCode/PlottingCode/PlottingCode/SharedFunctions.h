@@ -2,6 +2,9 @@
 #define SHARED_FUNCTIONS_H
 
 #include<iostream>
+#include<sstream>
+#include<fstream>
+
 #include<TString.h>
 #include<TFile.h>
 #include<TH1F.h>
@@ -13,6 +16,7 @@
 
 
 typedef TString _TS;
+typedef std::map<_TS, std::map<_TS, std::vector<TH1F*>>>::iterator MMVTFi; 
 typedef std::map<_TS, std::vector<TH1F*>>::iterator MVTFi; 
 typedef std::map<_TS, std::vector<float>>::iterator MVFi; 
 
@@ -48,5 +52,85 @@ static void ConformCanvas(TCanvas* can)
 };
 
 float WeightedShapeError(std::vector<TH1F*> Pred, std::vector<TH1F*> Truth);
+void Normalize(std::vector<TH1F*> Hists); 
+void Normalize(TH1F* Hist);
+
+class Table
+{
+  public:
+    int x_width;
+    int y_width; 
+
+    int x_i = -1; 
+    int y_i = -1;
+
+    int Round = 3; 
+    bool Scientific = false; 
+    bool Integer = false; 
+
+    _TS Name = "Table.txt";
+    _TS Outdir = ""; 
+
+    std::vector<std::vector<float>> values; 
+    std::vector<_TS> x_cellNames; 
+    std::vector<_TS> y_cellNames; 
+
+    std::vector<_TS> Output; 
+    std::vector<std::vector<float>> TMP_Score; 
+
+
+    _TS Spacer = " | "; 
+ 
+    int LargestElement(std::vector<_TS> c); 
+    _TS Rounded(float l); 
+    void CompileTable();
+    void AppendLine(std::vector<std::vector<float>> val);
+    void BestValues(); 
+    void MakeHeader();
+    void ResultList(); 
+    void OtherStats();
+
+
+
+    void Print(){ for (_TS O : Output){ std::cout << O << std::endl; } }; 
+    void Print_Debug() 
+    { 
+      for (std::vector<float> i : values)
+      { 
+        for (float c : i) {std::cout << c << std::endl; }
+      }
+    };
+
+    void WriteToFile()
+    {
+      std::ofstream print; 
+      print.open(Outdir + "/" + Name); 
+      for (_TS a : Output){ print << a << "\n"; }
+      print.close(); 
+    };
+    
+    void RepeatString(_TS* inp, int ntimes, _TS string)
+    { 
+      for (int i(0); i < ntimes; i++){*inp += string;}
+    }; 
+
+    void Newline()
+    { 
+      values.push_back({}); 
+      y_i++; 
+      x_i = -1; 
+    };
+
+    void AddValue(float x)
+    {
+      values[y_i].push_back(x); 
+      x_i++; 
+    };
+
+};
+
+
+
+
 
 #endif
