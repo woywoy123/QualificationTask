@@ -14,9 +14,8 @@ std::vector<_TS> ReturnCurrentDirs()
 }
 
 
-std::map<_TS, std::vector<TH1F*>> ReadCTIDE(_TS dir)
+std::map<_TS, std::vector<TH1F*>> ReadCTIDE(TFile* f)
 {
-  TFile* f = new TFile(dir, "READ");
   std::vector<_TS> Detector_Layer = ReturnCurrentDirs();
   std::map<_TS, std::vector<TH1F*>> Output; 
 
@@ -50,6 +49,14 @@ std::map<_TS, std::vector<TH1F*>> ReadCTIDE(_TS dir)
   
   return Output;
 }
+
+std::map<_TS, std::vector<TH1F*>> ReadCTIDE(_TS dir)
+{
+  TFile* f = new TFile(dir, "READ"); 
+  std::map<_TS, std::vector<TH1F*>> out = ReadCTIDE(f); 
+  return out; 
+}
+
 
 std::map<_TS, std::map<_TS, std::map<_TS, std::map<_TS, TH1F*>>>> ReadDebugging(_TS dir)
 {
@@ -89,9 +96,8 @@ std::map<_TS, std::map<_TS, std::map<_TS, std::map<_TS, TH1F*>>>> ReadDebugging(
   return Output;
 }
 
-std::map<_TS, std::map<_TS, std::vector<TH1F*>>> ReadPostAnalysis(_TS dir)
+std::map<_TS, std::map<_TS, std::vector<TH1F*>>> ReadPostAnalysis(TFile* f)
 {
-  TFile* f = new TFile(dir);
   std::vector<_TS> Layer_Energy = ReturnCurrentDirs();
   std::map<_TS, std::map<_TS, std::vector<TH1F*>>> Output; 
   for (_TS LE : Layer_Energy)
@@ -122,4 +128,11 @@ std::map<_TS, std::map<_TS, std::vector<TH1F*>>> ReadPostAnalysis(_TS dir)
     }
   }
   return Output;
+}
+
+std::map<_TS, std::map<_TS, std::vector<TH1F*>>> ReadPostAnalysis(_TS dir)
+{
+  TFile* f = new TFile(dir); 
+  std::map<_TS, std::map<_TS, std::vector<TH1F*>>> out = ReadPostAnalysis(f); 
+  return out; 
 }

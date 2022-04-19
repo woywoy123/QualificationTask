@@ -22,7 +22,7 @@ mkdir $root_dir/Output
 #source $CODE_DIR/ShellCode/CompileTestToData.sh
 source $CODE_DIR/ShellCode/CompileBestTruthShape.sh
 
-MakeOutputDir
+#MakeOutputDir
 #CollectDebuggingROOT
 #CollectCommonROOT
 #MakeClusterContent

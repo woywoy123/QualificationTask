@@ -209,8 +209,9 @@ MakeTestToTruthShape(){
       mkdir $OUTPUT_DIR/Appendix/TestToTruthShape/$i/ShapePerformance/$j
     done
     
-    ./TestToTruthShape $OUTPUT_DIR/Appendix/Common/$i/Output.root $OUTPUT_DIR/Appendix/Common/Merged.root
+    ./TestToTruthShape $OUTPUT_DIR/Appendix/Common/$i/Output.root $OUTPUT_DIR/Appendix/Common/Merged.root &
   done
+  wait
   cd $root_dir
 }
 
@@ -240,8 +241,9 @@ MakeTestToDataShape(){
       mkdir $OUTPUT_DIR/Appendix/TestToDataShape/$i/ShapePerformance/$j
     done
     
-    ./TestToDataShape $OUTPUT_DIR/Appendix/Common/$i/Output.root $OUTPUT_DIR/Appendix/Common/Merged.root
+    ./TestToDataShape $OUTPUT_DIR/Appendix/Common/$i/Output.root $OUTPUT_DIR/Appendix/Common/Merged.root &
   done
+  wait
   cd $root_dir
 }
 
@@ -251,28 +253,52 @@ MakeFindBestTruthShape(){
   cd $DIR_NAME
 
   local str=""
-  #mkdir $DIR_NAME/FittingAlgorithm 
-  #for l in ${Layer[@]}
-  #do 
-  #  mkdir $DIR_NAME/FittingAlgorithm/$l
-  #  mkdir $DIR_NAME/FittingAlgorithm/$l/Track-1
-  #  mkdir $DIR_NAME/FittingAlgorithm/$l/Track-2
-  #  mkdir $DIR_NAME/FittingAlgorithm/$l/Track-3
-  #  mkdir $DIR_NAME/FittingAlgorithm/$l/Track-4
-  #done
+  mkdir $DIR_NAME/FitToTruth 
+  mkdir $DIR_NAME/FitToData 
+  for l in ${Layer[@]}
+  do 
+    mkdir $DIR_NAME/FitToTruth/$l
+    mkdir $DIR_NAME/FitToTruth/$l/Track-1
+    mkdir $DIR_NAME/FitToTruth/$l/Track-2
+    mkdir $DIR_NAME/FitToTruth/$l/Track-3
+    mkdir $DIR_NAME/FitToTruth/$l/Track-4
 
-  #for i in ${Modes[@]}
-  #do
-  #  for l in ${Layer[@]}
-  #  do 
-  #    mkdir $DIR_NAME/FittingAlgorithm/$l/Track-1/$i
-  #    mkdir $DIR_NAME/FittingAlgorithm/$l/Track-2/$i
-  #    mkdir $DIR_NAME/FittingAlgorithm/$l/Track-3/$i
-  #    mkdir $DIR_NAME/FittingAlgorithm/$l/Track-4/$i
-  #  done
-  #done
+    mkdir $DIR_NAME/FitToData/$l
+    mkdir $DIR_NAME/FitToData/$l/Track-1
+    mkdir $DIR_NAME/FitToData/$l/Track-2
+    mkdir $DIR_NAME/FitToData/$l/Track-3
+    mkdir $DIR_NAME/FitToData/$l/Track-4
+
+  done
+  mkdir $DIR_NAME/FitToTruth/Summary/
+  mkdir $DIR_NAME/FitToTruth/Summary/Track-1
+  mkdir $DIR_NAME/FitToTruth/Summary/Track-2
+  mkdir $DIR_NAME/FitToTruth/Summary/Track-3
+  mkdir $DIR_NAME/FitToTruth/Summary/Track-4
+
+  mkdir $DIR_NAME/FitToData/Summary/
+  mkdir $DIR_NAME/FitToData/Summary/Track-1
+  mkdir $DIR_NAME/FitToData/Summary/Track-2
+  mkdir $DIR_NAME/FitToData/Summary/Track-3
+  mkdir $DIR_NAME/FitToData/Summary/Track-4
 
 
+  for i in ${Modes[@]}
+  do
+    for l in ${Layer[@]}
+    do 
+      mkdir $DIR_NAME/FitToTruth/$l/Track-1/$i
+      mkdir $DIR_NAME/FitToTruth/$l/Track-2/$i
+      mkdir $DIR_NAME/FitToTruth/$l/Track-3/$i
+      mkdir $DIR_NAME/FitToTruth/$l/Track-4/$i
+
+      mkdir $DIR_NAME/FitToData/$l/Track-1/$i
+      mkdir $DIR_NAME/FitToData/$l/Track-2/$i
+      mkdir $DIR_NAME/FitToData/$l/Track-3/$i
+      mkdir $DIR_NAME/FitToData/$l/Track-4/$i
+    done
+  done
+  
   for i in ${Modes[@]}
   do
     str="$OUTPUT_DIR/Appendix/Common/$i/Output.root $str"

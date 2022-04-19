@@ -54,6 +54,7 @@ static void ConformCanvas(TCanvas* can)
 float WeightedShapeError(std::vector<TH1F*> Pred, std::vector<TH1F*> Truth);
 void Normalize(std::vector<TH1F*> Hists); 
 void Normalize(TH1F* Hist);
+void Normalize(std::vector<float>* val); 
 
 class Table
 {
@@ -90,8 +91,6 @@ class Table
     void ResultList(); 
     void OtherStats();
 
-
-
     void Print(){ for (_TS O : Output){ std::cout << O << std::endl; } }; 
     void Print_Debug() 
     { 
@@ -127,10 +126,55 @@ class Table
       x_i++; 
     };
 
+    std::vector<int> LowestValue(std::vector<float> val)
+    {
+      std::vector<int> result;
+      float L = -1; 
+      for (int i(0); i < val.size(); i++)
+      {
+        if (val[i] == -1){continue;} 
+        if (L == -1){L = val[i];}
+        if (val[i] < L){L = val[i];}
+      }
+      
+      for (int i(0); i < val.size(); i++)
+      {
+        if (val[i] == L && val[i] != -1){ result.push_back(i); }
+      }
+      return result;
+    };
+    
+    float Sum(std::vector<float> val){ float sum = 0; for (float i : val){ sum += i; } return sum;}
 };
 
+class MergeTables : public Table
+{
+  public:
+    std::vector<Table> InputTables; 
+    std::vector<_TS> z_cellNames; 
+    
+    void CompileTable(); 
+    std::vector<_TS> FindLowestErrorProjection(std::vector<std::vector<std::vector<float>>> input); 
 
+    void AddToTable(std::vector<std::vector<float>>* dest, std::vector<std::vector<float>> src, float scale)
+    {
+      for (x_i = 0; x_i < x_cellNames.size(); x_i++)
+      {
+        for (y_i = 0; y_i < y_cellNames.size(); y_i++){ (*dest)[y_i][x_i] += scale*src[y_i][x_i]; }
+      }
+    }; 
 
+    void AddToTable(std::vector<std::vector<float>>* dest, std::vector<std::vector<float>> src)
+    {
+      AddToTable(dest, src, 1);
+    };
 
+    std::vector<std::vector<float>> MakeEmptyVector(int y, int x)
+    {
+      std::vector<std::vector<float>> Output; 
+      for (int i = 0; i < y; i++){ Output.push_back(std::vector<float>(x, 0)); }
+      return Output; 
+    }; 
+}; 
 
 #endif
