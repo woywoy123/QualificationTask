@@ -20,7 +20,8 @@ mkdir $root_dir/Output
 #source $CODE_DIR/ShellCode/CompileDebugging.sh
 #source $CODE_DIR/ShellCode/CompileTestToTruth.sh
 #source $CODE_DIR/ShellCode/CompileTestToData.sh
-source $CODE_DIR/ShellCode/CompileBestTruthShape.sh
+#source $CODE_DIR/ShellCode/CompileBestTruthShape.sh
+source $CODE_DIR/ShellCode/CompileFLostPrediction.sh
 
 #MakeOutputDir
 #CollectDebuggingROOT
@@ -29,4 +30,5 @@ source $CODE_DIR/ShellCode/CompileBestTruthShape.sh
 #MakeDebuggingContent
 #MakeTestToTruthShape
 #MakeTestToDataShape
-MakeFindBestTruthShape
+#MakeFindBestTruthShape
+MakeFindBestFLost

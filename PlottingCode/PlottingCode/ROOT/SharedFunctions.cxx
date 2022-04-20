@@ -22,9 +22,11 @@ void BulkDelete(std::vector<TGraph*> gr)
 std::vector<float> ReadTH1F(TH1F* TH)
 {
   std::vector<float> out; 
-  for (int i(0); i < TH -> GetNbinsX(); i++)
+  for (int i(0); i < TH -> GetNbinsX();  i++)
   {
-    out.push_back(TH -> GetBinContent(i+1)); 
+    float x = int(TH -> GetBinContent(i+1)); 
+    if (std::isnan(abs(x))){ x = 0; }
+    out.push_back(x); 
   }
   return out; 
 }
@@ -32,29 +34,39 @@ std::vector<float> ReadTH1F(TH1F* TH)
 void Normalize(std::vector<float>* v)
 {
   float sum = 0; 
-  for (float i : *v){ sum += i; }
-  if (sum == 0){ return; }
+  for (float i : *v)
+  {
+    sum += i; 
+  }
+  if (sum == 0){ sum = 1; }
   for (int i(0); i < v -> size(); i++){ (*v)[i] = (*v)[i] / sum; }
+}
+
+float Sum(std::vector<float> v)
+{ 
+  float s = 0; 
+  for (float x : v){ s += x; }
+  return s; 
 }
 
 void Normalize(TH1F* Hist)
 {
   float x = Hist -> Integral();
-  if (x == 0){return;}
+  if (x == 0){ x = 1;}
   Hist -> Scale(1/x); 
 }
 
 float WeightedShapeError(std::vector<TH1F*> Pred, std::vector<TH1F*> Truth)
 {
   float n_int = 0; 
-  for (TH1F* T : Truth){n_int += (T -> Integral());}
+  for (TH1F* T : Truth){n_int += Sum(ReadTH1F(T));}
   
   float err = 0; 
   for (int i(0); i < Pred.size(); i++)
   {
     std::vector<float> P = ReadTH1F(Pred[i]); 
-    std::vector<float> T = ReadTH1F(Truth[i]); 
-    float m_int = Truth[i] -> Integral();
+    std::vector<float> T = ReadTH1F(Truth[i]);
+    float m_int = Sum(ReadTH1F(Truth[i]));
     Normalize(&P); 
     Normalize(&T); 
     
@@ -79,12 +91,27 @@ void Normalize(std::vector<TH1F*> Hists)
   for (TH1F* H : Hists){Normalize(H);}
 }
 
+float Flost2(std::vector<TH1F*> trk1, std::vector<TH1F*> trk2)
+{
+  float ntrk_1_2 = Sum(ReadTH1F(trk1[1]));
+  float ntrk_2_2 = Sum(ReadTH1F(trk2[1])); 
+  float s = 2*(ntrk_1_2 + ntrk_2_2); 
+  if (s == 0){s = 1;}
+  
+  return (ntrk_1_2)/s; 
+}
 
+float Flost3(std::vector<TH1F*> trk1, std::vector<TH1F*> trk2, std::vector<TH1F*> trk3)
+{
+  float ntrk_1_3 = Sum(ReadTH1F(trk1[2]));
+  float ntrk_2_3 = Sum(ReadTH1F(trk2[2])); 
+  float ntrk_3_3 = Sum(ReadTH1F(trk3[2])); 
 
-
-
-
-
+  float s = 3*(ntrk_1_3 + ntrk_2_3 + ntrk_3_3); 
+  if (s == 0){s = 1;}
+  
+  return (2*ntrk_1_3 + ntrk_2_3)/s; 
+}
 
 void Table::CompileTable()
 {
@@ -96,7 +123,6 @@ void Table::CompileTable()
   ResultList(); 
   OtherStats(); 
   WriteToFile();
-  //Print(); 
 }
 
 void Table::MakeHeader()
@@ -275,9 +301,6 @@ _TS Table::Rounded(float l)
 
 
 
-
-
-
 void MergeTables::CompileTable()
 {
   Output.push_back("================= Raw Values =================="); 
@@ -334,8 +357,6 @@ void MergeTables::CompileTable()
   OtherStats();
 
   WriteToFile(); 
-
-
 }
 
 std::vector<_TS> MergeTables::FindLowestErrorProjection(std::vector<std::vector<std::vector<float>>> input)

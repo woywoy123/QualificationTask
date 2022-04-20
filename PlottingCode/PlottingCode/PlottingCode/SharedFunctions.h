@@ -49,12 +49,19 @@ static void ConformCanvas(TCanvas* can)
   gStyle -> SetOptStat(0); 
   gStyle -> SetImageScaling(3); 
   can -> SetTopMargin(0.1);
+  gStyle -> SetTitleOffset(1.25);
+  gStyle -> SetTitleSize(0.025); 
+  gStyle -> SetLabelSize(0.025, "XY"); 
 };
 
 float WeightedShapeError(std::vector<TH1F*> Pred, std::vector<TH1F*> Truth);
+float Flost2(std::vector<TH1F*> trk1, std::vector<TH1F*> trk2); 
+float Flost3(std::vector<TH1F*> trk1, std::vector<TH1F*> trk2, std::vector<TH1F*> trk3); 
+
 void Normalize(std::vector<TH1F*> Hists); 
 void Normalize(TH1F* Hist);
 void Normalize(std::vector<float>* val); 
+std::vector<float> ReadTH1F(TH1F* TH);
 
 class Table
 {

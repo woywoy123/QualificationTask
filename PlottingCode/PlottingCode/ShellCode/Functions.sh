@@ -247,58 +247,60 @@ MakeTestToDataShape(){
   cd $root_dir
 }
 
+
+MakeLayerInDirectory(){
+  local di=$1
+  for i in ${Layer[@]}
+  do
+    mkdir $di/$i
+  done
+}
+
+MakeTracksInDirectory(){
+  local di=$1
+  mkdir $di/Track-1
+  mkdir $di/Track-2
+  mkdir $di/Track-3
+  mkdir $di/Track-4
+}
+
+MakeTracksInLayersDirectory(){
+  local di=$1
+  MakeLayerInDirectory $di
+  for i in ${Layer[@]}
+  do
+    MakeTracksInDirectory $di/$i
+  done
+}
+
+
+
 MakeFindBestTruthShape(){
+
+  MakeDirectory()
+  {
+    local fit=$1  
+    mkdir $DIR_NAME/$fit
+    MakeTracksInLayersDirectory $DIR_NAME/$fit
+   
+    mkdir $DIR_NAME/$fit/Summary
+    mkdir $DIR_NAME/$fit/Summary/PerTemplateVariation
+    mkdir $DIR_NAME/$fit/Summary/PerAlgorithmVariation
+    mkdir $DIR_NAME/$fit/Summary/OverallPerformance
+
+    MakeTracksInDirectory $DIR_NAME/$fit/Summary/PerTemplateVariation
+    MakeTracksInLayersDirectory $DIR_NAME/$fit/Summary/PerAlgorithmVariation
+    MakeLayerInDirectory $DIR_NAME/$fit/Summary/OverallPerformance
+  }
+
   mkdir $OUTPUT_DIR/Appendix/BestTruthShape
   DIR_NAME=$OUTPUT_DIR/Appendix/BestTruthShape
   cd $DIR_NAME
 
-  local str=""
-  mkdir $DIR_NAME/FitToTruth 
-  mkdir $DIR_NAME/FitToData 
-  for l in ${Layer[@]}
-  do 
-    mkdir $DIR_NAME/FitToTruth/$l
-    mkdir $DIR_NAME/FitToTruth/$l/Track-1
-    mkdir $DIR_NAME/FitToTruth/$l/Track-2
-    mkdir $DIR_NAME/FitToTruth/$l/Track-3
-    mkdir $DIR_NAME/FitToTruth/$l/Track-4
-
-    mkdir $DIR_NAME/FitToData/$l
-    mkdir $DIR_NAME/FitToData/$l/Track-1
-    mkdir $DIR_NAME/FitToData/$l/Track-2
-    mkdir $DIR_NAME/FitToData/$l/Track-3
-    mkdir $DIR_NAME/FitToData/$l/Track-4
-
-  done
-  mkdir $DIR_NAME/FitToTruth/Summary/
-  mkdir $DIR_NAME/FitToTruth/Summary/Track-1
-  mkdir $DIR_NAME/FitToTruth/Summary/Track-2
-  mkdir $DIR_NAME/FitToTruth/Summary/Track-3
-  mkdir $DIR_NAME/FitToTruth/Summary/Track-4
-
-  mkdir $DIR_NAME/FitToData/Summary/
-  mkdir $DIR_NAME/FitToData/Summary/Track-1
-  mkdir $DIR_NAME/FitToData/Summary/Track-2
-  mkdir $DIR_NAME/FitToData/Summary/Track-3
-  mkdir $DIR_NAME/FitToData/Summary/Track-4
-
-
-  for i in ${Modes[@]}
-  do
-    for l in ${Layer[@]}
-    do 
-      mkdir $DIR_NAME/FitToTruth/$l/Track-1/$i
-      mkdir $DIR_NAME/FitToTruth/$l/Track-2/$i
-      mkdir $DIR_NAME/FitToTruth/$l/Track-3/$i
-      mkdir $DIR_NAME/FitToTruth/$l/Track-4/$i
-
-      mkdir $DIR_NAME/FitToData/$l/Track-1/$i
-      mkdir $DIR_NAME/FitToData/$l/Track-2/$i
-      mkdir $DIR_NAME/FitToData/$l/Track-3/$i
-      mkdir $DIR_NAME/FitToData/$l/Track-4/$i
-    done
-  done
+  MakeDirectory FitToTruth
+  MakeDirectory FitToData
   
+  local str=""
   for i in ${Modes[@]}
   do
     str="$OUTPUT_DIR/Appendix/Common/$i/Output.root $str"
@@ -310,6 +312,53 @@ MakeFindBestTruthShape(){
 
   cd $root_dir
 }
+
+MakeFindBestFLost(){
+
+  MakeDirectory()
+  {
+    local fit=$1  
+    mkdir $DIR_NAME/$fit
+    mkdir $DIR_NAME/$fit/Summary
+    mkdir $DIR_NAME/$fit/Summary/PerTemplateVariation
+    mkdir $DIR_NAME/$fit/Summary/PerAlgorithmVariation
+    mkdir $DIR_NAME/$fit/Summary/OverallPerformance
+    
+    MakeLayerInDirectory $DIR_NAME/$fit
+    MakeLayerInDirectory $DIR_NAME/$fit/Summary/PerAlgorithmVariation
+    MakeLayerInDirectory $DIR_NAME/$fit/Summary/OverallPerformance
+  }
+
+  mkdir $OUTPUT_DIR/Appendix/FLostPredictions
+  DIR_NAME=$OUTPUT_DIR/Appendix/FLostPredictions
+  cd $DIR_NAME
+
+  MakeDirectory FLost2_Error
+  MakeDirectory FLost3_Error
+  MakeDirectory FLost2
+  MakeDirectory FLost3
+  
+  local str=""
+  for i in ${Modes[@]}
+  do
+    str="$OUTPUT_DIR/Appendix/Common/$i/Output.root $str"
+  done
+  
+  cp -f $CODE_DIR/Binaries/BestFLost $DIR_NAME/BestFLost 
+  chmod +x BestFLost
+  ./BestFLost FLost2_Error $OUTPUT_DIR/Appendix/Common/Merged.root $str
+  ./BestFLost FLost3_Error $OUTPUT_DIR/Appendix/Common/Merged.root $str
+  ./BestFLost FLost2 $OUTPUT_DIR/Appendix/Common/Merged.root $str
+  ./BestFLost FLost3 $OUTPUT_DIR/Appendix/Common/Merged.root $str
+
+  cd $root_dir
+}
+
+
+
+
+
+
 
 
 
